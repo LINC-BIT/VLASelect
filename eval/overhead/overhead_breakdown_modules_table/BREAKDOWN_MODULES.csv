@@ -1,0 +1,5 @@
+family,panel_label,workload_name,display_name,workload_initialization_seconds,optimal_network_search_and_selective_model_enhancement_seconds,selective_knowledge_accumulation_seconds,online_rl_completion_seconds,total_seconds,has_module_data,source
+octo,a,Single-arm robot,VLASelect,0.0,0.0,0.0,0.0,0.0,0,
+vla_adapter_new,b,Dexterous hand,VLASelect,0.0,0.0,0.0,0.0,0.0,0,
+tinyvla,c,Mobile manipulator,VLASelect,0.0,0.0,0.0,0.0,0.0,0,
+edgevla,d,Humanoid robot,VLASelect,0.0,0.0,0.0,0.0,0.0,0,

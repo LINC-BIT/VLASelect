@@ -1,0 +1,1 @@
+借鉴train/toy_cnn/ours_single_agent/online_rl_ours_single_agent_cl.sh的逻辑，编写train/toy_cnn/ours_single_agent/rebuttal/gradient_similarity.py，计算原始模型和所生成小模型在输入相同数据、进行反向传播时，所生成梯度的余弦相似度。计算到相似度之后即可退出程序，不需要进行完整训练。不允许修改train/toy_cnn/ours_single_agent/rebuttal/gradient_similarity.py之外的文件！

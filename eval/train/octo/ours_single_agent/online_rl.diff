@@ -1,0 +1,377 @@
+--- train/toy_cnn/ours/deft_multiple_models/online_rl.py	2026-04-15 01:43:48.696289428 +0000
++++ train/toy_cnn/ours_single_agent/online_rl.py	2026-04-25 13:02:15.308436506 +0000
+@@ -57,7 +57,7 @@
+     """whether to save model into the `ckpt/{run_name}` folder"""
+     evaluate: bool = False
+     """if toggled, only runs evaluation with the given model checkpoint and saves the evaluation trajectories"""
+-    checkpoint: Optional[str] = None
++    checkpoint: str = "ckpt/PickCube-v1/ours/toy_cnn/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt"
+     """path to a pretrained checkpoint file to start evaluation/training from"""
+     render_mode: str = "all"
+     """the environment rendering mode"""
+@@ -187,7 +187,7 @@
+     feature_aggregator_norm_type: str = 'none'
+     """normalization used inside feature aggregator: none or layernorm"""
+ 
+-    enable_feature_fusion: bool = True
++    enable_feature_fusion: bool = False
+     small_model_generation_strategy: str = 'target-batch'  # 'source', 'target-batch', 'target-single', 'target-single-traj'
+     small_model_generation_policy: str = 'small'
+     """which policy collects target trajectories for small model generation: small, large, or better"""
+@@ -1152,7 +1152,7 @@
+         lambda model, sample: model(sample)
+     )
+ 
+-    agent.load_state_dict(torch.load(args.ppo_pretrained_model1_path)['agent'])
++    agent.load_state_dict(torch.load(args.checkpoint)['agent'])
+     for m in agent.modules():
+         if isinstance(m, nn.ReLU):
+             m.inplace = False
+@@ -1162,84 +1162,6 @@
+     return agent
+ 
+ 
+-def load_agent2():
+-    from train.toy_cnn.model import Actor
+-    actor = Actor(42, 4, 1, False).to(
+-        device=device
+-    )
+-    # add FBS
+-    set_module(actor, 'rgb_encoder.fc.0', svd_decompose_linear(
+-        get_module(actor, 'rgb_encoder.fc.0')
+-    ))
+-    set_module(actor, 'depth_encoder.fc.0', svd_decompose_linear(
+-        get_module(actor, 'depth_encoder.fc.0')
+-    ))
+-    rgb, depth, state = torch.rand((1, 3, 128, 128)), torch.rand((1, 1, 128, 128)), torch.rand((1, 42))
+-    example_sample = {
+-        'rgb': rgb.to(device),
+-        'depth': depth.to(device),
+-        'state': state.to(device)
+-    }
+-
+-    from ours.pretrain_fbs_model.main import add_FBS_into_cnn
+-    add_FBS_into_cnn(
+-        actor,
+-        [f'rgb_encoder.cnn.{i}' for i in [0, 6, 12]] + [f'depth_encoder.cnn.{i}' for i in [0, 6, 12]],
+-        # [f'state_encoder.{i}' for i in [2]] + ['decoder.0'] + ['rgb_encoder.fc.0.0', 'depth_encoder.fc.0.0'],
+-        ['decoder.0'] + ['rgb_encoder.fc.0.0', 'depth_encoder.fc.0.0'],
+-        example_sample,
+-        args.max_sparsity,
+-        8,
+-        lambda model, sample: model(sample['rgb'], sample['depth'], sample['state'])
+-    )
+-    # actor.load_state_dict(torch.load(args.bc_pretrained_fbs_model_path)['actor'])
+-    # # actor.decoder = nn.Identity()
+-    # print(f'load bc pretrained fbs model from {args.bc_pretrained_fbs_model_path}')
+-
+-    state_max, state_min = torch.load(args.state_norm_stats_path)
+-
+-    # NOTE: 去掉depth encoder，训一个模型变体，用来做实验；其它代码均不变
+-    # agent = Agent(envs, actor, 256 * 3, state_max, state_min).to(device)
+-    agent = AgentWithoutDepthInput(actor, 256 * 2, state_max, state_min, args.normalize_states).to(device)
+-
+-
+-    if args.use_pretrained_decoder_as_actor_mean:
+-        print('use_pretrained_decoder_as_actor_mean')
+-        agent.actor_mean = deepcopy(actor.decoder)
+-    actor.decoder = nn.Identity()
+-    rgb, depth, state = torch.rand((1, 128, 128, 3)), torch.rand((1, 128, 128, 1)), torch.rand((1, 42))
+-    example_sample = {
+-        'rgb': rgb,
+-        'depth': depth,
+-        'state': state
+-    }
+-    
+-    # print(example_sample)
+-    add_FBS_into_cnn(
+-        agent,
+-        # [f'rgb_encoder.cnn.{i}' for i in [0, 6, 12]] + [f'depth_encoder.cnn.{i}' for i in [0, 6, 12]],
+-        [],
+-        # [f'state_encoder.{i}' for i in [2]] + ['decoder.0'] + ['rgb_encoder.fc.0.0', 'depth_encoder.fc.0.0'],
+-        ['actor_mean.0', 'critic.0'] if not args.use_pretrained_decoder_as_actor_mean else ['critic.0'],
+-        example_sample,
+-        args.max_sparsity,
+-        8,
+-        lambda model, sample: model(sample)
+-    )
+-
+-    print('agent2: ', agent)
+-
+-    agent.load_state_dict(torch.load(args.ppo_pretrained_model2_path)['agent'])
+-
+-    for m in agent.modules():
+-        if isinstance(m, nn.ReLU):
+-            m.inplace = False
+-    # for p in agent.parameters():
+-    #     p.requires_grad = True
+-
+-    return agent
+-
+-
+ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of_output_features: str, layers_name_of_head: List[str],
+               local_feature_dim: int, feature_selector_alpha: float, pretrained_feature_aggregator_path):
+     
+@@ -1368,7 +1290,8 @@
+     print(f"args.minibatch_size={args.minibatch_size} args.batch_size={args.batch_size} args.update_epochs={args.update_epochs}")
+     print(f"####")
+ 
+-    from ours.de_feature_fusion.client import Client
++    # 多agent逻辑，暂不需要
++    # from ours.de_feature_fusion.client import Client
+ 
+ 
+     # if args.reinit_head:
+@@ -1413,25 +1336,26 @@
+         p.requires_grad = True
+ 
+ 
+-    client = Client(
+-        agent_name,
+-        agent,
+-        layer_name_of_output_features,
+-        local_feature_dim,
+-        feature_selector_alpha,
+-        args.data_manager_url,
+-        device,
+-        local_action_dim=int(np.prod(envs.single_action_space.shape)),
+-        feature_aggregator_attention_num_heads=args.feature_aggregator_attention_num_heads,
+-        feature_aggregator_gate_type=args.feature_aggregator_gate_type,
+-        feature_aggregator_gate_activation=args.feature_aggregator_gate_activation,
+-        feature_aggregator_norm_type=args.feature_aggregator_norm_type,
+-        feature_selector_topk_trajectories=args.feature_selector_topk_trajectories,
+-        feature_selector_temporal_pool_steps=args.feature_selector_temporal_pool_steps,
+-        feature_selector_strategy=args.feature_selector_strategy,
+-    )
+-    client.load_feature_aggregators(pretrained_feature_aggregator_path)
+-    client.before_training_start(agent)
++    # 多agent逻辑，暂不需要
++    # client = Client(
++    #     agent_name,
++    #     agent,
++    #     layer_name_of_output_features,
++    #     local_feature_dim,
++    #     feature_selector_alpha,
++    #     args.data_manager_url,
++    #     device,
++    #     local_action_dim=int(np.prod(envs.single_action_space.shape)),
++    #     feature_aggregator_attention_num_heads=args.feature_aggregator_attention_num_heads,
++    #     feature_aggregator_gate_type=args.feature_aggregator_gate_type,
++    #     feature_aggregator_gate_activation=args.feature_aggregator_gate_activation,
++    #     feature_aggregator_norm_type=args.feature_aggregator_norm_type,
++    #     feature_selector_topk_trajectories=args.feature_selector_topk_trajectories,
++    #     feature_selector_temporal_pool_steps=args.feature_selector_temporal_pool_steps,
++    #     feature_selector_strategy=args.feature_selector_strategy,
++    # )
++    # client.load_feature_aggregators(pretrained_feature_aggregator_path)
++    # client.before_training_start(agent)
+ 
+     training_feature_aggregator_modules = []
+ 
+@@ -1529,10 +1453,11 @@
+             if success_end_at_last_small_model_regeneration is None:
+                 success_end_at_last_small_model_regeneration = current_success_end
+                 iteration_at_last_small_model_regeneration = iteration
+-            client.report_metrics(time.time() - start_time, {
+-                'success_once': float(avg_success_once),
+-                'success_at_end': float(avg_success_end)
+-            })
++            # 多agent逻辑，暂不需要
++            # client.report_metrics(time.time() - start_time, {
++            #     'success_once': float(avg_success_once),
++            #     'success_at_end': float(avg_success_end)
++            # })
+             print(f"Client {agent_name} eval success_once={avg_success_once:.4f}, success_at_end={avg_success_end:.4f}")
+ 
+             if avg_success_once >= best_success_once:
+@@ -1579,7 +1504,8 @@
+                 },
+                 f"ckpt/{run_name}/checkpoints/last.pt",
+             )
+-            client.save_feature_aggregators(f"ckpt/{run_name}/checkpoints/last.pt.feature_aggregators")
++            # 多agent逻辑，暂不需要
++            # client.save_feature_aggregators(f"ckpt/{run_name}/checkpoints/last.pt.feature_aggregators")
+ 
+         if should_feedback_small_model_before_rollout(
+             feedback_schedule,
+@@ -1672,12 +1598,13 @@
+             next_done = torch.logical_or(terminations, truncations).to(torch.float32)
+             rewards[step] = reward.view(-1) * args.reward_scale
+ 
+-            if args.enable_feature_fusion:
+-                client.after_each_forward_during_rollout(
+-                    reward.view(-1).detach(),
+-                    next_done.detach(),
+-                    action_mean=action_mean.detach(),
+-                )
++            # 多agent逻辑，暂不需要
++            # if args.enable_feature_fusion:
++            #     client.after_each_forward_during_rollout(
++            #         reward.view(-1).detach(),
++            #         next_done.detach(),
++            #         action_mean=action_mean.detach(),
++            #     )
+             
+ 
+             if "final_info" in infos:
+@@ -1904,34 +1831,35 @@
+         #         entropy_loss = torch.tensor(0.0)
+         #         update_times = 0
+ 
+-        client.refresh_features()
+-
+-        if args.update_feature_aggregator_lr > 1e-7:
+-            feature_aggregators_parameters = client.get_feature_aggregators_parameters()
+-            for client_id, fap in feature_aggregators_parameters.items():
+-                # for p in fap:
+-                #     p.requires_grad = True
+-                if client_id not in training_feature_aggregator_modules:
+-                    training_feature_aggregator_modules.append(client_id)
+-                    fap_list = list(fap)  # must convert to list BEFORE iterating, generator can only be consumed once
+-                    for p in fap_list:
+-                        p.requires_grad = True
+-                    optimizer.add_param_group({'params': fap_list, 'lr': args.update_feature_aggregator_lr, 'eps': 1e-5})
+-                    print(f"Client {agent_name} start training feature aggregator {client_id} with {len(fap_list)} parameters")
+-
+-        feature_aggregators_gate_g = client.debug_feature_aggregators()
+-        gate_g_strs = []
+-        for client_id, gate_info in feature_aggregators_gate_g.items():
+-            for stream_name, gate_g in gate_info.items():
+-                if gate_g is None:
+-                    continue
+-                metric_prefix = f"train/feature_aggregator_{client_id}_{stream_name}_gate_g"
+-                logger.add_histogram(metric_prefix, gate_g, global_step)
+-                logger.add_scalar(f"{metric_prefix}_mean", gate_g.mean(), global_step)
+-                logger.add_scalar(f"{metric_prefix}_std", gate_g.std(), global_step)
+-                gate_g_strs.append(f"{client_id}.{stream_name}={gate_g.mean().item():.4f}")
+-        if gate_g_strs:
+-            print(f'Client {agent_name} gate_g_mean: {", ".join(gate_g_strs)}')
++        # 多agent逻辑，暂不需要
++        # client.refresh_features()
++        #
++        # if args.update_feature_aggregator_lr > 1e-7:
++        #     feature_aggregators_parameters = client.get_feature_aggregators_parameters()
++        #     for client_id, fap in feature_aggregators_parameters.items():
++        #         # for p in fap:
++        #         #     p.requires_grad = True
++        #         if client_id not in training_feature_aggregator_modules:
++        #             training_feature_aggregator_modules.append(client_id)
++        #             fap_list = list(fap)  # must convert to list BEFORE iterating, generator can only be consumed once
++        #             for p in fap_list:
++        #                 p.requires_grad = True
++        #             optimizer.add_param_group({'params': fap_list, 'lr': args.update_feature_aggregator_lr, 'eps': 1e-5})
++        #             print(f"Client {agent_name} start training feature aggregator {client_id} with {len(fap_list)} parameters")
++        #
++        # feature_aggregators_gate_g = client.debug_feature_aggregators()
++        # gate_g_strs = []
++        # for client_id, gate_info in feature_aggregators_gate_g.items():
++        #     for stream_name, gate_g in gate_info.items():
++        #         if gate_g is None:
++        #             continue
++        #         metric_prefix = f"train/feature_aggregator_{client_id}_{stream_name}_gate_g"
++        #         logger.add_histogram(metric_prefix, gate_g, global_step)
++        #         logger.add_scalar(f"{metric_prefix}_mean", gate_g.mean(), global_step)
++        #         logger.add_scalar(f"{metric_prefix}_std", gate_g.std(), global_step)
++        #         gate_g_strs.append(f"{client_id}.{stream_name}={gate_g.mean().item():.4f}")
++        # if gate_g_strs:
++        #     print(f'Client {agent_name} gate_g_mean: {", ".join(gate_g_strs)}')
+ 
+         update_time = time.perf_counter() - update_time
+         cumulative_times["update_time"] += update_time
+@@ -1970,7 +1898,8 @@
+         )
+         print(f"model saved to {model_path}")
+ 
+-    client.close()
++    # 多agent逻辑，暂不需要
++    # client.close()
+     envs.close()
+     eval_envs.close()
+     if logger is not None:
+@@ -2060,49 +1989,53 @@
+ 
+     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+ 
++    # 多agent逻辑，暂不需要
+     # Start data manager server in a background process
+-    import subprocess
+-    data_manager_proc = subprocess.Popen(
+-        ['python', '-m', 'uvicorn', 'ours.de_feature_fusion.data_manager:app', '--host', '0.0.0.0', '--port', args.data_manager_url.split(':')[-1]],
+-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+-    )
+-    import atexit
+-    atexit.register(lambda: data_manager_proc.terminate())
+-    time.sleep(3)  # Wait for the server to start
+-    print(f"Data manager started (pid={data_manager_proc.pid})")
+-
+-    mp.set_start_method('spawn', force=True)
+-
+-    # ppo_agent(args, device, run_name,
++    # import subprocess
++    # data_manager_proc = subprocess.Popen(
++    #     ['python', '-m', 'uvicorn', 'ours.de_feature_fusion.data_manager:app', '--host', '0.0.0.0', '--port', args.data_manager_url.split(':')[-1]],
++    #     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
++    # )
++    # import atexit
++    # atexit.register(lambda: data_manager_proc.terminate())
++    # time.sleep(3)  # Wait for the server to start
++    # print(f"Data manager started (pid={data_manager_proc.pid})")
++    #
++    # mp.set_start_method('spawn', force=True)
++    #
++    # client1_process = torch.multiprocessing.Process(target=ppo_agent, args=(
++    #     args, device, run_name,
+     #     load_agent(),
+     #     '[agent1]',
+     #     'feature_net.decoder',
+     #     ['critic', 'actor_mean', 'actor_logstd'],
+     #     256 * 3,
+     #     0.2,
+-    #     args.ppo_pretrained_model1_path + '.feature_aggregators')
++    #     args.ppo_pretrained_model1_path + '.feature_aggregators'
++    # ))
++    # client2_process = torch.multiprocessing.Process(target=ppo_agent, args=(
++    #     args, device, run_name,
++    #     load_agent2(),
++    #     'feature_filter',
++    #     ['critic', 'actor_mean', 'actor_logstd'],
++    #     256 * 2,
++    #     0.2,
++    #     args.ppo_pretrained_model2_path + '.feature_aggregators'
++    # ))
++    # client1_process.start()
++    # client2_process.start()
++    # client1_process.join()
++    # client2_process.join()
+ 
+-    client1_process = torch.multiprocessing.Process(target=ppo_agent, args=(
+-        args, device, run_name,
++    ppo_agent(
++        args,
++        device,
++        run_name,
+         load_agent(),
+-        '[agent1]',
++        '[agent]',
+         'feature_net.decoder',
+         ['critic', 'actor_mean', 'actor_logstd'],
+         256 * 3,
+         0.2,
+-        args.ppo_pretrained_model1_path + '.feature_aggregators'
+-    ))
+-    client2_process = torch.multiprocessing.Process(target=ppo_agent, args=(
+-        args, device, run_name,
+-        load_agent2(),
+-        '[agent2]',
+-        'feature_filter',
+-        ['critic', 'actor_mean', 'actor_logstd'],
+-        256 * 2,
+-        0.2,
+-        args.ppo_pretrained_model2_path + '.feature_aggregators'
+-    ))
+-    client1_process.start()
+-    client2_process.start()
+-    client1_process.join()
+-    client2_process.join()
++        None,
++    )

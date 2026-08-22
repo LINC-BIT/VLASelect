@@ -1,0 +1,30 @@
+{
+  "episodes": [
+    {
+      "episode_id": 0
+    }
+  ],
+  "env_info": {
+    "env_id": "PickCube-v1",
+    "env_kwargs": {
+      "obs_mode": "rgb+depth+state_dict",
+      "control_mode": "pd_ee_delta_pos",
+      "render_mode": "rgb_array",
+      "reward_mode": "dense",
+      "shader_dir": "default",
+      "sim_backend": "physx_cpu",
+      "robot_uids": "panda_wristcam",
+      "sensor_configs": {
+        "shader_pack": "default",
+        "width": 224,
+        "height": 224
+      },
+      "num_envs": 1
+    },
+    "max_episode_steps": 50
+  },
+  "metadata": {
+    "generator": "train.octo.generate_teacher_demo",
+    "checkpoint": "ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt"
+  }
+}

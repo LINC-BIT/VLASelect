@@ -1,0 +1,13 @@
+{
+  "stamp": "20260817-141228",
+  "output_base": "/home/zcr/vlaselect/eval/discussion/results/multi_agent_smoke",
+  "runs": [
+    {
+      "family": "tiny",
+      "model_backbone": "tiny",
+      "run_dir": "/home/zcr/vlaselect/eval/discussion/results/multi_agent_smoke/tiny",
+      "log_file": "/home/zcr/vlaselect/eval/discussion/results/multi_agent_smoke/tiny/train.log",
+      "status": "failed"
+    }
+  ]
+}

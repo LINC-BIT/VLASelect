@@ -1,0 +1,8 @@
+{
+  "suite_stamp": "20260821-114547",
+  "table_root": "overhead/overhead_same_acc_table",
+  "figure_output": "overhead/FIG_MEMORY_FOOTPOINT.pdf",
+  "table_output": "overhead/overhead_breakdown_table/TAB_OVERHEAD.csv",
+  "panels": [],
+  "families": []
+}

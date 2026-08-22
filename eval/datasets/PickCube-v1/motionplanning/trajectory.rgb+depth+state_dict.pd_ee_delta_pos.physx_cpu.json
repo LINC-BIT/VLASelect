@@ -1,0 +1,99 @@
+{
+  "episodes": [
+    {
+      "episode_id": 0
+    },
+    {
+      "episode_id": 1
+    },
+    {
+      "episode_id": 2
+    },
+    {
+      "episode_id": 3
+    },
+    {
+      "episode_id": 4
+    },
+    {
+      "episode_id": 5
+    },
+    {
+      "episode_id": 6
+    },
+    {
+      "episode_id": 7
+    },
+    {
+      "episode_id": 8
+    },
+    {
+      "episode_id": 9
+    },
+    {
+      "episode_id": 10
+    },
+    {
+      "episode_id": 11
+    },
+    {
+      "episode_id": 12
+    },
+    {
+      "episode_id": 13
+    },
+    {
+      "episode_id": 14
+    },
+    {
+      "episode_id": 15
+    },
+    {
+      "episode_id": 16
+    },
+    {
+      "episode_id": 17
+    },
+    {
+      "episode_id": 18
+    },
+    {
+      "episode_id": 19
+    },
+    {
+      "episode_id": 20
+    },
+    {
+      "episode_id": 21
+    },
+    {
+      "episode_id": 22
+    },
+    {
+      "episode_id": 23
+    }
+  ],
+  "env_info": {
+    "env_id": "PickCube-v1",
+    "env_kwargs": {
+      "obs_mode": "rgb+depth+state_dict",
+      "control_mode": "pd_ee_delta_pos",
+      "render_mode": "rgb_array",
+      "reward_mode": "dense",
+      "shader_dir": "default",
+      "sim_backend": "physx_cpu",
+      "robot_uids": "panda_wristcam",
+      "sensor_configs": {
+        "shader_pack": "default",
+        "width": 224,
+        "height": 224
+      },
+      "num_envs": 1
+    },
+    "max_episode_steps": 50
+  },
+  "metadata": {
+    "generator": "train.octo.generate_teacher_demo",
+    "checkpoint": "ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "episodes": [
+    {
+      "episode_id": 0
+    }
+  ],
+  "env_info": {
+    "env_kwargs": {
+      "obs_mode": "rgb+depth+state_dict",
+      "control_mode": "pd_ee_delta_pos",
+      "reward_mode": "normalized_dense",
+      "render_mode": "all",
+      "num_envs": 1
+    }
+  }
+}

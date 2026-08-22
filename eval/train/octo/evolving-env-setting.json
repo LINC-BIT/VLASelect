@@ -1,0 +1,40 @@
+{
+  "object_type": "cube",
+  "object_size_info": {
+    "cube": {
+      "half_size": 0.03
+    },
+    "sphere": {
+      "radius": 0.03
+    },
+    "cylinder": {
+      "radius": 0.03,
+      "half_length": 0.03
+    },
+    "box": {
+      "half_sizes": [
+        0.03340015078366777,
+        0.0445335343782237,
+        0.05566691797277963
+      ]
+    }
+  },
+  "object_mass": 0.29477848914275456,
+  "object_color": [
+    0.2858937845682791,
+    0.5666838622764379,
+    0.6815796735986189,
+    1.0
+  ],
+  "randomize_camera": false,
+  "ambient_light_temperature": 2294,
+  "ambient_light_intensity": 0.9243988353595817,
+  "directional_light_temperature": 5653,
+  "directional_light_direction": [
+    0.05744884392968669,
+    0.06693445554423755,
+    0.12450216115944168
+  ],
+  "shadow_scale": 5,
+  "global_random": true
+}

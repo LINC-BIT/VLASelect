@@ -1,0 +1,398 @@
+{
+  "source": {
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_comparison_task_env_table/20260821-103841/manifest.json",
+    "suite_manifest": "ckpt/cl_suite/20260821-103841/manifest.json"
+  },
+  "render_config": {
+    "smoothing": 0.7,
+    "matplotlib": {
+      "font_family": "sans-serif",
+      "font_sans_serif": [
+        "Arial",
+        "DejaVu Sans",
+        "Liberation Sans"
+      ],
+      "font_size": 36,
+      "axes_labelsize": 36,
+      "xtick_labelsize": 36,
+      "ytick_labelsize": 36,
+      "legend_fontsize": 36
+    },
+    "figure": {
+      "width": 9.6,
+      "height": 8.0,
+      "dpi": 200
+    },
+    "legend_figure": {
+      "width": 8.0,
+      "min_height": 2.2,
+      "height_per_item": 0.78,
+      "handlelength": 2.8,
+      "pad_inches": 0.15
+    }
+  },
+  "plots": {
+    "success_once": {
+      "tag": "eval/success_once",
+      "output_stem": "a_octo",
+      "xlabel": "Time (minutes)",
+      "ylabel": "Success Rate",
+      "xlim": [
+        0.0,
+        4.190928530693054
+      ],
+      "ylim": [
+        0.0,
+        1.0
+      ],
+      "grid_alpha": 0.3,
+      "summary": {
+        "others_average": 0.5595982142857143,
+        "ours_average": 0.25,
+        "absolute_improvement_percent": -30.95982142857143
+      },
+      "series": [
+        {
+          "name": "conrft",
+          "display_name": "ConRFT",
+          "label": "ConRFT",
+          "raw_average": 0.4,
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.11914606094360351,
+            0.31197905937830606,
+            0.45010326703389486,
+            0.6585080703099568
+          ],
+          "y": [
+            0.0,
+            0.30000000000000004,
+            0.51,
+            0.357,
+            0.24989999999999998
+          ]
+        },
+        {
+          "name": "flare",
+          "display_name": "FLaRe",
+          "label": "FLaRe",
+          "raw_average": 0.601562,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            1.0568281332651774,
+            2.048599660396576,
+            3.0718243439992268
+          ],
+          "y": [
+            0.5625,
+            0.571875,
+            0.5596875,
+            0.60740625
+          ]
+        },
+        {
+          "name": "improv_vla",
+          "display_name": "Improv-VLA",
+          "label": "Improv-VLA",
+          "raw_average": 0.8,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.17357142368952433,
+            0.3433114926020304,
+            0.5136361916859945,
+            0.6749529004096985
+          ],
+          "y": [
+            0.0,
+            0.30000000000000004,
+            0.51,
+            0.657,
+            0.7599
+          ]
+        },
+        {
+          "name": "self_improv",
+          "display_name": "Self-Improvement",
+          "label": "Self-Improvement",
+          "raw_average": 0.709821,
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.501201045513153,
+            1.0278342684110007,
+            1.5574161370595296,
+            2.088128685951233,
+            2.6205820480982465,
+            3.154241685072581
+          ],
+          "y": [
+            0.59375,
+            0.66875,
+            0.693125,
+            0.7101875,
+            0.67525625,
+            0.7164293749999999,
+            0.6890005625
+          ]
+        },
+        {
+          "name": "ppo_gen",
+          "display_name": "PPO-Gen",
+          "label": "PPO-Gen",
+          "raw_average": 0.520833,
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.5784164269765218,
+            1.1893796960512797,
+            1.8214717904726665,
+            2.4521140734354656,
+            3.085009733835856
+          ],
+          "y": [
+            0.5625,
+            0.571875,
+            0.5596875,
+            0.5136562499999999,
+            0.5470593749999999,
+            0.5048165624999998
+          ]
+        },
+        {
+          "name": "vla_rft",
+          "display_name": "VLA-RFT",
+          "label": "VLA-RFT",
+          "raw_average": 0.6,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.12140754063924154,
+            0.23249743779500326,
+            0.35041557550430297,
+            0.46425071159998577
+          ],
+          "y": [
+            0.0,
+            0.30000000000000004,
+            0.51,
+            0.357,
+            0.5499
+          ]
+        },
+        {
+          "name": "world_env",
+          "display_name": "WorldEnv",
+          "label": "WorldEnv",
+          "raw_average": 0.6,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.17598433097203572,
+            0.3558282494544983,
+            0.5400257666905721,
+            0.6995524326960246
+          ],
+          "y": [
+            0.0,
+            0.30000000000000004,
+            0.51,
+            0.657,
+            0.4599
+          ]
+        },
+        {
+          "name": "edgeta",
+          "display_name": "EdgeTA",
+          "label": "EdgeTA",
+          "raw_average": 0.3875,
+          "style": {
+            "color": "#A6A6A6",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.5617170929908752,
+            1.4265236616134644,
+            2.2979700764020285,
+            3.1909285306930544
+          ],
+          "y": [
+            0.28125,
+            0.3375,
+            0.339375,
+            0.34068750000000003,
+            0.38848125
+          ]
+        },
+        {
+          "name": "convertnet",
+          "display_name": "ConvertNet",
+          "label": "ConvertNet",
+          "raw_average": 0.416667,
+          "style": {
+            "color": "#CEBB6C",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.9466645797093709,
+            2.4807950297991437
+          ],
+          "y": [
+            0.28125,
+            0.3375,
+            0.38625
+          ]
+        },
+        {
+          "name": "ours_single_agent",
+          "display_name": "VLASelect",
+          "label": "VLASelect",
+          "raw_average": 0.25,
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.1133410135904948,
+            0.22342385848363241,
+            0.3439960598945618
+          ],
+          "y": [
+            0.0,
+            0.0,
+            0.0,
+            0.30000000000000004
+          ]
+        }
+      ],
+      "legend_entries": [
+        {
+          "name": "conrft",
+          "label": "ConRFT",
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "flare",
+          "label": "FLaRe",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "improv_vla",
+          "label": "Improv-VLA",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "self_improv",
+          "label": "Self-Improvement",
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ppo_gen",
+          "label": "PPO-Gen",
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "vla_rft",
+          "label": "VLA-RFT",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "world_env",
+          "label": "WorldEnv",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "edgeta",
+          "label": "EdgeTA",
+          "style": {
+            "color": "#A6A6A6",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "convertnet",
+          "label": "ConvertNet",
+          "style": {
+            "color": "#CEBB6C",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ours_single_agent",
+          "label": "VLASelect",
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        }
+      ]
+    }
+  }
+}

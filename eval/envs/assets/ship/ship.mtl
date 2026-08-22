@@ -1,0 +1,58 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 17.06.2025 19:18:29
+
+newmtl 268d8e51_7a71_42a6_9e7a_5e10a0fc8109
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5000 0.5000 0.5000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka textures/3d66-export-JCI54554575047-003.jpg
+	map_Kd textures/3d66-export-JCI54554575047-003.jpg
+	map_bump textures/3d66-export-JCI54554575047-004.jpg
+	bump textures/3d66-export-JCI54554575047-004.jpg
+
+newmtl 024a7a94_a191_422a_b742_339134dbb30e
+	Ns 10.0000
+	Ni 1.5000
+	d 0.0157
+	Tr 0.9843
+	Tf 0.0157 0.0157 0.0157 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.0157 0.0157 0.0157
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+
+newmtl 77fdca1d_cf06_40da_ba9b_ef1ea8ddc325
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5000 0.5000 0.5000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka textures/3d66-export-JCI54554575047-005.jpg
+	map_Kd textures/3d66-export-JCI54554575047-005.jpg
+	map_bump textures/3d66-export-JCI54554575047-006.jpg
+	bump textures/3d66-export-JCI54554575047-006.jpg
+
+newmtl da074118_9994_46dc_9d30_78aab78d4fe0
+	Ns 10.0000
+	Ni 1.5000
+	d 0.0157
+	Tr 0.9843
+	Tf 0.0157 0.0157 0.0157 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.0157 0.0157 0.0157
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000

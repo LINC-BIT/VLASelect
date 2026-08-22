@@ -1,0 +1,93 @@
+{
+  "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+  "table_root": "overhead/overhead_breakdown_all_methods_table",
+  "figure_all_methods_output": "overhead/FIG_BREAKDOWN_ALL_METHODS.pdf",
+  "figure_modules_output": "overhead/FIG_BREAKDOWN_MODULES.pdf",
+  "all_methods_csv": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/BREAKDOWN_ALL_METHODS.csv",
+  "modules_csv": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/BREAKDOWN_MODULES.csv",
+  "summary_output": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/breakdown_summary.json",
+  "panels": [
+    {
+      "family": "octo",
+      "suite_manifest": "ckpt/cl_suite/smoke-20260816-fig9-octo/manifest.json",
+      "suite_root": "ckpt/cl_suite/smoke-20260816-fig9-octo",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/octo.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "a",
+      "workload_name": "Single-arm robot",
+      "display_name": "Octo"
+    },
+    {
+      "family": "vla_adapter_new",
+      "suite_manifest": "ckpt/vla_adapter_new/cl_suite/smoke-20260816-fig9-vla_adapter_new/manifest.json",
+      "suite_root": "ckpt/vla_adapter_new/cl_suite/smoke-20260816-fig9-vla_adapter_new",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/vla_adapter_new.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "b",
+      "workload_name": "Dexterous hand",
+      "display_name": "VLA-Adapter"
+    },
+    {
+      "family": "tinyvla",
+      "suite_manifest": "ckpt/edgevla/cl_suite/smoke-20260816-fig9-tinyvla/manifest.json",
+      "suite_root": "ckpt/edgevla/cl_suite/smoke-20260816-fig9-tinyvla",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/tinyvla.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "display_name": "TinyVLA"
+    },
+    {
+      "family": "edgevla",
+      "suite_manifest": "train/edgevla/cl_suite/smoke-20260816-fig9f/manifest.json",
+      "suite_root": "train/edgevla/cl_suite/smoke-20260816-fig9f",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/edgevla.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "d",
+      "workload_name": "Humanoid robot",
+      "display_name": "EdgeVLA"
+    }
+  ],
+  "families": [
+    {
+      "family": "octo",
+      "suite_manifest": "ckpt/cl_suite/smoke-20260816-fig9-octo/manifest.json",
+      "suite_root": "ckpt/cl_suite/smoke-20260816-fig9-octo",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/octo.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "a",
+      "workload_name": "Single-arm robot",
+      "display_name": "Octo"
+    },
+    {
+      "family": "vla_adapter_new",
+      "suite_manifest": "ckpt/vla_adapter_new/cl_suite/smoke-20260816-fig9-vla_adapter_new/manifest.json",
+      "suite_root": "ckpt/vla_adapter_new/cl_suite/smoke-20260816-fig9-vla_adapter_new",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/vla_adapter_new.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "b",
+      "workload_name": "Dexterous hand",
+      "display_name": "VLA-Adapter"
+    },
+    {
+      "family": "tinyvla",
+      "suite_manifest": "ckpt/edgevla/cl_suite/smoke-20260816-fig9-tinyvla/manifest.json",
+      "suite_root": "ckpt/edgevla/cl_suite/smoke-20260816-fig9-tinyvla",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/tinyvla.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "display_name": "TinyVLA"
+    },
+    {
+      "family": "edgevla",
+      "suite_manifest": "train/edgevla/cl_suite/smoke-20260816-fig9f/manifest.json",
+      "suite_root": "train/edgevla/cl_suite/smoke-20260816-fig9f",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-all-runcheck/launch_logs/edgevla.log",
+      "suite_stamp": "smoke-20260816-breakdown-all-runcheck",
+      "panel_label": "d",
+      "workload_name": "Humanoid robot",
+      "display_name": "EdgeVLA"
+    }
+  ]
+}

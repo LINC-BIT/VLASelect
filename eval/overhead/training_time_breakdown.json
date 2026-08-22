@@ -1,0 +1,222 @@
+{
+  "dataset_order": [
+    "octo",
+    "vla_adapter_new",
+    "tinyvla",
+    "edgevla"
+  ],
+  "method_order": [
+    "conrft",
+    "flare",
+    "improv_vla",
+    "self_improv",
+    "ppo_gen",
+    "vla_rft",
+    "world_env",
+    "edgeta",
+    "convertnet",
+    "ours"
+  ],
+  "breakdown": {
+    "conrft": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "flare": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "improv_vla": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "self_improv": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "ppo_gen": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "vla_rft": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "world_env": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "edgeta": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "convertnet": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    },
+    "ours": {
+      "by_dataset": {
+        "octo": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "tinyvla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        },
+        "edgevla": {
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
+        }
+      }
+    }
+  }
+}

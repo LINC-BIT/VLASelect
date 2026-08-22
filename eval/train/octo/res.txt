@@ -1,0 +1,2 @@
+acc under same small model: ckpt/cl_suite/20260428-ours-ue2-edgeta06-convertnet-rerun
+

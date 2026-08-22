@@ -1,0 +1,43 @@
+{
+  "resource_info": {
+    "host_mem_total_mb": 257698.93359375,
+    "host_mem_available_mb": 226887.7734375,
+    "gpu_mem_total_mb": 81151.75,
+    "gpu_mem_free_mb": 79040.5625,
+    "family": "tinyvla",
+    "device": "cuda:5",
+    "dtype": "bfloat16",
+    "model_dir": "eval/ckpt/vla_adapter_new/LIBERO-Object",
+    "train_batch_size": 1
+  },
+  "results": [
+    {
+      "family": "tinyvla",
+      "model_dir": "eval/ckpt/vla_adapter_new/LIBERO-Object",
+      "uses_random_init_fallback": true,
+      "max_sparsity": 0.5,
+      "train_batch_size": 1,
+      "original_model_mb": 17.405609130859375,
+      "proxy_model_mb": 13.139984130859375,
+      "compression_ratio": 1.324629387487778,
+      "compatible_layer_count": 0,
+      "model_resident_mb_before_train": 13.1201171875,
+      "peak_train_memory_mb": 73.79541015625,
+      "train_overhead_mb": 60.67529296875,
+      "estimated_supported_original_model_mb_at_gpu_total": 19140.697745218615,
+      "estimated_supported_original_model_mb_at_gpu_free": 18642.746661958136,
+      "status": "completed",
+      "error": ""
+    }
+  ],
+  "budget_rows": [
+    {
+      "family": "tinyvla",
+      "max_sparsity": 0.5,
+      "train_batch_size": 1,
+      "budget_gb": 8.0,
+      "estimated_supported_original_model_mb": 1932.1899518966738,
+      "status": "completed"
+    }
+  ]
+}

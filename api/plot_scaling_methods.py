@@ -1,0 +1,15 @@
+"""Plot training accuracy for all completed small-model scaling methods."""
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from api._plot_result_curves import run_cli
+
+
+if __name__ == "__main__":
+    results = Path(__file__).resolve().parent / "results" / "scaling_methods"
+    run_cli(results, results / "training_accuracy_curve.png", "Training Accuracy by Scaling Method")

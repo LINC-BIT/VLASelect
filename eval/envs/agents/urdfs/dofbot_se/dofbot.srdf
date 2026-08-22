@@ -1,0 +1,91 @@
+<?xml version="1.0" ?>
+<robot name="dofbot">
+
+  <!-- ===================== -->
+  <!-- Groups -->
+  <!-- ===================== -->
+
+  <!-- Arm group -->
+  <group name="dofbot_arm">
+    <joint name="arm_joint1"/>
+    <joint name="arm_joint2"/>
+    <joint name="arm_joint3"/>
+    <joint name="arm_joint4"/>
+    <joint name="arm_joint5"/>
+  </group>
+
+  <!-- Gripper group -->
+  <group name="gripper">
+    <link name="grip_joint"/>
+    <link name="rlink_joint2"/>
+    <link name="rlink_joint3"/>
+    <link name="llink_joint1"/>
+    <link name="llink_joint2"/>
+    <link name="llink_joint3"/>
+  </group>
+
+  <!-- ===================== -->
+  <!-- Group States -->
+  <!-- ===================== -->
+
+  <group_state name="home" group="dofbot_arm">
+    <joint name="arm_joint1" value="0"/>
+    <joint name="arm_joint2" value="0"/>
+    <joint name="arm_joint3" value="0"/>
+    <joint name="arm_joint4" value="0"/>
+    <joint name="arm_joint5" value="0"/>
+  </group_state>
+
+  <!-- ===================== -->
+  <!-- End Effector -->
+  <!-- ===================== -->
+
+  <end_effector
+      name="gripper_eef"
+      parent_link="arm_link5"
+      group="gripper"/>
+
+  <!-- ===================== -->
+  <!-- Virtual Joint -->
+  <!-- ===================== -->
+
+  <virtual_joint
+      name="virtual_joint"
+      type="fixed"
+      parent_frame="world"
+      child_link="base"/>
+
+  <!-- ===================== -->
+  <!-- Disable Collisions -->
+  <!-- ===================== -->
+
+  <!-- Wrist to gripper base -->
+  <!-- <disable_collisions link1="arm_link5" link2="rlink1" reason="Adjacent"/>
+  <disable_collisions link1="arm_link5" link2="rlink3" reason="Adjacent"/>
+  <disable_collisions link1="arm_link5" link2="llink1" reason="Adjacent"/>
+  <disable_collisions link1="arm_link5" link2="llink3" reason="Adjacent"/> -->
+
+  <!-- Right finger internal collisions -->
+  <!-- <disable_collisions link1="rlink1" link2="rlink2" reason="Adjacent"/>
+  <disable_collisions link1="rlink1" link2="rlink3" reason="Adjacent"/>
+  <disable_collisions link1="rlink2" link2="rlink3" reason="Adjacent"/> -->
+
+  <!-- Left finger internal collisions -->
+  <!-- <disable_collisions link1="llink1" link2="llink2" reason="Adjacent"/>
+  <disable_collisions link1="llink1" link2="llink3" reason="Adjacent"/>
+  <disable_collisions link1="llink2" link2="llink3" reason="Adjacent"/> -->
+
+  <!-- Left / Right finger collisions -->
+  <!-- <disable_collisions link1="llink1" link2="rlink1" reason="Default"/>
+  <disable_collisions link1="llink1" link2="rlink2" reason="Default"/>
+  <disable_collisions link1="llink1" link2="rlink3" reason="Default"/> -->
+
+  <!-- <disable_collisions link1="llink2" link2="rlink1" reason="Default"/>
+  <disable_collisions link1="llink2" link2="rlink2" reason="Default"/>
+  <disable_collisions link1="llink2" link2="rlink3" reason="Default"/> -->
+
+  <!-- <disable_collisions link1="llink3" link2="rlink1" reason="Default"/>
+  <disable_collisions link1="llink3" link2="rlink2" reason="Default"/>
+  <disable_collisions link1="llink3" link2="rlink3" reason="Default"/> -->
+
+</robot>

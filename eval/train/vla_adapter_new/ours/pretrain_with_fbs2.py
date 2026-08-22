@@ -1,0 +1,2159 @@
+import argparse
+import importlib.util
+import json
+import math
+import os
+import sys; sys.path.append('.')
+import time
+from collections import defaultdict
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin, Union
+
+THIS_DIR = Path(__file__).resolve().parent
+PARENT_DIR = THIS_DIR.parent
+REPO_ROOT = THIS_DIR.parents[3]
+if str(THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(THIS_DIR))
+if str(PARENT_DIR) not in sys.path:
+    sys.path.insert(0, str(PARENT_DIR))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+import gymnasium as gym
+import matplotlib
+import mani_skill.envs
+import numpy as np
+import torch
+import torch.distributed as dist
+import torch.nn as nn
+import torch.optim as optim
+from mani_skill.utils import gym_utils
+from mani_skill.utils.wrappers.record import RecordEpisode
+from mani_skill.vector.wrappers.gymnasium import ManiSkillVectorEnv, torch_clone_dict
+from PIL import Image
+from torch.nn.parallel import DistributedDataParallel as DDP
+from transformers import AutoProcessor
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+import train.vla_adapter_new.model_impl.env as hold_cube_env  # noqa: F401
+import workloads.hold_in_hand  # noqa: F401
+from train.vla_adapter_new.model_impl.online_rl import (
+    broadcast_object,
+    cleanup_runtime,
+    distributed_barrier,
+    distributed_max,
+    distributed_mean,
+    ensure_package,
+    explained_variance,
+    gather_metric_summary,
+    get_rank,
+    get_world_size,
+    init_runtime,
+    is_distributed,
+    is_main_process,
+    iter_slices,
+    load_module_from_path,
+    mkdir,
+    parse_bool,
+    plot_metrics_history,
+    save_json,
+    save_metrics_history,
+    save_rollout_progress,
+    set_seed,
+    strip_module_prefix,
+)
+from train.vla_adapter_new.model_impl.prismatic.vla.action_tokenizer import ActionTokenizer
+
+
+
+TASK_PROMPT = "hold the cube in the hand without dropping it."
+DEFAULT_MODEL_DIR = "eval/ckpt/vla_adapter_new/LIBERO-Object"
+DEFAULT_WORKDIR = "train/vla_adapter_new/model_impl/workload_verify/outputs"
+DEFAULT_VERIFY_SUMMARY_NAME = "workload_verify_summary.json"
+
+
+def get_attention_implementation() -> str:
+    requested = os.environ.get("HAND_VLA_ATTN_IMPLEMENTATION", "flash_attention_2")
+    if requested == "flash_attention_2" and importlib.util.find_spec("flash_attn") is None:
+        print("[setup] flash_attn is not installed; falling back to SDPA attention")
+        return "sdpa"
+    print(f"[setup] using {requested} attention implementation for HandVLAAdapterActorCritic")
+    return requested
+
+
+def extract_rgb_batch_from_obs(obs: Dict[str, Any]) -> torch.Tensor:
+    rgb = obs["sensor_data"]["base_camera"]["rgb"]
+    if isinstance(rgb, torch.Tensor):
+        rgb_batch = rgb[..., :3].detach().to(device="cpu", dtype=torch.uint8).contiguous()
+    else:
+        rgb_batch = torch.from_numpy(np.asarray(rgb)[..., :3].astype(np.uint8, copy=False)).contiguous()
+    if rgb_batch.ndim == 3:
+        rgb_batch = rgb_batch.unsqueeze(0)
+    return rgb_batch
+
+
+def _to_numpy(value: Any) -> np.ndarray:
+    if isinstance(value, torch.Tensor):
+        return value.detach().cpu().numpy()
+    return np.asarray(value)
+
+
+def extract_hand_state_batch_from_obs(obs: Dict[str, Any]) -> np.ndarray:
+    agent = obs["agent"]
+    extra = obs["extra"]
+
+    qpos = _to_numpy(agent["qpos"]).astype(np.float32)
+    qvel = _to_numpy(agent["qvel"]).astype(np.float32)
+    palm_pose = _to_numpy(agent["palm_pose"]).astype(np.float32)
+    tip_poses = _to_numpy(agent["tip_poses"]).astype(np.float32)
+    fsr_impulse = _to_numpy(agent["fsr_impulse"]).astype(np.float32)
+    rotate_dir = _to_numpy(extra["rotate_dir"]).astype(np.float32)
+    obj_pose = _to_numpy(extra["obj_pose"]).astype(np.float32)
+    obj_tip_vec = _to_numpy(extra["obj_tip_vec"]).astype(np.float32)
+
+    if qpos.ndim == 1:
+        qpos = qpos[None, :]
+        qvel = qvel[None, :]
+        palm_pose = palm_pose[None, :]
+        tip_poses = tip_poses[None, :]
+        fsr_impulse = fsr_impulse[None, :]
+        rotate_dir = rotate_dir[None, :]
+        obj_pose = obj_pose[None, :]
+        obj_tip_vec = obj_tip_vec[None, :]
+
+    qvel = np.clip(qvel, -20.0, 20.0) / 20.0
+    fsr_impulse = np.log1p(np.clip(fsr_impulse, 0.0, None))
+
+    return np.concatenate(
+        [qpos, qvel, palm_pose, tip_poses, fsr_impulse, rotate_dir, obj_pose, obj_tip_vec],
+        axis=-1,
+    ).astype(np.float32)
+
+
+def get_maniskill_backend_kwargs(device: torch.device) -> Dict[str, str]:
+    if device.type == "cuda":
+        device_index = 0 if device.index is None else device.index
+        return {
+            "sim_backend": f"physx_cuda:{device_index}",
+            "render_backend": f"cuda:{device_index}",
+        }
+    return {
+        "sim_backend": "physx_cpu",
+        "render_backend": "sapien_cpu",
+    }
+
+
+def convert_to_fbs_model(actor: nn.Module, device: torch.device) -> nn.Module:
+    from train.vla_adapter_new.ours.model_with_fbs_test import convert_to_fbs_model as _convert_to_fbs_model
+
+    actor = _convert_to_fbs_model(actor, device)
+    if hasattr(actor, "vla"):
+        actor.vla.to(device=device, dtype=torch.bfloat16)
+    return actor
+
+
+class HandSafeManiSkillVectorEnv(ManiSkillVectorEnv):
+    """Mirror ManiSkill's partial auto-reset behavior for hand PPO training."""
+
+    def step(self, actions):  # type: ignore[override]
+        obs, rew, terminations, truncations, infos = self._env.step(actions)
+        episode_info: Optional[dict] = None
+        if self.record_metrics:
+            episode_info = dict()
+            self.returns += rew
+            if "success" in infos:
+                self.success_once = self.success_once | infos["success"]
+                episode_info["success_once"] = self.success_once.clone()
+                episode_info["success_at_end"] = infos["success"].clone()
+            if "fail" in infos:
+                self.fail_once = self.fail_once | infos["fail"]
+                episode_info["fail_once"] = self.fail_once.clone()
+                episode_info["fail_at_end"] = infos["fail"].clone()
+            episode_info["return"] = self.returns.clone()
+            episode_info["episode_len"] = self.base_env.elapsed_steps.clone()
+            episode_info["reward"] = episode_info["return"] / episode_info["episode_len"]
+
+        if isinstance(terminations, bool):
+            terminations = torch.tensor([terminations], device=self.device)
+
+        if self.ignore_terminations:
+            terminations[:] = False
+            if episode_info:
+                if "success" in infos:
+                    episode_info["success_at_end"] = infos["success"].clone()
+                if "fail" in infos:
+                    episode_info["fail_at_end"] = infos["fail"].clone()
+        if self.record_metrics:
+            infos["episode"] = episode_info
+
+        dones = torch.logical_or(terminations, truncations)
+        if dones.any() and self.auto_reset:
+            final_obs = torch_clone_dict(obs)
+            env_idx = torch.arange(0, self.num_envs, device=self.device)[dones]
+            final_info = torch_clone_dict(infos)
+            obs, infos = self.reset(options=dict(env_idx=env_idx))
+            infos["final_observation"] = final_obs
+            infos["final_info"] = final_info
+            infos["_final_info"] = dones
+            infos["_final_observation"] = dones
+            infos["_elapsed_steps"] = dones
+
+        return obs, rew, terminations, truncations, infos
+
+
+def make_vector_env(
+    args: "Args",
+    device: torch.device,
+    num_envs: int,
+    record_metrics: bool = True,
+    video_output_dir: Optional[Path] = None,
+    video_max_steps: Optional[int] = None,
+) -> ManiSkillVectorEnv:
+    backend_kwargs = get_maniskill_backend_kwargs(device)
+    env = gym.make(
+        args.env_id,
+        num_envs=num_envs,
+        obs_mode=args.obs_mode,
+        control_mode=args.control_mode,
+        reward_mode=args.reward_mode,
+        render_mode="rgb_array",
+        **backend_kwargs,
+    )
+    if video_output_dir is not None:
+        resolved_video_max_steps = video_max_steps
+        if resolved_video_max_steps is None:
+            resolved_video_max_steps = args.max_episode_steps or gym_utils.find_max_episode_steps_value(env)
+        env = RecordEpisode(
+            env,
+            output_dir=str(video_output_dir),
+            save_trajectory=False,
+            max_steps_per_video=resolved_video_max_steps,
+            video_fps=30,
+    )
+    return HandSafeManiSkillVectorEnv(env, auto_reset=True, ignore_terminations=False, record_metrics=record_metrics)
+
+
+def collect_success_metric(metric: Dict[str, Any], suffix: str) -> Optional[float]:
+    for key in (
+        f"eval_{suffix}",
+        f"train_{suffix}",
+        suffix,
+    ):
+        value = metric.get(key)
+        if value is not None:
+            return float(value)
+    return None
+
+
+def plot_success_time_curve(output_dir: Path, metrics_history: List[Dict[str, Any]]) -> None:
+    if not metrics_history:
+        return
+
+    series_specs = [
+        ("train_success_once", "train_success_once"),
+        ("train_success_at_end", "train_success_at_end"),
+        ("eval_success_once", "eval_success_once"),
+        ("eval_success_at_end", "eval_success_at_end"),
+    ]
+    plotted_any = False
+    plt.figure(figsize=(10, 6))
+    for metric_key, label in series_specs:
+        xs: List[float] = []
+        ys: List[float] = []
+        for metric in metrics_history:
+            value = metric.get(metric_key)
+            elapsed_hours = metric.get("elapsed_hours")
+            if value is None or elapsed_hours is None:
+                continue
+            xs.append(float(elapsed_hours) * 60.0)
+            ys.append(float(value))
+        if not xs:
+            continue
+        plotted_any = True
+        plt.plot(xs, ys, marker="o", linewidth=2, label=label)
+
+    if not plotted_any:
+        plt.close()
+        return
+
+    plots_dir = mkdir(output_dir / "plots")
+    plt.xlabel("Elapsed Time (minutes)")
+    plt.ylabel("Success Rate")
+    plt.title("Success Curve vs Time")
+    plt.ylim(-0.02, 1.02)
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(plots_dir / "success_time_curve.png", dpi=200)
+    plt.close()
+
+
+def should_early_stop_zero_success(
+    metrics_history: List[Dict[str, Any]],
+    threshold_minutes: float,
+) -> Tuple[bool, float]:
+    if not metrics_history:
+        return False, 0.0
+    latest_elapsed_minutes = float(metrics_history[-1].get("elapsed_hours", 0.0)) * 60.0
+    max_success = 0.0
+    for metric in metrics_history:
+        for metric_name in (
+            "train_success_once",
+            "train_success_at_end",
+            "eval_success_once",
+            "eval_success_at_end",
+        ):
+            value = metric.get(metric_name)
+            if value is not None:
+                max_success = max(max_success, float(value))
+    return latest_elapsed_minutes >= threshold_minutes and max_success <= 0.0, max_success
+
+
+def save_workload_verify_summary(output_dir: Path, payload: Dict[str, Any]) -> None:
+    save_json(output_dir / DEFAULT_VERIFY_SUMMARY_NAME, payload)
+
+
+def summarize_success_series(metrics_history: List[Dict[str, Any]], key: str) -> Dict[str, Optional[float]]:
+    values = [float(metric[key]) for metric in metrics_history if metric.get(key) is not None]
+    if not values:
+        return {"initial": None, "final": None, "average": None, "max": None, "improvement": None}
+    return {
+        "initial": values[0],
+        "final": values[-1],
+        "average": float(sum(values) / len(values)),
+        "max": max(values),
+        "improvement": values[-1] - values[0],
+    }
+
+
+class MLPProjector(nn.Module):
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(input_dim),
+            nn.Linear(input_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, output_dim),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
+
+
+class ResidualDiscreteActorHead(nn.Module):
+    def __init__(self, hidden_dim: int, action_dim: int, num_bins: int) -> None:
+        super().__init__()
+        self.action_dim = action_dim
+        self.num_bins = num_bins
+        self.context_encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=hidden_dim,
+                nhead=8,
+                dim_feedforward=hidden_dim * 4,
+                dropout=0.0,
+                activation="gelu",
+                batch_first=True,
+                norm_first=True,
+            ),
+            num_layers=2,
+        )
+        self.logit_head = nn.Sequential(
+            nn.LayerNorm(hidden_dim * 3),
+            nn.Linear(hidden_dim * 3, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, num_bins),
+        )
+        self.residual_scale = nn.Parameter(torch.tensor(0.10, dtype=torch.float32))
+
+    def forward(
+        self,
+        action_features: torch.Tensor,
+        state_feature: torch.Tensor,
+        context_feature: torch.Tensor,
+    ) -> torch.Tensor:
+        batch_size, seq_len, hidden_dim = action_features.shape
+        # Encode each next-token position independently. During teacher forcing,
+        # cross-position attention here would leak future action tokens.
+        action_features = self.context_encoder(action_features.reshape(batch_size * seq_len, 1, hidden_dim)).reshape(
+            batch_size,
+            seq_len,
+            hidden_dim,
+        )
+        seq_len = action_features.shape[1]
+        expanded_state = state_feature.unsqueeze(1).expand(-1, seq_len, -1)
+        expanded_context = context_feature if context_feature.ndim == 3 else context_feature.unsqueeze(1)
+        expanded_context = expanded_context.expand(-1, seq_len, -1)
+        fused = torch.cat([action_features, expanded_state, expanded_context], dim=-1)
+        return self.logit_head(fused) * self.residual_scale
+
+
+class HandVLAAdapterActorCritic(nn.Module):
+    def __init__(self, model_dir: Path, device: torch.device, state_dim: int = 105, action_dim: int = 16):
+        super().__init__()
+        self.model_dir = model_dir
+        self.device = device
+        self.state_dim = state_dim
+        self.env_action_dim = action_dim
+        self.prompt = f"In: What action should the robot take to {TASK_PROMPT}\nOut: "
+
+        self.processor = AutoProcessor.from_pretrained(str(model_dir), trust_remote_code=True)
+        self.action_tokenizer = ActionTokenizer(self.processor.tokenizer)
+        prompt_tokens = self.processor.tokenizer(self.prompt, return_tensors="pt")
+        self.register_buffer("prompt_input_ids", prompt_tokens["input_ids"], persistent=False)
+        self.register_buffer("prompt_attention_mask", prompt_tokens["attention_mask"], persistent=False)
+        ensure_package("local_hand_vla_pkg", model_dir)
+        config_mod = load_module_from_path(
+            "local_hand_vla_pkg.configuration_prismatic",
+            model_dir / "configuration_prismatic.py",
+        )
+        model_mod = load_module_from_path(
+            "local_hand_vla_pkg.modeling_prismatic",
+            model_dir / "modeling_prismatic.py",
+        )
+        self.ignore_index = int(getattr(model_mod, "IGNORE_INDEX", -100))
+        self.num_tokens = int(getattr(model_mod, "NUM_TOKENS", 64))
+
+        self.vla = model_mod.OpenVLAForActionPrediction.from_pretrained(
+            str(model_dir),
+            config=config_mod.OpenVLAConfig.from_pretrained(str(model_dir)),
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            attn_implementation=get_attention_implementation(),
+        ).to(device)
+        self.vla.set_version("v1")
+        self.full_vocab_size = int(self.vla.vocab_size)
+
+        self.action_token_start_idx = int(self.action_tokenizer.action_token_begin_idx + 1)
+        self.action_token_end_idx = int(self.action_tokenizer.action_token_end_idx)
+        self.num_action_bins = int(self.action_tokenizer.vocab_size)
+        self.hidden_dim = int(self.vla.llm_dim)
+
+        self.register_buffer(
+            "action_bin_centers",
+            torch.from_numpy(self.action_tokenizer.bin_centers.astype(np.float32)),
+            persistent=False,
+        )
+
+        self.state_projector = MLPProjector(state_dim, hidden_dim=self.hidden_dim, output_dim=self.hidden_dim).to(
+            device=device,
+            dtype=torch.float32,
+        )
+        self.context_projector = nn.Sequential(
+            nn.LayerNorm(self.hidden_dim),
+            nn.Linear(self.hidden_dim, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim),
+        ).to(device=device, dtype=torch.float32)
+        self.actor_head = ResidualDiscreteActorHead(
+            hidden_dim=self.hidden_dim,
+            action_dim=self.env_action_dim,
+            num_bins=self.num_action_bins,
+        ).to(device=device, dtype=torch.float32)
+
+        critic_input_dim = self.hidden_dim * 3
+        critic_hidden_dim = max(256, self.hidden_dim // 2)
+        self.value_head = nn.Sequential(
+            nn.LayerNorm(critic_input_dim),
+            nn.Linear(critic_input_dim, critic_hidden_dim),
+            nn.GELU(),
+            nn.Linear(critic_hidden_dim, 1),
+        ).to(device=device, dtype=torch.float32)
+
+        self.eval_micro_batch_size = 32
+        self._vla_trainable = True
+        self._set_backbone_trainable(True)
+
+    def _set_backbone_trainable(self, trainable: bool) -> None:
+        self._vla_trainable = trainable
+        for parameter in self.vla.parameters():
+            parameter.requires_grad = trainable
+
+    @staticmethod
+    def _set_module_trainable(module: nn.Module, trainable: bool) -> None:
+        for parameter in module.parameters():
+            parameter.requires_grad = trainable
+
+    def configure_trainable_modules(self, train_backbone: bool, train_policy_trunk: bool = True) -> None:
+        self._set_backbone_trainable(train_backbone)
+        self._set_module_trainable(self.state_projector, train_policy_trunk)
+        self._set_module_trainable(self.context_projector, train_policy_trunk)
+        self._set_module_trainable(self.actor_head.context_encoder, train_policy_trunk)
+        self._set_module_trainable(self.actor_head.logit_head, True)
+        self.actor_head.residual_scale.requires_grad = True
+        self._set_module_trainable(self.value_head, True)
+
+    def trainable_parameter_summary(self) -> Dict[str, Tuple[int, int]]:
+        modules = {
+            "vla": self.vla,
+            "state_projector": self.state_projector,
+            "context_projector": self.context_projector,
+            "actor_head": self.actor_head,
+            "value_head": self.value_head,
+        }
+        summary: Dict[str, Tuple[int, int]] = {}
+        for name, module in modules.items():
+            total = sum(parameter.numel() for parameter in module.parameters())
+            trainable = sum(parameter.numel() for parameter in module.parameters() if parameter.requires_grad)
+            summary[name] = (total, trainable)
+        return summary
+
+    @staticmethod
+    def _prepare_image(rgb: Union[np.ndarray, torch.Tensor]) -> Image.Image:
+        if isinstance(rgb, torch.Tensor):
+            if rgb.device.type != "cpu" or rgb.dtype != torch.uint8 or not rgb.is_contiguous():
+                rgb = rgb.detach().to(device="cpu", dtype=torch.uint8).contiguous()
+            return Image.fromarray(rgb.numpy(), mode="RGB").convert("RGB")
+        return Image.fromarray(np.asarray(rgb, dtype=np.uint8), mode="RGB").convert("RGB")
+
+    def _prepare_policy_inputs(self, rgbs: Union[np.ndarray, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        if isinstance(rgbs, torch.Tensor):
+            rgb_batch = rgbs[..., :3].detach()
+            if rgb_batch.device.type != "cpu" or rgb_batch.dtype != torch.uint8 or not rgb_batch.is_contiguous():
+                rgb_batch = rgb_batch.to(device="cpu", dtype=torch.uint8).contiguous()
+        else:
+            rgb_batch = torch.from_numpy(np.asarray(rgbs)[..., :3].astype(np.uint8, copy=False)).contiguous()
+
+        images = [self._prepare_image(rgb) for rgb in rgb_batch]
+        batch_size = len(images)
+        pixel_values = self.processor.image_processor(images=images, return_tensors="pt")["pixel_values"]
+        prompt_input_ids = self.prompt_input_ids.to(self.device)
+        prompt_attention_mask = self.prompt_attention_mask.to(self.device)
+        return {
+            "input_ids": prompt_input_ids.expand(batch_size, -1),
+            "attention_mask": prompt_attention_mask.expand(batch_size, -1),
+            "pixel_values": pixel_values.to(self.device, dtype=torch.bfloat16, non_blocking=True),
+        }
+
+    def _action_bins_to_token_ids(self, action_bins: torch.Tensor) -> torch.Tensor:
+        action_bins = action_bins.to(self.device, dtype=torch.long)
+        action_bins = torch.clamp(action_bins, 0, self.num_action_bins - 1)
+        return self.action_token_end_idx - action_bins - 1
+
+    def _is_vla_trainable(self) -> bool:
+        return self._vla_trainable
+
+    def env_actions_to_bin_indices(self, env_actions: np.ndarray) -> torch.Tensor:
+        env_actions = np.asarray(env_actions, dtype=np.float32)
+        if env_actions.ndim == 1:
+            env_actions = env_actions[None, :]
+        env_actions = np.clip(env_actions, -1.0, 1.0)
+        token_ids = np.asarray(self.action_tokenizer(env_actions, use_minivlm=True), dtype=np.int64)
+        bin_indices = self.action_token_end_idx - token_ids - 1
+        bin_indices = np.clip(bin_indices, 0, self.action_bin_centers.numel() - 1)
+        return torch.from_numpy(bin_indices.astype(np.int64))
+
+    def bin_indices_to_env_actions(self, bin_indices: torch.Tensor) -> torch.Tensor:
+        if bin_indices.ndim == 1:
+            bin_indices = bin_indices.unsqueeze(0)
+        bin_indices = bin_indices.to(self.device, dtype=torch.long)
+        bin_indices = torch.clamp(bin_indices, 0, self.action_bin_centers.numel() - 1)
+        env_actions = self.action_bin_centers.to(self.device)[bin_indices].to(torch.float32)
+        return torch.nan_to_num(env_actions, nan=0.0, posinf=1.0, neginf=-1.0).clamp_(-1.0, 1.0)
+
+    def _project_vision_features(self, pixel_values: torch.Tensor) -> torch.Tensor:
+        if self._is_vla_trainable():
+            return self.vla._process_vision_features(pixel_values, language_embeddings=None, use_film=False)
+        with torch.no_grad():
+            return self.vla._process_vision_features(pixel_values, language_embeddings=None, use_film=False)
+
+    @staticmethod
+    def _append_state_token_to_patches(
+        projected_patch_embeddings: torch.Tensor,
+        state_feature: torch.Tensor,
+    ) -> torch.Tensor:
+        state_token = state_feature.to(dtype=projected_patch_embeddings.dtype).unsqueeze(1)
+        return torch.cat([projected_patch_embeddings, state_token], dim=1)
+
+    def _language_model_from_prefix(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        projected_patch_embeddings: torch.Tensor,
+    ):
+        def run_language_model():
+            input_embeddings = self.vla.get_input_embeddings()(input_ids)
+            multimodal_embeddings, multimodal_attention_mask = self.vla._build_multimodal_attention(
+                input_embeddings,
+                projected_patch_embeddings,
+                attention_mask,
+            )
+            return self.vla.language_model(
+                input_ids=None,
+                attention_mask=multimodal_attention_mask,
+                position_ids=None,
+                past_key_values=None,
+                inputs_embeds=multimodal_embeddings,
+                labels=None,
+                use_cache=None,
+                output_attentions=False,
+                output_hidden_states=True,
+                return_dict=True,
+            )
+
+        if self._is_vla_trainable():
+            return run_language_model()
+        with torch.no_grad():
+            return run_language_model()
+
+    def _language_model_from_prefix_with_cache(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        projected_patch_embeddings: torch.Tensor,
+    ):
+        def run_language_model():
+            input_embeddings = self.vla.get_input_embeddings()(input_ids)
+            multimodal_embeddings, multimodal_attention_mask = self.vla._build_multimodal_attention(
+                input_embeddings,
+                projected_patch_embeddings,
+                attention_mask,
+            )
+            return self.vla.language_model(
+                input_ids=None,
+                attention_mask=multimodal_attention_mask,
+                position_ids=None,
+                past_key_values=None,
+                inputs_embeds=multimodal_embeddings,
+                labels=None,
+                use_cache=True,
+                output_attentions=False,
+                output_hidden_states=True,
+                return_dict=True,
+            )
+
+        if self._is_vla_trainable():
+            return run_language_model()
+        with torch.no_grad():
+            return run_language_model()
+
+    def _language_model_next_token_from_cache(
+        self,
+        token_id: torch.Tensor,
+        past_key_values,
+    ):
+        def run_language_model():
+            return self.vla.language_model(
+                input_ids=token_id,
+                attention_mask=None,
+                position_ids=None,
+                past_key_values=past_key_values,
+                inputs_embeds=None,
+                labels=None,
+                use_cache=True,
+                output_attentions=False,
+                output_hidden_states=True,
+                return_dict=True,
+            )
+
+        if self._is_vla_trainable():
+            return run_language_model()
+        with torch.no_grad():
+            return run_language_model()
+
+    def _next_token_logits_and_value_features(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        projected_patch_embeddings: torch.Tensor,
+        state_feature: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        output = self._language_model_from_prefix(input_ids, attention_mask, projected_patch_embeddings)
+        final_hidden = output.hidden_states[-1].to(torch.float32)
+        next_hidden = final_hidden[:, -1, :]
+        context_feature = self.context_projector(final_hidden.mean(dim=1))
+
+        action_token_logits = output.logits[:, -1, self.action_token_start_idx : self.action_token_end_idx].to(
+            torch.float32
+        )
+        base_bin_logits = torch.flip(action_token_logits, dims=[-1])
+        residual_logits = self.actor_head(next_hidden.unsqueeze(1), state_feature, context_feature).squeeze(1)
+        logits = torch.nan_to_num(base_bin_logits + residual_logits, nan=0.0, posinf=20.0, neginf=-20.0)
+        return logits, next_hidden, context_feature
+
+    def _compute_prompt_value(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        projected_patch_embeddings: torch.Tensor,
+        state_feature: torch.Tensor,
+    ) -> torch.Tensor:
+        _, prompt_hidden, context_feature = self._next_token_logits_and_value_features(
+            input_ids,
+            attention_mask,
+            projected_patch_embeddings,
+            state_feature,
+        )
+        value_input = self._build_value_input(prompt_hidden, state_feature, context_feature)
+        return torch.nan_to_num(self.value_head(value_input).squeeze(-1), nan=0.0, posinf=1e4, neginf=-1e4)
+
+    @staticmethod
+    def _build_value_input(
+        prompt_hidden: torch.Tensor,
+        state_feature: torch.Tensor,
+        context_feature: torch.Tensor,
+    ) -> torch.Tensor:
+        # Keep critic updates from pushing the shared actor features too hard.
+        # With PPO on top of the frozen FBS-VLA backbone, value-loss gradients
+        # through the shared state/context path cause large policy jumps after a
+        # single minibatch step.
+        return torch.cat(
+            [prompt_hidden.detach(), state_feature.detach(), context_feature.detach()],
+            dim=-1,
+        )
+
+    def _autoregressive_action_and_value(
+        self,
+        rgbs: np.ndarray,
+        states: np.ndarray,
+        action_bins: Optional[torch.Tensor] = None,
+        deterministic: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        model_inputs = self._prepare_policy_inputs(rgbs)
+        input_ids = model_inputs["input_ids"]
+        attention_mask = model_inputs["attention_mask"]
+        pixel_values = model_inputs["pixel_values"]
+
+        state_tensor = torch.as_tensor(states, device=self.device, dtype=torch.float32)
+        state_tensor = torch.nan_to_num(state_tensor, nan=0.0, posinf=1e4, neginf=-1e4)
+        state_feature = self.state_projector(state_tensor)
+        projected_patch_embeddings = self._project_vision_features(pixel_values)
+        projected_patch_embeddings = self._append_state_token_to_patches(projected_patch_embeddings, state_feature)
+
+        if action_bins is not None:
+            action_bins = action_bins.to(self.device, dtype=torch.long)
+            if action_bins.ndim != 2 or action_bins.shape[1] != self.env_action_dim:
+                raise ValueError(
+                    f"action_bins must have shape [batch, {self.env_action_dim}], got {tuple(action_bins.shape)}"
+                )
+            action_token_ids = self._action_bins_to_token_ids(action_bins)
+            teacher_input_ids = torch.cat([input_ids, action_token_ids], dim=1)
+            teacher_attention_mask = torch.cat([attention_mask, torch.ones_like(action_token_ids)], dim=1)
+            output = self._language_model_from_prefix(
+                teacher_input_ids,
+                teacher_attention_mask,
+                projected_patch_embeddings,
+            )
+            final_hidden = output.hidden_states[-1].to(torch.float32)
+            num_patches = projected_patch_embeddings.shape[1]
+            prompt_len = input_ids.shape[1]
+            pred_start = num_patches + prompt_len - 1
+            pred_end = pred_start + self.env_action_dim
+
+            action_token_logits = output.logits[
+                :,
+                pred_start:pred_end,
+                self.action_token_start_idx : self.action_token_end_idx,
+            ].to(torch.float32)
+            base_bin_logits = torch.flip(action_token_logits, dims=[-1])
+            prediction_features = final_hidden[:, pred_start:pred_end, :]
+            cumulative_context = final_hidden.cumsum(dim=1) / torch.arange(
+                1,
+                final_hidden.shape[1] + 1,
+                device=final_hidden.device,
+                dtype=final_hidden.dtype,
+            ).view(1, -1, 1)
+            context_features = self.context_projector(cumulative_context[:, pred_start:pred_end, :])
+            residual_logits = self.actor_head(prediction_features, state_feature, context_features)
+            logits = torch.nan_to_num(base_bin_logits + residual_logits, nan=0.0, posinf=20.0, neginf=-20.0)
+
+            categorical = torch.distributions.Categorical(logits=logits)
+            log_prob = categorical.log_prob(action_bins).sum(dim=-1)
+            entropy = categorical.entropy().mean(dim=-1)
+            prompt_hidden = final_hidden[:, pred_start, :]
+            prompt_context = self.context_projector(cumulative_context[:, pred_start, :])
+            value_input = self._build_value_input(prompt_hidden, state_feature, prompt_context)
+            value = torch.nan_to_num(self.value_head(value_input).squeeze(-1), nan=0.0, posinf=1e4, neginf=-1e4)
+            return self.bin_indices_to_env_actions(action_bins), log_prob, entropy, value, action_bins
+
+        generated_bins: List[torch.Tensor] = []
+        log_probs: List[torch.Tensor] = []
+        entropies: List[torch.Tensor] = []
+        value: Optional[torch.Tensor] = None
+        output = self._language_model_from_prefix_with_cache(input_ids, attention_mask, projected_patch_embeddings)
+        final_hidden = output.hidden_states[-1].to(torch.float32)
+        hidden_sum = final_hidden.sum(dim=1)
+        hidden_count = final_hidden.shape[1]
+        past_key_values = output.past_key_values
+
+        if past_key_values is None:
+            prefix_ids = input_ids
+            prefix_attention_mask = attention_mask
+
+            for action_idx in range(self.env_action_dim):
+                logits, prompt_hidden, context_feature = self._next_token_logits_and_value_features(
+                    prefix_ids,
+                    prefix_attention_mask,
+                    projected_patch_embeddings,
+                    state_feature,
+                )
+                if action_idx == 0:
+                    value_input = self._build_value_input(prompt_hidden, state_feature, context_feature)
+                    value = torch.nan_to_num(self.value_head(value_input).squeeze(-1), nan=0.0, posinf=1e4, neginf=-1e4)
+
+                categorical = torch.distributions.Categorical(logits=logits)
+                selected_bin = logits.argmax(dim=-1) if deterministic else categorical.sample()
+                log_probs.append(categorical.log_prob(selected_bin))
+                entropies.append(categorical.entropy())
+                generated_bins.append(selected_bin)
+
+                next_token_id = self._action_bins_to_token_ids(selected_bin).unsqueeze(1)
+                prefix_ids = torch.cat([prefix_ids, next_token_id], dim=1)
+                prefix_attention_mask = torch.cat([prefix_attention_mask, torch.ones_like(next_token_id)], dim=1)
+        else:
+            for action_idx in range(self.env_action_dim):
+                prompt_hidden = output.hidden_states[-1].to(torch.float32)[:, -1, :]
+                context_feature = self.context_projector(hidden_sum / hidden_count)
+                action_token_logits = output.logits[:, -1, self.action_token_start_idx : self.action_token_end_idx].to(
+                    torch.float32
+                )
+                base_bin_logits = torch.flip(action_token_logits, dims=[-1])
+                residual_logits = self.actor_head(prompt_hidden.unsqueeze(1), state_feature, context_feature).squeeze(1)
+                logits = torch.nan_to_num(base_bin_logits + residual_logits, nan=0.0, posinf=20.0, neginf=-20.0)
+
+                if action_idx == 0:
+                    value_input = self._build_value_input(prompt_hidden, state_feature, context_feature)
+                    value = torch.nan_to_num(self.value_head(value_input).squeeze(-1), nan=0.0, posinf=1e4, neginf=-1e4)
+
+                categorical = torch.distributions.Categorical(logits=logits)
+                selected_bin = logits.argmax(dim=-1) if deterministic else categorical.sample()
+                log_probs.append(categorical.log_prob(selected_bin))
+                entropies.append(categorical.entropy())
+                generated_bins.append(selected_bin)
+
+                if action_idx + 1 < self.env_action_dim:
+                    next_token_id = self._action_bins_to_token_ids(selected_bin).unsqueeze(1)
+                    output = self._language_model_next_token_from_cache(next_token_id, output.past_key_values)
+                    last_hidden = output.hidden_states[-1].to(torch.float32)[:, -1, :]
+                    hidden_sum = hidden_sum + last_hidden
+                    hidden_count += 1
+
+        selected_bins = torch.stack(generated_bins, dim=1)
+        log_prob = torch.stack(log_probs, dim=1).sum(dim=-1)
+        entropy = torch.stack(entropies, dim=1).mean(dim=-1)
+        env_actions = self.bin_indices_to_env_actions(selected_bins)
+        if value is None:
+            value = self._compute_prompt_value(input_ids, attention_mask, projected_patch_embeddings, state_feature)
+        return env_actions, log_prob, entropy, value, selected_bins
+
+    def forward_policy(self, rgbs: np.ndarray, states: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
+        model_inputs = self._prepare_policy_inputs(rgbs)
+        input_ids = model_inputs["input_ids"]
+        attention_mask = model_inputs["attention_mask"]
+        pixel_values = model_inputs["pixel_values"]
+        state_tensor = torch.as_tensor(states, device=self.device, dtype=torch.float32)
+        state_tensor = torch.nan_to_num(state_tensor, nan=0.0, posinf=1e4, neginf=-1e4)
+        state_feature = self.state_projector(state_tensor)
+        projected_patch_embeddings = self._project_vision_features(pixel_values)
+        projected_patch_embeddings = self._append_state_token_to_patches(projected_patch_embeddings, state_feature)
+        logits, prompt_hidden, context_feature = self._next_token_logits_and_value_features(
+            input_ids,
+            attention_mask,
+            projected_patch_embeddings,
+            state_feature,
+        )
+        value_input = self._build_value_input(prompt_hidden, state_feature, context_feature)
+        value = torch.nan_to_num(self.value_head(value_input).squeeze(-1), nan=0.0, posinf=1e4, neginf=-1e4)
+        return logits.unsqueeze(1), value
+
+    def get_value(self, rgbs: np.ndarray, states: np.ndarray) -> torch.Tensor:
+        model_inputs = self._prepare_policy_inputs(rgbs)
+        state_tensor = torch.as_tensor(states, device=self.device, dtype=torch.float32)
+        state_tensor = torch.nan_to_num(state_tensor, nan=0.0, posinf=1e4, neginf=-1e4)
+        state_feature = self.state_projector(state_tensor)
+        projected_patch_embeddings = self._project_vision_features(model_inputs["pixel_values"])
+        projected_patch_embeddings = self._append_state_token_to_patches(projected_patch_embeddings, state_feature)
+        return self._compute_prompt_value(
+            model_inputs["input_ids"],
+            model_inputs["attention_mask"],
+            projected_patch_embeddings,
+            state_feature,
+        )
+
+    def get_action_and_value(
+        self,
+        rgbs: np.ndarray,
+        states: np.ndarray,
+        action_bins: Optional[torch.Tensor] = None,
+        deterministic: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        return self._autoregressive_action_and_value(
+            rgbs=rgbs,
+            states=states,
+            action_bins=action_bins,
+            deterministic=deterministic,
+        )
+
+    def forward(
+        self,
+        rgbs: np.ndarray,
+        states: np.ndarray,
+        action_bins: Optional[torch.Tensor] = None,
+        deterministic: bool = False,
+        mode: str = "action_and_value",
+    ):
+        if mode == "action_and_value":
+            return self.get_action_and_value(
+                rgbs=rgbs,
+                states=states,
+                action_bins=action_bins,
+                deterministic=deterministic,
+            )
+        if mode == "value":
+            return self.get_value(rgbs=rgbs, states=states)
+        if mode == "policy":
+            return self.forward_policy(rgbs=rgbs, states=states)
+        raise ValueError(f"Unsupported forward mode: {mode}")
+
+    def predict_action(self, rgb: Union[np.ndarray, torch.Tensor], state: np.ndarray) -> np.ndarray:
+        self.eval()
+        with torch.no_grad():
+            action, _, _, _, _ = self.get_action_and_value(
+                rgbs=rgb.unsqueeze(0) if isinstance(rgb, torch.Tensor) else np.expand_dims(rgb, axis=0),
+                states=np.expand_dims(state, axis=0),
+                deterministic=True,
+            )
+        return action[0].detach().cpu().numpy().astype(np.float32)
+
+
+def build_optimizer(args: "Args", policy: HandVLAAdapterActorCritic) -> optim.Optimizer:
+    param_groups = [
+        {
+            "params": list(policy.vla.parameters()),
+            "lr": 0.0 if args.freeze_vla_backbone or args.backbone_warmup_updates > 0 else args.backbone_learning_rate,
+            "group_name": "vla",
+        },
+        {
+            "params": list(policy.state_projector.parameters()),
+            "lr": args.state_learning_rate,
+            "group_name": "state_projector",
+        },
+        {
+            "params": list(policy.context_projector.parameters()),
+            "lr": args.head_learning_rate,
+            "group_name": "context_projector",
+        },
+        {
+            "params": list(policy.actor_head.parameters()),
+            "lr": args.head_learning_rate,
+            "group_name": "actor_head",
+        },
+        {
+            "params": list(policy.value_head.parameters()),
+            "lr": args.value_head_learning_rate,
+            "group_name": "value_head",
+        },
+    ]
+    return optim.AdamW(param_groups, eps=1e-5, weight_decay=args.weight_decay)
+
+
+def set_optimizer_group_lr(optimizer: optim.Optimizer, group_name: str, lr: float) -> None:
+    for param_group in optimizer.param_groups:
+        if param_group.get("group_name") == group_name:
+            param_group["lr"] = lr
+            return
+    raise KeyError(f"Optimizer param group {group_name!r} not found")
+
+
+@dataclass
+class Args:
+    mode: str = "train"
+    seed: int = 1
+    env_id: str = "HoldCubeInHand-v1"
+    control_mode: str = "pd_joint_delta_pos"
+    reward_mode: str = "normalized_dense"
+    obs_mode: str = "rgb+state_dict"
+    model_dir: str = DEFAULT_MODEL_DIR
+    output_dir: str = DEFAULT_WORKDIR
+    num_envs: int = 128
+    num_eval_envs: int = 32
+    num_steps: int = 50
+    total_timesteps: int = 10_000_000
+    learning_rate: float = 1e-4
+    backbone_learning_rate: float = 1e-6
+    head_learning_rate: float = 5e-5
+    state_learning_rate: float = 5e-5
+    value_head_learning_rate: float = 1e-4
+    weight_decay: float = 1e-6
+    gamma: float = 0.99
+    gae_lambda: float = 0.95
+    update_epochs: int = 1
+    num_minibatches: int = 8
+    clip_coef: float = 0.2
+    ent_coef: float = 0.001
+    vf_coef: float = 0.5
+    max_grad_norm: float = 0.5
+    target_kl: float = 0.02
+    minibatch_target_kl_factor: float = 1.5
+    eval_episodes: int = 40
+    eval_every_updates: int = 10
+    max_episode_steps: Optional[int] = 100
+    cuda_device: str = "0"
+    smoke_steps: int = 32
+    save_video: bool = False
+    save_train_video_freq: int = 20
+    train_video_num_envs: int = 4
+    test_video_num_envs: int = 4
+    test_video_episodes: int = 4
+    run_setup_smoke: bool = True
+    max_runtime_hours: float = 8.0
+    rollout_micro_batch_size: int = 32
+    eval_micro_batch_size: int = 32
+    update_micro_batch_size: int = 16
+    rollout_progress_log_interval: int = 5
+    freeze_vla_backbone: bool = False
+    backbone_warmup_updates: int = 20
+    policy_trunk_warmup_updates: int = 100
+    resume_from: Optional[str] = None
+    action_dim: int = 16
+    state_dim: int = 105
+    run_name: Optional[str] = None
+    early_stop_zero_success_minutes: float = 45.0
+
+
+def parse_args() -> Args:
+    parser = argparse.ArgumentParser()
+    for field_name, field_def in Args.__dataclass_fields__.items():
+        default = field_def.default
+        arg_name = f"--{field_name.replace('_', '-')}"
+        field_type = field_def.type
+        if isinstance(default, bool):
+            parser.add_argument(arg_name, type=parse_bool, default=default)
+        elif default is None:
+            arg_type = str
+            origin = get_origin(field_type)
+            if origin is not None:
+                candidate_types = [candidate for candidate in get_args(field_type) if candidate is not type(None)]
+                if len(candidate_types) == 1 and isinstance(candidate_types[0], type):
+                    arg_type = candidate_types[0]
+            parser.add_argument(arg_name, type=arg_type, default=None)
+        else:
+            parser.add_argument(arg_name, type=type(default), default=default)
+    namespace = parser.parse_args()
+    return Args(**vars(namespace))
+
+
+def unwrap_policy(policy: nn.Module) -> HandVLAAdapterActorCritic:
+    return policy.module if isinstance(policy, DDP) else policy
+
+
+def sync_trainable_parameters(module: nn.Module) -> None:
+    if not is_distributed():
+        return
+    for parameter in module.parameters():
+        if parameter.requires_grad:
+            dist.broadcast(parameter.data, src=0)
+
+
+def average_trainable_gradients(module: nn.Module) -> None:
+    if not is_distributed():
+        return
+    world_size = get_world_size()
+    for parameter in module.parameters():
+        if parameter.requires_grad and parameter.grad is not None:
+            dist.all_reduce(parameter.grad, op=dist.ReduceOp.SUM)
+            parameter.grad.div_(world_size)
+
+
+def snapshot_trainable_parameters(module: nn.Module) -> Dict[str, torch.Tensor]:
+    return {
+        name: parameter.detach().clone()
+        for name, parameter in module.named_parameters()
+        if parameter.requires_grad
+    }
+
+
+def restore_trainable_parameters(module: nn.Module, snapshot: Dict[str, torch.Tensor]) -> None:
+    named_parameters = dict(module.named_parameters())
+    for name, saved_value in snapshot.items():
+        named_parameters[name].data.copy_(saved_value)
+
+
+def reset_optimizer_state_for_trainable_params(optimizer: optim.Optimizer, module: nn.Module) -> None:
+    for parameter in module.parameters():
+        if parameter.requires_grad:
+            optimizer.state.pop(parameter, None)
+
+
+def set_fbs_batch_size_hint(batch_size: int) -> None:
+    os.environ["_Z_BATCH_SIZE"] = str(int(batch_size))
+
+
+def policy_get_action_and_value(
+    policy: nn.Module,
+    rgbs: np.ndarray,
+    states: np.ndarray,
+    action_bins: Optional[torch.Tensor] = None,
+    deterministic: bool = False,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    set_fbs_batch_size_hint(len(rgbs))
+    if isinstance(policy, DDP):
+        return policy(rgbs, states, action_bins=action_bins, deterministic=deterministic, mode="action_and_value")
+    return policy.get_action_and_value(rgbs=rgbs, states=states, action_bins=action_bins, deterministic=deterministic)
+
+
+def policy_get_value(policy: nn.Module, rgbs: np.ndarray, states: np.ndarray) -> torch.Tensor:
+    set_fbs_batch_size_hint(len(rgbs))
+    if isinstance(policy, DDP):
+        return policy(rgbs, states, mode="value")
+    return policy.get_value(rgbs=rgbs, states=states)
+
+
+def get_completed_episode_metrics(infos: Dict[str, Any]) -> Tuple[Optional[torch.Tensor], Dict[str, torch.Tensor]]:
+    final_info = infos.get("final_info")
+    done_mask = infos.get("_final_info")
+    if final_info is None or done_mask is None:
+        return None, {}
+    episode_metrics = final_info.get("episode")
+    if not isinstance(episode_metrics, dict):
+        return done_mask, {}
+    return done_mask, episode_metrics
+
+
+def summarize_episode_metrics(episode_metrics: Dict[str, List[torch.Tensor]]) -> Dict[str, Tuple[float, int]]:
+    summary = {}
+    for key, values in episode_metrics.items():
+        if not values:
+            continue
+        cat = torch.cat(values)
+        summary[f"train_{key}"] = (float(cat.sum().item()), int(cat.numel()))
+    return summary
+
+
+def batched_get_action_and_value_no_grad(
+    policy: nn.Module,
+    rgbs: np.ndarray,
+    states: np.ndarray,
+    micro_batch_size: int,
+    deterministic: bool = False,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    actions = []
+    log_probs = []
+    entropies = []
+    values = []
+    action_bins = []
+    with torch.no_grad():
+        for start, end in iter_slices(len(rgbs), micro_batch_size):
+            action, log_prob, entropy, value, bins = policy_get_action_and_value(
+                policy,
+                rgbs=rgbs[start:end],
+                states=states[start:end],
+                deterministic=deterministic,
+            )
+            actions.append(action)
+            log_probs.append(log_prob)
+            entropies.append(entropy)
+            values.append(value)
+            action_bins.append(bins)
+    return (
+        torch.cat(actions, dim=0),
+        torch.cat(log_probs, dim=0),
+        torch.cat(entropies, dim=0),
+        torch.cat(values, dim=0),
+        torch.cat(action_bins, dim=0),
+    )
+
+
+def batched_recompute_action_and_value_no_grad(
+    policy: nn.Module,
+    rgbs: np.ndarray,
+    states: np.ndarray,
+    action_bins: torch.Tensor,
+    micro_batch_size: int,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    actions = []
+    log_probs = []
+    entropies = []
+    values = []
+    bins_out = []
+    with torch.no_grad():
+        for start, end in iter_slices(len(rgbs), micro_batch_size):
+            action, log_prob, entropy, value, bins = policy_get_action_and_value(
+                policy,
+                rgbs=rgbs[start:end],
+                states=states[start:end],
+                action_bins=action_bins[start:end],
+            )
+            actions.append(action)
+            log_probs.append(log_prob)
+            entropies.append(entropy)
+            values.append(value)
+            bins_out.append(bins)
+    return (
+        torch.cat(actions, dim=0),
+        torch.cat(log_probs, dim=0),
+        torch.cat(entropies, dim=0),
+        torch.cat(values, dim=0),
+        torch.cat(bins_out, dim=0),
+    )
+
+
+def batched_recompute_action_and_value_detached(
+    policy: nn.Module,
+    rgbs: np.ndarray,
+    states: np.ndarray,
+    action_bins: torch.Tensor,
+    micro_batch_size: int,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    actions = []
+    log_probs = []
+    entropies = []
+    values = []
+    bins_out = []
+    for start, end in iter_slices(len(rgbs), micro_batch_size):
+        action, log_prob, entropy, value, bins = policy_get_action_and_value(
+            policy,
+            rgbs=rgbs[start:end],
+            states=states[start:end],
+            action_bins=action_bins[start:end],
+        )
+        actions.append(action.detach())
+        log_probs.append(log_prob.detach())
+        entropies.append(entropy.detach())
+        values.append(value.detach())
+        bins_out.append(bins.detach())
+    return (
+        torch.cat(actions, dim=0),
+        torch.cat(log_probs, dim=0),
+        torch.cat(entropies, dim=0),
+        torch.cat(values, dim=0),
+        torch.cat(bins_out, dim=0),
+    )
+
+
+def batched_get_value_no_grad(
+    policy: nn.Module,
+    rgbs: np.ndarray,
+    states: np.ndarray,
+    micro_batch_size: int,
+) -> torch.Tensor:
+    values = []
+    with torch.no_grad():
+        for start, end in iter_slices(len(rgbs), micro_batch_size):
+            values.append(policy_get_value(policy, rgbs[start:end], states[start:end]))
+    return torch.cat(values, dim=0)
+
+
+def compute_teacher_forcing_approx_kl(
+    args: "Args",
+    policy: nn.Module,
+    b_rgbs: np.ndarray,
+    b_states: np.ndarray,
+    b_action_bins: torch.Tensor,
+    b_logprobs: torch.Tensor,
+    inds: np.ndarray,
+) -> float:
+    if len(inds) == 0:
+        return 0.0
+    _, new_logprobs, _, _, _ = batched_recompute_action_and_value_detached(
+        policy,
+        b_rgbs[inds],
+        b_states[inds],
+        action_bins=b_action_bins[inds],
+        micro_batch_size=args.update_micro_batch_size,
+    )
+    logratio = new_logprobs - b_logprobs[inds]
+    ratio = logratio.exp()
+    return float((((ratio - 1.0) - logratio).mean().item()))
+
+
+def evaluate_policy(policy: nn.Module, envs: ManiSkillVectorEnv, target_episodes: int) -> Dict[str, float]:
+    if target_episodes <= 0:
+        return {}
+    metrics = defaultdict(list)
+    obs, _ = envs.reset(seed=0)
+    episodes = 0
+    raw_policy = unwrap_policy(policy)
+    raw_policy.eval()
+    with torch.no_grad():
+        while episodes < target_episodes:
+            rgbs = extract_rgb_batch_from_obs(obs)
+            states = extract_hand_state_batch_from_obs(obs)
+            action_chunks = []
+            for start, end in iter_slices(len(rgbs), raw_policy.eval_micro_batch_size):
+                action_chunk, _, _, _, _ = policy_get_action_and_value(
+                    raw_policy,
+                    rgbs=rgbs[start:end],
+                    states=states[start:end],
+                    deterministic=True,
+                )
+                action_chunks.append(action_chunk)
+            action = torch.cat(action_chunks, dim=0)
+            obs, _, _, _, infos = envs.step(action)
+            done_mask, episode_metrics = get_completed_episode_metrics(infos)
+            if done_mask is None:
+                continue
+            episodes += int(done_mask.sum().item())
+            for key, value in episode_metrics.items():
+                metrics[key].append(value[done_mask].float().detach().cpu())
+    result = {}
+    for key, values in metrics.items():
+        if values:
+            result[key] = torch.cat(values).mean().item()
+    return result
+
+
+def record_policy_rollout_video(policy: nn.Module, envs: ManiSkillVectorEnv, num_steps: int, seed: int) -> None:
+    obs, _ = envs.reset(seed=seed)
+    raw_policy = unwrap_policy(policy)
+    raw_policy.eval()
+    with torch.no_grad():
+        for _ in range(num_steps):
+            rgbs = extract_rgb_batch_from_obs(obs)
+            states = extract_hand_state_batch_from_obs(obs)
+            action_chunks = []
+            for start, end in iter_slices(len(rgbs), raw_policy.eval_micro_batch_size):
+                action_chunk, _, _, _, _ = policy_get_action_and_value(
+                    raw_policy,
+                    rgbs=rgbs[start:end],
+                    states=states[start:end],
+                    deterministic=False,
+                )
+                action_chunks.append(action_chunk)
+            action = torch.cat(action_chunks, dim=0)
+            obs, _, _, _, _ = envs.step(action)
+
+
+def huber_loss(error: torch.Tensor, delta: float) -> torch.Tensor:
+    abs_error = error.abs()
+    quadratic = torch.minimum(abs_error, torch.tensor(delta, device=error.device, dtype=error.dtype))
+    linear = abs_error - quadratic
+    return 0.5 * quadratic.pow(2) + delta * linear
+
+
+def normalize_advantages(advantages: torch.Tensor, device: torch.device) -> torch.Tensor:
+    flat = advantages.detach().reshape(-1).to(device=device, dtype=torch.float64)
+    stats = torch.stack(
+        (
+            torch.tensor(float(flat.numel()), device=device, dtype=torch.float64),
+            flat.sum(),
+            (flat * flat).sum(),
+        )
+    )
+    if is_distributed():
+        dist.all_reduce(stats, op=dist.ReduceOp.SUM)
+    count = torch.clamp(stats[0], min=1.0)
+    mean = stats[1] / count
+    variance = torch.clamp(stats[2] / count - mean * mean, min=0.0)
+    std = torch.sqrt(variance)
+    return ((advantages - mean.to(advantages.dtype)) / (std.to(advantages.dtype) + 1e-8)).to(advantages.dtype)
+
+
+def build_minibatch_ranges(total: int, num_minibatches: int, micro_batch_size: int) -> List[Tuple[int, int]]:
+    if total % micro_batch_size != 0:
+        raise ValueError(
+            f"local batch size {total} must be divisible by update_micro_batch_size={micro_batch_size}"
+        )
+    total_micro_batches = total // micro_batch_size
+    used_num_minibatches = max(1, min(num_minibatches, total_micro_batches))
+    base_micro_batches = total_micro_batches // used_num_minibatches
+    extra_micro_batches = total_micro_batches % used_num_minibatches
+    ranges: List[Tuple[int, int]] = []
+    start_micro_batch = 0
+    for minibatch_idx in range(used_num_minibatches):
+        micro_batches_in_minibatch = base_micro_batches + (1 if minibatch_idx < extra_micro_batches else 0)
+        if micro_batches_in_minibatch <= 0:
+            continue
+        start = start_micro_batch * micro_batch_size
+        end = (start_micro_batch + micro_batches_in_minibatch) * micro_batch_size
+        ranges.append((start, end))
+        start_micro_batch += micro_batches_in_minibatch
+    return ranges
+
+
+def ppo_update_with_micro_batches(
+    args: Args,
+    policy: nn.Module,
+    optimizer: optim.Optimizer,
+    b_rgbs: np.ndarray,
+    b_states: np.ndarray,
+    b_action_bins: torch.Tensor,
+    b_logprobs: torch.Tensor,
+    b_values: torch.Tensor,
+    b_advantages: torch.Tensor,
+    b_returns: torch.Tensor,
+    minibatch_inds: np.ndarray,
+    post_step_probe_inds: Optional[np.ndarray] = None,
+) -> Dict[str, float]:
+    optimizer.zero_grad(set_to_none=True)
+    local_advantages = b_advantages[minibatch_inds]
+    total = len(minibatch_inds)
+    stats = defaultdict(float)
+    skipped_on_kl = False
+    micro_slices = list(iter_slices(total, args.update_micro_batch_size))
+
+    for slice_idx, (local_start, local_end) in enumerate(micro_slices):
+        micro_inds = minibatch_inds[local_start:local_end]
+        micro_weight = (local_end - local_start) / total
+        context = policy.no_sync() if isinstance(policy, DDP) and slice_idx != len(micro_slices) - 1 else torch.enable_grad()
+        with context:
+            _, newlogprob, entropy, newvalue, _ = policy_get_action_and_value(
+                policy,
+                b_rgbs[micro_inds],
+                b_states[micro_inds],
+                b_action_bins[micro_inds],
+            )
+            logratio = newlogprob - b_logprobs[micro_inds]
+            ratio = logratio.exp()
+            with torch.no_grad():
+                micro_approx_kl = ((ratio - 1) - logratio).mean().item()
+                stats["approx_kl"] += micro_approx_kl * micro_weight
+                stats["clipfrac"] += (((ratio - 1.0).abs() > args.clip_coef).float().mean().item()) * micro_weight
+
+            global_micro_approx_kl = distributed_max(micro_approx_kl, unwrap_policy(policy).device)
+            if args.target_kl is not None and global_micro_approx_kl > args.target_kl * args.minibatch_target_kl_factor:
+                skipped_on_kl = True
+                break
+
+            micro_adv = local_advantages[local_start:local_end]
+            pg_loss1 = -micro_adv * ratio
+            pg_loss2 = -micro_adv * torch.clamp(ratio, 1 - args.clip_coef, 1 + args.clip_coef)
+            pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+            newvalue = newvalue.view(-1)
+            oldvalue = b_values[micro_inds].view(-1)
+            returns = b_returns[micro_inds].view(-1)
+            value_pred_clipped = oldvalue + (newvalue - oldvalue).clamp(-args.clip_coef, args.clip_coef)
+            value_loss_original = huber_loss(newvalue - returns, delta=10.0)
+            value_loss_clipped = huber_loss(value_pred_clipped - returns, delta=10.0)
+            v_loss = torch.max(value_loss_original, value_loss_clipped).mean()
+            entropy_loss = entropy.mean()
+            loss = pg_loss - args.ent_coef * entropy_loss + args.vf_coef * v_loss
+            (loss * micro_weight).backward()
+
+        stats["pg_loss"] += float(pg_loss.detach().item()) * micro_weight
+        stats["v_loss"] += float(v_loss.detach().item()) * micro_weight
+        stats["entropy"] += float(entropy_loss.detach().item()) * micro_weight
+
+    if skipped_on_kl:
+        optimizer.zero_grad(set_to_none=True)
+        stats["skipped_on_kl"] = 1.0
+        stats["reverted_on_post_step_kl"] = 0.0
+        return dict(stats)
+
+    raw_policy = unwrap_policy(policy)
+    parameter_snapshot = snapshot_trainable_parameters(raw_policy)
+    average_trainable_gradients(unwrap_policy(policy))
+    nn.utils.clip_grad_norm_(unwrap_policy(policy).parameters(), args.max_grad_norm)
+    optimizer.step()
+    optimizer.zero_grad(set_to_none=True)
+
+    probe_inds = minibatch_inds if post_step_probe_inds is None else post_step_probe_inds
+    post_step_probe_kl = distributed_max(
+        compute_teacher_forcing_approx_kl(
+            args=args,
+            policy=policy,
+            b_rgbs=b_rgbs,
+            b_states=b_states,
+            b_action_bins=b_action_bins,
+            b_logprobs=b_logprobs,
+            inds=probe_inds,
+        ),
+        raw_policy.device,
+    )
+    stats["post_step_probe_kl"] = post_step_probe_kl
+    if args.target_kl is not None and post_step_probe_kl > args.target_kl * args.minibatch_target_kl_factor:
+        restore_trainable_parameters(raw_policy, parameter_snapshot)
+        reset_optimizer_state_for_trainable_params(optimizer, raw_policy)
+        optimizer.zero_grad(set_to_none=True)
+        stats["skipped_on_kl"] = 1.0
+        stats["reverted_on_post_step_kl"] = 1.0
+        return dict(stats)
+
+    stats["skipped_on_kl"] = 0.0
+    stats["reverted_on_post_step_kl"] = 0.0
+    return dict(stats)
+
+
+def run_vla_inference_smoke(
+    args: Args,
+    device: torch.device,
+    output_dir: Path,
+    policy: Optional[HandVLAAdapterActorCritic] = None,
+) -> None:
+    if policy is None:
+        policy = HandVLAAdapterActorCritic(
+            Path(args.model_dir),
+            device=device,
+            state_dim=args.state_dim,
+            action_dim=args.action_dim,
+        ).to(device)
+    env = make_vector_env(args, device, num_envs=1, record_metrics=False)
+    obs, _ = env.reset(seed=args.seed)
+    returns = 0.0
+    success = False
+    for step in range(args.smoke_steps):
+        rgb = extract_rgb_batch_from_obs(obs)[0]
+        state = extract_hand_state_batch_from_obs(obs)[0]
+        action = policy.predict_action(rgb=rgb, state=state)
+        obs, reward, terminated, truncated, infos = env.step(
+            torch.from_numpy(action).view(1, -1).to(device=device, dtype=torch.float32)
+        )
+        returns += float(reward.reshape(-1)[0].item())
+        if "success" in infos:
+            success = bool(infos["success"].reshape(-1)[0].item())
+        if terminated.reshape(-1)[0].item() or truncated.reshape(-1)[0].item():
+            break
+    env.close()
+    payload = {"smoke_return": returns, "smoke_success": success, "steps": step + 1}
+    print("[hold-cube-vla-smoke]", payload)
+    save_json(output_dir / "vla_smoke.json", payload)
+
+
+def maybe_load_checkpoint(
+    args: Args,
+    raw_policy: HandVLAAdapterActorCritic,
+    optimizer: Optional[optim.Optimizer] = None,
+) -> Tuple[int, int, float]:
+    if not args.resume_from:
+        return 1, 0, -1.0
+    checkpoint = torch.load(args.resume_from, map_location=raw_policy.device)
+    if isinstance(checkpoint, dict) and "policy" in checkpoint:
+        policy_state = strip_module_prefix(checkpoint["policy"])
+        start_update = int(checkpoint.get("update", 0)) + 1
+        global_step = int(checkpoint.get("global_step", 0))
+        best_success = float(checkpoint.get("best_success_once", -1.0))
+    else:
+        policy_state = strip_module_prefix(checkpoint)
+        start_update = 1
+        global_step = 0
+        best_success = -1.0
+    raw_policy.load_state_dict(policy_state, strict=True)
+    if optimizer is not None and isinstance(checkpoint, dict) and "optimizer" in checkpoint:
+        optimizer.load_state_dict(checkpoint["optimizer"])
+    return start_update, global_step, best_success
+
+
+def train(args: Args) -> None:
+    device, rank, world_size = init_runtime(args)
+    set_seed(args.seed + rank)
+
+    if args.num_envs % world_size != 0:
+        raise ValueError(f"num_envs={args.num_envs} must be divisible by world_size={world_size}")
+    local_num_envs = args.num_envs // world_size
+
+    default_run_name = time.strftime("%Y%m%d-%H%M%S") if is_main_process() else None
+    run_name = broadcast_object(args.run_name if is_main_process() and args.run_name else default_run_name)
+    output_dir = mkdir(Path(args.output_dir) / run_name)
+    if is_main_process():
+        args_payload = asdict(args)
+        args_payload.update({"world_size": world_size, "local_num_envs": local_num_envs})
+        save_json(output_dir / "args.json", args_payload)
+        print(f"[setup] output_dir={output_dir}")
+        print("[setup] loading hand VLA-Adapter policy")
+
+    raw_policy = HandVLAAdapterActorCritic(
+        Path(args.model_dir),
+        device=device,
+        state_dim=args.state_dim,
+        action_dim=args.action_dim,
+    ).to(device)
+    start_update, global_step, best_success_once = 1, 0, -1.0
+    raw_policy = convert_to_fbs_model(raw_policy, device).to(device)
+    train_backbone_now = not args.freeze_vla_backbone and args.backbone_warmup_updates <= 0
+    train_policy_trunk_now = args.policy_trunk_warmup_updates <= 0
+    raw_policy.configure_trainable_modules(
+        train_backbone=train_backbone_now,
+        train_policy_trunk=train_policy_trunk_now,
+    )
+    raw_policy.eval_micro_batch_size = args.eval_micro_batch_size
+    optimizer = build_optimizer(args, raw_policy)
+    start_update, global_step, best_success_once = maybe_load_checkpoint(args, raw_policy, optimizer)
+    raw_policy.vla.to(device=device, dtype=torch.bfloat16)
+
+    if args.resume_from and is_main_process():
+        print(
+            "[setup] loaded FBS checkpoint/state "
+            f"resume_from={args.resume_from} start_update={start_update} global_step={global_step}"
+        )
+
+    if is_main_process():
+        summary = raw_policy.trainable_parameter_summary()
+        summary_text = " ".join(f"{name}={trainable}/{total}" for name, (total, trainable) in summary.items())
+        print(f"[setup] trainable_params {summary_text}")
+
+    if args.run_setup_smoke and is_main_process() and world_size == 1:
+        run_vla_inference_smoke(args, device, output_dir, policy=raw_policy)
+    elif is_main_process():
+        print("[setup] distributed mode: skip VLA smoke")
+    distributed_barrier()
+
+    sync_trainable_parameters(raw_policy)
+    policy: nn.Module = raw_policy
+    if world_size > 1 and is_main_process():
+        print("[setup] distributed mode: using manual gradient all-reduce instead of DDP forward synchronization")
+
+    envs = make_vector_env(args, device, local_num_envs, record_metrics=True)
+    eval_envs = make_vector_env(args, device, args.num_eval_envs, record_metrics=True) if is_main_process() else None
+    train_video_envs = None
+    test_video_envs = None
+    if args.save_video and is_main_process():
+        train_video_envs = make_vector_env(
+            args,
+            device,
+            min(args.train_video_num_envs, args.num_envs),
+            record_metrics=False,
+            video_output_dir=output_dir / "train_videos",
+            video_max_steps=args.num_steps,
+        )
+        test_video_envs = make_vector_env(
+            args,
+            device,
+            min(args.test_video_num_envs, args.num_eval_envs),
+            record_metrics=False,
+            video_output_dir=output_dir / "test_videos",
+        )
+
+    global_batch_size = args.num_envs * args.num_steps
+    local_batch_size = local_num_envs * args.num_steps
+    global_minibatch_size = max(1, global_batch_size // args.num_minibatches)
+    if global_minibatch_size % world_size != 0:
+        raise ValueError(
+            f"global minibatch size {global_minibatch_size} must be divisible by world_size={world_size}"
+        )
+    local_minibatch_size = max(1, global_minibatch_size // world_size)
+    num_updates = max(1, args.total_timesteps // global_batch_size)
+
+    env_actions_buf = torch.zeros((args.num_steps, local_num_envs, args.action_dim), device=device)
+    action_bins_buf = torch.zeros((args.num_steps, local_num_envs, args.action_dim), device=device, dtype=torch.long)
+    logprobs_buf = torch.zeros((args.num_steps, local_num_envs), device=device)
+    rewards_buf = torch.zeros((args.num_steps, local_num_envs), device=device)
+    dones_buf = torch.zeros((args.num_steps, local_num_envs), device=device)
+    values_buf = torch.zeros((args.num_steps, local_num_envs), device=device)
+    final_values = torch.zeros((args.num_steps, local_num_envs), device=device)
+
+    next_obs, _ = envs.reset(seed=args.seed + rank)
+    next_done = torch.zeros(local_num_envs, device=device)
+    metrics_history: List[Dict[str, Any]] = []
+    train_start_time = time.time()
+    stop_reason = "completed"
+    stopped_early_zero_success = False
+    final_eval_metrics: Dict[str, float] = {}
+    if is_main_process():
+        print(
+            f"[setup] world_size={world_size} local_num_envs={local_num_envs} num_updates={num_updates} "
+            f"global_batch_size={global_batch_size} local_batch_size={local_batch_size} "
+            f"global_minibatch_size={global_minibatch_size} local_minibatch_size={local_minibatch_size}"
+        )
+
+    for update in range(start_update, num_updates + 1):
+        if not args.freeze_vla_backbone and args.backbone_warmup_updates > 0 and update == args.backbone_warmup_updates + 1:
+            raw_policy.configure_trainable_modules(
+                train_backbone=True,
+                train_policy_trunk=update > args.policy_trunk_warmup_updates,
+            )
+            set_optimizer_group_lr(optimizer, "vla", args.backbone_learning_rate)
+            if is_main_process():
+                print(f"[setup] unfreezing VLA backbone at update={update} lr={args.backbone_learning_rate}")
+        if args.policy_trunk_warmup_updates > 0 and update == args.policy_trunk_warmup_updates + 1:
+            raw_policy.configure_trainable_modules(
+                train_backbone=raw_policy._is_vla_trainable(),
+                train_policy_trunk=True,
+            )
+            if is_main_process():
+                print(f"[setup] unfreezing policy trunk at update={update}")
+
+        raw_policy.eval()
+        final_values.zero_()
+        rollout_rgbs: List[torch.Tensor] = []
+        rollout_states: List[np.ndarray] = []
+        train_episode_metrics = defaultdict(list)
+        partial_reward_means: List[float] = []
+        logged_partial_reward_means: List[float] = []
+        abort_during_rollout = False
+        abort_reason: Optional[str] = None
+        rollout_steps_completed = 0
+
+        from ours.libs.train_with_fbs.lib import set_sparsity
+        if is_main_process():
+            if update % 4 == 0:
+                cur_sparsity = 0.0
+            elif 1 <= update % 4 <= 2:
+                cur_sparsity = np.random.uniform(0.0, 0.9)
+            else:
+                cur_sparsity = 0.9
+        else:
+            cur_sparsity = None
+        cur_sparsity = broadcast_object(cur_sparsity)
+        set_sparsity(policy, cur_sparsity)
+
+        for step in range(args.num_steps):
+            global_step += args.num_envs
+            step_rgbs = extract_rgb_batch_from_obs(next_obs)
+            step_states = extract_hand_state_batch_from_obs(next_obs)
+            rollout_rgbs.append(step_rgbs.clone())
+            rollout_states.append(step_states.copy())
+            dones_buf[step] = next_done
+
+            action, logprob, _, value, action_bins = batched_get_action_and_value_no_grad(
+                policy,
+                step_rgbs,
+                step_states,
+                micro_batch_size=args.rollout_micro_batch_size,
+            )
+            # Cache rollout stats from the same teacher-forcing forward path used
+            # during PPO updates, then detach the results. This avoids subtle
+            # forward-path differences between pure no-grad caching and update-time
+            # logprob recomputation under FBS.
+            _, logprob, _, value, _ = batched_recompute_action_and_value_detached(
+                policy,
+                step_rgbs,
+                step_states,
+                action_bins=action_bins,
+                micro_batch_size=args.update_micro_batch_size,
+            )
+            env_actions_buf[step] = action
+            action_bins_buf[step] = action_bins
+            logprobs_buf[step] = logprob
+            values_buf[step] = value
+
+            next_obs, reward, terminations, truncations, infos = envs.step(action)
+            truncation_mask = truncations.to(torch.bool)
+            next_done = (terminations | truncations).to(torch.float32)
+            rewards_buf[step] = reward.view(-1)
+            partial_reward_means.append(float(rewards_buf[: step + 1].mean().item()))
+            rollout_steps_completed = step + 1
+
+            if (
+                (step + 1) % args.rollout_progress_log_interval == 0
+                or step == 0
+                or step + 1 == args.num_steps
+            ):
+                elapsed_hours = (time.time() - train_start_time) / 3600.0
+                reward_mean_so_far = distributed_mean(partial_reward_means[-1], device)
+                if is_main_process():
+                    logged_partial_reward_means.append(reward_mean_so_far)
+                    print(
+                        f"[rollout] update={update}/{num_updates} step={step + 1}/{args.num_steps} "
+                        f"reward_mean_so_far={reward_mean_so_far:.4f} elapsed_h={elapsed_hours:.2f}"
+                    )
+                    save_rollout_progress(
+                        output_dir=output_dir,
+                        update=update,
+                        num_updates=num_updates,
+                        rollout_step=step + 1,
+                        num_steps=args.num_steps,
+                        elapsed_hours=elapsed_hours,
+                        partial_reward_means=logged_partial_reward_means,
+                    )
+
+                partial_summary = summarize_episode_metrics(train_episode_metrics)
+                partial_success_metrics = gather_metric_summary(partial_summary)
+                partial_max_success = max(
+                    [
+                        float(partial_success_metrics.get("train_success_once", 0.0)),
+                        float(partial_success_metrics.get("train_success_at_end", 0.0)),
+                    ]
+                )
+                if elapsed_hours >= args.max_runtime_hours:
+                    abort_during_rollout = True
+                    abort_reason = "time_limit"
+                    break
+                if (
+                    elapsed_hours * 60.0 >= args.early_stop_zero_success_minutes
+                    and partial_max_success <= 0.0
+                ):
+                    abort_during_rollout = True
+                    abort_reason = "early_stop_zero_success"
+                    break
+
+            done_mask, episode_metrics = get_completed_episode_metrics(infos)
+            if done_mask is not None:
+                if done_mask.any():
+                    for key, value_tensor in episode_metrics.items():
+                        train_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+                bootstrap_mask = truncation_mask
+                if "final_observation" in infos and bootstrap_mask.any():
+                    final_obs = infos["final_observation"]
+                    bootstrap_idx = bootstrap_mask.detach().cpu().numpy().astype(bool)
+                    final_rgbs = extract_rgb_batch_from_obs(final_obs)[bootstrap_idx]
+                    final_states = extract_hand_state_batch_from_obs(final_obs)[bootstrap_idx]
+                    final_values[step, bootstrap_mask] = batched_get_value_no_grad(
+                        policy,
+                        final_rgbs,
+                        final_states,
+                        micro_batch_size=args.eval_micro_batch_size,
+                    ).view(-1)
+
+        if abort_during_rollout:
+            metric = {
+                "update": update,
+                "global_step": global_step,
+                "reward_mean": distributed_mean(rewards_buf[:rollout_steps_completed].mean().item(), device),
+                "return_mean": float("nan"),
+                "gae_return_mean": float("nan"),
+                "value_mean": distributed_mean(values_buf[:rollout_steps_completed].mean().item(), device),
+                "explained_variance": float("nan"),
+                "approx_kl": 0.0,
+                "clipfrac": 0.0,
+                "pg_loss": 0.0,
+                "v_loss": 0.0,
+                "entropy": 0.0,
+                "stopped_on_minibatch_kl": False,
+                "skipped_updates_on_kl": 0,
+                "elapsed_hours": (time.time() - train_start_time) / 3600.0,
+                "partial_rollout_only": True,
+                "rollout_steps_completed": rollout_steps_completed,
+            }
+            metric.update(gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+
+            if is_main_process():
+                metrics_history.append(metric)
+                print(
+                    f"[train] aborting during rollout update={update}/{num_updates} reason={abort_reason} "
+                    f"elapsed_h={metric['elapsed_hours']:.2f}"
+                )
+                save_json(output_dir / "latest_metrics.json", metric)
+                save_metrics_history(output_dir, metrics_history)
+                plot_metrics_history(output_dir, metrics_history)
+                plot_success_time_curve(output_dir, metrics_history)
+
+            stop_reason = abort_reason or stop_reason
+            stopped_early_zero_success = abort_reason == "early_stop_zero_success"
+            break
+
+        with torch.no_grad():
+            next_value = batched_get_value_no_grad(
+                policy,
+                extract_rgb_batch_from_obs(next_obs),
+                extract_hand_state_batch_from_obs(next_obs),
+                micro_batch_size=args.eval_micro_batch_size,
+            ).view(1, -1)
+            advantages = torch.zeros_like(rewards_buf)
+            lastgaelam = 0.0
+            for t in reversed(range(args.num_steps)):
+                if t == args.num_steps - 1:
+                    next_nonterminal = 1.0 - next_done
+                    next_values = next_value
+                else:
+                    next_nonterminal = 1.0 - dones_buf[t + 1]
+                    next_values = values_buf[t + 1]
+                real_next_values = next_nonterminal * next_values + final_values[t]
+                delta = rewards_buf[t] + args.gamma * real_next_values - values_buf[t]
+                advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * next_nonterminal * lastgaelam
+            returns = advantages + values_buf
+
+        b_rgbs = torch.cat(rollout_rgbs, dim=0)
+        b_states = np.concatenate(rollout_states, axis=0)
+        b_action_bins = action_bins_buf.reshape(-1, args.action_dim)
+        b_logprobs = logprobs_buf.reshape(-1)
+        b_values = values_buf.reshape(-1)
+        b_advantages = normalize_advantages(advantages, device).reshape(-1)
+        b_returns = returns.reshape(-1)
+        ev = explained_variance(values_buf, returns, device)
+
+        if os.environ.get("HAND_VLA_DEBUG_PREUPDATE_CHECK", "0") == "1":
+            _, recomputed_logprobs, _, recomputed_values, _ = batched_recompute_action_and_value_no_grad(
+                policy,
+                b_rgbs,
+                b_states,
+                action_bins=b_action_bins,
+                micro_batch_size=args.update_micro_batch_size,
+            )
+            logprob_abs_delta = (recomputed_logprobs - b_logprobs).abs()
+            value_abs_delta = (recomputed_values.reshape(-1) - b_values).abs()
+            preupdate_logprob_max_delta = distributed_max(float(logprob_abs_delta.max().item()), device)
+            preupdate_logprob_mean_delta = distributed_mean(float(logprob_abs_delta.mean().item()), device)
+            preupdate_value_max_delta = distributed_max(float(value_abs_delta.max().item()), device)
+            preupdate_value_mean_delta = distributed_mean(float(value_abs_delta.mean().item()), device)
+            if is_main_process():
+                print(
+                    "[preupdate-check] "
+                    f"logprob_max_delta={preupdate_logprob_max_delta:.6f} "
+                    f"logprob_mean_delta={preupdate_logprob_mean_delta:.6f} "
+                    f"value_max_delta={preupdate_value_max_delta:.6f} "
+                    f"value_mean_delta={preupdate_value_mean_delta:.6f}"
+                )
+
+        inds = np.arange(local_batch_size)
+        minibatch_ranges = build_minibatch_ranges(local_batch_size, args.num_minibatches, args.update_micro_batch_size)
+        approx_kl = 0.0
+        pg_loss_value = 0.0
+        v_loss_value = 0.0
+        entropy_value = 0.0
+        clipfrac_value = 0.0
+        stopped_on_minibatch_kl = False
+        skipped_updates_on_kl = 0
+        reverted_updates_on_post_step_kl = 0
+        pre_update_approx_kl = 0.0
+
+        update_i = 0
+        # Keep dropout/other train-time stochastic layers disabled so PPO ratios compare
+        # the updated policy against the same distribution used during rollout.
+        raw_policy.eval()
+
+        for epoch in range(args.update_epochs):
+            epoch_stats = defaultdict(list)
+            for minibatch_idx, (start, end) in enumerate(minibatch_ranges):
+
+                if is_main_process():
+                    print(
+                        f"[update] {update_i}/{args.update_epochs * len(minibatch_ranges)} "
+                    )
+                    update_i += 1
+
+                mb_inds = inds[start:end]
+                next_probe_inds: Optional[np.ndarray] = None
+                if minibatch_idx + 1 < len(minibatch_ranges):
+                    next_start, next_end = minibatch_ranges[minibatch_idx + 1]
+                    next_probe_inds = inds[next_start:next_end]
+                mb_stats = ppo_update_with_micro_batches(
+                    args=args,
+                    policy=policy,
+                    optimizer=optimizer,
+                    b_rgbs=b_rgbs,
+                    b_states=b_states,
+                    b_action_bins=b_action_bins,
+                    b_logprobs=b_logprobs,
+                    b_values=b_values,
+                    b_advantages=b_advantages,
+                    b_returns=b_returns,
+                    minibatch_inds=mb_inds,
+                    post_step_probe_inds=next_probe_inds,
+                )
+                for key, value in mb_stats.items():
+                    epoch_stats[key].append(value)
+                skipped_updates_on_kl += int(mb_stats.get("skipped_on_kl", 0.0) > 0.0)
+                reverted_updates_on_post_step_kl += int(mb_stats.get("reverted_on_post_step_kl", 0.0) > 0.0)
+                minibatch_kl = distributed_max(float(mb_stats.get("approx_kl", 0.0)), device)
+                if mb_stats.get("skipped_on_kl", 0.0) > 0.0 or minibatch_kl > args.target_kl * args.minibatch_target_kl_factor:
+                    stopped_on_minibatch_kl = True
+                    break
+
+            pre_update_approx_kl = distributed_mean(
+                float(np.mean(epoch_stats["approx_kl"])) if epoch_stats["approx_kl"] else 0.0,
+                device,
+            )
+            clipfrac_value = distributed_mean(
+                float(np.mean(epoch_stats["clipfrac"])) if epoch_stats["clipfrac"] else 0.0,
+                device,
+            )
+            pg_loss_value = distributed_mean(
+                float(np.mean(epoch_stats["pg_loss"])) if epoch_stats["pg_loss"] else 0.0,
+                device,
+            )
+            v_loss_value = distributed_mean(
+                float(np.mean(epoch_stats["v_loss"])) if epoch_stats["v_loss"] else 0.0,
+                device,
+            )
+            entropy_value = distributed_mean(
+                float(np.mean(epoch_stats["entropy"])) if epoch_stats["entropy"] else 0.0,
+                device,
+            )
+            approx_kl = distributed_mean(
+                compute_teacher_forcing_approx_kl(
+                    args=args,
+                    policy=policy,
+                    b_rgbs=b_rgbs,
+                    b_states=b_states,
+                    b_action_bins=b_action_bins,
+                    b_logprobs=b_logprobs,
+                    inds=inds,
+                ),
+                device,
+            )
+            if stopped_on_minibatch_kl or approx_kl > args.target_kl:
+                break
+
+        gae_return_mean = distributed_mean(returns.mean().item(), device)
+        metric = {
+            "update": update,
+            "global_step": global_step,
+            "reward_mean": distributed_mean(rewards_buf.mean().item(), device),
+            "return_mean": gae_return_mean,
+            "gae_return_mean": gae_return_mean,
+            "value_mean": distributed_mean(values_buf.mean().item(), device),
+            "explained_variance": ev,
+            "approx_kl": approx_kl,
+            "pre_update_approx_kl": pre_update_approx_kl,
+            "clipfrac": clipfrac_value,
+            "pg_loss": pg_loss_value,
+            "v_loss": v_loss_value,
+            "entropy": entropy_value,
+            "stopped_on_minibatch_kl": stopped_on_minibatch_kl,
+            "skipped_updates_on_kl": skipped_updates_on_kl,
+            "reverted_updates_on_post_step_kl": reverted_updates_on_post_step_kl,
+            "elapsed_hours": (time.time() - train_start_time) / 3600.0,
+        }
+
+        metric.update(gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+
+        if (
+            is_main_process()
+            and train_video_envs is not None
+            and args.save_train_video_freq > 0
+            and update % args.save_train_video_freq == 0
+        ):
+            record_policy_rollout_video(raw_policy, train_video_envs, num_steps=args.num_steps, seed=args.seed + update)
+
+        if update % args.eval_every_updates == 0 or update == num_updates:
+            if is_main_process() and eval_envs is not None:
+
+                avg_success_once = 0.
+
+                # import numpy as np
+                for sparsity in np.linspace(0, 0.9, 3):
+                    set_sparsity(raw_policy, sparsity)
+                    eval_metrics = evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+                    
+                    
+                    success_once = eval_metrics.get("success_once", eval_metrics.get("success", 0.0))
+                    avg_success_once += success_once
+
+                    # if f'{sparsity:.2f}' not in success_once_of_sparsity:
+                    #     success_once_of_sparsity[f'{sparsity:.2f}'] = []
+                    # success_once_of_sparsity[f'{sparsity:.2f}'] += success_once
+
+                    print(f"[eval] update={update} sparsity={sparsity:.2f} eval_success_once={success_once:.4f}")
+
+                # for sparsity, success_list in success_once_of_sparsity.items():
+                #     plt.plot(success_list, label=f'sparsity={sparsity}')
+                # plt.xlabel('Evaluation Count')
+                # plt.ylabel('Success Once')
+                # plt.title('Success Once vs Evaluation Count for Different Sparsity Levels')
+                # plt.legend()
+                # plt.savefig(output_dir / f'eval_success_once_sparsity_curve_update_{update}.png')
+                # plt.clf()
+
+                metric.update({f"eval_{k}": v for k, v in eval_metrics.items()})
+
+                avg_success_once /= 3
+                success_once = avg_success_once
+
+                
+
+                if success_once >= best_success_once:
+                    best_success_once = success_once
+                    torch.save(
+                        {
+                            "policy": raw_policy.state_dict(),
+                            "optimizer": optimizer.state_dict(),
+                            "update": update,
+                            "global_step": global_step,
+                            "best_success_once": best_success_once,
+                        },
+                        output_dir / "best_policy.pt",
+                    )
+
+                if test_video_envs is not None:
+                    evaluate_policy(
+                        raw_policy,
+                        test_video_envs,
+                        min(args.test_video_episodes, max(1, args.test_video_num_envs)),
+                    )
+
+        if is_main_process():
+            metrics_history.append(metric)
+            train_return = metric.get("train_return", float("nan"))
+            print(
+                f"[train] update={update}/{num_updates} step={global_step} "
+                f"reward={metric['reward_mean']:.4f} train_return={train_return:.4f} "
+                f"gae_return={metric['gae_return_mean']:.4f} "
+                f"value_mean={metric['value_mean']:.4f} explained_variance={metric['explained_variance']:.4f} "
+                f"approx_kl={metric['approx_kl']:.5f} eval_success_once={metric.get('eval_success_once', float('nan')):.4f} "
+                f"elapsed_h={metric['elapsed_hours']:.2f}"
+            )
+            save_json(output_dir / "latest_metrics.json", metric)
+            save_metrics_history(output_dir, metrics_history)
+            plot_metrics_history(output_dir, metrics_history)
+            plot_success_time_curve(output_dir, metrics_history)
+            if update % 10 == 0 or update == num_updates:
+                torch.save(
+                    {
+                        "policy": raw_policy.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                        "update": update,
+                        "global_step": global_step,
+                        "best_success_once": best_success_once,
+                    },
+                    output_dir / "latest_policy.pt",
+                )
+
+        reached_zero_success_stop = False
+        max_success_observed = 0.0
+        if is_main_process():
+            reached_zero_success_stop, max_success_observed = should_early_stop_zero_success(
+                metrics_history,
+                threshold_minutes=args.early_stop_zero_success_minutes,
+            )
+        reached_zero_success_stop = broadcast_object(reached_zero_success_stop)
+        max_success_observed = broadcast_object(max_success_observed)
+        if reached_zero_success_stop:
+            stop_reason = "early_stop_zero_success"
+            stopped_early_zero_success = True
+            if is_main_process():
+                print(
+                    "[train] reached zero-success early stop: "
+                    f"{args.early_stop_zero_success_minutes:.1f} minutes elapsed with max_success={max_success_observed:.4f}"
+                )
+            break
+
+        reached_time_limit = metric["elapsed_hours"] >= args.max_runtime_hours
+        reached_time_limit = broadcast_object(reached_time_limit)
+        if reached_time_limit:
+            stop_reason = "time_limit"
+            if is_main_process():
+                print(f"[train] reached time limit: {metric['elapsed_hours']:.2f}h >= {args.max_runtime_hours:.2f}h")
+            break
+
+    if is_main_process():
+        if eval_envs is not None:
+            final_eval_metrics = evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+            save_json(output_dir / "final_eval_metrics.json", final_eval_metrics)
+        save_metrics_history(output_dir, metrics_history)
+        plot_metrics_history(output_dir, metrics_history)
+        plot_success_time_curve(output_dir, metrics_history)
+        train_success_once_summary = summarize_success_series(metrics_history, "train_success_once")
+        train_success_at_end_summary = summarize_success_series(metrics_history, "train_success_at_end")
+        eval_success_once_summary = summarize_success_series(metrics_history, "eval_success_once")
+        eval_success_at_end_summary = summarize_success_series(metrics_history, "eval_success_at_end")
+        last_metric = metrics_history[-1] if metrics_history else {}
+        save_workload_verify_summary(
+            output_dir,
+            {
+                "env_id": args.env_id,
+                "output_dir": str(output_dir),
+                "stop_reason": stop_reason,
+                "stopped_early_zero_success": stopped_early_zero_success,
+                "elapsed_hours": float(last_metric.get("elapsed_hours", 0.0)),
+                "train_success_once_summary": train_success_once_summary,
+                "train_success_at_end_summary": train_success_at_end_summary,
+                "eval_success_once_summary": eval_success_once_summary,
+                "eval_success_at_end_summary": eval_success_at_end_summary,
+                "final_eval_metrics": final_eval_metrics,
+                "num_metric_points": len(metrics_history),
+            },
+        )
+    envs.close()
+    if eval_envs is not None:
+        eval_envs.close()
+    if train_video_envs is not None:
+        train_video_envs.close()
+    if test_video_envs is not None:
+        test_video_envs.close()
+    distributed_barrier()
+
+
+def main() -> None:
+    args = parse_args()
+    if args.mode == "train":
+        try:
+            train(args)
+        finally:
+            cleanup_runtime()
+        return
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_device
+    set_seed(args.seed)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    output_dir = mkdir(Path(args.output_dir) / f"{args.mode}-{time.strftime('%Y%m%d-%H%M%S')}")
+    save_json(output_dir / "args.json", asdict(args))
+    if args.mode == "vla_smoke":
+        run_vla_inference_smoke(args, device, output_dir)
+        return
+    raise ValueError(f"Unsupported mode: {args.mode}")
+
+
+if __name__ == "__main__":
+    main()

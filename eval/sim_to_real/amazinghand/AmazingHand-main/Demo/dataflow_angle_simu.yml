@@ -1,0 +1,19 @@
+nodes:
+  - id: move_angle
+    build: pip install -e AHSimulation
+    path: AHSimulation/examples/finger_angle_control.py
+    inputs:
+      tick: dora/timer/millis/50
+    outputs:
+      - hand_quat
+
+  - id: hand_simulation
+    build: pip install -e AHSimulation
+    path: AHSimulation/AHSimulation/mj_mink_right.py
+    inputs:
+      hand_quat: move_angle/hand_quat
+      tick: dora/timer/millis/2
+      tick_ctrl: dora/timer/millis/10
+    outputs:
+      - mj_joints_pos
+    args: -m quat

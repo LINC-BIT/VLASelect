@@ -1,0 +1,13 @@
+{
+  "stamp": "20260817-141552",
+  "output_base": "/home/zcr/vlaselect/eval/discussion/results/multi_agent_smoke3",
+  "runs": [
+    {
+      "family": "multi_agents",
+      "model_backbone": "multi_agents",
+      "run_dir": "/home/zcr/vlaselect/eval/discussion/results/multi_agent_smoke3/multi_agents",
+      "log_file": "/home/zcr/vlaselect/eval/discussion/results/multi_agent_smoke3/multi_agents/train.log",
+      "status": "completed"
+    }
+  ]
+}

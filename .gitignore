@@ -1,0 +1,57 @@
+# Editor metadata
+.vscode/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Packaging artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
+pip-wheel-metadata/
+
+# Logs and local run outputs
+*.log
+log/
+api/results/
+api/vla_model_interface_examples/log/
+eval/wandb/
+
+# Large local assets and checkpoints
+ckpt/
+eval/ckpt/
+eval/discussion/results/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+debug_rgb.png
+tmp-get-model-size-*.model
+
+# Local scratch files created during editing
+*.new
+
+# Common hidden caches
+.cache/
+
+# Generated experiment outputs
+**/log/
+**/nohup_out/
+**/launch_logs/
+eval/train/edgevla/cl_suite/smoke-*/
+eval/train/edgevla/cl_suite/smoke-edgevla-check/
+eval/train/edgevla/cl_suite/20*/
+
+# Large local-only artifacts
+ckpt/
+eval/ckpt/
+eval/discussion/results/
+eval/train/edgevla/cl_suite/
+tmp-get-model-
+  size-*.model

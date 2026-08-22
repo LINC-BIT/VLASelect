@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DATE=$(date +"%Y-%m-%d")
+TIME=$(date +"%H-%M-%S")
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+OUTPUT_DIR_BASE_DEFAULT="train/vla_adapter_new/vla_rft/outputs/online_rl"
+LOG_DIR="$SCRIPT_DIR/nohup_out/$DATE"
+LOG_FILE="$LOG_DIR/$TIME-vla-rft-online-rl.log"
+
+CUDA_DEVICES=${CUDA_DEVICES:-0}
+TAIL_LOG=${TAIL_LOG:-1}
+LAUNCH_DIRECT=${LAUNCH_DIRECT:-0}
+EXP_NAME=${EXP_NAME:-}
+RUN_NAME=${RUN_NAME_OVERRIDE:-}
+OUTPUT_DIR_BASE=${OUTPUT_DIR_BASE_OVERRIDE:-$OUTPUT_DIR_BASE_DEFAULT}
+LOG_FILE=${LOG_FILE_OVERRIDE:-$LOG_FILE}
+WORLD_MODEL_CHECKPOINT=${WORLD_MODEL_CHECKPOINT_OVERRIDE:-${WORLD_MODEL_CKPT_OVERRIDE:-${WORLD_MODEL_CHECKPOINT:-ckpt/vla_adapter_new/vla_rft/outputs/world_model/latest/best_world_model.pt}}}
+SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-false}
+MAX_RUNTIME_HOURS=${MAX_RUNTIME_HOURS_OVERRIDE:-5.1}
+EARLY_STOP_ZERO_SUCCESS_MINUTES=${EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE:-45000}
+RESUME_FROM=${RESUME_FROM_OVERRIDE:-}
+NUM_ENVS=${NUM_ENVS_OVERRIDE:-256}
+NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
+NUM_STEPS=${NUM_STEPS_OVERRIDE:-50}
+TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
+NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
+UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-2}
+EVAL_EVERY_UPDATES=${EVAL_EVERY_UPDATES_OVERRIDE:-50}
+ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-256}
+EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-256}
+UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-32}
+RUN_SETUP_SMOKE=${RUN_SETUP_SMOKE_OVERRIDE:-false}
+TEST_VIDEO_NUM_ENVS=${TEST_VIDEO_NUM_ENVS_OVERRIDE:-4}
+TEST_VIDEO_EPISODES=${TEST_VIDEO_EPISODES_OVERRIDE:-4}
+
+if [ -n "$EXP_NAME" ]; then
+    if [[ "$EXP_NAME" == */* ]]; then
+        OUTPUT_DIR_BASE="ckpt/${EXP_NAME%/*}"
+        if [ -z "$RUN_NAME" ]; then
+            RUN_NAME="${EXP_NAME##*/}"
+        fi
+    else
+        OUTPUT_DIR_BASE="ckpt"
+        if [ -z "$RUN_NAME" ]; then
+            RUN_NAME="$EXP_NAME"
+        fi
+    fi
+fi
+
+if [ -z "$RUN_NAME" ]; then
+    RUN_NAME="latest"
+fi
+
+mkdir -p "$OUTPUT_DIR_BASE" "$LOG_DIR"
+
+PYTHON_CMD=(
+    python "$SCRIPT_DIR/online_rl.py"
+    --mode train
+    --seed 1
+    --env-id HoldHammerInHandObjectScaleDown1p6-v1
+    --envs-id "['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']"
+    --env-change-time-points "[31,62,96,131,151,163,207,247,271,300]"
+    --control-mode pd_joint_delta_pos
+    --reward-mode normalized_dense
+    --obs-mode rgb+state_dict
+    --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object
+    --output-dir "$OUTPUT_DIR_BASE"
+    --world-model-checkpoint "$WORLD_MODEL_CHECKPOINT"
+    --fbs-policy-checkpoint ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt
+    --total-timesteps "$TOTAL_TIMESTEPS"
+    --num-envs "$NUM_ENVS"
+    --num-eval-envs "$NUM_EVAL_ENVS"
+    --num-steps "$NUM_STEPS"
+    --num-minibatches "$NUM_MINIBATCHES"
+    --update-epochs "$UPDATE_EPOCHS"
+    --head-learning-rate 3e-5
+    --state-learning-rate 3e-5
+    --value-head-learning-rate 3e-5
+    --backbone-learning-rate 3e-5
+    --weight-decay 1e-6
+    --gamma 0.8
+    --gae-lambda 0.9
+    --clip-coef 0.2
+    --ent-coef 0.0
+    --vf-coef 0.5
+    --max-grad-norm 0.5
+    --target-kl 0.2
+    --minibatch-target-kl-factor 1.0
+    --eval-episodes 50
+    --eval-every-updates "$EVAL_EVERY_UPDATES"
+    --max-runtime-hours "$MAX_RUNTIME_HOURS"
+    --rollout-micro-batch-size "$ROLLOUT_MICRO_BATCH_SIZE"
+    --eval-micro-batch-size "$EVAL_MICRO_BATCH_SIZE"
+    --update-micro-batch-size "$UPDATE_MICRO_BATCH_SIZE"
+    --rollout-progress-log-interval 10
+    --freeze-vla-backbone false
+    --backbone-warmup-updates 0
+    --run-setup-smoke "$RUN_SETUP_SMOKE"
+    --save-video "$SAVE_VIDEO"
+    --test-video-num-envs "$TEST_VIDEO_NUM_ENVS"
+    --test-video-episodes "$TEST_VIDEO_EPISODES"
+    --action-dim 16
+    --state-dim 105
+    --early-stop-zero-success-minutes "$EARLY_STOP_ZERO_SUCCESS_MINUTES"
+    --cuda-device "$CUDA_DEVICES"
+    --run-name "$RUN_NAME"
+)
+
+if [ -n "$RESUME_FROM" ]; then
+    PYTHON_CMD+=(--resume-from "$RESUME_FROM")
+fi
+
+if [ "$LAUNCH_DIRECT" = "1" ]; then
+    export CUDA_VISIBLE_DEVICES=$CUDA_DEVICES
+    exec "${PYTHON_CMD[@]}"
+else
+    CUDA_VISIBLE_DEVICES=$CUDA_DEVICES nohup "${PYTHON_CMD[@]}" > "$LOG_FILE" 2>&1 &
+    TRAIN_PID=$!
+    echo "TRAIN_PID=$TRAIN_PID"
+    echo "OUTPUT_DIR=$OUTPUT_DIR_BASE/$RUN_NAME"
+    echo "LOG_FILE=$LOG_FILE"
+    echo "EXP_NAME=$EXP_NAME"
+    echo "WORLD_MODEL_CHECKPOINT=$WORLD_MODEL_CHECKPOINT"
+    if [ "$TAIL_LOG" = "1" ]; then
+        tail --pid="$TRAIN_PID" -f "$LOG_FILE"
+    fi
+fi

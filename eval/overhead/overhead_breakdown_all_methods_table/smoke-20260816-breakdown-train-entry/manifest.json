@@ -1,0 +1,33 @@
+{
+  "suite_stamp": "smoke-20260816-breakdown-train-entry",
+  "table_root": "overhead/overhead_breakdown_all_methods_table",
+  "figure_all_methods_output": "overhead/FIG_BREAKDOWN_ALL_METHODS.pdf",
+  "figure_modules_output": "overhead/FIG_BREAKDOWN_MODULES.pdf",
+  "all_methods_csv": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-train-entry/BREAKDOWN_ALL_METHODS.csv",
+  "modules_csv": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-train-entry/BREAKDOWN_MODULES.csv",
+  "summary_output": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-train-entry/breakdown_summary.json",
+  "panels": [
+    {
+      "family": "edgevla",
+      "suite_manifest": "train/edgevla/cl_suite/smoke-20260816-breakdown-train-entry/manifest.json",
+      "suite_root": "train/edgevla/cl_suite/smoke-20260816-breakdown-train-entry",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-train-entry/launch_logs/edgevla.log",
+      "suite_stamp": "smoke-20260816-breakdown-train-entry",
+      "panel_label": "d",
+      "workload_name": "Humanoid robot",
+      "display_name": "EdgeVLA"
+    }
+  ],
+  "families": [
+    {
+      "family": "edgevla",
+      "suite_manifest": "train/edgevla/cl_suite/smoke-20260816-breakdown-train-entry/manifest.json",
+      "suite_root": "train/edgevla/cl_suite/smoke-20260816-breakdown-train-entry",
+      "launch_log": "overhead/overhead_breakdown_all_methods_table/smoke-20260816-breakdown-train-entry/launch_logs/edgevla.log",
+      "suite_stamp": "smoke-20260816-breakdown-train-entry",
+      "panel_label": "d",
+      "workload_name": "Humanoid robot",
+      "display_name": "EdgeVLA"
+    }
+  ]
+}

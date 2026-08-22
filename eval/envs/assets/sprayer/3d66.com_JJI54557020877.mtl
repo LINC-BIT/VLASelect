@@ -1,0 +1,13 @@
+# Blender 5.0.0 MTL File: 'None'
+# www.blender.org
+
+newmtl 88043065_be50_4557_b82c_4028a225f9d2
+Ns 10.000005
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd textures/3d66-export-JJI54557020877-001.jpg
+map_Bump textures/3d66-export-JJI54557020877-002.jpg

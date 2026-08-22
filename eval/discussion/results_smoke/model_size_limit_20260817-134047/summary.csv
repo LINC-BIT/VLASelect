@@ -1,0 +1,2 @@
+family,model_dir,uses_random_init_fallback,max_sparsity,train_batch_size,original_model_mb,proxy_model_mb,compression_ratio,compatible_layer_count,model_resident_mb_before_train,peak_train_memory_mb,train_overhead_mb,estimated_supported_original_model_mb_at_gpu_total,estimated_supported_original_model_mb_at_gpu_free,status,error
+tinyvla,eval/ckpt/vla_adapter_new/LIBERO-Object,True,0.5,1,17.405609130859375,13.139984130859375,1.324629387487778,0,13.1201171875,73.79541015625,60.67529296875,19140.697745218615,18642.746661958136,completed,

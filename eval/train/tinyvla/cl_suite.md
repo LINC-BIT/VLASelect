@@ -1,0 +1,1 @@
+模仿train/vla_adapter_new的CL Suite，在train/edgevla下实现相同的CL Suite。然后启动CL Suite，仅使用卡1运行ppo_gen。

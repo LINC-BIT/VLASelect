@@ -1,0 +1,42 @@
+<mujoco model="scene">
+    <include file="robot.xml" />
+
+    <visual>
+        <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0" />
+        <rgba haze="0.15 0.25 0.35 1" />
+        <global azimuth="160" elevation="-20" />
+    </visual>
+
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512"
+            height="3072" />
+        <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4"
+            rgb2="0.1 0.2 0.3"
+            markrgb="0.8 0.8 0.8" width="300" height="300" />
+        <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5"
+            reflectance="0.2" />
+    </asset>
+
+    <worldbody>
+        <light pos="0 0 3.5" dir="0 0 -1" directional="true" />
+        <geom name="floor" size="0 0 0.05" pos="0 0 0" type="plane" material="groundplane" />
+
+        <body name="finger1_target" pos="0.044124 0.02289 .1641" quat="8.74095045e-01 -6.36933342e-04  4.85754384e-01 -3.53958262e-04" mocap="true">
+          <geom type="sphere" size=".01" contype="0" conaffinity="0" rgba="1 0. 0. .2"/>
+        </body>
+
+        <body name="finger2_target" pos="0.044124 -0.019192 0.157503" quat="0.87144989 0.06794722 0.4842855  0.03775989" mocap="true">
+          <geom type="sphere" size=".01" contype="0" conaffinity="0" rgba="1 0. 0. .2"/>
+        </body>
+
+        <body name="finger3_target" pos="0.044124 -0.062256 0.143951" quat="0.8622165  0.14364159 0.47914304 0.07982319" mocap="true">
+          <geom type="sphere" size=".01" contype="0" conaffinity="0" rgba="1 0. 0. .2"/>
+        </body>
+
+        <body name="finger4_target" pos="0.086117 0.044181 0.085324" quat="0.94705296 -0.04749806  0.27052938  0.16627835" mocap="true">
+          <geom type="sphere" size=".01" contype="0" conaffinity="0" rgba="1 0. 0. .2"/>
+        </body>
+
+    </worldbody>
+    <include file="keyframes.xml"/>
+</mujoco>

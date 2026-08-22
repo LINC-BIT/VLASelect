@@ -1,0 +1,2 @@
+family,max_sparsity,train_batch_size,budget_gb,estimated_supported_original_model_mb,status
+tinyvla,0.5,1,8.0,1932.1899518966738,completed

@@ -1,0 +1,76 @@
+<?xml version="1.0" ?>
+<robot name="jetcobot">
+
+    <!-- Groups -->
+    <group name="jetcobot_arm">
+        <joint name="dummy_joint"/>
+        <joint name="1_Joint"/>
+        <joint name="2_Joint"/>
+        <joint name="3_Joint"/>
+        <joint name="4_Joint"/>
+        <joint name="5_Joint"/>
+        <joint name="6_Joint"/>
+    </group>
+    
+    <group name="gripper">
+        <link name="gripper_base"/>
+        <link name="gripper_left1"/>
+        <link name="gripper_left2"/>
+        <link name="gripper_left3"/>
+        <link name="gripper_right1"/>
+        <link name="gripper_right2"/>
+        <link name="gripper_right3"/>
+    </group>
+
+    <!-- Group States: home position -->
+    <group_state name="home" group="jetcobot_arm">
+        <joint name="1_Joint" value="0"/>
+        <joint name="2_Joint" value="0"/>
+        <joint name="3_Joint" value="0"/>
+        <joint name="4_Joint" value="0"/>
+        <joint name="5_Joint" value="0"/>
+        <joint name="6_Joint" value="0"/>
+    </group_state>
+
+    <!-- End Effector -->
+    <end_effector name="gripper_eef" parent_link="gripper_base" group="gripper"/>
+
+    <!-- Virtual Joint -->
+    <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="base_link"/>
+
+    <!-- Disable collisions -->
+    <!-- Gripper internal collisions -->
+    <disable_collisions link1="gripper_base" link2="gripper_left1" reason="Default"/>
+    <disable_collisions link1="gripper_base" link2="gripper_left2" reason="Default"/>
+    <disable_collisions link1="gripper_base" link2="gripper_left3" reason="Default"/>
+    <disable_collisions link1="gripper_base" link2="gripper_right1" reason="Default"/>
+    <disable_collisions link1="gripper_base" link2="gripper_right2" reason="Default"/>
+    <disable_collisions link1="gripper_base" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="gripper_left1" link2="gripper_left2" reason="Default"/>
+    <disable_collisions link1="gripper_left1" link2="gripper_left3" reason="Default"/>
+    <disable_collisions link1="gripper_left2" link2="gripper_left3" reason="Default"/>
+    <disable_collisions link1="gripper_right1" link2="gripper_right2" reason="Default"/>
+    <disable_collisions link1="gripper_right1" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="gripper_right2" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="gripper_left1" link2="gripper_right1" reason="Default"/>
+    <disable_collisions link1="gripper_left1" link2="gripper_right2" reason="Default"/>
+    <disable_collisions link1="gripper_left1" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="gripper_left2" link2="gripper_right1" reason="Default"/>
+    <disable_collisions link1="gripper_left2" link2="gripper_right2" reason="Default"/>
+    <disable_collisions link1="gripper_left2" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="gripper_left3" link2="gripper_right1" reason="Default"/>
+    <disable_collisions link1="gripper_left3" link2="gripper_right2" reason="Default"/>
+    <disable_collisions link1="gripper_left3" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="camera_link" link2="gripper_base" reason="Default"/>
+    <disable_collisions link1="camera_link" link2="gripper_left1" reason="Default"/>
+    <disable_collisions link1="camera_link" link2="gripper_left2" reason="Default"/>
+    <disable_collisions link1="camera_link" link2="gripper_left3" reason="Default"/>
+    <disable_collisions link1="camera_link" link2="gripper_right1" reason="Default"/>
+    <disable_collisions link1="camera_link" link2="gripper_right2" reason="Default"/>
+    <disable_collisions link1="camera_link" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="6_Link" link2="gripper_left3" reason="Default"/>
+    <disable_collisions link1="5_Link" link2="gripper_left3" reason="Default"/>
+    <disable_collisions link1="6_Link" link2="gripper_right3" reason="Default"/>
+    <disable_collisions link1="5_Link" link2="gripper_right3" reason="Default"/>
+
+</robot>

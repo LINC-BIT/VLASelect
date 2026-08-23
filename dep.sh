@@ -27,8 +27,9 @@ HF_MANISKILL_DATA_REPO_TYPE=${HF_MANISKILL_DATA_REPO_TYPE:-$HF_CKPT_REPO_TYPE}
 HF_MANISKILL_DATA_REVISION=${HF_MANISKILL_DATA_REVISION:-$HF_CKPT_REVISION}
 HF_MANISKILL_DATA_LIST=${HF_MANISKILL_DATA_LIST:-}
 DOWNLOAD_MANISKILL_DATA=${DOWNLOAD_MANISKILL_DATA:-1}
-CONTAINER_MS_ASSET_DIR=${CONTAINER_MS_ASSET_DIR:-/root/.maniskill}
-CONTAINER_MANISKILL_DATA_DIR=${CONTAINER_MANISKILL_DATA_DIR:-$CONTAINER_MS_ASSET_DIR/data}
+CONTAINER_HOME=${CONTAINER_HOME:-}
+CONTAINER_MS_ASSET_DIR=${CONTAINER_MS_ASSET_DIR:-}
+CONTAINER_MANISKILL_DATA_DIR=${CONTAINER_MANISKILL_DATA_DIR:-}
 HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-120}
 
 log() {
@@ -74,6 +75,22 @@ is_small_image_type() {
             return 1
             ;;
     esac
+}
+
+resolve_container_paths() {
+    if [[ -z "$CONTAINER_HOME" ]]; then
+        local image_home
+        image_home=$(docker image inspect "$DOCKER_IMAGE" --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | awk -F= '$1=="HOME" {print substr($0, 6); exit}')
+        CONTAINER_HOME=${image_home:-/root}
+    fi
+
+    if [[ -z "$CONTAINER_MS_ASSET_DIR" ]]; then
+        CONTAINER_MS_ASSET_DIR="$CONTAINER_HOME/.maniskill"
+    fi
+
+    if [[ -z "$CONTAINER_MANISKILL_DATA_DIR" ]]; then
+        CONTAINER_MANISKILL_DATA_DIR="$CONTAINER_MS_ASSET_DIR/data"
+    fi
 }
 
 container_has_small_image_runtime() {
@@ -527,6 +544,7 @@ fi
 resolve_docker_image
 check_nvidia_runtime
 pull_image
+resolve_container_paths
 download_hf_checkpoints
 remove_existing_container
 ensure_container

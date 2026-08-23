@@ -449,7 +449,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 - **Minimum working example**:
   
-  We provide an example implementation in `api/vla_model_interface_examples/vla_adapter_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]]()
+  We provide an example implementation in `api/vla_model_interface_examples/vla_adapter_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]](imgs/3.1.1-mwe.png)
     ```bash
     # completed within 5 minutes
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
@@ -556,7 +556,7 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
     ```
 
 **Minimum working example**: 
-- **Comparing all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]]()
+- **Comparing all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.3-mwe.png)
   ```bash
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
   ```
@@ -566,7 +566,7 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
   ```
 
 **Full run**:
-- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.3-mwe.png)
+- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]]()
   ```bash
   bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
   ```

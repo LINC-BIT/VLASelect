@@ -66,39 +66,80 @@ If the artifact is distributed as an archived package instead of a git repositor
     - RHEL: RHEL 8 or above with Docker and kernel 4.18+. If GPU is used, install a compatible NVIDIA driver and CUDA 12.x or above.
 
 - **Dependency installation steps**
-  - Example desktop: a Lenovo Legion T5 26IAB7 desktop running Ubuntu 22.04 LTS with kernel 5.15.0-78-generic, 16 GB RAM, an Intel Core i7-12700 CPU, and one NVIDIA RTX 3080 GPU with 12 GB VRAM and 13.0 CUDA version.
+  - Example desktop: a Lenovo Legion T5 26IAB7 desktop running Ubuntu 22.04 LTS with kernel 5.15.0-78-generic, 16 GB RAM, an Intel Core i7-12700 CPU, and one NVIDIA RTX 3080 Ti GPU with 12 GB VRAM and 13.0 CUDA version.
     1. Install Docker Engine on the host machine by following the Ubuntu guide: https://docs.docker.com/engine/install/ubuntu/.
 
        1.1 Open a terminal and run the following commands to add the Docker official GPG key and Ubuntu `apt` repository.
+        ```bash
+        # Add Docker's official GPG key:
+        sudo apt update
+        sudo apt install ca-certificates curl
+        sudo install -m 0755 -d /etc/apt/keyrings
+        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+        sudo chmod a+r /etc/apt/keyrings/docker.asc
 
+        # Add the repository to Apt sources:
+        sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+        Types: deb
+        URIs: https://download.docker.com/linux/ubuntu
+        Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+        Components: stable
+        Architectures: $(dpkg --print-architecture)
+        Signed-By: /etc/apt/keyrings/docker.asc
+        EOF
+
+        sudo apt update
+        ```
        ![1.1.1](/imgs/1.1.1.png)
 
        
        1.2 Install `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin`, and `docker-compose-plugin`.
-
+        ```bash
+        sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        ```
        ![1.2.1](/imgs/1.2.1.png)
 
 
        1.3 Verify that Docker is installed correctly. If the output matches the figure below without errors, it is correct.
-
+        ```bash
+        sudo systemctl status docker --no-pager
+        sudo docker run hello-world
+        ```
        ![1.3](/imgs/1.3.png)
 
     2. Install `nvidia-container-toolkit` by following the official guide: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html.
 
        2.1 Add the NVIDIA Container Toolkit `apt` repository on Ubuntu.
+        ```bash
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg2
 
+        curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+          | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+
+        curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+          | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+          | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+        sudo apt-get update
+        ```
        ![2.1](/imgs/2.1.png)
 
        2.2 Install `nvidia-container-toolkit`.
-
-       ![2.2](/imgs/2.2.png)
-
+        ```bash
+        sudo apt-get install -y nvidia-container-toolkit
+        ```
+        ![2.2](/imgs/2.2.png)
        2.3 Run `sudo nvidia-ctk runtime configure --runtime=docker` to configure the Docker runtime.
-
+        ```bash
+        sudo nvidia-ctk runtime configure --runtime=docker
+        ```
        ![2.3](/imgs/2.3.png)
 
        2.4 Restart the Docker service to apply the NVIDIA runtime configuration and verify GPU access from Docker.
-
+        ```bash
+        sudo systemctl restart docker
+        ```
        ![2.4](/imgs/2.4.png)
 
     3. Run `bash dep.sh` in the repository root to pull the image and create the container.
@@ -107,7 +148,9 @@ If the artifact is distributed as an archived package instead of a git repositor
        cd <VLASelect directory>
        bash dep.sh
        ```
+       ![3.1](/imgs/3.1.png)
        If successful, this step generates `start_docker.sh`.
+       ![3.2](/imgs/3.2.png)
 
     4. Start the container and check whether PyTorch works correctly. If the machine supports a GPU, also check `torch.cuda.is_available()`.
 
@@ -118,8 +161,9 @@ If the artifact is distributed as an archived package instead of a git repositor
        python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA not available')"
        ```
       If everything works correctly, the output should look like the following.
-
-    5. If PyTorch has issues, visit the official PyTorch installation page to get the proper download and installation commands: https://pytorch.org/get-started/locally/.
+      ![4.1](/imgs/4.1.png)
+    5. If PyTorch has issues, visit the official PyTorch installation page to get the proper download and installation commands: https://pytorch.org/get-started/locally/. 例如，我要为本机安装cuda 124版本（小于本机cuda版本）的pytorch，其运行如下所示。
+      ![5.1](/imgs/5.1.png)
 
 #### 2.1.3 One-click run
 We provide a one-click script `run.sh` in the root directory of `eval`, which can automatically run the experiments involved in the main claims of the paper. The specific reproducing steps of each experiment are described in the following subsections.
@@ -566,7 +610,7 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
   ```
 
 **Full run**:
-- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]]()
+- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.3-mwe.png)
   ```bash
   bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
   ```

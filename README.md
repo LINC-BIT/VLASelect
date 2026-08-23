@@ -384,6 +384,8 @@ bash run_multi_agent.sh
   - **Discussion experiments**: the ICL discussion takes up to 5 hours in total. The other discussion scripts except sim-to-real typically take up to 15 minutes per run with about 16-32 GB of GPU memory. The sim-to-real discussion mainly depends on the manual real-robot execution process, and its GPU memory usage is about 16 GB.
 - **MWE**: due to the reduced runtime and batch sizes, all MWE experiments typically finish within 5 minutes and use about 8-20 GB of GPU memory.
 
+
+
 ## 3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 
 VLASelect can support various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning), and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
@@ -564,7 +566,7 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
   ```
 
 **Full run**:
-- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]]()
+- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.3-mwe.png)
   ```bash
   bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
   ```
@@ -908,3 +910,4 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
   ```bash
   bash api/vla_model_interface_examples/tiny_vla_impl_verify.sh --knowledge-exchange-granularity <granularity>
   ```
+

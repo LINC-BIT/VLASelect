@@ -17,10 +17,18 @@ DOCKER_NETWORK=${DOCKER_NETWORK:-host}
 DOCKER_IPC=${DOCKER_IPC:-host}
 DOCKER_PID=${DOCKER_PID:-host}
 PULL_POLICY=${PULL_POLICY:-always}
+RECREATE=${RECREATE:-0}
 HF_CKPT_REPO=${HF_CKPT_REPO:-cz22edd/vlaselect_test}
 HF_CKPT_REPO_TYPE=${HF_CKPT_REPO_TYPE:-model}
 HF_CKPT_REVISION=${HF_CKPT_REVISION:-main}
 HF_CKPT_LIST=${HF_CKPT_LIST:-}
+HF_MANISKILL_DATA_REPO=${HF_MANISKILL_DATA_REPO:-$HF_CKPT_REPO}
+HF_MANISKILL_DATA_REPO_TYPE=${HF_MANISKILL_DATA_REPO_TYPE:-$HF_CKPT_REPO_TYPE}
+HF_MANISKILL_DATA_REVISION=${HF_MANISKILL_DATA_REVISION:-$HF_CKPT_REVISION}
+HF_MANISKILL_DATA_LIST=${HF_MANISKILL_DATA_LIST:-}
+DOWNLOAD_MANISKILL_DATA=${DOWNLOAD_MANISKILL_DATA:-1}
+CONTAINER_MS_ASSET_DIR=${CONTAINER_MS_ASSET_DIR:-/root/.maniskill}
+CONTAINER_MANISKILL_DATA_DIR=${CONTAINER_MANISKILL_DATA_DIR:-$CONTAINER_MS_ASSET_DIR/data}
 HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-120}
 
 log() {
@@ -137,11 +145,28 @@ pull_image() {
     fi
 }
 
+container_exists() {
+    docker ps -a --format '{{.Names}}' | grep -Fxq "$CONTAINER_NAME"
+}
+
 remove_existing_container() {
-    if docker ps -a --format '{{.Names}}' | grep -Fxq "$CONTAINER_NAME"; then
+    if [[ "$RECREATE" != "1" ]]; then
+        return
+    fi
+
+    if container_exists; then
         log "removing existing container: $CONTAINER_NAME"
         docker rm -f "$CONTAINER_NAME" >/dev/null
     fi
+}
+
+ensure_container() {
+    if container_exists; then
+        log "reusing existing container: $CONTAINER_NAME"
+        return
+    fi
+
+    create_container
 }
 
 default_hf_ckpt_paths() {
@@ -181,6 +206,30 @@ iter_hf_ckpt_paths() {
         return
     fi
     default_hf_ckpt_paths
+}
+
+default_hf_maniskill_data_paths() {
+    cat <<'PATHS_EOF'
+partnet_mobility/**
+PATHS_EOF
+}
+
+iter_hf_maniskill_data_paths() {
+    if [[ -n "$HF_MANISKILL_DATA_LIST" ]]; then
+        if [[ ! -f "$HF_MANISKILL_DATA_LIST" ]]; then
+            echo "[dep.sh] ManiSkill data list file not found: $HF_MANISKILL_DATA_LIST" >&2
+            exit 1
+        fi
+        cat "$HF_MANISKILL_DATA_LIST"
+        return
+    fi
+
+    if [[ -f "$ROOT_DIR/hf_maniskill_data_paths.txt" ]]; then
+        cat "$ROOT_DIR/hf_maniskill_data_paths.txt"
+        return
+    fi
+
+    default_hf_maniskill_data_paths
 }
 
 require_hf_downloader() {
@@ -275,6 +324,81 @@ snapshot_download(
 PY
 }
 
+ensure_container_maniskill_dirs() {
+    docker exec "$CONTAINER_NAME" bash -lc "mkdir -p '$CONTAINER_MANISKILL_DATA_DIR'"
+}
+
+download_hf_maniskill_data() {
+    if [[ "$DOWNLOAD_MANISKILL_DATA" != "1" || -z "$HF_MANISKILL_DATA_REPO" ]]; then
+        return
+    fi
+
+    local started_here=0
+    local status=0
+    local patterns_json
+
+    patterns_json=$(iter_hf_maniskill_data_paths | python3 -c 'import json, sys; print(json.dumps([line.strip() for line in sys.stdin if line.strip()]))')
+
+    if [[ -z $(docker ps --format '{{.Names}}' | grep -Fx "$CONTAINER_NAME" || true) ]]; then
+        log "starting container temporarily to download ManiSkill assets"
+        docker start "$CONTAINER_NAME" >/dev/null
+        started_here=1
+    fi
+
+    if ! docker exec "$CONTAINER_NAME" bash -lc "python -c 'import huggingface_hub'" >/dev/null 2>&1; then
+        log "installing container Python package: huggingface_hub"
+        docker exec "$CONTAINER_NAME" bash -lc "python -m pip install -U 'huggingface_hub'" || status=$?
+    fi
+
+    if [[ "$status" -eq 0 ]]; then
+        ensure_container_maniskill_dirs || status=$?
+    fi
+
+    if [[ "$status" -eq 0 ]]; then
+        log "downloading ManiSkill assets from Hugging Face repo: $HF_MANISKILL_DATA_REPO"
+        log "target directory: $CONTAINER_MANISKILL_DATA_DIR (inside container)"
+        if [[ -n "$HF_MANISKILL_DATA_LIST" ]]; then
+            log "ManiSkill data list: $HF_MANISKILL_DATA_LIST"
+        elif [[ -f "$ROOT_DIR/hf_maniskill_data_paths.txt" ]]; then
+            log "ManiSkill data list: $ROOT_DIR/hf_maniskill_data_paths.txt"
+        else
+            log "ManiSkill data list: built into dep.sh"
+        fi
+
+        docker exec             -e HF_MANISKILL_DATA_REPO="$HF_MANISKILL_DATA_REPO"             -e HF_MANISKILL_DATA_REPO_TYPE="$HF_MANISKILL_DATA_REPO_TYPE"             -e HF_MANISKILL_DATA_REVISION="$HF_MANISKILL_DATA_REVISION"             -e HF_MANISKILL_DATA_LOCAL_DIR="$CONTAINER_MANISKILL_DATA_DIR"             -e HF_MANISKILL_DATA_PATTERNS_JSON="$patterns_json"             -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT"             -e HF_TOKEN             -e HTTP_PROXY             -e HTTPS_PROXY             -e ALL_PROXY             -e NO_PROXY             "$CONTAINER_NAME"             bash -lc "python - <<'PY_HF_DATA'
+import json
+import os
+from pathlib import Path
+from huggingface_hub import snapshot_download
+
+repo_id = os.environ['HF_MANISKILL_DATA_REPO']
+repo_type = os.environ['HF_MANISKILL_DATA_REPO_TYPE']
+revision = os.environ['HF_MANISKILL_DATA_REVISION']
+local_dir = Path(os.environ['HF_MANISKILL_DATA_LOCAL_DIR'])
+patterns = json.loads(os.environ['HF_MANISKILL_DATA_PATTERNS_JSON'])
+token = os.environ.get('HF_TOKEN') or None
+
+snapshot_download(
+    repo_id=repo_id,
+    repo_type=repo_type,
+    revision=revision,
+    local_dir=local_dir,
+    allow_patterns=patterns,
+    token=token,
+)
+PY_HF_DATA" || status=$?
+    fi
+
+    if [[ "$started_here" == "1" ]]; then
+        log "stopping container after ManiSkill asset download"
+        docker stop "$CONTAINER_NAME" >/dev/null || true
+    fi
+
+    if [[ "$status" -ne 0 ]]; then
+        return "$status"
+    fi
+}
+
 ensure_container_python_package() {
     local module_name="$1"
     local package_spec="$2"
@@ -328,6 +452,7 @@ create_container() {
         -e PYTHONUNBUFFERED=1 \
         -e VLASELECT_REPO_DIR="$CONTAINER_REPO_DIR" \
         -e VLASELECT_VENV_DIR="$CONTAINER_VENV_DIR" \
+        -e MS_ASSET_DIR="$CONTAINER_MS_ASSET_DIR" \
         -v "$HOST_REPO_DIR:$CONTAINER_REPO_DIR" \
         -w "$CONTAINER_REPO_DIR" \
         "$DOCKER_IMAGE" \
@@ -374,12 +499,14 @@ print_summary() {
 [dep.sh] environment preparation is complete.
 [dep.sh] container name : $CONTAINER_NAME
 [dep.sh] image type     : $TYPE
+[dep.sh] recreate mode  : $RECREATE
 [dep.sh] docker image   : $DOCKER_IMAGE
 [dep.sh] container venv : $CONTAINER_VENV_DIR
 [dep.sh] gpu access     : all GPUs
 [dep.sh] network mode   : $DOCKER_NETWORK
 [dep.sh] ipc mode       : $DOCKER_IPC
 [dep.sh] pid mode       : $DOCKER_PID
+[dep.sh] ManiSkill data : $CONTAINER_NAME:$CONTAINER_MANISKILL_DATA_DIR
 [dep.sh] repo mount     : $HOST_REPO_DIR -> $CONTAINER_REPO_DIR
 [dep.sh] start script   : $START_SCRIPT_PATH
 
@@ -402,7 +529,8 @@ check_nvidia_runtime
 pull_image
 download_hf_checkpoints
 remove_existing_container
-create_container
+ensure_container
 install_container_runtime_dependencies
+download_hf_maniskill_data
 generate_start_script
 print_summary

@@ -208,8 +208,12 @@ class Args:
     """feedback strength from small model to large model before regeneration"""
     small_model_regeneration_increment_ratio: float = 1.0
     """fraction of selected channels replaced during regeneration. 1.0 means full reselection, 0.0 means keep previous subnet"""
+    small_model_training_variant: str = 'pruned'
+    """how to realize the trainable small model: pruned (static compact subnet) or frozen (gate-masked FBS model)"""
     small_model_ab_strategy: Optional[str] = None
     """optional ablation strategy for small-model channel selection: random, inverse, or default"""
+    small_model_regeneration_ab_strategy: Optional[str] = None
+    """optional ablation strategy used only during regeneration/swapping; None reuses small_model_ab_strategy"""
     update_feature_aggregator_lr: float = 0.
 
     data_manager_port: str = 8000
@@ -980,6 +984,51 @@ def collect_sample_for_small_model_generation(args, large_agent, small_agent, ev
     raise NotImplementedError(f"Unknown small_model_generation_strategy: {args.small_model_generation_strategy}")
 
 
+def resolve_regeneration_ab_strategy(args) -> Optional[str]:
+    if args.small_model_regeneration_ab_strategy is not None:
+        return args.small_model_regeneration_ab_strategy
+    return args.small_model_ab_strategy
+
+
+def set_trainable_small_model_sparsity(model: nn.Module, k: float) -> None:
+    for module in model.modules():
+        k_takes_all = getattr(module, 'k_takes_all', None)
+        if k_takes_all is not None and hasattr(k_takes_all, 'k'):
+            k_takes_all.k = k
+
+
+def build_initial_trainable_small_model(args, large_agent, eval_envs, env_kwargs, device):
+    sample_for_gen_small_model = collect_sample_for_small_model_generation(
+        args=args,
+        large_agent=large_agent,
+        small_agent=None,
+        eval_envs=eval_envs,
+        env_kwargs=env_kwargs,
+        device=device,
+    )
+
+    if args.small_model_training_variant == 'pruned':
+        from ours.pretrain_fbs_model.main import generate_small_cnn_with_verify
+
+        return generate_small_cnn_with_verify(
+            large_agent,
+            args.max_sparsity,
+            sample_for_gen_small_model,
+            lambda model, sample: model(sample),
+            return_pruning_info=True,
+            ab_strategy=args.small_model_ab_strategy,
+        )
+
+    if args.small_model_training_variant == 'frozen':
+        small_agent = deepcopy(large_agent)
+        set_trainable_small_model_sparsity(small_agent, args.max_sparsity)
+        return small_agent, None
+
+    raise NotImplementedError(
+        f"Unknown small_model_training_variant: {args.small_model_training_variant}"
+    )
+
+
 def should_regenerate_small_model_before_rollout(
     schedule: str,
     iteration: int,
@@ -1140,7 +1189,7 @@ def regenerate_small_model_in_place(
         return_pruning_info=True,
         previous_pruning_info=current_pruning_info,
         regeneration_increment_ratio=args.small_model_regeneration_increment_ratio,
-        ab_strategy=args.small_model_ab_strategy,
+        ab_strategy=resolve_regeneration_ab_strategy(args),
     )
     if args.small_model_regeneration_increment_ratio < 1.0:
         inherit_small_cnn_retained_channels(
@@ -1579,23 +1628,13 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
     # generate small model
     print(f'generate small model for online RL')
-    from ours.pretrain_fbs_model.main import generate_small_cnn_with_verify
     large_agent = agent
-    sample_for_gen_small_model = collect_sample_for_small_model_generation(
+    agent, current_small_model_pruning_info = build_initial_trainable_small_model(
         args=args,
         large_agent=large_agent,
-        small_agent=None,
         eval_envs=eval_envs,
         env_kwargs=env_kwargs,
         device=device,
-    )
-    agent, current_small_model_pruning_info = generate_small_cnn_with_verify(
-        large_agent,
-        args.max_sparsity,
-        sample_for_gen_small_model,
-        lambda model, s: model(s),
-        return_pruning_info=True,
-        ab_strategy=args.small_model_ab_strategy,
     )
     for m in agent.modules():
         if isinstance(m, nn.ReLU):
@@ -1658,12 +1697,17 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     best_success_end = 0.
     last_eval_metrics = None
     current_success_end = None
-    feedback_schedule = resolve_small_model_feedback_schedule(args)
+    if args.small_model_training_variant == 'frozen':
+        if args.small_model_feedback_schedule not in {None, 'once'} or args.small_model_regeneration_schedule != 'once':
+            print('frozen small-model ablation disables knowledge accumulation and neuron swapping; forcing feedback/regeneration schedules to once')
+        feedback_schedule = 'once'
+        regeneration_schedule = 'once'
+    else:
+        feedback_schedule = resolve_small_model_feedback_schedule(args)
+        regeneration_schedule = args.small_model_regeneration_schedule
     success_end_at_last_small_model_feedback = None
     success_end_at_last_small_model_regeneration = None
     iteration_at_last_small_model_regeneration = None
-
-    from ours.libs.train_with_fbs.lib import set_sparsity
 
     for iteration in range(start_iter_idx, args.num_iterations + 1):
         switched_env, should_stop_for_schedule, elapsed_minutes = maybe_switch_envs()
@@ -1696,7 +1740,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             
             for test_sparsity in sparsity_list:
                 test_sparsity_str = f'{test_sparsity:.4f}'
-                set_sparsity(agent, test_sparsity)
+                set_trainable_small_model_sparsity(agent, test_sparsity)
 
                 stime = time.perf_counter()
                 eval_obs, _ = eval_envs.reset()
@@ -1846,7 +1890,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             success_end_at_last_small_model_feedback = current_success_end
 
         if should_regenerate_small_model_before_rollout(
-            args.small_model_regeneration_schedule,
+            regeneration_schedule,
             iteration,
             start_iter_idx,
             current_success_end=current_success_end,

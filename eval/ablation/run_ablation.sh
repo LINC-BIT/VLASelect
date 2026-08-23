@@ -163,7 +163,7 @@ neuron_grained_scaling_up:neuron_grained
 scaling_down_freezing_vs_pruning:pruning
 scaling_down_freezing_vs_pruning:freezing
 neuron_swapping:with_swapping
-neuron_swapping:without_swapping
+neuron_swapping:random_swapping
 knowledge_accumulation:selective_accumulation
 knowledge_accumulation:no_accumulation
 knowledge_accumulation:accumulate_every_rollout
@@ -223,7 +223,7 @@ KEYS
         neuron_swapping)
             cat <<'KEYS'
 neuron_swapping:with_swapping
-neuron_swapping:without_swapping
+neuron_swapping:random_swapping
 KEYS
             ;;
         knowledge_accumulation)
@@ -407,24 +407,24 @@ panels = [
             {
                 "curve_id": "pruning",
                 "label": "Pruning",
-                "color": "#C44E52",
-                "linestyle": "-",
+                "color": "#4D4D4D",
+                "linestyle": "--",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/pruning/[agent]",
                 "metric_source": "tensorboard",
                 "metric_key": "eval/success_end",
-                "notes": "Compressed small model with max_sparsity=0.8.",
-                "changed_options": [],
+                "notes": "Train a structurally pruned small model with the proposed scaling-up policy but without neuron swapping or knowledge accumulation.",
+                "changed_options": ["small_model_training_variant"],
             },
             {
                 "curve_id": "freezing",
                 "label": "Freezing",
-                "color": "#4D4D4D",
-                "linestyle": "--",
+                "color": "#C44E52",
+                "linestyle": "-",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/freezing/[agent]",
                 "metric_source": "tensorboard",
                 "metric_key": "eval/success_end",
-                "notes": "No pruning path, using max_sparsity=0.0 as the large-model frozen-size baseline.",
-                "changed_options": ["max_sparsity"],
+                "notes": "Train a gate-masked small model by freezing inactive neurons instead of structurally pruning them.",
+                "changed_options": [],
             },
         ],
     },
@@ -435,6 +435,17 @@ panels = [
         "workload_name": "Single-arm robot",
         "curves": [
             {
+                "curve_id": "random_swapping",
+                "label": "Random swapping",
+                "color": "#4D4D4D",
+                "linestyle": "--",
+                "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/random_swapping/[agent]",
+                "metric_source": "tensorboard",
+                "metric_key": "eval/success_end",
+                "notes": "Repeated regeneration with randomly selected swapped-in neurons.",
+                "changed_options": ["small_model_regeneration_ab_strategy"],
+            },
+            {
                 "curve_id": "with_swapping",
                 "label": "With swapping",
                 "color": "#C44E52",
@@ -442,19 +453,8 @@ panels = [
                 "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/with_swapping/[agent]",
                 "metric_source": "tensorboard",
                 "metric_key": "eval/success_end",
-                "notes": "Repeated regeneration with partial channel replacement.",
+                "notes": "Repeated regeneration with neuron-index-guided partial channel replacement.",
                 "changed_options": [],
-            },
-            {
-                "curve_id": "without_swapping",
-                "label": "Without swapping",
-                "color": "#4D4D4D",
-                "linestyle": "--",
-                "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/without_swapping/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
-                "notes": "One-shot small model without iterative swapping.",
-                "changed_options": ["small_model_regeneration_schedule"],
             },
         ],
     },
@@ -592,16 +592,16 @@ launch_curve() {
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:pruning)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_training_variant pruned --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:freezing)
-            cmd+=(--max-sparsity 0.0 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_training_variant frozen --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_swapping:with_swapping)
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
-        neuron_swapping:without_swapping)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule once --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+        neuron_swapping:random_swapping)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --small_model_regeneration_ab_strategy random --reset_optimizer_after_regeneration)
             ;;
         knowledge_accumulation:selective_accumulation)
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
@@ -634,7 +634,7 @@ resolve_curve_gpu_map() {
         scaling_down_freezing_vs_pruning:pruning
         scaling_down_freezing_vs_pruning:freezing
         neuron_swapping:with_swapping
-        neuron_swapping:without_swapping
+        neuron_swapping:random_swapping
         knowledge_accumulation:no_accumulation
         knowledge_accumulation:accumulate_every_rollout
         knowledge_accumulation:selective_accumulation
@@ -723,7 +723,7 @@ launch_selected_curves() {
             scaling_down_freezing_vs_pruning:pruning
             scaling_down_freezing_vs_pruning:freezing
             neuron_swapping:with_swapping
-            neuron_swapping:without_swapping
+            neuron_swapping:random_swapping
             knowledge_accumulation:no_accumulation
             knowledge_accumulation:accumulate_every_rollout
             knowledge_accumulation:selective_accumulation

@@ -99,14 +99,14 @@ PANEL_SPECS = [
         "title": "(c) Scaling down by freezing vs pruning",
         "curves": [
             {
-                "curve_id": "freezing",
-                "label": "Freezing",
+                "curve_id": "pruning",
+                "label": "Pruning",
                 "color": "#4D4D4D",
                 "linestyle": "--",
             },
             {
-                "curve_id": "pruning",
-                "label": "Pruning",
+                "curve_id": "freezing",
+                "label": "Freezing",
                 "color": "#C44E52",
                 "linestyle": "-",
             },
@@ -118,8 +118,8 @@ PANEL_SPECS = [
         "title": "(d) Neuron swapping",
         "curves": [
             {
-                "curve_id": "without_swapping",
-                "label": "Without swapping",
+                "curve_id": "random_swapping",
+                "label": "Random swapping",
                 "color": "#4D4D4D",
                 "linestyle": "--",
             },
@@ -205,15 +205,15 @@ VIS_GROUP_SPECS = [
     {
         "group_name": "neuron_swapping",
         "slots": [
-            ("random", "neuron_swapping", "without_swapping"),
+            ("random", "neuron_swapping", "random_swapping"),
             ("ours", "neuron_swapping", "with_swapping"),
         ],
     },
     {
         "group_name": "scaling down",
         "slots": [
-            ("pruning", "scaling_down_freezing_vs_pruning", "freezing"),
-            ("ours", "scaling_down_freezing_vs_pruning", "pruning"),
+            ("pruning", "scaling_down_freezing_vs_pruning", "pruning"),
+            ("ours", "scaling_down_freezing_vs_pruning", "freezing"),
         ],
     },
     {

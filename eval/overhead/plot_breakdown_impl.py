@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -101,6 +102,13 @@ MODULE_SPECS = [
     ("online_rl_completion_seconds", "Online RL", "#E45756"),
 ]
 NO_DATA_TEXT = "No data"
+
+
+def available_sans_serif_fonts() -> list[str]:
+    candidates = ["Arial", "DejaVu Sans", "Liberation Sans", "Noto Sans", "sans-serif"]
+    installed = {entry.name for entry in font_manager.fontManager.ttflist}
+    matched = [name for name in candidates if name in installed]
+    return matched or ["DejaVu Sans", "Liberation Sans", "sans-serif"]
 
 
 @dataclass
@@ -488,7 +496,8 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
 
     plt.rcParams.update(
         {
-            "font.family": "Arial",
+            "font.family": "sans-serif",
+            "font.sans-serif": available_sans_serif_fonts(),
             "font.size": 16,
             "axes.labelsize": 16,
             "xtick.labelsize": 16,

@@ -4,6 +4,8 @@ set -euo pipefail
 DATE=$(date +"%Y-%m-%d")
 TIME=$(date +"%H-%M-%S")
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+ROOT_DIR=$(cd "$SCRIPT_DIR/../../../.." && pwd)
+export MS_ASSET_DIR="${MS_ASSET_DIR:-$ROOT_DIR/eval/datasets}"
 OURS_DIR="train/tinyvla/ours"
 LOG_DIR="$OURS_DIR/nohup_out/$DATE"
 LOG_FILE="$LOG_DIR/$TIME-edgevla-online-rl-cl.log"

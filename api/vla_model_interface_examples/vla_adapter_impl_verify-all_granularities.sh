@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
 VERIFY_SCRIPT="$SCRIPT_DIR/vla_adapter_impl_verify.sh"
-RESULTS_DIR="$ROOT_DIR/api/results/knowledge_exchange"
+RESULTS_DIR="$ROOT_DIR/api/results/vla_adapter/knowledge_exchange"
 
 # Use one GPU for the whole serial run. CUDA_DEVICE_OVERRIDE takes precedence;
 # if a multi-GPU value is supplied, use its first device for this serial run.
@@ -43,6 +43,7 @@ for granularity in "${KNOWLEDGE_EXCHANGE_GRANULARITIES[@]}"; do
   run_granularity "$granularity"
 done
 
-python "$ROOT_DIR/api/plot_knowledge_exchange.py"
+python "$ROOT_DIR/api/plot_knowledge_exchange.py" \
+  --results-dir "$RESULTS_DIR" \
+  --output "$RESULTS_DIR/training_accuracy_curve.png"
 echo "[granularity] plot=$RESULTS_DIR/training_accuracy_curve.png"
-

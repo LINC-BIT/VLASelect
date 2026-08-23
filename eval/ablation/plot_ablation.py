@@ -634,6 +634,12 @@ def main(argv: list[str] | None = None) -> None:
 
     manifest, manifest_path = load_manifest(args.manifest)
     plot_panels(manifest, manifest_path)
+    print(f"Saved manifest: {manifest_path}")
+    print(f"Saved PDF: {FIGURE_PATH}")
+    print(f"Saved PNG: {FIGURE_PNG_PATH}")
+    print(f"Saved SVG: {FIGURE_SVG_PATH}")
+    print(f"Saved CSV: {SUMMARY_CSV_PATH}")
+    print(f"Saved JSON: {SUMMARY_JSON_PATH}")
 
 
 if __name__ == "__main__":

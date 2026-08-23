@@ -46,14 +46,14 @@ If the artifact is distributed as an archived package instead of a git repositor
 #### 2.1.2 Install dependencies
 
 - **Hardware**
-  - **Recommended environments**: A device with at least 128 GB of RAM, one NVIDIA GPU with more than 60 GB of device memory (e.g., NVIDIA A100), and two CPUs with at least 64 cores each (e.g., Intel(R) Xeon(R) Gold 6430). 
+  - **Recommended environments**: A device with at least 128 GB of RAM, one NVIDIA GPU with more than 60 GB of device memory (e.g., NVIDIA A100), two CPUs with at least 64 cores each (e.g., Intel(R) Xeon(R) Gold 6430), and 150 GB of free disk space.
   - **Minimum requirements**:
-    - Single-CPU server: 16-32 GB RAM and one 8-core server CPU (e.g., Intel Xeon E-2388G).
-    - GPU-equipped server: 32-64 GB RAM, one 12-core server CPU (e.g., Intel Xeon Silver 4310), and one mid-range NVIDIA GPU with 8-12 GB VRAM (e.g., NVIDIA RTX 3060).
-    - CPU-only desktop: 16-32 GB RAM and one 16-core desktop CPU with integrated graphics (e.g., Dell OptiPlex 7010 Plus Tower with Intel Core i7-13700).
-    - GPU-equipped desktop: 16-32 GB RAM, one 20-core desktop CPU (e.g., Intel Core i7-14700), and one consumer NVIDIA GPU with 8 GB VRAM (e.g., Dell XPS Desktop 8960 with RTX 4060).
-    - CPU-only laptop: 16-32 GB RAM and one 12-core mobile CPU with integrated graphics (e.g., Lenovo ThinkPad X1 Carbon Gen 12 with Intel Core Ultra 7 155U).
-    - GPU-equipped laptop: 16-32 GB RAM, one 16-core mobile CPU (e.g., Intel Core i7-14650HX), and one NVIDIA laptop GPU with 8 GB VRAM (e.g., Lenovo Legion 5i Gen 9 with RTX 4060).
+    - Single-CPU server: 16-32 GB RAM, one 8-core server CPU (e.g., Intel Xeon E-2388G), and at least 80 GB of free disk space.
+    - GPU-equipped server: 32-64 GB RAM, one 12-core server CPU (e.g., Intel Xeon Silver 4310), one mid-range NVIDIA GPU with 8-12 GB VRAM (e.g., NVIDIA RTX 3060), and at least 80 GB of free disk space.
+    - CPU-only desktop: 16-32 GB RAM, one 16-core desktop CPU with integrated graphics (e.g., Dell OptiPlex 7010 Plus Tower with Intel Core i7-13700), and at least 80 GB of free disk space.
+    - GPU-equipped desktop: 16-32 GB RAM, one 20-core desktop CPU (e.g., Intel Core i7-14700), one consumer NVIDIA GPU with 8 GB VRAM (e.g., Dell XPS Desktop 8960 with RTX 4060), and at least 80 GB of free disk space.
+    - CPU-only laptop: 16-32 GB RAM, one 12-core mobile CPU with integrated graphics (e.g., Lenovo ThinkPad X1 Carbon Gen 12 with Intel Core Ultra 7 155U), and at least 80 GB of free disk space.
+    - GPU-equipped laptop: 16-32 GB RAM, one 16-core mobile CPU (e.g., Intel Core i7-14650HX), one NVIDIA laptop GPU with 8 GB VRAM (e.g., Lenovo Legion 5i Gen 9 with RTX 4060), and at least 80 GB of free disk space.
   - Sim-to-real evaluation also requires a DOFBOT-SE single-arm robot and an AmazingHand dexterous hand.
 
 - **Software**
@@ -147,10 +147,22 @@ If the artifact is distributed as an archived package instead of a git repositor
        ```bash
        cd <VLASelect directory>
        bash dep.sh
+
+       # Optional: use the lightweight ~100 MB image to start the container quickly,
+       # then let dep.sh install the remaining runtime inside the container automatically
+       TYPE=100M bash dep.sh
        ```
        ![3.1](/imgs/3.1.png)
        If successful, this step generates `start_docker.sh`.
        ![3.2](/imgs/3.2.png)
+       The default `bash dep.sh` path uses the full image with the required runtime preinstalled. The `TYPE=100M bash dep.sh` path uses a lightweight bootstrap image that keeps only a minimal Python and system layer in the image itself, and then installs the remaining runtime into the container on first setup.
+
+       If you want to build the lightweight image locally instead of pulling it from Docker Hub, run:
+
+       ```bash
+       cd <VLASelect directory>
+       bash docker/100m/build-image.sh
+       ```
 
     4. Start the container and check whether PyTorch works correctly. If the machine supports a GPU, also check `torch.cuda.is_available()`.
 
@@ -160,10 +172,26 @@ If the artifact is distributed as an archived package instead of a git repositor
        python -c "import torch; print(torch.cuda.is_available())"
        python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA not available')"
        ```
-      If everything works correctly, the output should look like the following.
-      ![4.1](/imgs/4.1.png)
+       If everything works correctly, the output should look like the following.
+       ![4.1](/imgs/4.1.png)
     5. If PyTorch has issues, visit the official PyTorch installation page to get the proper download and installation commands: https://pytorch.org/get-started/locally/. For example, if I want to install the CUDA 12.4 build of PyTorch on this machine, which is lower than the host CUDA version, the command is shown below.
-      ![5.1](/imgs/5.1.png)
+       ![5.1](/imgs/5.1.png)
+
+    - If you do not want to use Docker, run `bash dep-non-docker.sh` instead. Before doing so, check the CUDA version that matches the current device from https://pytorch.org/get-started/locally/. For example, the current project uses `torch==2.4.0`, `torchvision==0.19.0`, and `torchaudio==2.4.0` with the CUDA 12.4 wheel index. For ARM-based hosts, use `ARM=1` to enable the ARM defaults in `dep-non-docker.sh`.
+
+       ```bash
+       cd <VLASelect directory>
+       TORCH_VERSION=2.4.0 \
+       TORCHVISION_VERSION=0.19.0 \
+       TORCHAUDIO_VERSION=2.4.0 \
+       TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124 \
+       bash dep-non-docker.sh
+
+       # ARM example
+       ARM=1 bash dep-non-docker.sh
+       ```
+       ![5.1](/imgs/no-docker.png)
+
 
 #### 2.1.3 One-click run
 We provide a one-click script `run.sh` in the root directory of `eval`, which can automatically run the experiments involved in the main claims of the paper. The specific reproducing steps of each experiment are described in the following subsections.
@@ -214,6 +242,8 @@ On machines with fewer CPU cores, you can reduce the default host-side thread us
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash run_acc_task_env_change.sh`.
 
+The result file will be stored as `acc_comparison/FIG_ACC_TASK_ENV.pdf`, which corresponds to Fig. 8 in the paper.
+
 **Accuracy Under Available Resource Changes**
 
 
@@ -234,6 +264,8 @@ python3 plot_acc_res_change.py
 ```
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash run_acc_res_change.sh`.
+
+The result file will be stored as `acc_comparison/FIG_ACC_RESOURCE.pdf`, which corresponds to Fig. 8 in the paper.
 
 #### 2.2.2 Overhead Experiments
 
@@ -258,6 +290,9 @@ python3 plot_overhead.py
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash overhead_same_acc.sh`.
 
+The result files will be stored as `overhead/FIG_MEMORY_FOOTPOINT.pdf`, `overhead/overhead_breakdown_table/TAB_OVERHEAD.csv`, and `overhead/overhead_breakdown_table/TAB_ENERGY.csv`, which correspond to Fig. 9, Table 2, and Table 3 in the paper, respectively.
+
+
 **Time Breakdown of VLASelect's Modules**
 
 1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
@@ -277,6 +312,8 @@ python3 plot_breakdown_modules.py
 ```
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash overhead_breakdown_modules.sh`.
+
+The result file will be stored as `overhead/FIG_BREAKDOWN_MODULES.pdf`, which corresponds to Fig. 10 in the paper.
 
 **Time Breakdown of Sampling and Training for All Methods**
 
@@ -298,6 +335,8 @@ python3 plot_breakdown_all_methods.py
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash overhead_breakdown_all_methods.sh`.
 
+The result file will be stored as `overhead/FIG_BREAKDOWN_ALL_METHODS.pdf`, which corresponds to Fig. 11 in the paper.
+
 #### 2.2.3 Ablation Experiments
 
 1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
@@ -317,6 +356,8 @@ python3 plot_ablation.py
 ```
 
 3. **Switch models**: For example, if the workload uses `octo`, run `MODEL_SELECTION=octo bash run_ablation.sh`.
+
+The result file will be stored as `ablation/FIG_ABLATION.pdf`, which corresponds to Fig. 12 in the paper.
 
 #### 2.2.4 Discussion Experiments
 
@@ -423,10 +464,19 @@ bash run_multi_agent.sh
 - **Full runs**
   - **Accuracy under tasks/environment changes**: up to 200 hours in total and about 15-32 GB of GPU memory for VLASelect or up to about 60 GB for some baselines.
   - **Accuracy under resource changes**: up to 200 hours in total and about 15-32 GB of GPU memory for VLASelect or up to about 60 GB for some baselines.
-  - **Overheads under the same accuracy and overhead breakdown**: up to 140 hours in total and about 15-32 GB of GPU memory for VLASelect or up to about 60 GB for some baselines.
+  - **Overheads under the same accuracy**: up to 140 hours in total and about 15-32 GB of GPU memory for VLASelect or up to about 60 GB for some baselines.
+  - **Breakdown for all methods**: also up to about 140 hours in total, but the time-breakdown scene is more complex than the same-accuracy overhead test, so a 32 GB-or-larger GPU is strongly recommended.
+  - **Breakdown for VLASelect modules**: the camera/rendering buffers are much heavier here; use about 50 GB of free VRAM as a practical target for the full run.
   - **Ablation**: up to 55 hours in total for the full set of 11 design choices, and at a similar GPU-memory level to the primary online evaluation.
-  - **Discussion experiments**: the ICL discussion takes up to 5 hours in total. The other discussion scripts except sim-to-real typically take up to 15 minutes per run with about 16-32 GB of GPU memory. The sim-to-real discussion mainly depends on the manual real-robot execution process, and its GPU memory usage is about 16 GB.
-- **MWE**: due to the reduced runtime and batch sizes, all MWE experiments typically finish within 5 minutes and use about 8-20 GB of GPU memory.
+  - **Discussion experiments**: the ICL discussion takes up to 5 hours in total. The other discussion scripts except sim-to-real typically take up to 15 minutes per run with about 16-32 GB of GPU memory. The multi-agent discussion creates large camera groups and is best run on a 50 GB-class GPU for the full configuration. The sim-to-real discussion mainly depends on the manual real-robot execution process, and its GPU memory usage is about 16 GB.
+- **MWE**:
+  - **Accuracy under tasks/environment changes**: up to 20 minutes in total, with about 8-20 GB of GPU memory.
+  - **Accuracy under resource changes**: up to 20 minutes in total, with about 8-20 GB of GPU memory.
+  - **Overheads under the same accuracy**: up to 20 minutes in total, with about 8-20 GB of GPU memory.
+  - **Breakdown for all methods**: up to 20 minutes in total, with about 8-20 GB of GPU memory.
+  - **Breakdown for VLASelect modules**: up to 20 minutes in total, with about 8-20 GB of GPU memory.
+  - **Ablation**: up to 25 minutes in total, with about 8-20 GB of GPU memory.
+  - **Discussion experiments**: up to 5 minutes in total, with about 8-20 GB of GPU memory in typical runs.
 
 ## 3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 

@@ -23,6 +23,7 @@ PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-60}"
 TAIL_LOG="${TAIL_LOG:-1}"
 vlaselect_install_cleanup_trap
 GPU_BY_METHOD_OVERRIDE="${GPU_BY_METHOD_OVERRIDE:-}"
+GPU_QUEUE_POLL_SECONDS="${GPU_QUEUE_POLL_SECONDS:-30}"
 ENABLE_SELF_CURVE_WATCHER="${ENABLE_SELF_CURVE_WATCHER:-0}"
 
 WORLD_ENV_WM_CKPT="${WORLD_ENV_WM_CKPT:-ckpt/PickCube-v1/baselines/world_env/world_model/20260425-032853-run032_e2/checkpoints/best_with_reference.pt}"
@@ -36,16 +37,15 @@ FALLBACK_ENV_CONFIG_PATH="${SUITE_ROOT}/fallback_env_config.json"
 SMOKE_ENV_OVERRIDES=()
 if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES=(
-        TOTAL_TIMESTEPS_OVERRIDE=200
-        NUM_ENVS_OVERRIDE=1
-        NUM_EVAL_ENVS_OVERRIDE=1
-        NUM_STEPS_OVERRIDE=50
-        NUM_EVAL_STEPS_OVERRIDE=50
-        NUM_MINIBATCHES_OVERRIDE=1
+        TOTAL_TIMESTEPS_OVERRIDE=1024
+        NUM_ENVS_OVERRIDE=8
+        NUM_EVAL_ENVS_OVERRIDE=2
+        NUM_STEPS_OVERRIDE=16
+        NUM_EVAL_STEPS_OVERRIDE=16
+        NUM_MINIBATCHES_OVERRIDE=2
         UPDATE_EPOCHS_OVERRIDE=1
-        MAX_TIME_OVERRIDE=5
         SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1
-        SUPERVISED_BATCH_SIZE_OVERRIDE=1
+        SUPERVISED_BATCH_SIZE_OVERRIDE=8
         WANDB_MODE=disabled
         WANDB_SILENT=true
     )
@@ -89,9 +89,9 @@ prepare_smoke_inputs() {
     ENV_CONFIG_PATH="$EFFECTIVE_ENV_CONFIG_PATH" \
     STATE_NORM_STATS_PATH="ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth" \
     CHECKPOINT_PATH="ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt" \
-    TARGET_SUCCESS_TRAJECTORIES="${SMOKE_SHARED_EXPERT_DEMO_TARGET_SUCCESS_TRAJECTORIES:-2}" \
-    NUM_ENVS="${SMOKE_SHARED_EXPERT_DEMO_NUM_ENVS:-2}" \
-    MAX_STEPS="${SMOKE_SHARED_EXPERT_DEMO_MAX_STEPS:-200}" \
+    TARGET_SUCCESS_TRAJECTORIES="${SMOKE_SHARED_EXPERT_DEMO_TARGET_SUCCESS_TRAJECTORIES:-4}" \
+    NUM_ENVS="${SMOKE_SHARED_EXPERT_DEMO_NUM_ENVS:-4}" \
+    MAX_STEPS="${SMOKE_SHARED_EXPERT_DEMO_MAX_STEPS:-128}" \
     SEED="${SMOKE_SHARED_EXPERT_DEMO_SEED:-0}" \
     LOG_PREFIX="${SMOKE_SHARED_EXPERT_DEMO_LOG_PREFIX:-octo-smoke-expert-demo}" \
     bash train/octo/prepare_expert_demo.sh
@@ -261,6 +261,26 @@ printf "name\tdisplay_name\tgpu\tstatus\tinherited_from\tpid\tmonitor_pid\trun_d
 
 prepare_smoke_inputs
 
+: "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+if [[ "$SMOKE" == "1" ]]; then
+    selected_method_count=0
+    for method in "${METHOD_ORDER[@]}"; do
+        if [[ "${SHOULD_RUN[$method]}" == "1" ]]; then
+            selected_method_count=$((selected_method_count + 1))
+        fi
+    done
+    if [[ "$selected_method_count" -lt 1 ]]; then
+        selected_method_count=1
+    fi
+    mwe_per_method_runtime_seconds=$((MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS / selected_method_count))
+    if [[ "$mwe_per_method_runtime_seconds" -lt 1 ]]; then
+        mwe_per_method_runtime_seconds=1
+    fi
+    SMOKE_ENV_OVERRIDES+=(MAX_TIME_OVERRIDE="$mwe_per_method_runtime_seconds")
+fi
+
+declare -A LAST_PID_BY_GPU=()
+
 for method in "${METHOD_ORDER[@]}"; do
     gpu="${RESOLVED_GPU_BY_METHOD[$method]}"
     script_path="${SCRIPT_BY_METHOD[$method]}"
@@ -346,13 +366,22 @@ for method in "${METHOD_ORDER[@]}"; do
     fi
     cmd+=(bash "$script_path")
 
-    python "$ROOT_DIR/train/octo/spawn_detached.py" \
-        --pid-file "$pid_file" \
-        --log-file "$log_file" \
-        --cwd "$ROOT_DIR" \
-        -- "${cmd[@]}" \
-        > "$launch_log"
+    wait_for_pid="${LAST_PID_BY_GPU[$gpu]:-}"
+    cmd_escaped="$(printf '%q ' "${cmd[@]}")"
+    cmd_escaped="${cmd_escaped% }"
+    if [[ -n "$wait_for_pid" ]]; then
+        launch_cmd=(
+            bash
+            -lc
+            "while kill -0 ${wait_for_pid} 2>/dev/null; do sleep ${GPU_QUEUE_POLL_SECONDS}; done; exec ${cmd_escaped}"
+        )
+    else
+        launch_cmd=("${cmd[@]}")
+    fi
+
+    python "$ROOT_DIR/train/octo/spawn_detached.py"         --pid-file "$pid_file"         --log-file "$log_file"         --cwd "$ROOT_DIR"         -- "${launch_cmd[@]}"         > "$launch_log"
     train_pid="$(cat "$pid_file")"
+    LAST_PID_BY_GPU["$gpu"]="$train_pid"
 
     monitor_pid_file="${PID_DIR}/${method}.gpu_monitor.pid"
     monitor_log="${LAUNCH_LOG_DIR}/${method}.gpu_monitor.log"

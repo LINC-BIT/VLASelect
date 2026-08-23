@@ -155,26 +155,26 @@ class SuiteScheduler:
         if self.args.smoke:
             env_items.extend(
                 [
-                    "TOTAL_TIMESTEPS_OVERRIDE=200",
-                    "NUM_ENVS_OVERRIDE=1",
-                    "NUM_EVAL_ENVS_OVERRIDE=1",
-                    "NUM_STEPS_OVERRIDE=50",
-                    "NUM_MINIBATCHES_OVERRIDE=1",
+                    "TOTAL_TIMESTEPS_OVERRIDE=1024",
+                    "NUM_ENVS_OVERRIDE=8",
+                    "NUM_EVAL_ENVS_OVERRIDE=2",
+                    "NUM_STEPS_OVERRIDE=16",
+                    "NUM_MINIBATCHES_OVERRIDE=2",
                     "UPDATE_EPOCHS_OVERRIDE=1",
                     "EVAL_EPISODES_OVERRIDE=4",
-                    "MAX_RUNTIME_HOURS_OVERRIDE=0.08",
+                    f"MAX_RUNTIME_HOURS_OVERRIDE={self.args.smoke_max_runtime_hours}",
                     "EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45",
-                    "ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=1",
-                    "EVAL_MICRO_BATCH_SIZE_OVERRIDE=1",
-                    "UPDATE_MICRO_BATCH_SIZE_OVERRIDE=1",
+                    "ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=8",
+                    "EVAL_MICRO_BATCH_SIZE_OVERRIDE=8",
+                    "UPDATE_MICRO_BATCH_SIZE_OVERRIDE=4",
                     "ROLLOUT_PROGRESS_LOG_INTERVAL_OVERRIDE=1",
                     "SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1",
-                    "SUPERVISED_BATCH_SIZE_OVERRIDE=1",
-                    "ONLINE_BUFFER_CAPACITY_OVERRIDE=64",
-                    "EXPERT_BUFFER_CAPACITY_OVERRIDE=64",
+                    "SUPERVISED_BATCH_SIZE_OVERRIDE=8",
+                    "ONLINE_BUFFER_CAPACITY_OVERRIDE=256",
+                    "EXPERT_BUFFER_CAPACITY_OVERRIDE=256",
                     "EXPERT_TARGET_SUCCESS_TRAJECTORIES_OVERRIDE=0",
-                    "EXPERT_COLLECT_NUM_ENVS_OVERRIDE=1",
-                    "EXPERT_COLLECT_MAX_STEPS_OVERRIDE=50",
+                    "EXPERT_COLLECT_NUM_ENVS_OVERRIDE=4",
+                    "EXPERT_COLLECT_MAX_STEPS_OVERRIDE=128",
                 ]
             )
         return ["env", *env_items, "bash", SCRIPT_BY_METHOD[method]]
@@ -186,7 +186,7 @@ class SuiteScheduler:
             sys.executable,
             "-u",
             "-m",
-            "train.toy_cnn.monitor_gpu_metrics",
+            "train.common.monitor_gpu_metrics",
             "--pid",
             str(train_pid),
             "--gpu-index",
@@ -317,6 +317,7 @@ def main() -> None:
     parser.add_argument("--resource-change-factors", default="")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--gpu-by-method-override", default="")
+    parser.add_argument("--smoke-max-runtime-hours", type=float, default=0.0084)
     args = parser.parse_args()
     SuiteScheduler(args).run()
 

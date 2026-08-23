@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
 VERIFY_SCRIPT="$SCRIPT_DIR/vla_adapter_impl_verify.sh"
-RESULTS_DIR="$ROOT_DIR/api/results/scaling_methods"
+RESULTS_DIR="$ROOT_DIR/api/results/vla_adapter/scaling_methods"
 
 # Use one GPU for the whole serial run. CUDA_DEVICE_OVERRIDE takes precedence;
 # if a multi-GPU value is supplied, use its first device for this serial run.

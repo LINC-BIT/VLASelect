@@ -161,6 +161,10 @@ def main(argv: list[str] | None = None) -> None:
     panel_paths = draw_panels(payload)
     compose_grid_figure(panel_paths, output_paths=[FIG_ALL_METHODS_PNG, FIG_ALL_METHODS_SVG], rows=1, cols=4, figsize=(20.0, 5.0), legend_path=None, dpi=200)
     fill_sampling_training_template(FIG_ALL_METHODS, panel_paths)
+    print(f"Saved JSON: {JSON_OUTPUT}")
+    print(f"Saved PDF: {FIG_ALL_METHODS}")
+    print(f"Saved PNG: {FIG_ALL_METHODS_PNG}")
+    print(f"Saved SVG: {FIG_ALL_METHODS_SVG}")
 
 
 if __name__ == '__main__':

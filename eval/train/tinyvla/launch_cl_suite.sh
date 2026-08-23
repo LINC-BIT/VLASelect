@@ -31,20 +31,19 @@ RESOURCE_CHANGE_FACTORS="${RESOURCE_CHANGE_FACTORS_OVERRIDE:-}"
 SMOKE_ENV_OVERRIDES=()
 if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES=(
-        TOTAL_TIMESTEPS_OVERRIDE=200
-        NUM_ENVS_OVERRIDE=1
-        NUM_EVAL_ENVS_OVERRIDE=1
-        NUM_STEPS_OVERRIDE=50
-        NUM_MINIBATCHES_OVERRIDE=1
+        TOTAL_TIMESTEPS_OVERRIDE=1024
+        NUM_ENVS_OVERRIDE=8
+        NUM_EVAL_ENVS_OVERRIDE=2
+        NUM_STEPS_OVERRIDE=16
+        NUM_MINIBATCHES_OVERRIDE=2
         UPDATE_EPOCHS_OVERRIDE=1
         EVAL_EPISODES_OVERRIDE=4
-        MAX_RUNTIME_HOURS_OVERRIDE=0.08
         TRAIN_VIDEO_NUM_ENVS_OVERRIDE=1
         TEST_VIDEO_NUM_ENVS_OVERRIDE=1
         TEST_VIDEO_EPISODES_OVERRIDE=1
-        ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=1
-        EVAL_MICRO_BATCH_SIZE_OVERRIDE=1
-        UPDATE_MICRO_BATCH_SIZE_OVERRIDE=1
+        ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=8
+        EVAL_MICRO_BATCH_SIZE_OVERRIDE=8
+        UPDATE_MICRO_BATCH_SIZE_OVERRIDE=4
         EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45
     )
 fi
@@ -225,6 +224,25 @@ if [[ -n "$INHERIT_SUITE_FROM" ]]; then
     if [[ "$INHERITED_SUITE_LABEL" == "$INHERITED_SUITE_ROOT" ]]; then
         INHERITED_SUITE_LABEL="$INHERITED_SUITE_ROOT"
     fi
+fi
+
+if [[ "$SMOKE" == "1" ]]; then
+    : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+    selected_method_count=0
+    for method in "${METHOD_ORDER[@]}"; do
+        if [[ "${SHOULD_RUN[$method]:-0}" == "1" ]]; then
+            selected_method_count=$((selected_method_count + 1))
+        fi
+    done
+    if [[ "$selected_method_count" -lt 1 ]]; then
+        selected_method_count=1
+    fi
+    mwe_per_method_runtime_seconds=$((MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS / selected_method_count))
+    if [[ "$mwe_per_method_runtime_seconds" -lt 1 ]]; then
+        mwe_per_method_runtime_seconds=1
+    fi
+    mwe_per_method_runtime_hours="$(awk -v sec="$mwe_per_method_runtime_seconds" 'BEGIN { printf "%.6f", sec / 3600 }')"
+    SMOKE_ENV_OVERRIDES+=(MAX_RUNTIME_HOURS_OVERRIDE="$mwe_per_method_runtime_hours")
 fi
 
 mkdir -p "$SUITE_ROOT" "$PLOTS_DIR" "$LAUNCH_LOG_DIR"

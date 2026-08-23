@@ -48,9 +48,9 @@ done
 if [[ -n "${OUTPUT_DIR_OVERRIDE:-}" ]]; then
   OUTPUT_DIR=$OUTPUT_DIR_OVERRIDE
 elif [[ -n "$SCALING_METHOD" ]]; then
-  OUTPUT_DIR="$ROOT_DIR/api/results/scaling_methods/$SCALING_METHOD"
+  OUTPUT_DIR="$ROOT_DIR/api/results/vla_adapter/scaling_methods/$SCALING_METHOD"
 elif [[ -n "$KNOWLEDGE_EXCHANGE_GRANULARITY" ]]; then
-  OUTPUT_DIR="$ROOT_DIR/api/results/knowledge_exchange/$KNOWLEDGE_EXCHANGE_GRANULARITY"
+  OUTPUT_DIR="$ROOT_DIR/api/results/vla_adapter/knowledge_exchange/$KNOWLEDGE_EXCHANGE_GRANULARITY"
 else
   OUTPUT_DIR="$SCRIPT_DIR/outputs/vla_adapter_online_rl_cl"
 fi

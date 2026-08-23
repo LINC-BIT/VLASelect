@@ -7,6 +7,7 @@ SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 EVAL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
+source "${EVAL_ROOT}/common/sanity_check.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="ablation/ablation_table"
@@ -15,32 +16,28 @@ MANIFEST_JSON="${RUN_ROOT}/manifest.json"
 LATEST_POINTER="${TABLE_ROOT}/latest.txt"
 LAUNCH_LOG_DIR="${RUN_ROOT}/launch_logs"
 
-RUN_EXPERIMENTS="${RUN_EXPERIMENTS:-0}"
+RUN_EXPERIMENTS="${RUN_EXPERIMENTS:-1}"
 SMOKE="${SMOKE:-0}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 TAIL_LOG="${TAIL_LOG:-1}"
-CUDA_DEVICE="${CUDA_DEVICE:-0}"
+CUDA_DEVICE="${CUDA_DEVICE:-}"
+GPU_BY_CURVE_OVERRIDE="${GPU_BY_CURVE_OVERRIDE:-}"
+GPU_QUEUE_POLL_SECONDS="${GPU_QUEUE_POLL_SECONDS:-30}"
 ABLATION_SELECTION="${ABLATION_SELECTION:-}"
 LIST_ONLY="${LIST_ONLY:-0}"
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 MODEL_CKPT_PATH="${MODEL_CKPT_PATH:-${CHECKPOINT_PATH:-}}"
 MWE="${MWE:-0}"
 
-: "${MWE_RUNTIME_LIMIT_SECONDS:=300}"
-export MWE_RUNTIME_LIMIT_SECONDS
-if [[ "$MWE" == "1" && "${MWE_TIMEOUT_APPLIED:-0}" != "1" ]]; then
-    if command -v timeout >/dev/null 2>&1; then
-        export MWE_TIMEOUT_APPLIED=1
-        exec timeout --preserve-status -k 10s "${MWE_RUNTIME_LIMIT_SECONDS}s" bash "$SCRIPT_PATH" "$@"
-    fi
-    echo "[warn] timeout command not found; MWE runtime is not hard-capped" >&2
-fi
+: "${ABLATION_PANEL_RUNTIME_LIMIT_SECONDS:=300}"
+export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS
 if [[ "$MWE" == "1" ]]; then
-    RUN_EXPERIMENTS="${RUN_EXPERIMENTS:-1}"
-    SMOKE="${SMOKE:-1}"
+    RUN_EXPERIMENTS=1
+    SMOKE=1
     ABLATION_SELECTION="${ABLATION_SELECTION:-scaling_law_function:with_scaling_law,scaling_law_function:without_scaling_law}"
 fi
 vlaselect_install_cleanup_trap
+vlaselect_run_sanity_check "run_ablation.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 
 BASE_ENV_ID="${BASE_ENV_ID:-PickCubeObjectScaleUp1p2-v1}"
 BASE_ENVS_ID="${BASE_ENVS_ID:-['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']}"
@@ -55,6 +52,44 @@ MISSING_CHECKPOINT_PATH="${RUN_ROOT}/missing_pretrained_checkpoint.pt"
 
 mkdir -p "$RUN_ROOT" "$LAUNCH_LOG_DIR"
 printf "%s\n" "$SUITE_STAMP" > "$LATEST_POINTER"
+
+log() {
+    echo "[fig12] $*"
+}
+
+print_log_excerpt() {
+    local log_file="$1"
+    local lines="${2:-20}"
+    if [[ -f "$log_file" ]]; then
+        echo "[fig12] last ${lines} lines from ${log_file}:" >&2
+        tail -n "$lines" "$log_file" >&2 || true
+    fi
+}
+
+run_curve_command() {
+    local curve_label="$1"
+    local launch_log="$2"
+    local gpu="$3"
+    shift 3
+
+    if [[ "$TAIL_LOG" == "1" ]]; then
+        vlaselect_start_file_log_tail "$launch_log" "${curve_label}-launch"
+    fi
+
+    set +e
+    CUDA_VISIBLE_DEVICES="$gpu" "$@" > "$launch_log" 2>&1
+    local rc=$?
+    set -e
+
+    if [[ "$rc" -ne 0 ]]; then
+        echo "[fig12] launch failed for ${curve_label} with exit code ${rc}" >&2
+        echo "[fig12] launch log: ${launch_log}" >&2
+        print_log_excerpt "$launch_log"
+        return "$rc"
+    fi
+
+    log "launch command finished for ${curve_label}; log: ${launch_log}"
+}
 
 ensure_env_config() {
     if [[ -f "$DEFAULT_ENV_CONFIG_PATH" ]]; then
@@ -152,6 +187,134 @@ should_run_curve() {
 
     return 1
 }
+
+list_panel_ids() {
+    cat <<'PANELS'
+scaling_law_function
+neuron_grained_scaling_up
+scaling_down_freezing_vs_pruning
+neuron_swapping
+knowledge_accumulation
+PANELS
+}
+
+list_panel_curve_keys() {
+    local panel_id="$1"
+    case "$panel_id" in
+        scaling_law_function)
+            cat <<'KEYS'
+scaling_law_function:with_scaling_law
+scaling_law_function:without_scaling_law
+KEYS
+            ;;
+        neuron_grained_scaling_up)
+            cat <<'KEYS'
+neuron_grained_scaling_up:random
+neuron_grained_scaling_up:inverse
+neuron_grained_scaling_up:neuron_grained
+KEYS
+            ;;
+        scaling_down_freezing_vs_pruning)
+            cat <<'KEYS'
+scaling_down_freezing_vs_pruning:pruning
+scaling_down_freezing_vs_pruning:freezing
+KEYS
+            ;;
+        neuron_swapping)
+            cat <<'KEYS'
+neuron_swapping:with_swapping
+neuron_swapping:without_swapping
+KEYS
+            ;;
+        knowledge_accumulation)
+            cat <<'KEYS'
+knowledge_accumulation:no_accumulation
+knowledge_accumulation:accumulate_every_rollout
+knowledge_accumulation:selective_accumulation
+KEYS
+            ;;
+        *)
+            echo "Unknown ablation panel: ${panel_id}" >&2
+            return 1
+            ;;
+    esac
+}
+
+should_run_panel() {
+    local panel_id="$1"
+    local curve_key
+    while IFS= read -r curve_key; do
+        [[ -z "$curve_key" ]] && continue
+        if should_run_curve "$curve_key"; then
+            return 0
+        fi
+    done < <(list_panel_curve_keys "$panel_id")
+    return 1
+}
+
+count_selected_panel_curves() {
+    local panel_id="$1"
+    local curve_key
+    local count=0
+    while IFS= read -r curve_key; do
+        [[ -z "$curve_key" ]] && continue
+        if ! should_run_curve "$curve_key"; then
+            continue
+        fi
+        count=$((count + 1))
+    done < <(list_panel_curve_keys "$panel_id")
+    printf '%s\n' "$count"
+}
+
+launch_panel_group() {
+    local panel_id="$1"
+    local gpu="$2"
+    local per_curve_limit_seconds="$3"
+    local curve_key
+    local curve_id
+
+    while IFS= read -r curve_key; do
+        [[ -z "$curve_key" ]] && continue
+        if ! should_run_curve "$curve_key"; then
+            continue
+        fi
+        curve_id="${curve_key#*:}"
+        if command -v timeout >/dev/null 2>&1; then
+            timeout --preserve-status -k 10s "${per_curve_limit_seconds}s" \
+                bash -lc "$(declare -f vlaselect_register_cleanup_manifest vlaselect_register_cleanup_pid vlaselect_start_file_log_tail log print_log_excerpt run_curve_command launch_curve); set -euo pipefail; launch_curve '$panel_id' '$curve_id' '$gpu'"
+        else
+            launch_curve "$panel_id" "$curve_id" "$gpu"
+        fi
+    done < <(list_panel_curve_keys "$panel_id")
+}
+
+run_panel_group_with_limit() {
+    local panel_id="$1"
+    local gpu="$2"
+    local selected_curve_count
+    local per_curve_limit_seconds
+
+    selected_curve_count="$(count_selected_panel_curves "$panel_id")"
+    if [[ -z "$selected_curve_count" || "$selected_curve_count" -le 0 ]]; then
+        return 0
+    fi
+
+    per_curve_limit_seconds=$((ABLATION_PANEL_RUNTIME_LIMIT_SECONDS / selected_curve_count))
+    if [[ "$per_curve_limit_seconds" -le 0 ]]; then
+        per_curve_limit_seconds=1
+    fi
+
+    export SUITE_STAMP LAUNCH_LOG_DIR BASE_ENV_ID BASE_ENVS_ID BASE_ENV_CHANGE_TIME_POINTS
+    export ENV_CONFIG_PATH STATE_NORM_STATS_PATH CHECKPOINT_PATH SMOKE PYTHON_BIN TAIL_LOG ABLATION_SELECTION
+    export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS
+
+    if ! command -v timeout >/dev/null 2>&1; then
+        echo "[warn] timeout command not found; panel ${panel_id} cannot be evenly hard-capped" >&2
+    fi
+
+    launch_panel_group "$panel_id" "$gpu" "$per_curve_limit_seconds"
+}
+
 
 write_manifest() {
     "$PYTHON_BIN" - <<'PY' "$MANIFEST_JSON" "$SUITE_STAMP" "$CHECKPOINT_PATH"
@@ -360,6 +523,7 @@ PY
 launch_curve() {
     local panel_id="$1"
     local curve_id="$2"
+    local gpu="$3"
     local exp_name="ablation/${SUITE_STAMP}/${panel_id}/${curve_id}"
     local log_file="${LAUNCH_LOG_DIR}/${panel_id}__${curve_id}.log"
     local run_dir="ckpt/ablation/${SUITE_STAMP}/${panel_id}/${curve_id}/[agent]"
@@ -378,14 +542,14 @@ launch_curve() {
     local num_eval_steps="50"
 
     if [[ "$SMOKE" == "1" ]]; then
-        total_timesteps="4096"
-        num_envs="8"
-        num_eval_envs="2"
-        num_minibatches="2"
+        total_timesteps="16384"
+        num_envs="16"
+        num_eval_envs="4"
+        num_minibatches="4"
         update_epochs="1"
-        max_time="1"
-        num_steps="8"
-        num_eval_steps="8"
+        max_time="2"
+        num_steps="16"
+        num_eval_steps="16"
     fi
 
     local -a cmd=(
@@ -413,138 +577,40 @@ launch_curve() {
 
     case "${panel_id}:${curve_id}" in
         scaling_law_function:with_scaling_law)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_law_function:without_scaling_law)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-batch
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-batch --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_grained_scaling_up:random)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_ab_strategy random
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_ab_strategy random --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_grained_scaling_up:inverse)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_ab_strategy inverse
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_ab_strategy inverse --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_grained_scaling_up:neuron_grained)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:pruning)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:freezing)
-            cmd+=(
-                --max-sparsity 0.0
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.0 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_swapping:with_swapping)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_swapping:without_swapping)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule once
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule once --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         knowledge_accumulation:selective_accumulation)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         knowledge_accumulation:no_accumulation)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule once
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.0
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         knowledge_accumulation:accumulate_every_rollout)
-            cmd+=(
-                --max-sparsity 0.8
-                --small_model_generation_strategy target-single-traj
-                --small_model_feedback_schedule before_per_rollout
-                --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters
-                --small_model_feedback_alpha 0.1
-                --small_model_regeneration_increment_ratio 0.05
-                --reset_optimizer_after_regeneration
-            )
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         *)
             echo "Unknown ablation curve: ${panel_id}:${curve_id}" >&2
@@ -552,21 +618,149 @@ launch_curve() {
             ;;
     esac
 
-    echo "[ablation] launching ${panel_id}/${curve_id}"
-    if [[ "$TAIL_LOG" == "1" ]]; then
-        CUDA_VISIBLE_DEVICES="$CUDA_DEVICE" "${cmd[@]}" 2>&1 | tee "$log_file"
-    else
-        CUDA_VISIBLE_DEVICES="$CUDA_DEVICE" "${cmd[@]}" > "$log_file" 2>&1
-    fi
+    log "launching ${panel_id}/${curve_id} on gpu=${gpu}"
+    log "launch log: ${log_file}"
+    run_curve_command "${panel_id}-${curve_id}" "$log_file" "$gpu" "${cmd[@]}"
 }
 
-maybe_launch_curve() {
-    local panel_id="$1"
-    local curve_id="$2"
-    local key="${panel_id}:${curve_id}"
-    if should_run_curve "$key"; then
-        launch_curve "$panel_id" "$curve_id"
+resolve_curve_gpu_map() {
+    local default_map=""
+    local curve_keys=(
+        scaling_law_function:with_scaling_law
+        scaling_law_function:without_scaling_law
+        neuron_grained_scaling_up:random
+        neuron_grained_scaling_up:inverse
+        neuron_grained_scaling_up:neuron_grained
+        scaling_down_freezing_vs_pruning:pruning
+        scaling_down_freezing_vs_pruning:freezing
+        neuron_swapping:with_swapping
+        neuron_swapping:without_swapping
+        knowledge_accumulation:no_accumulation
+        knowledge_accumulation:accumulate_every_rollout
+        knowledge_accumulation:selective_accumulation
+    )
+    local requested_gpus=()
+
+    if [[ -n "$CUDA_DEVICE" ]]; then
+        while IFS= read -r gpu; do
+            [[ -n "$gpu" ]] && requested_gpus+=("$gpu")
+        done < <(printf '%s' "$CUDA_DEVICE" | tr ',' '\n' | awk 'NF {gsub(/^[ 	]+|[ 	]+$/, ""); print}')
     fi
+    if [[ "${#requested_gpus[@]}" -eq 0 ]]; then
+        requested_gpus=(0 1 2 3)
+    fi
+
+    local idx=0
+    for curve_key in "${curve_keys[@]}"; do
+        local gpu="${requested_gpus[$((idx % ${#requested_gpus[@]}))]}"
+        if [[ -n "$default_map" ]]; then
+            default_map+=","
+        fi
+        default_map+="${curve_key}=${gpu}"
+        idx=$((idx + 1))
+    done
+
+    python3 -m train.common.gpu_auto_select resolve-method-map         --method-order "$(IFS=,; echo "${curve_keys[*]}")"         --default-map "$default_map"         --override-map "$GPU_BY_CURVE_OVERRIDE"
+}
+
+launch_selected_curves() {
+    declare -A curve_gpu_map=()
+    while IFS=$'	' read -r curve_key gpu; do
+        [[ -z "$curve_key" ]] && continue
+        curve_gpu_map["$curve_key"]="$gpu"
+    done < <(resolve_curve_gpu_map)
+
+    declare -A last_pid_by_gpu=()
+    local -a active_pids=()
+    local failure=0
+
+    if [[ "$MWE" == "1" ]]; then
+        local panel_id
+        local curve_key
+        local gpu
+        while IFS= read -r panel_id; do
+            [[ -z "$panel_id" ]] && continue
+            if ! should_run_panel "$panel_id"; then
+                continue
+            fi
+            gpu=""
+            while IFS= read -r curve_key; do
+                [[ -z "$curve_key" ]] && continue
+                if ! should_run_curve "$curve_key"; then
+                    continue
+                fi
+                gpu="${curve_gpu_map[$curve_key]}"
+                break
+            done < <(list_panel_curve_keys "$panel_id")
+            if [[ -z "$gpu" ]]; then
+                continue
+            fi
+
+            local wait_for_pid="${last_pid_by_gpu[$gpu]:-}"
+            if [[ -n "$wait_for_pid" ]]; then
+                (
+                    while kill -0 "$wait_for_pid" 2>/dev/null; do
+                        sleep "$GPU_QUEUE_POLL_SECONDS"
+                    done
+                    run_panel_group_with_limit "$panel_id" "$gpu"
+                ) &
+            else
+                (
+                    run_panel_group_with_limit "$panel_id" "$gpu"
+                ) &
+            fi
+            local launch_pid=$!
+            last_pid_by_gpu["$gpu"]="$launch_pid"
+            active_pids+=("$launch_pid")
+        done < <(list_panel_ids)
+    else
+        local curve_keys=(
+            scaling_law_function:with_scaling_law
+            scaling_law_function:without_scaling_law
+            neuron_grained_scaling_up:random
+            neuron_grained_scaling_up:inverse
+            neuron_grained_scaling_up:neuron_grained
+            scaling_down_freezing_vs_pruning:pruning
+            scaling_down_freezing_vs_pruning:freezing
+            neuron_swapping:with_swapping
+            neuron_swapping:without_swapping
+            knowledge_accumulation:no_accumulation
+            knowledge_accumulation:accumulate_every_rollout
+            knowledge_accumulation:selective_accumulation
+        )
+
+        for curve_key in "${curve_keys[@]}"; do
+            if ! should_run_curve "$curve_key"; then
+                continue
+            fi
+            local panel_id="${curve_key%%:*}"
+            local curve_id="${curve_key#*:}"
+            local gpu="${curve_gpu_map[$curve_key]}"
+            local wait_for_pid="${last_pid_by_gpu[$gpu]:-}"
+            if [[ -n "$wait_for_pid" ]]; then
+                (
+                    while kill -0 "$wait_for_pid" 2>/dev/null; do
+                        sleep "$GPU_QUEUE_POLL_SECONDS"
+                    done
+                    launch_curve "$panel_id" "$curve_id" "$gpu"
+                ) &
+            else
+                (
+                    launch_curve "$panel_id" "$curve_id" "$gpu"
+                ) &
+            fi
+            local launch_pid=$!
+            last_pid_by_gpu["$gpu"]="$launch_pid"
+            active_pids+=("$launch_pid")
+        done
+    fi
+
+    for launch_pid in "${active_pids[@]}"; do
+        if ! wait "$launch_pid"; then
+            failure=1
+        fi
+    done
+    return "$failure"
 }
 
 write_manifest
@@ -577,20 +771,9 @@ if [[ "$LIST_ONLY" == "1" ]]; then
 fi
 
 if [[ "$RUN_EXPERIMENTS" == "1" ]]; then
-    maybe_launch_curve scaling_law_function with_scaling_law
-    maybe_launch_curve scaling_law_function without_scaling_law
-    maybe_launch_curve neuron_grained_scaling_up random
-    maybe_launch_curve neuron_grained_scaling_up inverse
-    maybe_launch_curve neuron_grained_scaling_up neuron_grained
-    maybe_launch_curve scaling_down_freezing_vs_pruning pruning
-    maybe_launch_curve scaling_down_freezing_vs_pruning freezing
-    maybe_launch_curve neuron_swapping with_swapping
-    maybe_launch_curve neuron_swapping without_swapping
-    maybe_launch_curve knowledge_accumulation no_accumulation
-    maybe_launch_curve knowledge_accumulation accumulate_every_rollout
-    maybe_launch_curve knowledge_accumulation selective_accumulation
+    launch_selected_curves
 fi
 
-echo "Manifest written to ${MANIFEST_JSON}"
-echo "Results root: ${RUN_ROOT}"
-echo "Run plot via: cd ${SCRIPT_DIR} && ${PYTHON_BIN} plot_ablation.py"
+log "Manifest written to ${MANIFEST_JSON}"
+log "Results root: ${RUN_ROOT}"
+log "Run plot via: cd ${SCRIPT_DIR} && ${PYTHON_BIN} plot_ablation.py"

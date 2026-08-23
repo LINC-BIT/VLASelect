@@ -201,17 +201,12 @@ def make_vla_adapter() -> ReferenceAdapter:
 
 
 def make_tinyvla() -> ReferenceAdapter:
-    # TinyVLA is evaluated in the VLA-Adapter HoldCube continual-learning workload.
-    # The common runner must therefore use the hand workload's observation/evaluation
-    # helpers, while the policy and its FBS conversion remain TinyVLA-specific.
-    from train.vla_adapter_new.model_impl import online_rl_hold_cube_in_hand as reference_api
+    # TinyVLA follows the OpenCabinet continual-learning reference workload.
+    from train.tinyvla.model_impl import online_rl_open_cabinet_drawer as reference_api
     from train.tinyvla.model_impl import online_rl_open_cabinet_drawer as tiny_reference
     from train.tinyvla.ours.model_with_fbs import convert_to_fbs_model
 
-    import workloads.hold_in_hand as workload_module
-
-    original_extract_state = reference_api.extract_hand_state_batch_from_obs
-    reference_api.extract_hand_state_batch_from_obs = lambda obs: original_extract_state(obs)[:, :44]
+    import workloads.mobile_arm as workload_module
 
     TinyVLAImplementation.policy_type = tiny_reference.EdgeVLAActorCritic
     TinyVLAImplementation.fbs_converter = staticmethod(convert_to_fbs_model)
@@ -222,7 +217,7 @@ def make_tinyvla() -> ReferenceAdapter:
         policy_class_name=f"{tiny_reference.EdgeVLAActorCritic.__module__}.{tiny_reference.EdgeVLAActorCritic.__name__}",
         state_dim=44,
         action_dim=8,
-        env_action_dim=16,
+        env_action_dim=13,
         fbs_layers=_tinyvla_fbs_layers(),
         architecture_config={},
     )
@@ -312,16 +307,16 @@ class VLAAdapterImplementation(ReferenceAdapter):
 
 
 class TinyVLAImplementation(ReferenceAdapter):
-    """TinyVLA: 44-state, 8-policy-action adapter mapped to 16 env actions."""
+    """TinyVLA: 44-state, 8-policy-action adapter for OpenCabinet environments."""
 
     model_name = "tinyvla"
     state_dim = 44
     action_dim = 8
-    env_action_dim = 16
+    env_action_dim = 13
     controlled_action_indices = tuple(range(8))
 
     def extract_state_batch_from_obs(self, obs: Any) -> np.ndarray:
-        return self.reference_api.extract_hand_state_batch_from_obs(obs)[:, : self.state_dim]
+        return self.reference_api.extract_cabinet_state_batch_from_obs(obs)[:, : self.state_dim]
 
 
 class EdgeVLAImplementation(ReferenceAdapter):

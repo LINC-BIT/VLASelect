@@ -22,8 +22,8 @@ Use `layer`, `block`, or `attention_head` for knowledge-exchange granularity.
 `head` is accepted as a short alias by `vla_adapter_impl.py`.
 
 With `MWE=1`, training runs until the five-minute wall-clock limit. Results are written
-under `api/results/scaling_methods/<method>` or
-`api/results/knowledge_exchange/<granularity>`. Plot all completed runs with:
+under model-specific directories: `api/results/vla_adapter/{scaling_methods,knowledge_exchange}`
+or `api/results/tinyvla/{scaling_methods,knowledge_exchange}`. Plot completed runs with:
 
 ```bash
 python api/plot_scaling_methods.py

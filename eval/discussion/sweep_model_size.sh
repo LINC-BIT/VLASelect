@@ -6,6 +6,7 @@ SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 REPO_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 cd "$REPO_ROOT/eval"
 source "${REPO_ROOT}/eval/common/interrupt_cleanup.sh"
+source "${REPO_ROOT}/eval/common/sanity_check.sh"
 
 FAMILY=${MODEL_SIZE_LIMIT_FAMILY:-tinyvla}
 MODEL_DIR=${MODEL_SIZE_LIMIT_MODEL_DIR:-}
@@ -35,6 +36,7 @@ if [[ "$MWE" == "1" ]]; then
     TRAIN_BATCH_SIZE=${MODEL_SIZE_LIMIT_TRAIN_BATCH_SIZE:-1}
 fi
 vlaselect_install_cleanup_trap
+vlaselect_run_sanity_check "sweep_model_size.sh" "${REPO_ROOT}/eval" "$MWE" "16" "8"
 
 CMD=(
     python discussion/sweep_model_size.py

@@ -7,6 +7,7 @@ SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 EVAL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
+source "${EVAL_ROOT}/common/sanity_check.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}" 
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-overhead/overhead_same_acc_table}"
@@ -27,15 +28,8 @@ MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 MWE="${MWE:-0}"
 
-: "${MWE_RUNTIME_LIMIT_SECONDS:=300}"
-export MWE_RUNTIME_LIMIT_SECONDS
-if [[ "$MWE" == "1" && "${MWE_TIMEOUT_APPLIED:-0}" != "1" ]]; then
-    if command -v timeout >/dev/null 2>&1; then
-        export MWE_TIMEOUT_APPLIED=1
-        exec timeout --preserve-status -k 10s "${MWE_RUNTIME_LIMIT_SECONDS}s" bash "$SCRIPT_PATH" "$@"
-    fi
-    echo "[warn] timeout command not found; MWE runtime is not hard-capped" >&2
-fi
+: "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+export MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS
 if [[ "$MWE" == "1" ]]; then
     EDGEVLA_SMOKE="1"
     MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-5}"
@@ -43,6 +37,7 @@ if [[ "$MWE" == "1" ]]; then
     SUITE_WAIT_POLL_SECONDS="${SUITE_WAIT_POLL_SECONDS:-5}"
 fi
 vlaselect_install_cleanup_trap
+vlaselect_run_sanity_check "overhead_same_acc.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 
 EDGEVLA_ENVS_ID="${EDGEVLA_ENVS_ID:-['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']}"
 TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']}"
@@ -157,7 +152,8 @@ payload = {
     'suite_stamp': suite_stamp,
     'table_root': table_root,
     'figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf',
-    'table_output': 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv',
+    'table2_output': 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv',
+    'table3_output': 'overhead/overhead_breakdown_table/TAB_ENERGY.csv',
     'panels': panels,
     'families': panels,
 }
@@ -287,6 +283,7 @@ launch_family_suite() {
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 ENABLE_SELF_CURVE_WATCHER="$ENABLE_SELF_CURVE_WATCHER" \
                 SMOKE="$MWE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
@@ -298,6 +295,7 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 SMOKE="$MWE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
@@ -310,6 +308,7 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 SMOKE="$MWE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
@@ -323,6 +322,7 @@ launch_family_suite() {
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 QUEUED_PER_GPU="$EDGEVLA_QUEUED_PER_GPU" \
                 SMOKE="$EDGEVLA_SMOKE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 SUITE_ENVS_ID="$envs_id" \
                 SUITE_ENV_CHANGE_TIME_POINTS="$ENV_CHANGE_TIME_POINTS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
@@ -359,3 +359,8 @@ refresh_top_manifest
 
 echo "[fig9] manifest saved to ${MANIFEST_JSON}"
 echo "[fig9] latest pointer updated at ${LATEST_POINTER}"
+echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.pdf"
+echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.png"
+echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.svg"
+echo "[fig9] plotting will write table: ${SCRIPT_DIR}/overhead_breakdown_table/TAB_OVERHEAD.csv"
+echo "[fig9] plotting will write table: ${SCRIPT_DIR}/overhead_breakdown_table/TAB_ENERGY.csv"

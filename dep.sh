@@ -3,10 +3,15 @@ set -euo pipefail
 
 ROOT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 CONTAINER_NAME=${CONTAINER_NAME:-vlaselect-ae}
-DOCKER_IMAGE=${DOCKER_IMAGE:-cz22edd/pytorch:maniskillv2}
+TYPE=${TYPE:-default}
+DOCKER_IMAGE_FULL=${DOCKER_IMAGE_FULL:-cz22edd/pytorch:maniskillv2}
+DOCKER_IMAGE_100M=${DOCKER_IMAGE_100M:-cz22edd/pytorch:maniskillv2-100m}
+DOCKER_IMAGE=${DOCKER_IMAGE:-}
 HOST_REPO_DIR=${HOST_REPO_DIR:-$ROOT_DIR}
 CONTAINER_REPO_DIR=${CONTAINER_REPO_DIR:-$ROOT_DIR}
 START_SCRIPT_PATH=${START_SCRIPT_PATH:-$ROOT_DIR/start_docker.sh}
+CONTAINER_VENV_DIR=${CONTAINER_VENV_DIR:-/opt/vlaselect-venv}
+SMALL_IMAGE_SENTINEL=${SMALL_IMAGE_SENTINEL:-/opt/vlaselect-venv/.vlaselect-ready}
 SHM_SIZE=${SHM_SIZE:-32g}
 DOCKER_NETWORK=${DOCKER_NETWORK:-host}
 DOCKER_IPC=${DOCKER_IPC:-host}
@@ -29,6 +34,80 @@ require_cmd() {
         echo "[dep.sh] missing required command: $cmd" >&2
         echo "[dep.sh] $hint" >&2
         exit 1
+    fi
+}
+
+resolve_docker_image() {
+    if [[ -n "$DOCKER_IMAGE" ]]; then
+        return
+    fi
+
+    case "$TYPE" in
+        default|6G|full|FULL)
+            DOCKER_IMAGE="$DOCKER_IMAGE_FULL"
+            ;;
+        100M|small|SMALL)
+            DOCKER_IMAGE="$DOCKER_IMAGE_100M"
+            ;;
+        *)
+            echo "[dep.sh] unsupported TYPE: $TYPE" >&2
+            echo "[dep.sh] supported values: default, 6G, full, 100M, small" >&2
+            exit 1
+            ;;
+    esac
+}
+
+is_small_image_type() {
+    case "$TYPE" in
+        100M|small|SMALL)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+container_has_small_image_runtime() {
+    docker exec "$CONTAINER_NAME" bash -lc "[ -f '$SMALL_IMAGE_SENTINEL' ]" >/dev/null 2>&1
+}
+
+bootstrap_small_image_environment() {
+    local started_here=0
+    local status=0
+
+    if [[ -z $(docker ps --format '{{.Names}}' | grep -Fx "$CONTAINER_NAME" || true) ]]; then
+        log "starting TYPE=$TYPE container temporarily to install the remaining runtime"
+        docker start "$CONTAINER_NAME" >/dev/null
+        started_here=1
+    fi
+
+    if container_has_small_image_runtime; then
+        log "TYPE=$TYPE container runtime is already bootstrapped"
+    else
+        log "bootstrapping TYPE=$TYPE container runtime via dep-non-docker.sh"
+        docker exec \
+            -e VENV_DIR="$CONTAINER_VENV_DIR" \
+            -e DOWNLOAD_CKPTS=0 \
+            -e INSTALL_SYSTEM_DEPS=0 \
+            -e HF_CKPT_REPO= \
+            "$CONTAINER_NAME" \
+            bash -lc "cd '$CONTAINER_REPO_DIR' && bash dep-non-docker.sh" || status=$?
+
+        if [[ "$status" -ne 0 ]]; then
+            if [[ "$started_here" == "1" ]]; then
+                log "stopping container after failed TYPE=$TYPE bootstrap"
+                docker stop "$CONTAINER_NAME" >/dev/null || true
+            fi
+            return "$status"
+        fi
+
+        docker exec "$CONTAINER_NAME" bash -lc "mkdir -p '$(dirname "$SMALL_IMAGE_SENTINEL")' && touch '$SMALL_IMAGE_SENTINEL'"
+    fi
+
+    if [[ "$started_here" == "1" ]]; then
+        log "stopping container after TYPE=$TYPE runtime bootstrap"
+        docker stop "$CONTAINER_NAME" >/dev/null
     fi
 }
 
@@ -210,6 +289,11 @@ ensure_container_python_package() {
 }
 
 install_container_runtime_dependencies() {
+    if is_small_image_type; then
+        bootstrap_small_image_environment
+        return
+    fi
+
     local started_here=0
 
     if [[ -z $(docker ps --format '{{.Names}}' | grep -Fx "$CONTAINER_NAME" || true) ]]; then
@@ -219,6 +303,8 @@ install_container_runtime_dependencies() {
     fi
 
     ensure_container_python_package pypdf pypdf
+    ensure_container_python_package pinocchio pin
+    ensure_container_python_package noise noise
 
     if [[ "$started_here" == "1" ]]; then
         log "stopping container after dependency installation"
@@ -241,6 +327,7 @@ create_container() {
         -e NVIDIA_DRIVER_CAPABILITIES=all \
         -e PYTHONUNBUFFERED=1 \
         -e VLASELECT_REPO_DIR="$CONTAINER_REPO_DIR" \
+        -e VLASELECT_VENV_DIR="$CONTAINER_VENV_DIR" \
         -v "$HOST_REPO_DIR:$CONTAINER_REPO_DIR" \
         -w "$CONTAINER_REPO_DIR" \
         "$DOCKER_IMAGE" \
@@ -255,6 +342,7 @@ set -euo pipefail
 
 CONTAINER_NAME=${CONTAINER_NAME@Q}
 CONTAINER_REPO_DIR=${CONTAINER_REPO_DIR@Q}
+CONTAINER_VENV_DIR=${CONTAINER_VENV_DIR@Q}
 
 if ! command -v docker >/dev/null 2>&1; then
     echo "[start_docker.sh] docker is not installed or not in PATH." >&2
@@ -276,7 +364,7 @@ exec docker exec -it \
     -e VLASELECT_IN_CONTAINER=1 \
     -e PS1='(vlaselect-container) \u@\h:\w\$ ' \
     "\$CONTAINER_NAME" \
-    bash -lc "printf '%s\\n' '==== VLASelect Docker container ====' 'Container: \$CONTAINER_NAME' 'Workdir: \$CONTAINER_REPO_DIR' 'Type exit to return to the host shell.' '==================================='; cd \"\$CONTAINER_REPO_DIR\"; exec bash -i"
+    bash -lc "printf '%s\n' '==== VLASelect Docker container ====' 'Container: \$CONTAINER_NAME' 'Workdir: \$CONTAINER_REPO_DIR' 'Type exit to return to the host shell.' '==================================='; if [[ -f "\$CONTAINER_VENV_DIR/bin/activate" ]]; then source "\$CONTAINER_VENV_DIR/bin/activate"; fi; cd "\$CONTAINER_REPO_DIR"; exec bash -i"
 START_EOF
     chmod +x "$START_SCRIPT_PATH"
 }
@@ -285,7 +373,9 @@ print_summary() {
     cat <<MSG
 [dep.sh] environment preparation is complete.
 [dep.sh] container name : $CONTAINER_NAME
+[dep.sh] image type     : $TYPE
 [dep.sh] docker image   : $DOCKER_IMAGE
+[dep.sh] container venv : $CONTAINER_VENV_DIR
 [dep.sh] gpu access     : all GPUs
 [dep.sh] network mode   : $DOCKER_NETWORK
 [dep.sh] ipc mode       : $DOCKER_IPC
@@ -307,6 +397,7 @@ if ! docker version >/dev/null 2>&1; then
     exit 1
 fi
 
+resolve_docker_image
 check_nvidia_runtime
 pull_image
 download_hf_checkpoints

@@ -23,6 +23,7 @@ FIGURE_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.pdf'
 FIGURE_SVG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.svg'
 FIGURE_PNG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.png'
 TABLE2_CSV_PATH = BREAKDOWN_ROOT / 'TAB_OVERHEAD.csv'
+TABLE3_CSV_PATH = BREAKDOWN_ROOT / 'TAB_ENERGY.csv'
 SUMMARY_JSON_PATH = SCRIPT_DIR / 'overhead_same_acc_summary.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_MEMORY_FOOTPRINT_panels'
 PANEL_FIGURE_SIZE = (5.6, 3.6)
@@ -58,7 +59,15 @@ def find_latest_manifest() -> Path | None:
     manifest_paths = sorted(TABLE_ROOT.glob('*/manifest.json'))
     return manifest_paths[-1] if manifest_paths else None
 def default_manifest() -> dict[str, Any]:
-    return {'suite_stamp': 'no-data','table_root': 'overhead/overhead_same_acc_table','figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf','table_output': 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv','panels': [dict(panel) for panel in PAPER_PANELS],'families': [dict(panel) for panel in PAPER_PANELS]}
+    return {
+        'suite_stamp': 'no-data',
+        'table_root': 'overhead/overhead_same_acc_table',
+        'figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf',
+        'table2_output': 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv',
+        'table3_output': 'overhead/overhead_breakdown_table/TAB_ENERGY.csv',
+        'panels': [dict(panel) for panel in PAPER_PANELS],
+        'families': [dict(panel) for panel in PAPER_PANELS],
+    }
 def load_history(run_dir: Path) -> list[dict[str, Any]]:
     history_path = run_dir / 'metrics_history.json'
     if not history_path.exists(): return []
@@ -349,22 +358,37 @@ def collect_panel_metrics(panel):
         return panel_metrics, f'Baselines / VLASelect avg. memory (GB): {baseline_avg:.2f} / {vlaselect_memory:.2f} ({reduction_pct:.2f}%↓)'
     return panel_metrics, 'Baselines / VLASelect avg. memory (GB): No data'
 def format_number(value): return '0' if value <= 0.0 else f'{value:.2f}'
-def build_table_rows(panel_entries, metrics_by_family):
+def build_table2_rows(panel_entries, metrics_by_family):
     family_by_panel = {panel['panel_label']: panel['family'] for panel in panel_entries}
-    rows = [['', 'Time (h)', '', '', '', 'Memory footprint (GB)', '', '', '', 'Energy consumption (kJ)', '', '', ''],['Method', '(a)', '(b)', '(c)', '(d)', '(a)', '(b)', '(c)', '(d)', '(a)', '(b)', '(c)', '(d)']]
+    rows = [['', 'Time (h)', '', '', '', 'Memory footprint (GB)', '', '', ''], ['Method', '(a)', '(b)', '(c)', '(d)', '(a)', '(b)', '(c)', '(d)']]
     for method_name in PAPER_METHOD_ORDER:
         row = [method_name]
-        for metric_key in ('time_h', 'memory_gb', 'energy_kj'):
+        for metric_key in ('time_h', 'memory_gb'):
             for panel_label in ('a', 'b', 'c', 'd'):
                 family = family_by_panel.get(panel_label)
                 metrics = metrics_by_family.get(family, {}).get(method_name, make_empty_metrics()) if family else make_empty_metrics()
                 row.append(format_number(metrics[metric_key]))
         rows.append(row)
     return rows
-def write_table_csv(rows):
+
+def build_table3_rows(panel_entries, metrics_by_family):
+    family_by_panel = {panel['panel_label']: panel['family'] for panel in panel_entries}
+    rows = [['', 'Energy consumption (kJ)', '', '', ''], ['Method', '(a)', '(b)', '(c)', '(d)']]
+    for method_name in PAPER_METHOD_ORDER:
+        row = [method_name]
+        for panel_label in ('a', 'b', 'c', 'd'):
+            family = family_by_panel.get(panel_label)
+            metrics = metrics_by_family.get(family, {}).get(method_name, make_empty_metrics()) if family else make_empty_metrics()
+            row.append(format_number(metrics['energy_kj']))
+        rows.append(row)
+    return rows
+
+def write_table_csvs(table2_rows, table3_rows):
     BREAKDOWN_ROOT.mkdir(parents=True, exist_ok=True)
     with TABLE2_CSV_PATH.open('w', encoding='utf-8', newline='') as handle:
-        csv.writer(handle).writerows(rows)
+        csv.writer(handle).writerows(table2_rows)
+    with TABLE3_CSV_PATH.open('w', encoding='utf-8', newline='') as handle:
+        csv.writer(handle).writerows(table3_rows)
 MEMORY_PANEL_FIGURE_SIZES = {'a': (38.4, 8.0), 'b': (12.8, 8.0), 'c': (12.8, 8.0), 'd': (12.8, 8.0)}
 
 
@@ -479,8 +503,9 @@ def draw_figure(top_manifest, smoothing=0.2):
             summary_stats.append({'others_average': baseline_avg, 'ours_average': ours, 'absolute_improvement_percent': reduction_pct})
         else:
             summary_stats.append({'others_average': None, 'ours_average': None, 'absolute_improvement_percent': None})
-    rows = build_table_rows(panels, metrics_by_family)
-    write_table_csv(rows)
+    table2_rows = build_table2_rows(panels, metrics_by_family)
+    table3_rows = build_table3_rows(panels, metrics_by_family)
+    write_table_csvs(table2_rows, table3_rows)
     BREAKDOWN_ROOT.mkdir(parents=True, exist_ok=True)
     try:
         fill_memory_template(FIGURE_PATH, panel_paths, summary_stats)
@@ -495,4 +520,5 @@ rows = draw_figure(top_manifest)
 write_summary(rows)
 print(f'manifest: {manifest_path or "no-data"}')
 print(f'figure: {FIGURE_PATH}')
-print(f'table: {TABLE2_CSV_PATH}')
+print(f'table2: {TABLE2_CSV_PATH}')
+print(f'table3: {TABLE3_CSV_PATH}')

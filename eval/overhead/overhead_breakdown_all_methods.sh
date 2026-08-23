@@ -7,6 +7,7 @@ SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 EVAL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
+source "${EVAL_ROOT}/common/sanity_check.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-overhead/overhead_breakdown_all_methods_table}"
@@ -27,15 +28,8 @@ MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 MWE="${MWE:-0}"
 
-: "${MWE_RUNTIME_LIMIT_SECONDS:=300}"
-export MWE_RUNTIME_LIMIT_SECONDS
-if [[ "$MWE" == "1" && "${MWE_TIMEOUT_APPLIED:-0}" != "1" ]]; then
-    if command -v timeout >/dev/null 2>&1; then
-        export MWE_TIMEOUT_APPLIED=1
-        exec timeout --preserve-status -k 10s "${MWE_RUNTIME_LIMIT_SECONDS}s" bash "$SCRIPT_PATH" "$@"
-    fi
-    echo "[warn] timeout command not found; MWE runtime is not hard-capped" >&2
-fi
+: "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+export MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS
 if [[ "$MWE" == "1" ]]; then
     EDGEVLA_SMOKE="1"
     MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-5}"
@@ -43,6 +37,7 @@ if [[ "$MWE" == "1" ]]; then
     SUITE_WAIT_POLL_SECONDS="${SUITE_WAIT_POLL_SECONDS:-5}"
 fi
 vlaselect_install_cleanup_trap
+vlaselect_run_sanity_check "overhead_breakdown_all_methods.sh" "$EVAL_ROOT" "$MWE" "32" "12"
 
 declare -a FAMILY_ORDER=(
     octo
@@ -291,6 +286,8 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 ENABLE_SELF_CURVE_WATCHER="$ENABLE_SELF_CURVE_WATCHER" \
+                SMOKE="$MWE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         vla_adapter_new)
@@ -300,6 +297,7 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 SMOKE="$MWE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         tinyvla)
@@ -316,10 +314,10 @@ launch_family_suite() {
                 SUITE_STAMP="$SUITE_STAMP" \
                 TAIL_LOG="$TAIL_LOG" \
                 SMOKE="$EDGEVLA_SMOKE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 QUEUED_PER_GPU="$EDGEVLA_QUEUED_PER_GPU" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
-                SMOKE="$MWE" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         *)

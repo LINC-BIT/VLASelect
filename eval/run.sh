@@ -82,5 +82,6 @@ cat <<'MSG'
 [run.sh] primary evaluation scripts finished.
 [run.sh] Notes:
 [run.sh] - The postprocess scripts now generate panel images first and then stitch them into final figures close to the paper layout.
+[run.sh] - Each experiment entry script performs its own preflight sanity check before launch.
 [run.sh] - To run the short sanity-check mode instead, use `MWE=1 bash run.sh`.
 MSG

@@ -172,6 +172,26 @@ if [[ -n "$INHERIT_SUITE_FROM" ]]; then
     fi
 fi
 
+if [[ "$SMOKE" == "1" ]]; then
+    : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+    selected_method_count=0
+    for method in "${METHOD_ORDER[@]}"; do
+        if [[ "${SHOULD_RUN[$method]}" == "1" ]]; then
+            selected_method_count=$((selected_method_count + 1))
+        fi
+    done
+    if [[ "$selected_method_count" -lt 1 ]]; then
+        selected_method_count=1
+    fi
+    MWE_PER_METHOD_RUNTIME_SECONDS=$((MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS / selected_method_count))
+    if [[ "$MWE_PER_METHOD_RUNTIME_SECONDS" -lt 1 ]]; then
+        MWE_PER_METHOD_RUNTIME_SECONDS=1
+    fi
+    MWE_PER_METHOD_RUNTIME_HOURS="$(awk -v sec="$MWE_PER_METHOD_RUNTIME_SECONDS" 'BEGIN { printf "%.6f", sec / 3600 }')"
+else
+    MWE_PER_METHOD_RUNTIME_HOURS="0.0084"
+fi
+
 mkdir -p "$SUITE_ROOT" "$PLOTS_DIR" "$LAUNCH_LOG_DIR"
 rm -rf "$PID_DIR"
 mkdir -p "$PID_DIR"
@@ -201,6 +221,7 @@ if [[ "$QUEUED_PER_GPU" == "1" ]]; then
         --resource-change-directions "$RESOURCE_CHANGE_DIRECTIONS"
         --resource-change-factors "$RESOURCE_CHANGE_FACTORS"
         --gpu-by-method-override "$GPU_BY_METHOD_OVERRIDE"
+        --smoke-max-runtime-hours "$MWE_PER_METHOD_RUNTIME_HOURS"
     )
     if [[ "$SMOKE" == "1" ]]; then
         scheduler_cmd+=(--smoke)
@@ -303,26 +324,26 @@ for method in "${METHOD_ORDER[@]}"; do
 
     if [[ "$SMOKE" == "1" ]]; then
         cmd+=(
-            TOTAL_TIMESTEPS_OVERRIDE=200
-            NUM_ENVS_OVERRIDE=1
-            NUM_EVAL_ENVS_OVERRIDE=1
-            NUM_STEPS_OVERRIDE=50
-            NUM_MINIBATCHES_OVERRIDE=1
+            TOTAL_TIMESTEPS_OVERRIDE=1024
+            NUM_ENVS_OVERRIDE=8
+            NUM_EVAL_ENVS_OVERRIDE=2
+            NUM_STEPS_OVERRIDE=16
+            NUM_MINIBATCHES_OVERRIDE=2
             UPDATE_EPOCHS_OVERRIDE=1
             EVAL_EPISODES_OVERRIDE=4
-            MAX_RUNTIME_HOURS_OVERRIDE=0.08
+            MAX_RUNTIME_HOURS_OVERRIDE="$MWE_PER_METHOD_RUNTIME_HOURS"
             EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45
-            ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=1
-            EVAL_MICRO_BATCH_SIZE_OVERRIDE=1
-            UPDATE_MICRO_BATCH_SIZE_OVERRIDE=1
+            ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=8
+            EVAL_MICRO_BATCH_SIZE_OVERRIDE=8
+            UPDATE_MICRO_BATCH_SIZE_OVERRIDE=4
             ROLLOUT_PROGRESS_LOG_INTERVAL_OVERRIDE=1
             SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1
-            SUPERVISED_BATCH_SIZE_OVERRIDE=1
-            ONLINE_BUFFER_CAPACITY_OVERRIDE=64
-            EXPERT_BUFFER_CAPACITY_OVERRIDE=64
+            SUPERVISED_BATCH_SIZE_OVERRIDE=8
+            ONLINE_BUFFER_CAPACITY_OVERRIDE=256
+            EXPERT_BUFFER_CAPACITY_OVERRIDE=256
             EXPERT_TARGET_SUCCESS_TRAJECTORIES_OVERRIDE=0
-            EXPERT_COLLECT_NUM_ENVS_OVERRIDE=1
-            EXPERT_COLLECT_MAX_STEPS_OVERRIDE=50
+            EXPERT_COLLECT_NUM_ENVS_OVERRIDE=4
+            EXPERT_COLLECT_MAX_STEPS_OVERRIDE=128
         )
     fi
 

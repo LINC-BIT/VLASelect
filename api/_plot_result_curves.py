@@ -115,6 +115,21 @@ def _latest_history(method_dir: Path) -> Optional[Tuple[Path, List[Dict[str, Any
     return None
 
 
+def _single_run_label(run_dir: Path) -> str:
+    """Use the selected method/granularity as the label for a single run plot."""
+    args_path = run_dir / "args.json"
+    try:
+        payload = json.loads(args_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        payload = {}
+    if isinstance(payload, dict):
+        for key in ("scaling_method", "knowledge_exchange_granularity"):
+            value = payload.get(key)
+            if value:
+                return str(value)
+    return run_dir.parent.name if run_dir.parent != run_dir else run_dir.name
+
+
 def _metric_value(metric: Dict[str, Any], requested: str) -> Optional[float]:
     candidates = [requested]
     if requested == "train_success_once":
@@ -141,13 +156,20 @@ def plot_category(
     if not results_dir.is_dir():
         raise FileNotFoundError(f"results directory does not exist: {results_dir}")
     series: List[Tuple[str, List[float], List[float]]] = []
-    for method_dir in sorted(
-        path for path in results_dir.iterdir() if path.is_dir() and path.name not in _IGNORED_METHOD_DIRS
-    ):
-        loaded = _latest_history(method_dir)
-        if loaded is None:
-            continue
-        _, history = loaded
+    direct_history = results_dir / "metrics_history.json"
+    if direct_history.is_file():
+        loaded = _load_history(direct_history)
+        method_histories = [(_single_run_label(results_dir), loaded)] if loaded else []
+    else:
+        method_histories = []
+        for method_dir in sorted(
+            path for path in results_dir.iterdir() if path.is_dir() and path.name not in _IGNORED_METHOD_DIRS
+        ):
+            loaded = _latest_history(method_dir)
+            if loaded is not None:
+                method_histories.append((method_dir.name, loaded[1]))
+
+    for method_name, history in method_histories:
         xs: List[float] = []
         ys: List[float] = []
         for item in history:
@@ -161,7 +183,7 @@ def plot_category(
             except (TypeError, ValueError):
                 continue
         if xs:
-            series.append((method_dir.name, xs, ys))
+            series.append((method_name, xs, ys))
     if not series:
         raise RuntimeError(f"no usable metrics_history.json found under {results_dir}")
 

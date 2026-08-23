@@ -9,7 +9,7 @@ cd "$ROOT_DIR"
 
 MWE=${MWE:-0}
 OUTPUT_DIR=${OUTPUT_DIR_OVERRIDE:-"$SCRIPT_DIR/outputs/tinyvla_online_rl_cl"}
-RUN_NAME=${RUN_NAME_OVERRIDE:-}
+RUN_NAME=${RUN_NAME_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}
 ENV_ID=${ENV_ID_OVERRIDE:-OpenCabinetDrawerCabinet1021Default-v1}
 CUDA_VISIBLE_DEVICES=${CUDA_DEVICES:-${CUDA_VISIBLE_DEVICES:-0}}
 export CUDA_VISIBLE_DEVICES
@@ -63,5 +63,21 @@ ARGS=(--env-id "$ENV_ID" --output-dir "$OUTPUT_DIR" \
   --early-stop-zero-success-minutes 45000 --cuda-device "$CUDA_VISIBLE_DEVICES")
 if [[ -n "$SCALING_METHOD" ]]; then ARGS+=(--scaling-method "$SCALING_METHOD"); fi
 if [[ -n "$KNOWLEDGE_EXCHANGE_GRANULARITY" ]]; then ARGS+=(--knowledge-exchange-granularity "$KNOWLEDGE_EXCHANGE_GRANULARITY"); fi
-if [[ -n "$RUN_NAME" ]]; then ARGS+=(--run-name "$RUN_NAME"); fi
-exec python -u "$SCRIPT_DIR/tinyvla_impl.py" "${ARGS[@]}"
+ARGS+=(--run-name "$RUN_NAME")
+python -u "$SCRIPT_DIR/tinyvla_impl.py" "${ARGS[@]}"
+
+RUN_DIR="$OUTPUT_DIR/$RUN_NAME"
+if [[ -n "$SCALING_METHOD" ]]; then
+  python "$ROOT_DIR/api/plot_scaling_methods.py" \
+    --results-dir "$RUN_DIR" \
+    --output "$RUN_DIR/training_accuracy_curve.png"
+elif [[ -n "$KNOWLEDGE_EXCHANGE_GRANULARITY" ]]; then
+  python "$ROOT_DIR/api/plot_knowledge_exchange.py" \
+    --results-dir "$RUN_DIR" \
+    --output "$RUN_DIR/training_accuracy_curve.png"
+else
+  python "$ROOT_DIR/api/plot_scaling_methods.py" \
+    --results-dir "$RUN_DIR" \
+    --output "$RUN_DIR/training_accuracy_curve.png"
+fi
+echo "[plot] output=$RUN_DIR/training_accuracy_curve.png"

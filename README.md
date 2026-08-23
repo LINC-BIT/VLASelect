@@ -545,8 +545,6 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     ```bash
     # completed within 5 minutes
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
-    # draw the running results
-    python api/draw.py
     ```
 
 - **Full run**:
@@ -726,8 +724,6 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
     ```bash
     # completed within 5 minutes
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
-    # draw the running results
-    python api/draw.py
     ```
 
 - **Full run**:

@@ -14,6 +14,7 @@ dist/
 docker/
 pip-wheel-metadata/
 eval/datasets/
+eval/overhead/mock_preview/
 
 # Logs and local run outputs
 *.log

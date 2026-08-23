@@ -162,7 +162,7 @@ If the artifact is distributed as an archived package instead of a git repositor
        ```
       If everything works correctly, the output should look like the following.
       ![4.1](/imgs/4.1.png)
-    5. If PyTorch has issues, visit the official PyTorch installation page to get the proper download and installation commands: https://pytorch.org/get-started/locally/. 例如，我要为本机安装cuda 124版本（小于本机cuda版本）的pytorch，其运行如下所示。
+    5. If PyTorch has issues, visit the official PyTorch installation page to get the proper download and installation commands: https://pytorch.org/get-started/locally/. For example, if I want to install the CUDA 12.4 build of PyTorch on this machine, which is lower than the host CUDA version, the command is shown below.
       ![5.1](/imgs/5.1.png)
 
 #### 2.1.3 One-click run
@@ -194,7 +194,7 @@ You can then start the experiments by running the following commands.
 **Accuracy Under Tasks/Environment Changes**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd acc_comparison
@@ -202,7 +202,7 @@ MWE=1 bash run_acc_task_env_change.sh
 python3 plot_acc_task_env.py
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd acc_comparison
@@ -217,7 +217,7 @@ On machines with fewer CPU cores, you can reduce the default host-side thread us
 **Accuracy Under Available Resource Changes**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd acc_comparison
@@ -225,7 +225,7 @@ MWE=1 bash run_acc_res_change.sh
 python3 plot_acc_res_change.py
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd acc_comparison
@@ -240,7 +240,7 @@ python3 plot_acc_res_change.py
 **Overheads Under The Same Accuracy**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd overhead
@@ -248,7 +248,7 @@ MWE=1 bash overhead_same_acc.sh
 python3 plot_overhead.py
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd overhead
@@ -260,7 +260,7 @@ python3 plot_overhead.py
 
 **Time Breakdown of VLASelect's Modules**
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd overhead
@@ -268,7 +268,7 @@ MWE=1 bash overhead_breakdown_modules.sh
 python3 plot_breakdown_modules.py
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd overhead
@@ -280,7 +280,7 @@ python3 plot_breakdown_modules.py
 
 **Time Breakdown of Sampling and Training for All Methods**
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd overhead
@@ -288,7 +288,7 @@ MWE=1 bash overhead_breakdown_all_methods.sh
 python3 plot_breakdown_all_methods.py
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd overhead
@@ -300,7 +300,7 @@ python3 plot_breakdown_all_methods.py
 
 #### 2.2.3 Ablation Experiments
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd ablation
@@ -308,7 +308,7 @@ MWE=1 bash run_ablation.sh
 python3 plot_ablation.py
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd ablation
@@ -326,13 +326,13 @@ The sim-to-real results need to be summarized manually and the results of the ot
 **Sim-to-real transfer**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 ```bash
 cd discussion
 MWE=1 bash run_sim_to_real.sh
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd discussion
@@ -344,14 +344,14 @@ bash run_sim_to_real.sh
 **ICL**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd discussion
 MWE=1 bash compare_icl.sh
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd discussion
@@ -363,14 +363,14 @@ bash compare_icl.sh
 **Applicability to VLA models**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd discussion
 MWE=1 MODEL_SELECTION=octo bash run_vla_models.sh
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd discussion
@@ -382,14 +382,14 @@ MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash run_vla_models.sh
 **Maximum supported model size**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd discussion
 MWE=1 MODEL_SIZE_LIMIT_FAMILY=tinyvla bash sweep_model_size.sh
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd discussion
@@ -401,14 +401,14 @@ MODEL_SIZE_LIMIT_FAMILY=tinyvla bash sweep_model_size.sh
 **Applicability to multi-agent scenarios**
 
 
-1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly.
+1. **Minimum Working Example**: you can use the following code to run the minimum working example and check whether the code runs correctly. [[Example running results]]()
 
 ```bash
 cd discussion
 MWE=1 bash run_multi_agent.sh
 ```
 
-2. **Full run**: you can use the following code to reproduce the full experiment.
+2. **Full run**: you can use the following code to reproduce the full experiment. [[Example running results]]()
 
 ```bash
 cd discussion
@@ -427,8 +427,6 @@ bash run_multi_agent.sh
   - **Ablation**: up to 55 hours in total for the full set of 11 design choices, and at a similar GPU-memory level to the primary online evaluation.
   - **Discussion experiments**: the ICL discussion takes up to 5 hours in total. The other discussion scripts except sim-to-real typically take up to 15 minutes per run with about 16-32 GB of GPU memory. The sim-to-real discussion mainly depends on the manual real-robot execution process, and its GPU memory usage is about 16 GB.
 - **MWE**: due to the reduced runtime and batch sizes, all MWE experiments typically finish within 5 minutes and use about 8-20 GB of GPU memory.
-
-
 
 ## 3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 
@@ -610,7 +608,7 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
   ```
 
 **Full run**:
-- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.3-mwe.png)
+- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]]()
   ```bash
   bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
   ```

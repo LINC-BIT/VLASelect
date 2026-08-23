@@ -9,13 +9,9 @@ MWE="${MWE:-0}"
 
 : "${MWE_RUNTIME_LIMIT_SECONDS:=300}"
 export MWE_RUNTIME_LIMIT_SECONDS
-if [[ "$MWE" == "1" && "${MWE_TIMEOUT_APPLIED:-0}" != "1" ]]; then
-    if command -v timeout >/dev/null 2>&1; then
-        export MWE_TIMEOUT_APPLIED=1
-        exec timeout --preserve-status -k 10s "${MWE_RUNTIME_LIMIT_SECONDS}s" bash "$SCRIPT_PATH" "$@"
-    fi
-    echo "[warn] timeout command not found; MWE runtime is not hard-capped" >&2
-fi
+# Do not wrap the whole suite in one timeout. Each child experiment enforces
+# its own MWE cap, and some of them launch detached workers that must manage
+# cleanup and result writing independently.
 AUTO_POSTPROCESS="${AUTO_POSTPROCESS:-1}"
 RUN_ACC_TASK_ENV="${RUN_ACC_TASK_ENV:-1}"
 RUN_ACC_RES_CHANGE="${RUN_ACC_RES_CHANGE:-1}"

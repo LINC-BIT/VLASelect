@@ -18,6 +18,8 @@ import argparse
 import gymnasium as gym
 import numpy as np
 import torch
+
+os.environ.setdefault("ACCELERATE_USE_DEEPSPEED", "false")
 import torch.multiprocessing as mp
 import torch.optim as optim
 from accelerate import Accelerator

@@ -229,6 +229,7 @@ class SuiteScheduler:
                 stdin=subprocess.DEVNULL,
                 stdout=log_f,
                 stderr=subprocess.STDOUT,
+                start_new_session=True,
                 env=os.environ.copy(),
             )
         self.current_processes[f"{method}:train"] = train_proc
@@ -244,7 +245,38 @@ class SuiteScheduler:
             started_at_utc=datetime.now(timezone.utc).isoformat(),
         )
 
-        exit_code = train_proc.wait()
+        hard_timeout_seconds = max(1.0, self.args.smoke_max_runtime_hours * 3600.0) if self.args.smoke else None
+        try:
+            if hard_timeout_seconds is None:
+                exit_code = train_proc.wait()
+            else:
+                exit_code = train_proc.wait(timeout=hard_timeout_seconds)
+        except subprocess.TimeoutExpired:
+            with log_file.open("ab") as log_f:
+                log_f.write(
+                    f"[edgevla-queue] hard timeout reached after {hard_timeout_seconds:.3f}s; terminating pid={train_proc.pid}\n".encode("utf-8")
+                )
+                log_f.flush()
+            try:
+                os.killpg(train_proc.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                exit_code = train_proc.wait(timeout=10.0)
+            except subprocess.TimeoutExpired:
+                with log_file.open("ab") as log_f:
+                    log_f.write(
+                        f"[edgevla-queue] force killing pid={train_proc.pid} after 10.000s grace\n".encode("utf-8")
+                    )
+                    log_f.flush()
+                try:
+                    os.killpg(train_proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                exit_code = train_proc.wait()
+            if exit_code == 0:
+                exit_code = 124
+
         try:
             monitor_proc.wait(timeout=max(5.0, self.args.monitor_interval_seconds + 5.0))
         except subprocess.TimeoutExpired:
@@ -258,7 +290,7 @@ class SuiteScheduler:
         self.current_processes.pop(f"{method}:monitor", None)
         self.update_manifest(
             method,
-            status="completed" if exit_code == 0 else "failed",
+            status="completed" if exit_code == 0 else ("timed_out" if exit_code == 124 else "failed"),
             exit_code=exit_code,
             finished_at_utc=datetime.now(timezone.utc).isoformat(),
         )

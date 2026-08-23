@@ -106,6 +106,46 @@ vlaselect_start_manifest_log_tail() {
     vlaselect_register_cleanup_pid "$!"
 }
 
+vlaselect_print_suite_training_logs() {
+    local manifest_path="$1"
+    local prefix="${2:-suite-log}"
+    local suite_label="${3:-suite}"
+
+    [[ -f "$manifest_path" ]] || return 0
+
+    python - "$manifest_path" "$prefix" "$suite_label" <<'__VLASELECT_LOGS__'
+import json
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+prefix = sys.argv[2]
+suite_label = sys.argv[3]
+
+try:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError):
+    raise SystemExit(0)
+
+methods = manifest.get("methods", [])
+if not isinstance(methods, list):
+    raise SystemExit(0)
+
+for method in methods:
+    if not isinstance(method, dict):
+        continue
+    name = str(method.get("name") or method.get("display_name") or "unknown")
+    log_file = str(method.get("log_file") or "").strip()
+    run_dir = str(method.get("run_dir") or "").strip()
+    status = str(method.get("status") or "").strip()
+    if log_file:
+        print(f"[{prefix}] training log ({suite_label}/{name}): {log_file}")
+    elif run_dir:
+        suffix = f" status={status}" if status else ""
+        print(f"[{prefix}] training log ({suite_label}/{name}): unavailable; run_dir={run_dir}{suffix}")
+__VLASELECT_LOGS__
+}
+
 vlaselect_cleanup() {
     local rc=$?
     trap - INT TERM EXIT

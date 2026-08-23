@@ -1,4 +1,5 @@
 from __future__ import annotations
+import ast
 import csv
 import json
 import math
@@ -42,6 +43,22 @@ FAMILY_CONFIGS = {'edgevla': {'metric_key': 'eval_success_once', 'loader': 'hist
 PAPER_METHOD_ORDER = ['ConRFT', 'FlaRe', 'iRe-VLA', 'Self-Improvement', 'RLVLA', 'VLA-RFT', 'World-Env', 'EdgeTA', 'ConvertNet', 'VLASelect']
 PAPER_METHOD_BY_INTERNAL = {'conrft': 'ConRFT','flare': 'FlaRe','improv_vla': 'iRe-VLA','self_improv': 'Self-Improvement','self_improvement': 'Self-Improvement','ppo_gen': 'RLVLA','vla_rft': 'VLA-RFT','world_env': 'World-Env','edgeta': 'EdgeTA','convertnet': 'ConvertNet','ours': 'VLASelect','ours_single_agent': 'VLASelect'}
 VLASELECT_METHODS_BY_FAMILY = {'octo': ['ours_single_agent', 'ours'],'vla_adapter_new': ['ours'],'tinyvla': ['ours'],'edgevla': ['ours', 'ours_single_agent']}
+HISTORY_METRIC_ALIASES_BY_FAMILY = {
+    'octo': ('eval_success_once', 'eval/success_once', 'success_once'),
+    'vla_adapter_new': ('train_success_once', 'eval_success_once', 'success_once'),
+    'tinyvla': ('train_success_once', 'eval_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'success_once'),
+}
+# Table 3 follows the paper format: the first row of each method averages the
+# workload segments treated as new tasks, and the second row averages the
+# segments treated as environment changes.
+TABLE3_EVENT_LABELS_BY_FAMILY = {
+    'octo': ['task', 'env', 'env', 'env', 'task', 'env', 'env', 'env', 'task', 'env'],
+    'vla_adapter_new': ['task', 'task', 'task', 'task', 'env', 'task', 'env', 'task', 'env', 'task'],
+    'tinyvla': ['task', 'env', 'env', 'env', 'env', 'env', 'env', 'env', 'env', 'env'],
+    'edgevla': ['task', 'env', 'env', 'env', 'task', 'task', 'env', 'task', 'task', 'env'],
+}
+TABLE3_EVENT_DISPLAY_NAMES = {'task': 'new task', 'env': 'environment change'}
 def load_json(path: Path) -> Any: return json.loads(path.read_text(encoding='utf-8'))
 def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
     path = Path(raw_path)
@@ -50,6 +67,19 @@ def finite_float(value: Any) -> float | None:
     try: result = float(value)
     except (TypeError, ValueError): return None
     return result if math.isfinite(result) else None
+def parse_sequence(raw_value: Any) -> list[Any]:
+    if raw_value is None:
+        return []
+    if isinstance(raw_value, (list, tuple)):
+        return list(raw_value)
+    raw_text = str(raw_value).strip()
+    if raw_text == '':
+        return []
+    try:
+        parsed = ast.literal_eval(raw_text)
+    except (SyntaxError, ValueError):
+        parsed = [item.strip() for item in raw_text.split(',') if item.strip()]
+    return list(parsed) if isinstance(parsed, (list, tuple)) else [parsed]
 def find_latest_manifest() -> Path | None:
     if LATEST_POINTER.exists():
         stamp = LATEST_POINTER.read_text(encoding='utf-8').strip()
@@ -108,6 +138,26 @@ def collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[flo
 def collect_series(family: str, run_dir: Path) -> list[tuple[float, float]]:
     config = FAMILY_CONFIGS[family]
     return collect_tensorboard_series(run_dir, config['metric_key']) if config['loader'] == 'tensorboard' else collect_history_series(run_dir, config['metric_key'])
+
+def extract_history_success_value(family: str, metric: dict[str, Any]) -> float | None:
+    for key in HISTORY_METRIC_ALIASES_BY_FAMILY.get(family, ()): 
+        value = finite_float(metric.get(key))
+        if value is not None:
+            return value
+    return None
+
+def collect_segment_success_history(family: str, run_dir: Path) -> dict[int, list[tuple[float, float]]]:
+    grouped: dict[int, list[tuple[float, float]]] = {}
+    for metric in load_history(run_dir):
+        env_index = finite_float(metric.get('current_env_index'))
+        elapsed_hours = finite_float(metric.get('elapsed_hours'))
+        success_value = extract_history_success_value(family, metric)
+        if env_index is None or elapsed_hours is None or success_value is None:
+            continue
+        grouped.setdefault(int(env_index), []).append((elapsed_hours, success_value))
+    for values in grouped.values():
+        values.sort(key=lambda item: item[0])
+    return grouped
 def smooth_values(values: list[float], smoothing: float) -> list[float]:
     if not values or smoothing <= 0.0: return values
     smoothed = [values[0]]
@@ -167,12 +217,143 @@ def integrate_energy_kj(samples, cutoff_hours):
 def mean_memory_gb(samples, cutoff_hours):
     values = [sample['gpu_memory_used_mb'] / 1024.0 for sample in samples if sample['elapsed_hours'] <= cutoff_hours]
     return sum(values) / len(values) if values else 0.0
+
+def integrate_energy_interval_kj(samples, start_hours, end_hours):
+    if not samples or end_hours <= start_hours:
+        return 0.0
+    start_seconds = start_hours * 3600.0
+    end_seconds = end_hours * 3600.0
+    total_j = 0.0
+    prev_power = samples[0]['gpu_power_w']
+    prev_time = start_seconds
+    for sample in samples:
+        sample_time = sample['elapsed_seconds']
+        sample_power = sample['gpu_power_w']
+        if sample_time <= start_seconds:
+            prev_power = sample_power
+            continue
+        interval_end = min(sample_time, end_seconds)
+        if interval_end > prev_time:
+            total_j += prev_power * (interval_end - prev_time)
+            prev_time = interval_end
+        prev_power = sample_power
+        if sample_time >= end_seconds:
+            break
+    if prev_time < end_seconds:
+        total_j += prev_power * (end_seconds - prev_time)
+    return total_j / 1000.0
 def pick_vlaselect_method(methods, family):
     by_name = {method.get('name'): method for method in methods if isinstance(method, dict)}
     for name in VLASELECT_METHODS_BY_FAMILY.get(family, []):
         if name in by_name: return by_name[name]
     return None
 def make_empty_metrics(): return {'time_h': 0.0, 'memory_gb': 0.0, 'energy_kj': 0.0, 'reach_hours': 0.0, 'target_accuracy': 0.0}
+
+def build_table3_segments(panel: dict[str, Any]) -> list[dict[str, Any]]:
+    env_ids = [str(value) for value in parse_sequence(panel.get('envs_id'))]
+    raw_time_points = parse_sequence(panel.get('env_change_time_points'))
+    time_points = [finite_float(value) for value in raw_time_points]
+    time_points = [value for value in time_points if value is not None]
+    segment_count = min(len(env_ids), len(time_points))
+    if segment_count == 0:
+        return []
+    labels = TABLE3_EVENT_LABELS_BY_FAMILY.get(panel['family'], [])
+    if len(labels) < segment_count:
+        labels = list(labels) + ['env'] * (segment_count - len(labels))
+    segments = []
+    start_minutes = 0.0
+    for index in range(segment_count):
+        end_minutes = float(time_points[index])
+        if end_minutes <= start_minutes:
+            continue
+        segments.append({
+            'index': index,
+            'env_id': env_ids[index],
+            'label': labels[index],
+            'start_hours': start_minutes / 60.0,
+            'end_hours': end_minutes / 60.0,
+        })
+        start_minutes = end_minutes
+    return segments
+
+def segment_target_accuracy(series: list[tuple[float, float]], start_hours: float, end_hours: float) -> float | None:
+    values = [value for elapsed_hours, value in series if start_hours <= elapsed_hours <= end_hours]
+    return max(values) if values else None
+
+def first_reach_hours_in_window(series: list[tuple[float, float]], target_accuracy: float, start_hours: float, end_hours: float) -> float | None:
+    for elapsed_hours, value in series:
+        if elapsed_hours < start_hours:
+            continue
+        if elapsed_hours > end_hours:
+            break
+        if value >= target_accuracy:
+            return elapsed_hours
+    return None
+
+def average_or_zero(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+def collect_panel_table3_energy(panel):
+    suite_manifest_raw = panel.get('suite_manifest')
+    if not suite_manifest_raw:
+        return {}
+    suite_manifest_path = resolve_path(suite_manifest_raw)
+    if not suite_manifest_path.exists():
+        return {}
+    suite_manifest = load_json(suite_manifest_path)
+    methods = [method for method in suite_manifest.get('methods', []) if isinstance(method, dict)]
+    vlaselect_method = pick_vlaselect_method(methods, panel['family'])
+    if vlaselect_method is None:
+        return {}
+    segments = build_table3_segments(panel)
+    if not segments:
+        return {}
+    vlaselect_history = collect_segment_success_history(panel['family'], resolve_path(vlaselect_method['run_dir']))
+    segment_targets: dict[int, float] = {}
+    for segment in segments:
+        target = segment_target_accuracy(
+            vlaselect_history.get(segment['index'], []),
+            segment['start_hours'],
+            segment['end_hours'],
+        )
+        if target is not None:
+            segment_targets[segment['index']] = target
+
+    energy_values_by_method: dict[str, dict[str, list[float]]] = {}
+    for method in methods:
+        paper_name = PAPER_METHOD_BY_INTERNAL.get(method.get('name'))
+        if not paper_name:
+            continue
+        run_dir = resolve_path(method['run_dir'])
+        success_history = collect_segment_success_history(panel['family'], run_dir)
+        gpu_samples = load_gpu_samples(run_dir)
+        if not gpu_samples:
+            continue
+        buckets = energy_values_by_method.setdefault(paper_name, {'task': [], 'env': []})
+        for segment in segments:
+            target_accuracy = segment_targets.get(segment['index'])
+            if target_accuracy is None:
+                continue
+            reach_hours = first_reach_hours_in_window(
+                success_history.get(segment['index'], []),
+                target_accuracy,
+                segment['start_hours'],
+                segment['end_hours'],
+            )
+            if reach_hours is None:
+                continue
+            buckets[segment['label']].append(
+                integrate_energy_interval_kj(gpu_samples, segment['start_hours'], reach_hours)
+            )
+
+    averaged: dict[str, dict[str, float]] = {}
+    for method_name in PAPER_METHOD_ORDER:
+        buckets = energy_values_by_method.get(method_name, {'task': [], 'env': []})
+        averaged[method_name] = {
+            'task': average_or_zero(buckets['task']),
+            'env': average_or_zero(buckets['env']),
+        }
+    return averaged
 
 def percentile(values: list[float], q: float) -> float:
     if not values:
@@ -371,16 +552,23 @@ def build_table2_rows(panel_entries, metrics_by_family):
         rows.append(row)
     return rows
 
-def build_table3_rows(panel_entries, metrics_by_family):
+def build_table3_rows(panel_entries, table3_energy_by_family):
     family_by_panel = {panel['panel_label']: panel['family'] for panel in panel_entries}
-    rows = [['', 'Energy consumption (kJ)', '', '', ''], ['Method', '(a)', '(b)', '(c)', '(d)']]
+    workload_name_by_panel = {panel['panel_label']: panel['workload_name'] for panel in panel_entries}
+    rows = [
+        ['', 'Average energy consumption (kJ) in each new task (first row)', 'and environment change (second row).', '', ''],
+        ['Method', workload_name_by_panel.get('a', '(a)'), workload_name_by_panel.get('b', '(b)'), workload_name_by_panel.get('c', '(c)'), workload_name_by_panel.get('d', '(d)')],
+    ]
     for method_name in PAPER_METHOD_ORDER:
-        row = [method_name]
+        task_row = [method_name]
+        env_row = ['']
         for panel_label in ('a', 'b', 'c', 'd'):
             family = family_by_panel.get(panel_label)
-            metrics = metrics_by_family.get(family, {}).get(method_name, make_empty_metrics()) if family else make_empty_metrics()
-            row.append(format_number(metrics['energy_kj']))
-        rows.append(row)
+            family_rows = table3_energy_by_family.get(family, {}) if family else {}
+            task_row.append(format_number(family_rows.get(method_name, {}).get('task', 0.0)))
+            env_row.append(format_number(family_rows.get(method_name, {}).get('env', 0.0)))
+        rows.append(task_row)
+        rows.append(env_row)
     return rows
 
 def write_table_csvs(table2_rows, table3_rows):
@@ -487,11 +675,13 @@ def draw_figure(top_manifest, smoothing=0.2):
     panels = resolve_panel_entries(top_manifest)
     summary_rows = []
     metrics_by_family = {}
+    table3_energy_by_family = {}
     summary_stats: list[dict[str, float | None]] = []
     panel_paths: list[Path] = []
     for panel in panels:
         panel_metrics, _ = collect_panel_metrics(panel)
         metrics_by_family[panel['family']] = panel_metrics
+        table3_energy_by_family[panel['family']] = collect_panel_table3_energy(panel)
         panel_path, panel_rows = draw_memory_panel(panel, panel_metrics)
         panel_paths.append(panel_path)
         summary_rows.extend(panel_rows)
@@ -504,7 +694,7 @@ def draw_figure(top_manifest, smoothing=0.2):
         else:
             summary_stats.append({'others_average': None, 'ours_average': None, 'absolute_improvement_percent': None})
     table2_rows = build_table2_rows(panels, metrics_by_family)
-    table3_rows = build_table3_rows(panels, metrics_by_family)
+    table3_rows = build_table3_rows(panels, table3_energy_by_family)
     write_table_csvs(table2_rows, table3_rows)
     BREAKDOWN_ROOT.mkdir(parents=True, exist_ok=True)
     try:

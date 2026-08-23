@@ -172,6 +172,7 @@ if [[ -n "$INHERIT_SUITE_FROM" ]]; then
     fi
 fi
 
+MWE_SPAWN_TIMEOUT_ARGS=()
 if [[ "$SMOKE" == "1" ]]; then
     : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
     selected_method_count=0
@@ -187,6 +188,7 @@ if [[ "$SMOKE" == "1" ]]; then
     if [[ "$MWE_PER_METHOD_RUNTIME_SECONDS" -lt 1 ]]; then
         MWE_PER_METHOD_RUNTIME_SECONDS=1
     fi
+    MWE_SPAWN_TIMEOUT_ARGS=(--timeout-seconds "$MWE_PER_METHOD_RUNTIME_SECONDS" --kill-after-seconds 10)
     MWE_PER_METHOD_RUNTIME_HOURS="$(awk -v sec="$MWE_PER_METHOD_RUNTIME_SECONDS" 'BEGIN { printf "%.6f", sec / 3600 }')"
 else
     MWE_PER_METHOD_RUNTIME_HOURS="0.0084"
@@ -353,6 +355,7 @@ for method in "${METHOD_ORDER[@]}"; do
         --pid-file "$pid_file" \
         --log-file "$log_file" \
         --cwd "$ROOT_DIR" \
+        "${MWE_SPAWN_TIMEOUT_ARGS[@]}" \
         -- "${cmd[@]}" \
         > "$launch_log"
     train_pid="$(cat "$pid_file")"

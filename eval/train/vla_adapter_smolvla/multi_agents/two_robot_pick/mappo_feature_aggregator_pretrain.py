@@ -16,6 +16,8 @@ import random
 import gymnasium as gym
 import numpy as np
 import torch
+
+os.environ.setdefault("ACCELERATE_USE_DEEPSPEED", "false")
 import torch.nn.functional as F
 import torch.multiprocessing as mp
 import torch.optim as optim

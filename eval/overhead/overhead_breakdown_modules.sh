@@ -266,6 +266,7 @@ launch_family_suite() {
     if [[ -n "$reuse_manifest" ]]; then
         vlaselect_register_cleanup_manifest "$reuse_manifest"
         echo "[breakdown] reusing ${family}: ${reuse_manifest}"
+        vlaselect_print_suite_training_logs "$reuse_manifest" "breakdown" "$family"
         append_panel_entry "$family" "$reuse_manifest" "$launch_log"
         return 0
     fi
@@ -326,6 +327,7 @@ launch_family_suite() {
             ;;
     esac
 
+    vlaselect_print_suite_training_logs "$suite_manifest" "breakdown" "$family"
     append_panel_entry "$family" "$suite_manifest" "$launch_log"
     if [[ "$TAIL_LOG" == "1" ]]; then
         vlaselect_start_manifest_log_tail "$suite_manifest" "$family"

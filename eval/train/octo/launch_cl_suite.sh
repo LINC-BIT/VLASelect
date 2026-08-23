@@ -261,6 +261,7 @@ printf "name\tdisplay_name\tgpu\tstatus\tinherited_from\tpid\tmonitor_pid\trun_d
 
 prepare_smoke_inputs
 
+MWE_SPAWN_TIMEOUT_ARGS=()
 : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
 if [[ "$SMOKE" == "1" ]]; then
     selected_method_count=0
@@ -276,6 +277,7 @@ if [[ "$SMOKE" == "1" ]]; then
     if [[ "$mwe_per_method_runtime_seconds" -lt 1 ]]; then
         mwe_per_method_runtime_seconds=1
     fi
+    MWE_SPAWN_TIMEOUT_ARGS=(--timeout-seconds "$mwe_per_method_runtime_seconds" --kill-after-seconds 10)
     SMOKE_ENV_OVERRIDES+=(MAX_TIME_OVERRIDE="$mwe_per_method_runtime_seconds")
 fi
 
@@ -379,7 +381,7 @@ for method in "${METHOD_ORDER[@]}"; do
         launch_cmd=("${cmd[@]}")
     fi
 
-    python "$ROOT_DIR/train/octo/spawn_detached.py"         --pid-file "$pid_file"         --log-file "$log_file"         --cwd "$ROOT_DIR"         -- "${launch_cmd[@]}"         > "$launch_log"
+    python "$ROOT_DIR/train/octo/spawn_detached.py"         --pid-file "$pid_file"         --log-file "$log_file"         --cwd "$ROOT_DIR"         "${MWE_SPAWN_TIMEOUT_ARGS[@]}"         -- "${launch_cmd[@]}"         > "$launch_log"
     train_pid="$(cat "$pid_file")"
     LAST_PID_BY_GPU["$gpu"]="$train_pid"
 

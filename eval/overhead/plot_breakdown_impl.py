@@ -510,6 +510,10 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
         [[_safe_float(grouped.get(family, {}).get(key, 0.0)) for key in module_keys] for family in FAMILY_ORDER],
         dtype=float,
     )
+    training_times = np.array(
+        [_safe_float(grouped.get(family, {}).get("online_rl_completion_seconds", 0.0)) for family in FAMILY_ORDER],
+        dtype=float,
+    )
 
     fig_height = max(3.35, 0.42 * len(workloads) + 1.2)
     fig, ax = plt.subplots(figsize=(8.4, fig_height), constrained_layout=False)
@@ -541,7 +545,6 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
         spine.set_color('black')
         spine.set_linewidth(1.0)
     ax.tick_params(axis='y', length=0)
-    ax.margins(x=0.04)
 
     if float(np.max(values)) <= 0.0:
         ax.set_xlim(0.0, 1.0)
@@ -549,6 +552,27 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
             row = grouped.get(family)
             if not row or int(row.get("has_module_data", 0)) != 1:
                 ax.text(0.02, idx, NO_DATA_TEXT, ha='left', va='center', fontsize=9)
+    else:
+        totals = np.sum(values, axis=1)
+        max_total = float(np.max(totals))
+        max_training = float(np.max(training_times)) if len(training_times) else 0.0
+        right_padding = max(0.15 * max_total, 0.06 * max_training, 6.0)
+        ax.set_xlim(0.0, max_total + right_padding)
+        text_offset = max(0.02 * max_total, 1.0)
+        for idx, family in enumerate(FAMILY_ORDER):
+            row = grouped.get(family)
+            if not row or int(row.get("has_module_data", 0)) != 1:
+                continue
+            total = float(totals[idx])
+            training_time = float(training_times[idx])
+            ax.text(
+                total + text_offset,
+                idx,
+                f"training time: {training_time:.1f}s",
+                ha='left',
+                va='center',
+                fontsize=12,
+            )
 
     fig.tight_layout()
     fig.savefig(FIG_MODULES, dpi=300, bbox_inches='tight')

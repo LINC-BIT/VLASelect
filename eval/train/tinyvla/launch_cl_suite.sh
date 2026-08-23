@@ -29,6 +29,7 @@ RESOURCE_CHANGE_DIRECTIONS="${RESOURCE_CHANGE_DIRECTIONS_OVERRIDE:-}"
 RESOURCE_CHANGE_FACTORS="${RESOURCE_CHANGE_FACTORS_OVERRIDE:-}"
 
 SMOKE_ENV_OVERRIDES=()
+MWE_SPAWN_TIMEOUT_ARGS=()
 if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES=(
         TOTAL_TIMESTEPS_OVERRIDE=1024
@@ -242,6 +243,7 @@ if [[ "$SMOKE" == "1" ]]; then
         mwe_per_method_runtime_seconds=1
     fi
     mwe_per_method_runtime_hours="$(awk -v sec="$mwe_per_method_runtime_seconds" 'BEGIN { printf "%.6f", sec / 3600 }')"
+    MWE_SPAWN_TIMEOUT_ARGS=(--timeout-seconds "$mwe_per_method_runtime_seconds" --kill-after-seconds 10)
     SMOKE_ENV_OVERRIDES+=(MAX_RUNTIME_HOURS_OVERRIDE="$mwe_per_method_runtime_hours")
 fi
 
@@ -325,6 +327,7 @@ for method in "${METHOD_ORDER[@]}"; do
         --pid-file "$pid_file" \
         --log-file "$log_file" \
         --cwd "$ROOT_DIR" \
+        "${MWE_SPAWN_TIMEOUT_ARGS[@]}" \
         -- "${launch_cmd[@]}" \
         > "$launch_log"
     train_pid="$(cat "$pid_file")"

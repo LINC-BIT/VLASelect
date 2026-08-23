@@ -203,6 +203,8 @@ bash start_docker.sh
 # Then you can start the experiment
 cd <VLASelect directory in the container>/eval
 bash run.sh
+# You can use the command below to run all the minimum working examples
+MWE=1 base run.sh
 ```
 
 ### 2.2 Step-by-Step Reproducing

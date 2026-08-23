@@ -1,12 +1,12 @@
-,Time (h),,,,Memory footprint (GB),,,,Energy consumption (kJ),,,
-Method,(a),(b),(c),(d),(a),(b),(c),(d),(a),(b),(c),(d)
-ConRFT,0,0,0,0,0,0,0,0,0,0,0,0
-FlaRe,0,0,0,0,0,0,0,0,0,0,0,0
-iRe-VLA,0,0,0,0,0,0,0,0,0,0,0,0
-Self-Improvement,0,0,0,0,0,0,0,0,0,0,0,0
-RLVLA,0,0,0,0,0,0,0,0,0,0,0,0
-VLA-RFT,0,0,0,0,0,0,0,0,0,0,0,0
-World-Env,0,0,0,0,0,0,0,0,0,0,0,0
-EdgeTA,0,0,0,0,0,0,0,0,0,0,0,0
-ConvertNet,0,0,0,0,0,0,0,0,0,0,0,0
-VLASelect,0,0,0,0,0,0,0,0,0,0,0,0
+,Time (h),,,,Memory footprint (GB),,,
+Method,(a),(b),(c),(d),(a),(b),(c),(d)
+ConRFT,0,0,0,0,0,0,0,0
+FlaRe,0,0,0,0,0,0,0,0
+iRe-VLA,0,0,0,0,0,0,0,0
+Self-Improvement,0,0,0,0,0,0,0,0
+RLVLA,0,0,0,0,0,0,0,0
+VLA-RFT,0,0,0,0,0,0,0,0
+World-Env,0,0,0,0,0,0,0,0
+EdgeTA,0,0,0,0,0,0,0,0
+ConvertNet,0,0,0,0,0,0,0,0
+VLASelect,0,0,0,0,0,0,0,0

@@ -386,6 +386,7 @@ launch_family_suite() {
         return 1
     fi
 
+    vlaselect_print_suite_training_logs "$suite_manifest" "fig8" "$family"
     append_panel_entry "$family" "$suite_manifest" "$launch_log"
     if [[ "$TAIL_LOG" == "1" ]]; then
         vlaselect_start_manifest_log_tail "$suite_manifest" "$family"

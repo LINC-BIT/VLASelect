@@ -15,6 +15,8 @@ import random
 import gymnasium as gym
 import numpy as np
 import torch
+
+os.environ.setdefault("ACCELERATE_USE_DEEPSPEED", "false")
 import torch.multiprocessing as mp
 from accelerate import Accelerator
 from mani_skill.vector.wrappers.gymnasium import ManiSkillVectorEnv

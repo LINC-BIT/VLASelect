@@ -21,11 +21,19 @@ from torch import nn
 from api.small_model_scaling_interface import SmallModelScalingInterface
 
 
-def _randomize_student_parameters(student: nn.Module) -> None:
+def _randomize_student_parameters(student: nn.Module) -> int:
+    """Reset every nested module that exposes PyTorch's init hook.
+
+    Return the count so callers can verify that the generated student actually
+    contains resettable modules; some wrapper modules intentionally do not.
+    """
+    reset_count = 0
     for module in student.modules():
         reset_parameters = getattr(module, "reset_parameters", None)
         if callable(reset_parameters):
             reset_parameters()
+            reset_count += 1
+    return reset_count
 
 
 def _as_device_tensor(value: Any, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
@@ -167,7 +175,8 @@ class _DistillationScaling(_EnvironmentAwareScaling):
     def _distill(self, teacher: nn.Module, student: nn.Module, sample_batch: dict, device: torch.device, reference_api: Any) -> None:
         # FBS materialization copies teacher channels.  Distillation methods start
         # from an independent initialization, as in the original KD formulation.
-        _randomize_student_parameters(student)
+        reset_count = _randomize_student_parameters(student)
+        print(f"[distill-init] reset_parameters modules={reset_count}")
         rgbs = sample_batch["rgbs"].detach().cpu().numpy() if isinstance(sample_batch["rgbs"], torch.Tensor) else np.asarray(sample_batch["rgbs"])
         states = np.asarray(sample_batch["states"], dtype=np.float32)
         action_bins = sample_batch.get("action_bins")

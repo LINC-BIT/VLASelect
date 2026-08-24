@@ -167,11 +167,13 @@ class KnowledgeDistillationSmallModelScalingInterface(SmallModelScalingInterface
         ``reset_parameters`` is the standard initialization contract for PyTorch
         modules and is applied once per module by ``modules()``.
         """
+        reset_count = 0
         for module in student.modules():
             reset_parameters = getattr(module, "reset_parameters", None)
             if callable(reset_parameters):
                 reset_parameters()
-                print('reset')
+                reset_count += 1
+        print(f"[distill-init] reset_parameters modules={reset_count}")
 
 
 def make_knowledge_distillation_interface() -> KnowledgeDistillationSmallModelScalingInterface:

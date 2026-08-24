@@ -9,6 +9,7 @@ cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
 source "${EVAL_ROOT}/common/env_order.sh"
+source "${EVAL_ROOT}/common/mwe_time.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="ablation/ablation_table"
@@ -45,6 +46,10 @@ BASE_ENVS_ID="${BASE_ENVS_ID:-['PickCubeObjectScaleUp1p2-v1','PickCubeLightStron
 BASE_ENV_CHANGE_TIME_POINTS="${BASE_ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
 
 vlaselect_apply_env_id_order BASE_ENVS_ID BASE_ENV_CHANGE_TIME_POINTS BASE_ENV_ID
+EFFECTIVE_BASE_ENV_CHANGE_TIME_POINTS="$BASE_ENV_CHANGE_TIME_POINTS"
+if [[ "$MWE" == "1" ]]; then
+    EFFECTIVE_BASE_ENV_CHANGE_TIME_POINTS="$(vlaselect_convert_mwe_schedule_seconds_to_minutes "$BASE_ENV_CHANGE_TIME_POINTS")"
+fi
 
 DEFAULT_ENV_CONFIG_PATH="${DEFAULT_ENV_CONFIG_PATH:-datasets/PickCube-v1/motionplanning/trajectory.rgb+depth+state_dict.pd_ee_delta_pos.physx_cpu.json}"
 DEFAULT_STATE_NORM_STATS_PATH="${DEFAULT_STATE_NORM_STATS_PATH:-ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth}"
@@ -307,7 +312,7 @@ run_panel_group_with_limit() {
         per_curve_limit_seconds=1
     fi
 
-    export SUITE_STAMP LAUNCH_LOG_DIR BASE_ENV_ID BASE_ENVS_ID BASE_ENV_CHANGE_TIME_POINTS
+    export SUITE_STAMP LAUNCH_LOG_DIR BASE_ENV_ID BASE_ENVS_ID BASE_ENV_CHANGE_TIME_POINTS EFFECTIVE_BASE_ENV_CHANGE_TIME_POINTS
     export ENV_CONFIG_PATH STATE_NORM_STATS_PATH CHECKPOINT_PATH SMOKE PYTHON_BIN TAIL_LOG ABLATION_SELECTION
     export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS
 
@@ -560,7 +565,7 @@ launch_curve() {
         --exp-name "$exp_name"
         --env-id "$BASE_ENV_ID"
         --envs-id "$BASE_ENVS_ID"
-        --env-change-time-points "$BASE_ENV_CHANGE_TIME_POINTS"
+        --env-change-time-points "$EFFECTIVE_BASE_ENV_CHANGE_TIME_POINTS"
         --env_config_path "$ENV_CONFIG_PATH"
         --state-norm-stats-path "$STATE_NORM_STATS_PATH"
         --checkpoint "$CHECKPOINT_PATH"

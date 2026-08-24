@@ -9,6 +9,7 @@ cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
 source "${EVAL_ROOT}/common/env_order.sh"
+source "${EVAL_ROOT}/common/mwe_time.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-overhead/overhead_breakdown_modules_table}"
@@ -50,6 +51,11 @@ vlaselect_apply_env_id_order OCTO_ENVS_ID ENV_CHANGE_TIME_POINTS
 vlaselect_apply_env_id_order VLA_ADAPTER_NEW_ENVS_ID ENV_CHANGE_TIME_POINTS
 vlaselect_apply_env_id_order TINYVLA_ENVS_ID ENV_CHANGE_TIME_POINTS
 vlaselect_apply_env_id_order EDGEVLA_ENVS_ID ENV_CHANGE_TIME_POINTS
+
+EFFECTIVE_ENV_CHANGE_TIME_POINTS="$ENV_CHANGE_TIME_POINTS"
+if [[ "$MWE" == "1" ]]; then
+    EFFECTIVE_ENV_CHANGE_TIME_POINTS="$(vlaselect_convert_mwe_schedule_seconds_to_minutes "$ENV_CHANGE_TIME_POINTS")"
+fi
 
 
 declare -a FAMILY_ORDER=(
@@ -322,7 +328,7 @@ launch_family_suite() {
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         vla_adapter_new)
@@ -335,7 +341,7 @@ launch_family_suite() {
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         tinyvla)
@@ -348,7 +354,7 @@ launch_family_suite() {
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         edgevla)
@@ -361,10 +367,10 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 SUITE_ENVS_ID="$envs_id" \
-                SUITE_ENV_CHANGE_TIME_POINTS="$ENV_CHANGE_TIME_POINTS" \
+                SUITE_ENV_CHANGE_TIME_POINTS="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         *)

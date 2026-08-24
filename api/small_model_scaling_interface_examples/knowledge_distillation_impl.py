@@ -171,6 +171,7 @@ class KnowledgeDistillationSmallModelScalingInterface(SmallModelScalingInterface
             reset_parameters = getattr(module, "reset_parameters", None)
             if callable(reset_parameters):
                 reset_parameters()
+                print('reset')
 
 
 def make_knowledge_distillation_interface() -> KnowledgeDistillationSmallModelScalingInterface:

@@ -1,1 +1,2 @@
 partnet_mobility/**
+assets.zip

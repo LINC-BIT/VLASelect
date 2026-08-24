@@ -21,6 +21,7 @@ from mani_skill.vector.wrappers.gymnasium import ManiSkillVectorEnv
 import gymnasium as gym
 import random
 
+from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.octo.model import Agent as BaseAgent
 from train.octo.model import make_mlp, make_mlp_with_orth_init
 from train.reinforcement_learning.utils import collect_rollout, compute_gae, ppo_update_on_policy, get_step_infos
@@ -204,14 +205,30 @@ def get_agent_info(args, env_kwargs, collate_fn):
 
 
 class RiclAgent(BaseAgent):
-    def __init__(self, state_dim, action_dim, retrieval_embedding_dim, retrieval_hidden_dim=128, camera_count=1, normalize_state=True, use_depth=True):
+    def __init__(
+        self,
+        state_dim,
+        action_dim,
+        retrieval_embedding_dim,
+        retrieval_hidden_dim=128,
+        camera_count=1,
+        normalize_state=True,
+        use_depth=True,
+        simulate_prompt_feature=False,
+        prompt_feature_scale=1.0,
+    ):
         self.retrieval_hidden_dim = retrieval_hidden_dim
         self.retrieval_embedding_dim = retrieval_embedding_dim
+        self.simulate_prompt_feature = simulate_prompt_feature
+        self.prompt_feature_scale = prompt_feature_scale
         super().__init__(state_dim=state_dim, action_dim=action_dim, camera_count=camera_count, normalize_state=normalize_state, use_depth=use_depth)
         self.retrieval_action_proj = make_mlp(action_dim, [retrieval_hidden_dim], last_act=False)
         self.retrieval_embedding_proj = make_mlp(retrieval_embedding_dim, [retrieval_hidden_dim], last_act=False)
         base_feature_dim = 256 * 3 if use_depth else 256 * 2
-        total_feature_dim = base_feature_dim + retrieval_hidden_dim * 2
+        self.prompt_feature_proj = make_mlp(action_dim + retrieval_embedding_dim, [256], last_act=False)
+        self.prompt_injector = make_mlp(256, [base_feature_dim], last_act=False)
+        self.context_fuser = make_mlp(retrieval_hidden_dim * 2, [256], last_act=False)
+        total_feature_dim = base_feature_dim + 256
         self.actor_mean = make_mlp_with_orth_init(total_feature_dim, [512, action_dim], last_act=False, is_actor=True)
         self.critic = make_mlp_with_orth_init(total_feature_dim, [512, 1], last_act=False)
 
@@ -229,7 +246,11 @@ class RiclAgent(BaseAgent):
             retrieval_embedding = torch.zeros((base.shape[0], self.retrieval_embedding_dim), dtype=base.dtype, device=base.device)
         action_context = self.retrieval_action_proj(retrieval_action)
         embedding_context = self.retrieval_embedding_proj(retrieval_embedding)
-        return torch.cat([base, action_context, embedding_context], dim=1)
+        prompt_feature = self.prompt_feature_proj(torch.cat([retrieval_action, retrieval_embedding], dim=1))
+        if self.simulate_prompt_feature:
+            base = base + self.prompt_feature_scale * self.prompt_injector(prompt_feature)
+        context_feature = self.context_fuser(torch.cat([action_context, embedding_context], dim=1))
+        return torch.cat([base, context_feature], dim=1)
 
     def load_actor(self, path, strict=True):
         actor_state = torch.load(path, map_location='cpu')['actor']
@@ -396,6 +417,8 @@ def main(args):
         retrieval_embedding_dim=demo_bank.embedding_dim,
         retrieval_hidden_dim=args.ricl_context_hidden_dim,
         normalize_state=args.normalize_state,
+        simulate_prompt_feature=args.simulate_prompt_feature,
+        prompt_feature_scale=args.prompt_feature_scale,
     )
 
     if os.path.exists(ckpt['latest_agent']):
@@ -411,6 +434,8 @@ def main(args):
     sta_steps = global_steps = 0
     optimizer = optim.Adam(agent.parameters(), lr=args.lr, eps=1e-5)
     start_time = time.time()
+    training_start_time = time.monotonic()
+    runtime_tracker = ActiveRuntimeTracker.from_env(wall_clock_start_time=training_start_time)
     if os.path.exists(ckpt['latest_opt']):
         print(f"[Train] Resume optimizer from {ckpt['latest_opt']}")
         resume_opt = torch.load(ckpt['latest_opt'], map_location='cpu')
@@ -487,6 +512,16 @@ def main(args):
             frac = 1.0 - (global_steps / step_infos['total_steps'])
             args.ent_coef = args.ent_coef / 10 + (args.ent_coef * 0.9) * frac
 
+        if args.max_time is not None:
+            elapsed_minutes = runtime_tracker.current_minutes()
+            if elapsed_minutes >= args.max_time:
+                print(
+                    f'[RICL] reached max_time={args.max_time} minutes '
+                    f'(elapsed={elapsed_minutes:.2f} minutes) before rollout, stopping training.'
+                )
+                break
+
+        rollout_time = time.perf_counter()
         rollout = collect_rollout(
             args=args,
             agent=agent,
@@ -498,7 +533,11 @@ def main(args):
             writer=writer,
             global_step=global_steps,
         )
+        rollout_time = time.perf_counter() - rollout_time
+        runtime_tracker.add_active_seconds(rollout_time)
         obs_buf, act_buf, logp_buf, rew_buf, done_buf, val_buf, final_val_buf, next_obs, next_done = rollout
+
+        update_time = time.perf_counter()
         adv_buf, ret_buf = compute_gae(rew_buf, done_buf, val_buf, final_val_buf, next_obs, next_done, agent, collate_fn, args, accelerator)
         data = (
             obs_buf.reshape((-1,)),
@@ -511,6 +550,8 @@ def main(args):
         agent.train()
         stats = ppo_update_on_policy(args, agent, optimizer, data, collate_fn, accelerator, 'RICL PPO', writer)
         added = update_demo_bank_from_rollout(args, demo_bank, obs_buf, act_buf, rew_buf, device)
+        update_time = time.perf_counter() - update_time
+        runtime_tracker.add_active_seconds(update_time)
 
         global_steps += step_infos['rollot_steps']
         pbar.update(step_infos['rollot_steps'])
@@ -529,6 +570,10 @@ def main(args):
         writer.add_scalar('ricl/demo_bank_size', demo_bank.size, global_steps)
         writer.add_scalar('ricl/added_per_iteration', added, global_steps)
         writer.add_scalar('ricl/mean_retrieval_distance', demo_bank.last_mean_distance, global_steps)
+        writer.add_scalar('time/elapsed_minutes', runtime_tracker.current_minutes(), global_steps)
+        writer.add_scalar('time/rollout_time', rollout_time, global_steps)
+        writer.add_scalar('time/update_time', update_time, global_steps)
+        writer.add_scalar('time/total_rollout+update_time', runtime_tracker.active_seconds, global_steps)
         print(f'[RICL] demo_bank_size={demo_bank.size} added={added} mean_distance={demo_bank.last_mean_distance:.6f}')
 
     writer.close()
@@ -587,6 +632,7 @@ def parse_args():
     parser.add_argument('--resume-dir', type=str, default=None)
     parser.add_argument('--save-interval-per-rollout', type=int, default=25)
     parser.add_argument('--max-episode-steps', type=int, default=50)
+    parser.add_argument('--max-time', type=float, default=None)
     parser.add_argument('--robot-name', type=str, default='panda')
     parser.add_argument('--ricl-bank-capacity', type=int, default=4096)
     parser.add_argument('--ricl-bank-add-per-iter', type=int, default=256)
@@ -594,6 +640,8 @@ def parse_args():
     parser.add_argument('--ricl-retrieval-temperature', type=float, default=10.0)
     parser.add_argument('--ricl-state-dim-cap', type=int, default=32)
     parser.add_argument('--ricl-context-hidden-dim', type=int, default=128)
+    parser.add_argument('--simulate-prompt-feature', action='store_true')
+    parser.add_argument('--prompt-feature-scale', type=float, default=0.001)
     return parser.parse_args()
 
 

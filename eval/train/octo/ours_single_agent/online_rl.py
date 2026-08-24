@@ -1154,7 +1154,8 @@ def load_agent():
 
     checkpoint_path = Path(args.checkpoint)
     if checkpoint_path.exists():
-        agent.load_state_dict(torch.load(checkpoint_path)['agent'])
+        checkpoint_payload = torch.load(checkpoint_path, map_location='cpu')
+        agent.load_state_dict(checkpoint_payload['agent'])
     else:
         print(f"checkpoint not found at {checkpoint_path}; keep current initialization")
     for m in agent.modules():

@@ -5,6 +5,8 @@ import os
 import shutil
 import sys
 import time
+
+from train.common.mwe_runtime import ActiveRuntimeTracker
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -33,6 +35,7 @@ from train.vla_adapter_new.model_impl.online_rl import (
     save_metrics_history,
     strip_module_prefix,
 )
+from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
 from train.vla_adapter_new.ours.generate_static_small_model import generate_static_small_model
 from train.tinyvla.ours.model_with_fbs import convert_to_fbs_model
 
@@ -304,9 +307,17 @@ def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -
         return {}
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     if isinstance(checkpoint, dict) and "policy" in checkpoint:
-        policy_state = strip_module_prefix(checkpoint["policy"])
+        policy_state = maybe_apply_checkpoint_noise_to_state_dict(
+            strip_module_prefix(checkpoint["policy"]),
+            checkpoint_path=checkpoint_path,
+            state_label="policy",
+        )
     else:
-        policy_state = strip_module_prefix(checkpoint)
+        policy_state = maybe_apply_checkpoint_noise_to_state_dict(
+            strip_module_prefix(checkpoint),
+            checkpoint_path=checkpoint_path,
+            state_label="checkpoint",
+        )
     policy.load_state_dict(policy_state, strict=True)
     return checkpoint if isinstance(checkpoint, dict) else {}
 
@@ -612,6 +623,7 @@ def train(args: Args) -> None:
     metrics_history: List[Dict[str, Any]] = []
     train_start_time = time.time()
     training_start_time = time.monotonic()
+    runtime_tracker = ActiveRuntimeTracker.from_env(wall_clock_start_time=training_start_time)
     stop_reason = "completed"
     stopped_early_zero_success = False
     final_eval_metrics: Dict[str, float] = {}
@@ -622,7 +634,7 @@ def train(args: Args) -> None:
         if continual_env_schedule is None:
             return False, False, None
 
-        elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+        elapsed_minutes = runtime_tracker.current_minutes()
         scheduled_env_index = bisect.bisect_right(
             continual_env_schedule.change_time_points,
             elapsed_minutes,
@@ -723,6 +735,7 @@ def train(args: Args) -> None:
         train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
+        rollout_start_time = time.perf_counter()
         abort_during_rollout = False
         abort_reason: Optional[str] = None
         rollout_steps_completed = 0
@@ -767,7 +780,7 @@ def train(args: Args) -> None:
                 or step == 0
                 or step + 1 == args.num_steps
             ):
-                elapsed_hours = (time.time() - train_start_time) / 3600.0
+                elapsed_hours = runtime_tracker.current_hours(extra_active_seconds=time.perf_counter() - rollout_start_time)
                 reward_mean_so_far = float(partial_reward_means[-1])
                 logged_partial_reward_means.append(reward_mean_so_far)
                 print(
@@ -846,7 +859,7 @@ def train(args: Args) -> None:
                 "bc_loss": 0.0,
                 "bc_online_ratio": 0.0,
                 "bc_updates": 0.0,
-                "elapsed_hours": (time.time() - train_start_time) / 3600.0,
+                "elapsed_hours": runtime_tracker.current_hours(extra_active_seconds=time.perf_counter() - rollout_start_time),
                 "partial_rollout_only": True,
                 "rollout_steps_completed": rollout_steps_completed,
                 "online_buffer_steps": float(len(online_buffer)),
@@ -862,6 +875,9 @@ def train(args: Args) -> None:
             stop_reason = abort_reason or stop_reason
             stopped_early_zero_success = abort_reason == "early_stop_zero_success"
             break
+
+        rollout_time = time.perf_counter() - rollout_start_time
+        runtime_tracker.add_active_seconds(rollout_time)
 
         with torch.no_grad():
             next_value = reference.batched_get_value_no_grad(
@@ -945,6 +961,9 @@ def train(args: Args) -> None:
             online_buffer=online_buffer,
         )
 
+        update_time = time.perf_counter() - update_start_time
+        runtime_tracker.add_active_seconds(update_time)
+
         metric = {
             "update": update,
             "global_step": global_step,
@@ -962,7 +981,7 @@ def train(args: Args) -> None:
             "entropy": entropy_value,
             "stopped_on_minibatch_kl": stopped_on_minibatch_kl,
             "skipped_updates_on_kl": skipped_updates_on_kl,
-            "elapsed_hours": (time.time() - train_start_time) / 3600.0,
+            "elapsed_hours": runtime_tracker.current_hours(),
             "online_buffer_steps": float(len(online_buffer)),
             "online_success_trajectories": float(online_buffer.num_success_trajectories),
             **bc_stats,

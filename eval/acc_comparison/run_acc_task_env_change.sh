@@ -8,6 +8,7 @@ EVAL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
+source "${EVAL_ROOT}/common/env_order.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-acc_comparison/acc_comparison_task_env_table}"
@@ -44,6 +45,11 @@ TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1021Default-v1','O
 VLA_ADAPTER_NEW_ENVS_ID="${VLA_ADAPTER_NEW_ENVS_ID:-['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']}"
 OCTO_ENVS_ID="${OCTO_ENVS_ID:-['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']}"
 ENV_CHANGE_TIME_POINTS="${ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
+
+vlaselect_apply_env_id_order OCTO_ENVS_ID ENV_CHANGE_TIME_POINTS
+vlaselect_apply_env_id_order VLA_ADAPTER_NEW_ENVS_ID ENV_CHANGE_TIME_POINTS
+vlaselect_apply_env_id_order TINYVLA_ENVS_ID ENV_CHANGE_TIME_POINTS
+vlaselect_apply_env_id_order EDGEVLA_ENVS_ID ENV_CHANGE_TIME_POINTS
 
 declare -a PAPER_FAMILY_ORDER=(
     octo

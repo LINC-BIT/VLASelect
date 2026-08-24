@@ -363,8 +363,8 @@ The result file will be stored as `ablation/FIG_ABLATION.pdf`, which corresponds
 
 #### 2.2.4 Discussion Experiments
 
-The sim-to-real results need to be summarized manually and the results of the other experiments are printed to the console, so no
-  scripts are provided for plotting curves or summarizing tables/figures.
+The sim-to-real and ICL results are reported directly in the console. The VLA applicability experiment additionally provides a
+  plotting/summarization script that writes its figure and summary files automatically.
 
 **Sim-to-real transfer**
 
@@ -421,6 +421,8 @@ MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash run_vla_models.sh
 ```
 
 3. **Switch models**: For example, if the workload uses `octo`, run `MODEL_SELECTION=octo bash run_vla_models.sh`.
+
+The result files will be stored as `discussion/FIG_VLA_APPLICABILITY.pdf` and `discussion/vla_applicability_summary.csv`.
 
 **Maximum supported model size**
 

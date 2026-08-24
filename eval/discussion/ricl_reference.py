@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Reference RICL utility for the ICL discussion.
-
-This file provides two pieces:
-1. A lightweight, dependency-free reference implementation of the core RICL
-   mechanics: retrieval, neighbor ranking, and action interpolation.
-2. A paper-report mode that prints the discussion result used by the artifact.
-
-The repo does not ship the official RICL checkpoint or demo buffer, so the
-`paper-report` mode is the default behavior used by `compare_icl.sh`.
-"""
+"""Reference RICL utility for the ICL discussion."""
 
 from __future__ import annotations
 

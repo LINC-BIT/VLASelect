@@ -1,0 +1,230 @@
+{
+  "manifest": "/tmp/vla_applicability_preview/manifest.json",
+  "figure_pdf": "/home/zcr/vlaselect/eval/discussion/FIG_VLA_APPLICABILITY.pdf",
+  "figure_png": "/home/zcr/vlaselect/eval/discussion/FIG_VLA_APPLICABILITY.png",
+  "figure_svg": "/home/zcr/vlaselect/eval/discussion/FIG_VLA_APPLICABILITY.svg",
+  "rows": [
+    {
+      "family": "octo",
+      "status": "completed",
+      "pid": 0,
+      "log_file": "/tmp/vla_applicability_preview/octo_suite/launcher.log",
+      "run_dir": "/tmp/vla_applicability_preview/octo_suite",
+      "history_len": 9,
+      "latest_train_once": null,
+      "latest_train_end": null,
+      "latest_eval_once": 0.9,
+      "latest_eval_end": 0.92,
+      "final_eval_once": 0.9,
+      "final_eval_end": 0.92,
+      "display_name": "Octo",
+      "plot_run_dir": "/tmp/vla_applicability_preview/octo_suite/run_0",
+      "plot_num_points": 9,
+      "plot_last_minutes": 4.0,
+      "plot_final_accuracy": 0.9,
+      "manifest": "/tmp/vla_applicability_preview/manifest.json"
+    },
+    {
+      "family": "vla_adapter_new",
+      "status": "completed",
+      "pid": 0,
+      "log_file": "/tmp/vla_applicability_preview/vla_adapter_new/run.log",
+      "run_dir": "/tmp/vla_applicability_preview/vla_adapter_new/run",
+      "history_len": 9,
+      "latest_train_once": 0.81,
+      "latest_train_end": null,
+      "latest_eval_once": 0.78,
+      "latest_eval_end": null,
+      "final_eval_once": null,
+      "final_eval_end": null,
+      "display_name": "VLA-Adapter",
+      "plot_run_dir": "/tmp/vla_applicability_preview/vla_adapter_new/run",
+      "plot_num_points": 9,
+      "plot_last_minutes": 4.0,
+      "plot_final_accuracy": 0.81,
+      "manifest": "/tmp/vla_applicability_preview/manifest.json"
+    },
+    {
+      "family": "tinyvla",
+      "status": "completed",
+      "pid": 0,
+      "log_file": "/tmp/vla_applicability_preview/tinyvla/run.log",
+      "run_dir": "/tmp/vla_applicability_preview/tinyvla/run",
+      "history_len": 9,
+      "latest_train_once": 0.67,
+      "latest_train_end": null,
+      "latest_eval_once": 0.64,
+      "latest_eval_end": null,
+      "final_eval_once": null,
+      "final_eval_end": null,
+      "display_name": "TinyVLA",
+      "plot_run_dir": "/tmp/vla_applicability_preview/tinyvla/run",
+      "plot_num_points": 9,
+      "plot_last_minutes": 4.0,
+      "plot_final_accuracy": 0.67,
+      "manifest": "/tmp/vla_applicability_preview/manifest.json"
+    },
+    {
+      "family": "edgevla",
+      "status": "completed",
+      "pid": 0,
+      "log_file": "/tmp/vla_applicability_preview/edgevla/run.log",
+      "run_dir": "/tmp/vla_applicability_preview/edgevla/run",
+      "history_len": 9,
+      "latest_train_once": 0.64,
+      "latest_train_end": null,
+      "latest_eval_once": 0.61,
+      "latest_eval_end": null,
+      "final_eval_once": null,
+      "final_eval_end": null,
+      "display_name": "EdgeVLA",
+      "plot_run_dir": "/tmp/vla_applicability_preview/edgevla/run",
+      "plot_num_points": 9,
+      "plot_last_minutes": 4.0,
+      "plot_final_accuracy": 0.61,
+      "manifest": "/tmp/vla_applicability_preview/manifest.json"
+    }
+  ],
+  "series": [
+    {
+      "family": "octo",
+      "display_name": "Octo",
+      "source_run_dir": "/tmp/vla_applicability_preview/octo_suite/run_0",
+      "num_points": 9,
+      "last_minutes": 4.0,
+      "final_accuracy": 0.9,
+      "x": [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5,
+        4.0
+      ],
+      "y": [
+        0.12,
+        0.162,
+        0.23040000000000002,
+        0.32028,
+        0.416196,
+        0.5133372,
+        0.6023360400000001,
+        0.679635228,
+        0.7457446596
+      ],
+      "style": {
+        "color": "#4C78A8",
+        "linestyle": "-",
+        "linewidth": 3.6
+      }
+    },
+    {
+      "family": "vla_adapter_new",
+      "display_name": "VLA-Adapter",
+      "source_run_dir": "/tmp/vla_applicability_preview/vla_adapter_new/run",
+      "num_points": 9,
+      "last_minutes": 4.0,
+      "final_accuracy": 0.81,
+      "x": [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5,
+        4.0
+      ],
+      "y": [
+        0.1,
+        0.136,
+        0.19720000000000004,
+        0.27904000000000007,
+        0.36932800000000005,
+        0.4565296000000001,
+        0.5355707200000001,
+        0.605899504,
+        0.6671296528
+      ],
+      "style": {
+        "color": "#59A14F",
+        "linestyle": "-",
+        "linewidth": 3.6
+      }
+    },
+    {
+      "family": "tinyvla",
+      "display_name": "TinyVLA",
+      "source_run_dir": "/tmp/vla_applicability_preview/tinyvla/run",
+      "num_points": 9,
+      "last_minutes": 4.0,
+      "final_accuracy": 0.67,
+      "x": [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5,
+        4.0
+      ],
+      "y": [
+        0.08,
+        0.11,
+        0.16100000000000003,
+        0.2207,
+        0.28349,
+        0.35144300000000006,
+        0.41701010000000005,
+        0.47790707,
+        0.535534949
+      ],
+      "style": {
+        "color": "#4D4D4D",
+        "linestyle": "-",
+        "linewidth": 3.6
+      }
+    },
+    {
+      "family": "edgevla",
+      "display_name": "EdgeVLA",
+      "source_run_dir": "/tmp/vla_applicability_preview/edgevla/run",
+      "num_points": 9,
+      "last_minutes": 4.0,
+      "final_accuracy": 0.61,
+      "x": [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5,
+        4.0
+      ],
+      "y": [
+        0.03,
+        0.054000000000000006,
+        0.1008,
+        0.16056000000000004,
+        0.22339200000000003,
+        0.29137440000000003,
+        0.3599620800000001,
+        0.422973456,
+        0.4790814192
+      ],
+      "style": {
+        "color": "#C44E52",
+        "linestyle": "-",
+        "linewidth": 3.6
+      }
+    }
+  ]
+}

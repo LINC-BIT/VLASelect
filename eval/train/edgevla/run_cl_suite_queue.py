@@ -175,6 +175,7 @@ class SuiteScheduler:
                     "EXPERT_TARGET_SUCCESS_TRAJECTORIES_OVERRIDE=0",
                     "EXPERT_COLLECT_NUM_ENVS_OVERRIDE=4",
                     "EXPERT_COLLECT_MAX_STEPS_OVERRIDE=128",
+                    "MWE_ACTIVE_RUNTIME_ONLY=1",
                 ]
             )
         return ["env", *env_items, "bash", SCRIPT_BY_METHOD[method]]
@@ -245,37 +246,7 @@ class SuiteScheduler:
             started_at_utc=datetime.now(timezone.utc).isoformat(),
         )
 
-        hard_timeout_seconds = max(1.0, self.args.smoke_max_runtime_hours * 3600.0) if self.args.smoke else None
-        try:
-            if hard_timeout_seconds is None:
-                exit_code = train_proc.wait()
-            else:
-                exit_code = train_proc.wait(timeout=hard_timeout_seconds)
-        except subprocess.TimeoutExpired:
-            with log_file.open("ab") as log_f:
-                log_f.write(
-                    f"[edgevla-queue] hard timeout reached after {hard_timeout_seconds:.3f}s; terminating pid={train_proc.pid}\n".encode("utf-8")
-                )
-                log_f.flush()
-            try:
-                os.killpg(train_proc.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            try:
-                exit_code = train_proc.wait(timeout=10.0)
-            except subprocess.TimeoutExpired:
-                with log_file.open("ab") as log_f:
-                    log_f.write(
-                        f"[edgevla-queue] force killing pid={train_proc.pid} after 10.000s grace\n".encode("utf-8")
-                    )
-                    log_f.flush()
-                try:
-                    os.killpg(train_proc.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                exit_code = train_proc.wait()
-            if exit_code == 0:
-                exit_code = 124
+        exit_code = train_proc.wait()
 
         try:
             monitor_proc.wait(timeout=max(5.0, self.args.monitor_interval_seconds + 5.0))

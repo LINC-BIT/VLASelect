@@ -197,6 +197,20 @@ eval/ckpt/vla_adapter_new/model_impl/outputs/ppo_hold_cube_in_hand/20260430-1035
 eval/ckpt/vla_adapter_new/LIBERO-Object/model.safetensors
 eval/ckpt/vla_adapter_new/LIBERO-Object/action_head--checkpoint.pt
 eval/ckpt/vla_adapter_new/LIBERO-Object/proprio_projector--checkpoint.pt
+eval/ckpt/vla_adapter_new/LIBERO-Object/added_tokens.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/config.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/configuration_prismatic.py
+eval/ckpt/vla_adapter_new/LIBERO-Object/dataset_statistics.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/generation_config.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/merges.txt
+eval/ckpt/vla_adapter_new/LIBERO-Object/modeling_prismatic.py
+eval/ckpt/vla_adapter_new/LIBERO-Object/preprocessor_config.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/processing_prismatic.py
+eval/ckpt/vla_adapter_new/LIBERO-Object/processor_config.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/special_tokens_map.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/tokenizer.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/tokenizer_config.json
+eval/ckpt/vla_adapter_new/LIBERO-Object/vocab.json
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_agent.pt
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_opt.pt
@@ -228,6 +242,7 @@ iter_hf_ckpt_paths() {
 default_hf_maniskill_data_paths() {
     cat <<'PATHS_EOF'
 partnet_mobility/**
+assets.zip
 PATHS_EOF
 }
 
@@ -386,6 +401,7 @@ download_hf_maniskill_data() {
 import json
 import os
 from pathlib import Path
+import zipfile
 from huggingface_hub import snapshot_download
 
 repo_id = os.environ['HF_MANISKILL_DATA_REPO']
@@ -395,14 +411,46 @@ local_dir = Path(os.environ['HF_MANISKILL_DATA_LOCAL_DIR'])
 patterns = json.loads(os.environ['HF_MANISKILL_DATA_PATTERNS_JSON'])
 token = os.environ.get('HF_TOKEN') or None
 
-snapshot_download(
-    repo_id=repo_id,
-    repo_type=repo_type,
-    revision=revision,
-    local_dir=local_dir,
-    allow_patterns=patterns,
-    token=token,
-)
+
+def snapshot_with_patterns(allow_patterns):
+    if not allow_patterns:
+        return
+    snapshot_download(
+        repo_id=repo_id,
+        repo_type=repo_type,
+        revision=revision,
+        local_dir=local_dir,
+        allow_patterns=allow_patterns,
+        token=token,
+    )
+
+
+archive_patterns = [pattern for pattern in patterns if pattern.lower().endswith('.zip')]
+regular_patterns = [pattern for pattern in patterns if not pattern.lower().endswith('.zip')]
+
+snapshot_with_patterns(regular_patterns)
+snapshot_with_patterns(archive_patterns)
+
+
+def safe_extract_zip(zip_path: Path, target_dir: Path) -> None:
+    with zipfile.ZipFile(zip_path) as zf:
+        for member in zf.infolist():
+            member_path = Path(member.filename)
+            if member_path.is_absolute() or '..' in member_path.parts:
+                raise RuntimeError(f'unsafe zip entry: {member.filename}')
+            resolved = (target_dir / member_path).resolve()
+            target_root = target_dir.resolve()
+            if target_root not in resolved.parents and resolved != target_root:
+                raise RuntimeError(f'zip entry escapes target dir: {member.filename}')
+        zf.extractall(target_dir)
+
+
+for archive_pattern in archive_patterns:
+    for archive_path in sorted(local_dir.glob(archive_pattern)):
+        if not archive_path.is_file():
+            continue
+        safe_extract_zip(archive_path, local_dir)
+        archive_path.unlink()
 PY_HF_DATA" || status=$?
     fi
 

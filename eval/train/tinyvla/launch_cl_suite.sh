@@ -22,6 +22,19 @@ MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-30}"
 PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-60}"
 TAIL_LOG="${TAIL_LOG:-1}"
 vlaselect_install_cleanup_trap
+if [[ -z "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE+x}" ]]; then
+    if [[ "$SMOKE" == "1" ]]; then
+        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.35"
+    else
+        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.0"
+    fi
+else
+    export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE
+fi
+export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED="${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED:-0}"
+if [[ "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0" && "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0.0" ]]; then
+    echo "[tinyvla-suite] baseline pretrained checkpoint noise scale=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE seed=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED"
+fi
 GPU_BY_METHOD_OVERRIDE="${GPU_BY_METHOD_OVERRIDE:-}"
 GPU_QUEUE_POLL_SECONDS="${GPU_QUEUE_POLL_SECONDS:-30}"
 RESOURCE_CHANGE_TIME_POINTS="${RESOURCE_CHANGE_TIME_POINTS_OVERRIDE:-}"
@@ -29,12 +42,11 @@ RESOURCE_CHANGE_DIRECTIONS="${RESOURCE_CHANGE_DIRECTIONS_OVERRIDE:-}"
 RESOURCE_CHANGE_FACTORS="${RESOURCE_CHANGE_FACTORS_OVERRIDE:-}"
 
 SMOKE_ENV_OVERRIDES=()
-MWE_SPAWN_TIMEOUT_ARGS=()
 if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES=(
         TOTAL_TIMESTEPS_OVERRIDE=1024
         NUM_ENVS_OVERRIDE=8
-        NUM_EVAL_ENVS_OVERRIDE=2
+        NUM_EVAL_ENVS_OVERRIDE=8
         NUM_STEPS_OVERRIDE=16
         NUM_MINIBATCHES_OVERRIDE=2
         UPDATE_EPOCHS_OVERRIDE=1
@@ -46,6 +58,7 @@ if [[ "$SMOKE" == "1" ]]; then
         EVAL_MICRO_BATCH_SIZE_OVERRIDE=8
         UPDATE_MICRO_BATCH_SIZE_OVERRIDE=4
         EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45
+        MWE_ACTIVE_RUNTIME_ONLY=1
     )
 fi
 
@@ -243,7 +256,6 @@ if [[ "$SMOKE" == "1" ]]; then
         mwe_per_method_runtime_seconds=1
     fi
     mwe_per_method_runtime_hours="$(awk -v sec="$mwe_per_method_runtime_seconds" 'BEGIN { printf "%.6f", sec / 3600 }')"
-    MWE_SPAWN_TIMEOUT_ARGS=(--timeout-seconds "$mwe_per_method_runtime_seconds" --kill-after-seconds 10)
     SMOKE_ENV_OVERRIDES+=(MAX_RUNTIME_HOURS_OVERRIDE="$mwe_per_method_runtime_hours")
 fi
 
@@ -327,7 +339,6 @@ for method in "${METHOD_ORDER[@]}"; do
         --pid-file "$pid_file" \
         --log-file "$log_file" \
         --cwd "$ROOT_DIR" \
-        "${MWE_SPAWN_TIMEOUT_ARGS[@]}" \
         -- "${launch_cmd[@]}" \
         > "$launch_log"
     train_pid="$(cat "$pid_file")"

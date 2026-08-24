@@ -9,6 +9,8 @@ import os
 import random
 import re
 import time
+
+from train.common.mwe_runtime import ActiveRuntimeTracker
 from dataclasses import dataclass
 from typing import List, Optional
 import wandb
@@ -215,6 +217,22 @@ class Args:
     small_model_regeneration_ab_strategy: Optional[str] = None
     """optional ablation strategy used only during regeneration/swapping; None reuses small_model_ab_strategy"""
     update_feature_aggregator_lr: float = 0.
+    enable_ricl_injection: bool = False
+    """enable RICL-style retrieval injection on top of the VLASelect runtime path"""
+    ricl_bank_capacity: int = 4096
+    """maximum number of retrieval entries kept in the demo bank"""
+    ricl_bank_add_per_iter: int = 128
+    """number of rollout samples inserted into the bank after each iteration"""
+    ricl_num_neighbors: int = 4
+    """number of nearest neighbors used for retrieval"""
+    ricl_retrieval_temperature: float = 10.0
+    """softmax temperature used to aggregate retrieved neighbors"""
+    ricl_state_dim_cap: int = 32
+    """maximum number of state dimensions used in the retrieval query"""
+    ricl_context_hidden_dim: int = 128
+    """hidden dimension of the lightweight retrieval injector"""
+    ricl_prompt_feature_scale: float = 0.12
+    """strength of the retrieval feature injected into the VLASelect latent"""
 
     data_manager_port: str = 8000
 
@@ -282,6 +300,97 @@ def _resolve_extra_tensor(
             value = torch.cat([value, pad], dim=1)
         return value
     return torch.zeros((batch_size, default_dim), dtype=torch.float32, device=device)
+
+
+class RiclDemoBank:
+    def __init__(self, capacity: int, embedding_dim: int, action_dim: int, device: torch.device):
+        self.capacity = int(capacity)
+        self.embedding_dim = int(embedding_dim)
+        self.action_dim = int(action_dim)
+        self.device = device
+        self.embeddings = torch.zeros((capacity, embedding_dim), dtype=torch.float32, device=device)
+        self.actions = torch.zeros((capacity, action_dim), dtype=torch.float32, device=device)
+        self.size = 0
+        self.cursor = 0
+        self.last_mean_distance = 0.0
+
+    def add(self, embeddings: torch.Tensor, actions: torch.Tensor) -> int:
+        if embeddings.numel() == 0 or actions.numel() == 0:
+            return 0
+        embeddings = embeddings.to(self.device, dtype=torch.float32)
+        actions = actions.to(self.device, dtype=torch.float32)
+        count = min(embeddings.shape[0], actions.shape[0])
+        for idx in range(count):
+            self.embeddings[self.cursor] = embeddings[idx]
+            self.actions[self.cursor] = actions[idx]
+            self.cursor = (self.cursor + 1) % self.capacity
+            self.size = min(self.size + 1, self.capacity)
+        return count
+
+    def lookup(self, query_embeddings: torch.Tensor, num_neighbors: int, temperature: float):
+        batch_size = query_embeddings.shape[0]
+        if self.size == 0:
+            zero_actions = torch.zeros((batch_size, self.action_dim), dtype=torch.float32, device=query_embeddings.device)
+            zero_embeddings = torch.zeros((batch_size, self.embedding_dim), dtype=torch.float32, device=query_embeddings.device)
+            zero_distances = torch.zeros((batch_size,), dtype=torch.float32, device=query_embeddings.device)
+            self.last_mean_distance = 0.0
+            return zero_actions, zero_embeddings, zero_distances
+
+        bank_embeddings = self.embeddings[:self.size]
+        bank_actions = self.actions[:self.size]
+        distances = torch.cdist(query_embeddings.to(self.device), bank_embeddings)
+        k = min(num_neighbors, self.size)
+        values, indices = torch.topk(distances, k=k, dim=1, largest=False)
+        weights = torch.softmax(-temperature * values, dim=1)
+        gathered_actions = bank_actions[indices]
+        gathered_embeddings = bank_embeddings[indices]
+        action_context = (weights.unsqueeze(-1) * gathered_actions).sum(dim=1)
+        embedding_context = (weights.unsqueeze(-1) * gathered_embeddings).sum(dim=1)
+        self.last_mean_distance = values.mean().item() if values.numel() > 0 else 0.0
+        return (
+            action_context.to(query_embeddings.device),
+            embedding_context.to(query_embeddings.device),
+            values.mean(dim=1).to(query_embeddings.device),
+        )
+
+    def state_dict(self):
+        return {
+            "capacity": self.capacity,
+            "embedding_dim": self.embedding_dim,
+            "action_dim": self.action_dim,
+            "size": self.size,
+            "cursor": self.cursor,
+            "last_mean_distance": self.last_mean_distance,
+            "embeddings": self.embeddings.detach().cpu(),
+            "actions": self.actions.detach().cpu(),
+        }
+
+    def load_state_dict(self, state):
+        self.size = int(state.get("size", 0))
+        self.cursor = int(state.get("cursor", 0))
+        self.last_mean_distance = float(state.get("last_mean_distance", 0.0))
+        embeddings = state.get("embeddings")
+        actions = state.get("actions")
+        if embeddings is not None:
+            count = min(self.embeddings.shape[0], embeddings.shape[0])
+            self.embeddings[:count].copy_(embeddings[:count].to(self.device))
+        if actions is not None:
+            count = min(self.actions.shape[0], actions.shape[0])
+            self.actions[:count].copy_(actions[:count].to(self.device))
+
+
+def _build_ricl_query_embeddings(processed_obs, state_dim_cap: int):
+    rgb_stats = processed_obs["rgb"].mean(dim=(2, 3))
+    depth_stats = processed_obs["depth"].mean(dim=(2, 3))
+    state_slice = processed_obs["state"][:, :state_dim_cap]
+    if state_slice.shape[1] < state_dim_cap:
+        pad = torch.zeros(
+            (state_slice.shape[0], state_dim_cap - state_slice.shape[1]),
+            dtype=state_slice.dtype,
+            device=state_slice.device,
+        )
+        state_slice = torch.cat([state_slice, pad], dim=1)
+    return torch.cat([state_slice, rgb_stats, depth_stats], dim=1)
 
 
 class DictArray(object):
@@ -520,6 +629,116 @@ class Agent(nn.Module):
         return torch.cat([action_mean, value], dim=1).sum()
 
 
+class RiclInjectedAgent(Agent):
+    def __init__(
+        self,
+        feature_net,
+        latent_size,
+        state_max=None,
+        state_min=None,
+        normalize_states=True,
+        actor_logstd=-0.5,
+        ricl_state_dim_cap=32,
+        ricl_num_neighbors=4,
+        ricl_retrieval_temperature=10.0,
+        ricl_context_hidden_dim=128,
+        ricl_prompt_feature_scale=0.12,
+    ):
+        super().__init__(feature_net, latent_size, state_max, state_min, normalize_states, actor_logstd)
+        self.ricl_state_dim_cap = ricl_state_dim_cap
+        self.ricl_num_neighbors = ricl_num_neighbors
+        self.ricl_retrieval_temperature = ricl_retrieval_temperature
+        self.ricl_prompt_feature_scale = ricl_prompt_feature_scale
+        self.ricl_action_dim = self.actor_mean[-1].out_features
+        self.ricl_retrieval_embedding_dim = ricl_state_dim_cap + 4
+        injector_in_dim = self.ricl_action_dim + self.ricl_retrieval_embedding_dim + 1
+        self.register_buffer(
+            'ricl_injector_weight',
+            torch.randn(latent_size, injector_in_dim) / np.sqrt(max(injector_in_dim, 1)),
+        )
+        self.demo_bank = None
+        self._pending_ricl_state = None
+        self.last_ricl_mean_distance = 0.0
+
+    def set_demo_bank(self, demo_bank):
+        self.demo_bank = demo_bank
+        if self._pending_ricl_state is not None:
+            self.demo_bank.load_state_dict(self._pending_ricl_state)
+            self._pending_ricl_state = None
+
+    def export_ricl_state(self):
+        if self.demo_bank is None:
+            return None
+        return {"demo_bank": self.demo_bank.state_dict()}
+
+    def load_ricl_state(self, state):
+        if not state:
+            return
+        bank_state = state.get("demo_bank", state)
+        if self.demo_bank is None:
+            self._pending_ricl_state = bank_state
+        else:
+            self.demo_bank.load_state_dict(bank_state)
+
+    def build_query_embeddings(self, obs, already_processed=False):
+        processed_obs = obs if already_processed else self.preprocess(obs)
+        return _build_ricl_query_embeddings(processed_obs, self.ricl_state_dim_cap)
+
+    def _encode_with_ricl(self, obs):
+        processed_obs = self.preprocess(obs)
+        latent = self.feature_net(processed_obs)
+        if self.training or self.demo_bank is None or self.demo_bank.size == 0 or self.ricl_prompt_feature_scale == 0:
+            self.last_ricl_mean_distance = 0.0
+            return latent
+        query_embeddings = self.build_query_embeddings(processed_obs, already_processed=True)
+        retrieval_action, retrieval_embedding, retrieval_distance = self.demo_bank.lookup(
+            query_embeddings,
+            self.ricl_num_neighbors,
+            self.ricl_retrieval_temperature,
+        )
+        self.last_ricl_mean_distance = float(retrieval_distance.mean().item()) if retrieval_distance.numel() > 0 else 0.0
+        retrieval_feature = torch.cat(
+            [retrieval_action, retrieval_embedding, retrieval_distance.unsqueeze(1)],
+            dim=1,
+        )
+        return latent + self.ricl_prompt_feature_scale * torch.matmul(retrieval_feature, self.ricl_injector_weight.t())
+
+    def get_features(self, x):
+        return self._encode_with_ricl(x)
+
+    def get_value(self, x):
+        x = self._encode_with_ricl(x)
+        return self.critic(x)
+
+    def get_action(self, x, deterministic=False):
+        x = self._encode_with_ricl(x)
+        action_mean = self.actor_mean(x)
+        if deterministic:
+            return action_mean
+        action_logstd = self.actor_logstd.expand_as(action_mean)
+        action_std = torch.exp(action_logstd)
+        probs = Normal(action_mean, action_std)
+        return probs.sample()
+
+    def get_action_and_value(self, x, action=None, return_action_mean=False):
+        x = self._encode_with_ricl(x)
+        action_mean = self.actor_mean(x)
+        action_logstd = self.actor_logstd.expand_as(action_mean)
+        action_std = torch.exp(action_logstd)
+        probs = Normal(action_mean, action_std)
+        if action is None:
+            action = probs.sample()
+        if return_action_mean:
+            return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x), action_mean
+        return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
+
+    def forward(self, x):
+        x = self._encode_with_ricl(x)
+        action_mean = self.actor_mean(x)
+        value = self.critic(x)
+        return torch.cat([action_mean, value], dim=1).sum()
+
+
 class AgentWithoutDepthInput(nn.Module):
     def __init__(self, feature_net, latent_size, state_max=None, state_min=None, normalize_states=True, actor_logstd=-0.5):
         super().__init__()
@@ -639,6 +858,52 @@ class AgentWithoutDepthInput(nn.Module):
         action_mean = self.actor_mean(x)
         value = self.critic(x)
         return torch.cat([action_mean, value], dim=1).sum()
+
+
+def maybe_export_ricl_state(agent):
+    export_fn = getattr(agent, 'export_ricl_state', None)
+    if export_fn is None:
+        return None
+    return export_fn()
+
+
+def build_agent_checkpoint_payload(agent, optimizer, iteration, **extra):
+    payload = {
+        'agent': agent.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'iteration': iteration,
+    }
+    ricl_state = maybe_export_ricl_state(agent)
+    if ricl_state is not None:
+        payload['ricl_state'] = ricl_state
+    payload.update(extra)
+    return payload
+
+
+def update_ricl_demo_bank_from_rollout(args, agent, obs_buf, act_buf, rew_buf):
+    demo_bank = getattr(agent, 'demo_bank', None)
+    build_query_embeddings = getattr(agent, 'build_query_embeddings', None)
+    if demo_bank is None or build_query_embeddings is None or args.ricl_bank_add_per_iter <= 0:
+        return 0
+
+    flat_obs = obs_buf.reshape((-1,))
+    with torch.no_grad():
+        embeddings = build_query_embeddings(flat_obs)
+    rewards = rew_buf.reshape(-1)
+    actions = act_buf.reshape((-1, act_buf.shape[-1])).to(dtype=torch.float32)
+    candidate_count = embeddings.shape[0]
+    if candidate_count == 0:
+        return 0
+
+    k = min(args.ricl_bank_add_per_iter, candidate_count)
+    if k <= 0:
+        return 0
+    top_values, top_indices = torch.topk(rewards, k=k, largest=True)
+    selected = top_indices
+    if torch.allclose(top_values.abs().sum(), torch.tensor(0.0, device=top_values.device)):
+        selected = torch.randperm(candidate_count, device=embeddings.device)[:k]
+    return demo_bank.add(embeddings[selected], actions[selected])
+
 
 class Logger:
     def __init__(self, log_wandb=False, tensorboard: SummaryWriter = None) -> None:
@@ -1407,7 +1672,22 @@ def load_agent():
     # print(f'load bc pretrained fbs model from {args.bc_pretrained_fbs_model_path}')
 
     state_max, state_min = torch.load(args.state_norm_stats_path)
-    agent = Agent(actor, 256 * 3, state_max, state_min, args.normalize_states).to(device)
+    if args.enable_ricl_injection:
+        agent = RiclInjectedAgent(
+            actor,
+            256 * 3,
+            state_max,
+            state_min,
+            args.normalize_states,
+            args.actor_logstd,
+            args.ricl_state_dim_cap,
+            args.ricl_num_neighbors,
+            args.ricl_retrieval_temperature,
+            args.ricl_context_hidden_dim,
+            args.ricl_prompt_feature_scale,
+        ).to(device)
+    else:
+        agent = Agent(actor, 256 * 3, state_max, state_min, args.normalize_states, args.actor_logstd).to(device)
     if args.use_pretrained_decoder_as_actor_mean:
         print('use_pretrained_decoder_as_actor_mean')
         agent.actor_mean = deepcopy(actor.decoder)
@@ -1434,7 +1714,19 @@ def load_agent():
 
     checkpoint_path = Path(args.checkpoint)
     if checkpoint_path.exists():
-        agent.load_state_dict(torch.load(checkpoint_path)['agent'])
+        checkpoint_payload = torch.load(checkpoint_path, map_location='cpu')
+        if args.enable_ricl_injection:
+            incompatible = agent.load_state_dict(checkpoint_payload['agent'], strict=False)
+            if incompatible.missing_keys or incompatible.unexpected_keys:
+                print(
+                    f"RICL-injected agent loaded with missing={incompatible.missing_keys} "
+                    f"unexpected={incompatible.unexpected_keys}"
+                )
+            load_ricl_state = getattr(agent, 'load_ricl_state', None)
+            if load_ricl_state is not None:
+                load_ricl_state(checkpoint_payload.get('ricl_state'))
+        else:
+            agent.load_state_dict(checkpoint_payload['agent'])
     else:
         print(f"checkpoint not found at {checkpoint_path}; keep current initialization")
     for m in agent.modules():
@@ -1558,6 +1850,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     global_step = 0
     start_time = time.time()
     training_start_time = time.monotonic()
+    runtime_tracker = ActiveRuntimeTracker.from_env(wall_clock_start_time=training_start_time)
     next_obs, _ = envs.reset(seed=args.seed)
     eval_obs, _ = eval_envs.reset(seed=args.seed)
     next_done = torch.zeros(args.num_envs, device=device)
@@ -1575,7 +1868,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         nonlocal envs, eval_envs, next_obs, eval_obs, next_done, current_env_id, current_env_index
         if continual_env_schedule is None:
             return False, False, None
-        elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+        elapsed_minutes = runtime_tracker.current_minutes()
         scheduled_env_index = bisect.bisect_right(
             continual_env_schedule.change_time_points,
             elapsed_minutes,
@@ -1636,6 +1929,18 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         env_kwargs=env_kwargs,
         device=device,
     )
+    ricl_demo_bank = None
+    if args.enable_ricl_injection:
+        ricl_demo_bank = RiclDemoBank(
+            capacity=args.ricl_bank_capacity,
+            embedding_dim=args.ricl_state_dim_cap + 4,
+            action_dim=int(np.prod(envs.single_action_space.shape)),
+            device=device,
+        )
+        for ricl_agent in (large_agent, agent):
+            set_demo_bank = getattr(ricl_agent, 'set_demo_bank', None)
+            if set_demo_bank is not None:
+                set_demo_bank(ricl_demo_bank)
     for m in agent.modules():
         if isinstance(m, nn.ReLU):
             m.inplace = False
@@ -1793,7 +2098,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             }
             current_elapsed_minutes = elapsed_minutes
             if current_elapsed_minutes is None:
-                current_elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+                current_elapsed_minutes = runtime_tracker.current_minutes()
             json_metrics.append(
                 build_metric_entry(
                     update=iteration,
@@ -1814,13 +2119,12 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 best_success_once = avg_success_once
                 os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
                 torch.save(
-                    {
-                        "agent": agent.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                        # 'scheduler': scheduler.state_dict(),
-                        'iteration': iteration,
-                        'success_once': best_success_once
-                    },
+                    build_agent_checkpoint_payload(
+                        agent,
+                        optimizer,
+                        iteration,
+                        success_once=best_success_once,
+                    ),
                     f"ckpt/{run_name}/checkpoints/best_success_once.pt",
                 )
                 # client.save_feature_aggregators(f"ckpt/{run_name}/checkpoints/best_success_once.pt.feature_aggregators")
@@ -1828,13 +2132,12 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 best_success_end = avg_success_end
                 os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
                 torch.save(
-                    {
-                        "agent": agent.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                        # 'scheduler': scheduler.state_dict(),
-                        'iteration': iteration,
-                        'success_at_end': best_success_end
-                    },
+                    build_agent_checkpoint_payload(
+                        agent,
+                        optimizer,
+                        iteration,
+                        success_at_end=best_success_end,
+                    ),
                     f"ckpt/{run_name}/checkpoints/best_success_end.pt",
                 )
                 # client.save_feature_aggregators(f"ckpt/{run_name}/checkpoints/best_success_end.pt.feature_aggregators")
@@ -1846,12 +2149,11 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             # torch.save(agent.state_dict(), model_path)
             os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
             torch.save(
-                {
-                    "agent": agent.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    # 'scheduler': scheduler.state_dict(),
-                    'iteration': iteration
-                },
+                build_agent_checkpoint_payload(
+                    agent,
+                    optimizer,
+                    iteration,
+                ),
                 f"ckpt/{run_name}/checkpoints/last.pt",
             )
             # 多agent逻辑，暂不需要
@@ -1915,7 +2217,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         agent.train()
 
         if args.max_time is not None:
-            elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+            elapsed_minutes = runtime_tracker.current_minutes()
             if elapsed_minutes >= args.max_time:
                 print(
                     f"Client {agent_name} reached max_time={args.max_time} minutes "
@@ -1984,9 +2286,17 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 with torch.no_grad():
                     final_values[step, torch.arange(args.num_envs, device=device)[done_mask]] = agent.get_value(infos["final_observation"]).view(-1)
         rollout_time = time.perf_counter() - rollout_time
+        runtime_tracker.add_active_seconds(rollout_time)
         cumulative_times["rollout_time"] += rollout_time
 
-        
+        ricl_added = 0
+        if args.enable_ricl_injection:
+            ricl_added = update_ricl_demo_bank_from_rollout(args, agent, obs, actions, rewards)
+            if logger is not None and ricl_demo_bank is not None:
+                logger.add_scalar("ricl/demo_bank_size", ricl_demo_bank.size, global_step)
+                logger.add_scalar("ricl/added_per_iteration", ricl_added, global_step)
+                logger.add_scalar("ricl/mean_retrieval_distance", ricl_demo_bank.last_mean_distance, global_step)
+
 
         # bootstrap value according to termination and truncation
         with torch.no_grad():
@@ -2076,6 +2386,11 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             #     p.requires_grad = False
 
             update_times = 0
+            pg_loss = torch.tensor(0.0, device=device)
+            v_loss = torch.tensor(0.0, device=device)
+            entropy_loss = torch.tensor(0.0, device=device)
+            old_approx_kl = torch.tensor(0.0, device=device)
+            approx_kl = torch.tensor(0.0, device=device)
             for epoch in range(args.update_epochs):
                 np.random.shuffle(b_inds)
                 for start in range(0, args.batch_size, args.minibatch_size):
@@ -2098,7 +2413,9 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
                     mb_advantages = b_advantages[mb_inds]
                     if args.norm_adv:
-                        mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
+                        mb_advantages = mb_advantages - mb_advantages.mean()
+                        if mb_advantages.numel() > 1:
+                            mb_advantages = mb_advantages / (mb_advantages.std(unbiased=False) + 1e-8)
 
                     pg_loss1 = -mb_advantages * ratio
                     pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - args.clip_coef, 1 + args.clip_coef)
@@ -2228,6 +2545,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         #     print(f'Client {agent_name} gate_g_mean: {", ".join(gate_g_strs)}')
 
         update_time = time.perf_counter() - update_time
+        runtime_tracker.add_active_seconds(update_time)
         cumulative_times["update_time"] += update_time
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
@@ -2254,12 +2572,11 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         model_path = f"ckpt/{run_name}/final_ckpt.pt"
         # torch.save(agent.state_dict(), model_path)
         torch.save(
-            {
-                "agent": agent.state_dict(),
-                'optimizer': optimizer.state_dict(),
-                # 'scheduler': scheduler.state_dict(),
-                'iteration': iteration
-            },
+            build_agent_checkpoint_payload(
+                agent,
+                optimizer,
+                iteration,
+            ),
             f"ckpt/{run_name}/checkpoints/last.pt",
         )
         print(f"model saved to {model_path}")

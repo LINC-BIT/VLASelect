@@ -8,6 +8,7 @@ EVAL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
+source "${EVAL_ROOT}/common/env_order.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-overhead/overhead_breakdown_all_methods_table}"
@@ -38,6 +39,18 @@ if [[ "$MWE" == "1" ]]; then
 fi
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "overhead_breakdown_all_methods.sh" "$EVAL_ROOT" "$MWE" "32" "12"
+
+EDGEVLA_ENVS_ID="${EDGEVLA_ENVS_ID:-['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']}"
+TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']}"
+VLA_ADAPTER_NEW_ENVS_ID="${VLA_ADAPTER_NEW_ENVS_ID:-['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']}"
+OCTO_ENVS_ID="${OCTO_ENVS_ID:-['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']}"
+ENV_CHANGE_TIME_POINTS="${ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
+
+vlaselect_apply_env_id_order OCTO_ENVS_ID ENV_CHANGE_TIME_POINTS
+vlaselect_apply_env_id_order VLA_ADAPTER_NEW_ENVS_ID ENV_CHANGE_TIME_POINTS
+vlaselect_apply_env_id_order TINYVLA_ENVS_ID ENV_CHANGE_TIME_POINTS
+vlaselect_apply_env_id_order EDGEVLA_ENVS_ID ENV_CHANGE_TIME_POINTS
+
 
 declare -a FAMILY_ORDER=(
     octo
@@ -79,6 +92,13 @@ declare -A SUITE_MANIFEST_BY_FAMILY=(
     [vla_adapter_new]="ckpt/vla_adapter_new/cl_suite/${SUITE_STAMP}/manifest.json"
     [tinyvla]="ckpt/tinyvla/cl_suite/${SUITE_STAMP}/manifest.json"
     [edgevla]="train/edgevla/cl_suite/${SUITE_STAMP}/manifest.json"
+)
+
+declare -A ENVS_ID_BY_FAMILY=(
+    [octo]="$OCTO_ENVS_ID"
+    [vla_adapter_new]="$VLA_ADAPTER_NEW_ENVS_ID"
+    [tinyvla]="$TINYVLA_ENVS_ID"
+    [edgevla]="$EDGEVLA_ENVS_ID"
 )
 
 select_families() {
@@ -257,6 +277,7 @@ launch_family_suite() {
     local launch_script="${LAUNCH_SCRIPT_BY_FAMILY[$family]}"
     local suite_manifest="${SUITE_MANIFEST_BY_FAMILY[$family]}"
     local launch_log="${LAUNCH_LOG_DIR}/${family}.log"
+    local envs_id="${ENVS_ID_BY_FAMILY[$family]}"
     local reuse_var_name
     local reuse_manifest=""
 
@@ -289,6 +310,8 @@ launch_family_suite() {
                 ENABLE_SELF_CURVE_WATCHER="$ENABLE_SELF_CURVE_WATCHER" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                ENVS_ID_OVERRIDE="$envs_id" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         vla_adapter_new)
@@ -299,6 +322,9 @@ launch_family_suite() {
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                ENVS_ID_OVERRIDE="$envs_id" \
+                ENV_IDS_OVERRIDE="$envs_id" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         tinyvla)
@@ -308,6 +334,10 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 SMOKE="$MWE" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                ENVS_ID_OVERRIDE="$envs_id" \
+                ENV_IDS_OVERRIDE="$envs_id" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         edgevla)
@@ -319,6 +349,11 @@ launch_family_suite() {
                 QUEUED_PER_GPU="$EDGEVLA_QUEUED_PER_GPU" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
+                SUITE_ENVS_ID="$envs_id" \
+                SUITE_ENV_CHANGE_TIME_POINTS="$ENV_CHANGE_TIME_POINTS" \
+                ENVS_ID_OVERRIDE="$envs_id" \
+                ENV_IDS_OVERRIDE="$envs_id" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script" > "$launch_log" 2>&1
             ;;
         *)

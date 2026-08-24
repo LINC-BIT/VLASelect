@@ -11,6 +11,9 @@ import random
 import shutil
 import time
 
+from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
+
 import gymnasium as gym
 import h5py
 import numpy as np
@@ -721,6 +724,11 @@ def build_agent(args: Args, device: torch.device, env_kwargs: dict):
     checkpoint_path = Path(args.checkpoint)
     if checkpoint_path.exists():
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        checkpoint["agent"] = maybe_apply_checkpoint_noise_to_state_dict(
+            checkpoint["agent"],
+            checkpoint_path=checkpoint_path,
+            state_label="agent",
+        )
         print(agent.load_state_dict(checkpoint["agent"], strict=True))
     else:
         print(f"checkpoint not found at {checkpoint_path}; keep current initialization")
@@ -996,6 +1004,7 @@ def main():
     best_success_end = 0.0
     start_time = time.time()
     training_start_time = time.monotonic()
+    runtime_tracker = ActiveRuntimeTracker.from_env(wall_clock_start_time=training_start_time)
     output_dir = Path(f"ckpt/{run_name}")
     json_metrics = JsonMetricsLogger(output_dir)
 
@@ -1013,7 +1022,7 @@ def main():
         nonlocal envs, eval_envs, next_obs, next_done, current_env_id, current_env_index, active_episode_buffers
         if continual_env_schedule is None:
             return False, False, None
-        elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+        elapsed_minutes = runtime_tracker.current_minutes()
         scheduled_env_index = bisect.bisect_right(
             continual_env_schedule.change_time_points,
             elapsed_minutes,
@@ -1081,7 +1090,7 @@ def main():
             break
 
         if args.max_time is not None:
-            elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+            elapsed_minutes = runtime_tracker.current_minutes()
             if elapsed_minutes >= args.max_time:
                 print(f"Reached max_time={args.max_time} minutes, stopping.")
                 break
@@ -1138,6 +1147,7 @@ def main():
                     active_episode_buffers[env_idx] = []
 
         rollout_time = time.perf_counter() - rollout_start
+        runtime_tracker.add_active_seconds(rollout_time)
 
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
@@ -1215,10 +1225,12 @@ def main():
                 break
 
         rl_update_time = time.perf_counter() - rl_update_start
+        runtime_tracker.add_active_seconds(rl_update_time)
 
         sl_start = time.perf_counter()
         sl_loss = run_supervised_stage(agent, expert_dataset, online_buffer, sl_optimizer, args, device)
         sl_time = time.perf_counter() - sl_start
+        runtime_tracker.add_active_seconds(sl_time)
 
         metrics = evaluate(agent, eval_envs, args, logger, global_step)
         success_once = metrics.get("success_once", 0.0)
@@ -1230,7 +1242,7 @@ def main():
                 global_step=global_step,
                 current_env_id=current_env_id,
                 current_env_index=current_env_index,
-                elapsed_minutes=(time.monotonic() - training_start_time) / 60.0,
+                elapsed_minutes=runtime_tracker.current_minutes(),
                 eval_metrics=metrics,
                 extras={
                     "best_success_once": best_success_once,

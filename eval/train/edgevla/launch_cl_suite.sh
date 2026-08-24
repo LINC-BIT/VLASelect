@@ -22,6 +22,19 @@ MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-30}"
 PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-60}"
 QUEUED_PER_GPU="${QUEUED_PER_GPU:-1}"
 vlaselect_install_cleanup_trap
+if [[ -z "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE+x}" ]]; then
+    if [[ "$SMOKE" == "1" ]]; then
+        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.35"
+    else
+        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.0"
+    fi
+else
+    export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE
+fi
+export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED="${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED:-0}"
+if [[ "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0" && "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0.0" ]]; then
+    echo "[edgevla-suite] baseline pretrained checkpoint noise scale=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE seed=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED"
+fi
 GPU_BY_METHOD_OVERRIDE="${GPU_BY_METHOD_OVERRIDE:-}"
 
 FULL_ENVS_ID="['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']"
@@ -172,7 +185,6 @@ if [[ -n "$INHERIT_SUITE_FROM" ]]; then
     fi
 fi
 
-MWE_SPAWN_TIMEOUT_ARGS=()
 if [[ "$SMOKE" == "1" ]]; then
     : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
     selected_method_count=0
@@ -188,7 +200,6 @@ if [[ "$SMOKE" == "1" ]]; then
     if [[ "$MWE_PER_METHOD_RUNTIME_SECONDS" -lt 1 ]]; then
         MWE_PER_METHOD_RUNTIME_SECONDS=1
     fi
-    MWE_SPAWN_TIMEOUT_ARGS=(--timeout-seconds "$MWE_PER_METHOD_RUNTIME_SECONDS" --kill-after-seconds 10)
     MWE_PER_METHOD_RUNTIME_HOURS="$(awk -v sec="$MWE_PER_METHOD_RUNTIME_SECONDS" 'BEGIN { printf "%.6f", sec / 3600 }')"
 else
     MWE_PER_METHOD_RUNTIME_HOURS="0.0084"
@@ -328,7 +339,7 @@ for method in "${METHOD_ORDER[@]}"; do
         cmd+=(
             TOTAL_TIMESTEPS_OVERRIDE=1024
             NUM_ENVS_OVERRIDE=8
-            NUM_EVAL_ENVS_OVERRIDE=2
+            NUM_EVAL_ENVS_OVERRIDE=8
             NUM_STEPS_OVERRIDE=16
             NUM_MINIBATCHES_OVERRIDE=2
             UPDATE_EPOCHS_OVERRIDE=1
@@ -346,6 +357,7 @@ for method in "${METHOD_ORDER[@]}"; do
             EXPERT_TARGET_SUCCESS_TRAJECTORIES_OVERRIDE=0
             EXPERT_COLLECT_NUM_ENVS_OVERRIDE=4
             EXPERT_COLLECT_MAX_STEPS_OVERRIDE=128
+            MWE_ACTIVE_RUNTIME_ONLY=1
         )
     fi
 
@@ -355,7 +367,6 @@ for method in "${METHOD_ORDER[@]}"; do
         --pid-file "$pid_file" \
         --log-file "$log_file" \
         --cwd "$ROOT_DIR" \
-        "${MWE_SPAWN_TIMEOUT_ARGS[@]}" \
         -- "${cmd[@]}" \
         > "$launch_log"
     train_pid="$(cat "$pid_file")"

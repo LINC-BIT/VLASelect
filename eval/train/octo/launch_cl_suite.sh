@@ -22,6 +22,19 @@ MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-30}"
 PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-60}"
 TAIL_LOG="${TAIL_LOG:-1}"
 vlaselect_install_cleanup_trap
+if [[ -z "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE+x}" ]]; then
+    if [[ "$SMOKE" == "1" ]]; then
+        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.35"
+    else
+        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.0"
+    fi
+else
+    export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE
+fi
+export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED="${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED:-0}"
+if [[ "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0" && "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0.0" ]]; then
+    echo "[octo-suite] baseline pretrained checkpoint noise scale=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE seed=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED"
+fi
 GPU_BY_METHOD_OVERRIDE="${GPU_BY_METHOD_OVERRIDE:-}"
 GPU_QUEUE_POLL_SECONDS="${GPU_QUEUE_POLL_SECONDS:-30}"
 ENABLE_SELF_CURVE_WATCHER="${ENABLE_SELF_CURVE_WATCHER:-0}"
@@ -39,7 +52,7 @@ if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES=(
         TOTAL_TIMESTEPS_OVERRIDE=1024
         NUM_ENVS_OVERRIDE=8
-        NUM_EVAL_ENVS_OVERRIDE=2
+        NUM_EVAL_ENVS_OVERRIDE=8
         NUM_STEPS_OVERRIDE=16
         NUM_EVAL_STEPS_OVERRIDE=16
         NUM_MINIBATCHES_OVERRIDE=2
@@ -48,6 +61,7 @@ if [[ "$SMOKE" == "1" ]]; then
         SUPERVISED_BATCH_SIZE_OVERRIDE=8
         WANDB_MODE=disabled
         WANDB_SILENT=true
+        MWE_ACTIVE_RUNTIME_ONLY=1
     )
 fi
 
@@ -261,7 +275,6 @@ printf "name\tdisplay_name\tgpu\tstatus\tinherited_from\tpid\tmonitor_pid\trun_d
 
 prepare_smoke_inputs
 
-MWE_SPAWN_TIMEOUT_ARGS=()
 : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
 if [[ "$SMOKE" == "1" ]]; then
     selected_method_count=0
@@ -277,8 +290,8 @@ if [[ "$SMOKE" == "1" ]]; then
     if [[ "$mwe_per_method_runtime_seconds" -lt 1 ]]; then
         mwe_per_method_runtime_seconds=1
     fi
-    MWE_SPAWN_TIMEOUT_ARGS=(--timeout-seconds "$mwe_per_method_runtime_seconds" --kill-after-seconds 10)
-    SMOKE_ENV_OVERRIDES+=(MAX_TIME_OVERRIDE="$mwe_per_method_runtime_seconds")
+    mwe_per_method_runtime_minutes="$(awk -v sec="$mwe_per_method_runtime_seconds" 'BEGIN { printf "%.6f", sec / 60 }')"
+    SMOKE_ENV_OVERRIDES+=(MAX_TIME_OVERRIDE="$mwe_per_method_runtime_minutes")
 fi
 
 declare -A LAST_PID_BY_GPU=()
@@ -381,7 +394,7 @@ for method in "${METHOD_ORDER[@]}"; do
         launch_cmd=("${cmd[@]}")
     fi
 
-    python "$ROOT_DIR/train/octo/spawn_detached.py"         --pid-file "$pid_file"         --log-file "$log_file"         --cwd "$ROOT_DIR"         "${MWE_SPAWN_TIMEOUT_ARGS[@]}"         -- "${launch_cmd[@]}"         > "$launch_log"
+    python "$ROOT_DIR/train/octo/spawn_detached.py"         --pid-file "$pid_file"         --log-file "$log_file"         --cwd "$ROOT_DIR"         -- "${launch_cmd[@]}"         > "$launch_log"
     train_pid="$(cat "$pid_file")"
     LAST_PID_BY_GPU["$gpu"]="$train_pid"
 

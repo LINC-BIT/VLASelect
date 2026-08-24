@@ -5,6 +5,8 @@ import os
 import re
 import sys
 import time
+
+from train.common.mwe_runtime import ActiveRuntimeTracker
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -797,6 +799,7 @@ def train(args: Args) -> None:
     metrics_history: List[Dict[str, Any]] = []
     train_start_time = time.time()
     training_start_time = time.monotonic()
+    runtime_tracker = ActiveRuntimeTracker.from_env(wall_clock_start_time=training_start_time)
     stop_reason = "completed"
     feedback_schedule = resolve_small_model_feedback_schedule(args)
     success_end_at_last_small_model_feedback = None
@@ -808,7 +811,7 @@ def train(args: Args) -> None:
         nonlocal envs, eval_envs, next_obs, next_done, current_env_id, current_env_index
         if continual_env_schedule is None:
             return False, False, None
-        elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+        elapsed_minutes = runtime_tracker.current_minutes()
         scheduled_env_index = bisect.bisect_right(continual_env_schedule.change_time_points, elapsed_minutes)
         if scheduled_env_index >= len(continual_env_schedule.env_ids):
             return False, True, elapsed_minutes
@@ -918,6 +921,7 @@ def train(args: Args) -> None:
         train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
+        rollout_start_time = time.perf_counter()
 
         for step in range(args.num_steps):
             global_step += args.num_envs
@@ -950,7 +954,7 @@ def train(args: Args) -> None:
                 or step == 0
                 or step + 1 == args.num_steps
             ):
-                elapsed_hours = (time.time() - train_start_time) / 3600.0
+                elapsed_hours = runtime_tracker.current_hours(extra_active_seconds=time.perf_counter() - rollout_start_time)
                 logged_partial_reward_means.append(float(partial_reward_means[-1]))
                 print(
                     f"[rollout] update={update}/{num_updates} step={step + 1}/{args.num_steps} "
@@ -982,6 +986,9 @@ def train(args: Args) -> None:
                         final_states,
                         micro_batch_size=args.eval_micro_batch_size,
                     ).view(-1)
+
+        rollout_time = time.perf_counter() - rollout_start_time
+        runtime_tracker.add_active_seconds(rollout_time)
 
         with torch.no_grad():
             next_value = reference.batched_get_value_no_grad(
@@ -1018,6 +1025,7 @@ def train(args: Args) -> None:
         stopped_on_minibatch_kl = False
         skipped_updates_on_kl = 0
         small_agent.eval()
+        update_start_time = time.perf_counter()
 
         for _ in range(args.update_epochs):
             np.random.shuffle(inds)
@@ -1052,6 +1060,9 @@ def train(args: Args) -> None:
             if stopped_on_minibatch_kl or approx_kl > args.target_kl:
                 break
 
+        update_time = time.perf_counter() - update_start_time
+        runtime_tracker.add_active_seconds(update_time)
+
         metric = {
             "update": update,
             "global_step": global_step,
@@ -1066,7 +1077,7 @@ def train(args: Args) -> None:
             "entropy": entropy_value,
             "stopped_on_minibatch_kl": stopped_on_minibatch_kl,
             "skipped_updates_on_kl": skipped_updates_on_kl,
-            "elapsed_hours": (time.time() - train_start_time) / 3600.0,
+            "elapsed_hours": runtime_tracker.current_hours(),
             "env_id": current_env_id,
             "env_index": current_env_index,
         }

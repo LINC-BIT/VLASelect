@@ -7,6 +7,7 @@ import sys
 import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -835,8 +836,10 @@ def train(args: Args) -> None:
         print(
             f"[env] switching from {previous_env_id} to {current_env_id} at elapsed={elapsed_minutes:.2f} minutes"
         )
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_envs, record_metrics=True)
         eval_envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_eval_envs, record_metrics=True)
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)
@@ -1174,8 +1177,10 @@ def train(args: Args) -> None:
             "num_metric_points": len(metrics_history),
         },
     )
-    envs.close()
-    eval_envs.close()
+    close_envs(envs, eval_envs)
+    envs = None
+    eval_envs = None
+    clear_torch_cuda_cache()
 
 
 def main() -> None:

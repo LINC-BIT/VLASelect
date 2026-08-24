@@ -7,6 +7,7 @@ import sys
 import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -495,10 +496,11 @@ def train(args: Args) -> None:
             f"[setup] switching env from {previous_env_id} to {current_env_id} "
             f"at elapsed={elapsed_minutes:.2f} minutes"
         )
-        envs.close()
-        eval_envs.close()
-        if test_video_envs is not None:
-            test_video_envs.close()
+        close_envs(envs, eval_envs, test_video_envs)
+        envs = None
+        eval_envs = None
+        test_video_envs = None
+        clear_torch_cuda_cache()
         envs, eval_envs, test_video_envs = build_runtime_envs(
             runtime_args,
             device,
@@ -903,10 +905,11 @@ def train(args: Args) -> None:
         },
     )
 
-    envs.close()
-    eval_envs.close()
-    if test_video_envs is not None:
-        test_video_envs.close()
+    close_envs(envs, eval_envs, test_video_envs)
+    envs = None
+    eval_envs = None
+    test_video_envs = None
+    clear_torch_cuda_cache()
 
 
 def main() -> None:

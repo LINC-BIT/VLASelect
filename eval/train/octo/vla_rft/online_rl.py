@@ -16,6 +16,7 @@ import shutil
 import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
 
 import gymnasium as gym
@@ -816,8 +817,10 @@ def main():
             f"switching env from {previous_env_id} to {current_env_id} "
             f"at elapsed={elapsed_minutes:.2f} minutes"
         )
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         envs, eval_envs, _ = make_envs_for_env_id(
             args,
             current_env_id,
@@ -849,8 +852,10 @@ def main():
 
     if args.evaluate:
         json_metrics.save_final_eval(last_eval_metrics)
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         if logger is not None:
             logger.close()
         return
@@ -1085,8 +1090,10 @@ def main():
         save_checkpoint(run_name, "last.pt", agent, optimizer, last_iteration, None)
 
     json_metrics.save_final_eval(last_eval_metrics)
-    envs.close()
-    eval_envs.close()
+    close_envs(envs, eval_envs)
+    envs = None
+    eval_envs = None
+    clear_torch_cuda_cache()
     if logger is not None:
         logger.close()
 

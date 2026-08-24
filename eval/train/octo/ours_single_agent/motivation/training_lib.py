@@ -21,6 +21,7 @@ import tyro
 from torch.utils.tensorboard import SummaryWriter
 
 from train.octo.ours_single_agent import online_rl_cl as base
+from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 
 
 # WORKLOAD_ENVS = ['PokeCubeLightWeaker50-v1','PushCubeColorTempLower50-v1','StackCubeObjectBlack-v1','StackCubeLightWeaker50-v1','StackCubeColorTempLower50-v1','RollBallLightWeaker50-v1','RollBallObjectBlack-v1','PickCubeLightWeaker50-v1','RollBallColorTempHigher50-v1','PokeCubeColorTempLower50-v1']
@@ -648,8 +649,10 @@ def run_training(mode: Literal["original", "small"], script_path: str) -> None:
             f"Switching env from {previous_env_id} to {current_env_id} "
             f"at elapsed={elapsed_minutes:.2f} minutes"
         )
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         envs, eval_envs = base.make_envs_for_env_id(
             args,
             current_env_id,
@@ -1008,6 +1011,8 @@ def run_training(mode: Literal["original", "small"], script_path: str) -> None:
                 f"ckpt/{run_name}/checkpoints/last.pt",
             )
 
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         logger.close()

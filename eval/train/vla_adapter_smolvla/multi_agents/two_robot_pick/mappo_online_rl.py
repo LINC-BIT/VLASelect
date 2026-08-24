@@ -18,6 +18,7 @@ import argparse
 import gymnasium as gym
 import numpy as np
 import torch
+from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 
 os.environ.setdefault("ACCELERATE_USE_DEEPSPEED", "false")
 import torch.multiprocessing as mp
@@ -406,8 +407,10 @@ def main(args):
 
         previous_env_name = current_env_name
         current_env_index = scheduled_env_index
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         envs, eval_envs, current_env_name = make_envs_for_env_kwargs(
             args,
             ckpt,
@@ -442,8 +445,10 @@ def main(args):
             eval_envs=eval_envs,
         )
         payload = {k: float(v.mean()) for k, v in eval_metrics.items()}
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         if accelerator.is_main_process:
             dump_json(os.path.join(ckpt["root_dir"], "eval_metrics.json"), payload)
         return
@@ -780,8 +785,10 @@ def main(args):
             writer.add_scalar("loss/argmax_change_frac", stats.get("argmax_change_frac", 0.0), global_steps)
             writer.add_scalar("loss/explained_var", explained_var, global_steps)
 
-    envs.close()
-    eval_envs.close()
+    close_envs(envs, eval_envs)
+    envs = None
+    eval_envs = None
+    clear_torch_cuda_cache()
     if accelerator.is_main_process:
         unwrapped_agent = accelerator.unwrap_model(agent)
         save_checkpoint(ckpt["latest_agent"], unwrapped_agent.checkpoint_state_dict())

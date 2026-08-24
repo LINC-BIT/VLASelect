@@ -11,6 +11,7 @@ import re
 import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from dataclasses import dataclass
 from typing import List, Optional
 import wandb
@@ -1885,8 +1886,10 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             f"Client {agent_name} switching env from {previous_env_id} to {current_env_id} "
             f"at elapsed={elapsed_minutes:.2f} minutes"
         )
-        envs.close()
-        eval_envs.close()
+        close_envs(envs, eval_envs)
+        envs = None
+        eval_envs = None
+        clear_torch_cuda_cache()
         envs, eval_envs = make_envs_for_env_id(
             args,
             current_env_id,
@@ -2585,8 +2588,10 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     # client.close()
     if last_eval_metrics is not None:
         json_metrics.save_final_eval(last_eval_metrics)
-    envs.close()
-    eval_envs.close()
+    close_envs(envs, eval_envs)
+    envs = None
+    eval_envs = None
+    clear_torch_cuda_cache()
     if logger is not None:
         logger.close()
 

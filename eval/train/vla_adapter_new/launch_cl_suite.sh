@@ -331,7 +331,7 @@ for method in "${METHOD_ORDER[@]}"; do
         launch_cmd=(
             bash
             -lc
-            "while kill -0 ${wait_for_pid} 2>/dev/null; do sleep ${GPU_QUEUE_POLL_SECONDS}; done; exec ${cmd_escaped}"
+            "echo '[queue] method=${method} gpu=${gpu} waiting for pid=${wait_for_pid} before launch'; while kill -0 ${wait_for_pid} 2>/dev/null; do sleep ${GPU_QUEUE_POLL_SECONDS}; done; echo '[queue] method=${method} gpu=${gpu} wait finished; launching'; exec ${cmd_escaped}"
         )
     else
         launch_cmd=("${cmd[@]}")

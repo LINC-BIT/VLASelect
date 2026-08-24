@@ -63,6 +63,13 @@ def load_json(path: Path) -> Any: return json.loads(path.read_text(encoding='utf
 def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
     path = Path(raw_path)
     return path if path.is_absolute() else (base_dir / path).resolve()
+def parse_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    raw_text = str(value).strip().lower()
+    return raw_text in {'1', 'true', 'yes', 'y', 'on'}
 def finite_float(value: Any) -> float | None:
     try: result = float(value)
     except (TypeError, ValueError): return None
@@ -247,7 +254,44 @@ def pick_vlaselect_method(methods, family):
     for name in VLASELECT_METHODS_BY_FAMILY.get(family, []):
         if name in by_name: return by_name[name]
     return None
-def make_empty_metrics(): return {'time_h': 0.0, 'memory_gb': 0.0, 'energy_kj': 0.0, 'reach_hours': 0.0, 'target_accuracy': 0.0}
+def panel_is_mwe(panel: dict[str, Any]) -> bool:
+    return parse_bool(panel.get('mwe', False))
+
+def panel_mwe_limit_hours(panel: dict[str, Any]) -> float | None:
+    raw_seconds = finite_float(panel.get('mwe_workload_runtime_limit_seconds'))
+    if raw_seconds is None or raw_seconds <= 0.0:
+        return None
+    return raw_seconds / 3600.0
+
+def latest_series_hours(series: list[tuple[float, float]]) -> float:
+    return max((elapsed_hours for elapsed_hours, _ in series), default=0.0)
+
+def latest_segment_history_hours(grouped_history: dict[int, list[tuple[float, float]]]) -> float:
+    return max((latest_series_hours(series) for series in grouped_history.values()), default=0.0)
+
+def latest_gpu_hours(samples: list[dict[str, Any]]) -> float:
+    return max((sample['elapsed_hours'] for sample in samples), default=0.0)
+
+def observed_cutoff_hours(panel: dict[str, Any], series_hours: float, gpu_hours: float) -> float | None:
+    observed_hours = max(series_hours, gpu_hours)
+    if observed_hours <= 0.0:
+        return None
+    if panel_is_mwe(panel):
+        mwe_limit_hours = panel_mwe_limit_hours(panel)
+        if mwe_limit_hours is not None:
+            return min(observed_hours, mwe_limit_hours)
+    return observed_hours
+
+def make_empty_metrics():
+    return {
+        'time_h': 0.0,
+        'memory_gb': 0.0,
+        'energy_kj': 0.0,
+        'reach_hours': 0.0,
+        'target_accuracy': 0.0,
+        'reached_target': False,
+        'used_fallback_cutoff': False,
+    }
 
 def build_table3_segments(panel: dict[str, Any]) -> list[dict[str, Any]]:
     env_ids = [str(value) for value in parse_sequence(panel.get('envs_id'))]
@@ -329,6 +373,11 @@ def collect_panel_table3_energy(panel):
         gpu_samples = load_gpu_samples(run_dir)
         if not gpu_samples:
             continue
+        fallback_cutoff_hours = observed_cutoff_hours(
+            panel,
+            latest_segment_history_hours(success_history),
+            latest_gpu_hours(gpu_samples),
+        )
         buckets = energy_values_by_method.setdefault(paper_name, {'task': [], 'env': []})
         for segment in segments:
             target_accuracy = segment_targets.get(segment['index'])
@@ -341,7 +390,11 @@ def collect_panel_table3_energy(panel):
                 segment['end_hours'],
             )
             if reach_hours is None:
-                continue
+                if not panel_is_mwe(panel) or fallback_cutoff_hours is None:
+                    continue
+                reach_hours = min(segment['end_hours'], fallback_cutoff_hours)
+                if reach_hours <= segment['start_hours']:
+                    continue
             buckets[segment['label']].append(
                 integrate_energy_interval_kj(gpu_samples, segment['start_hours'], reach_hours)
             )
@@ -526,11 +579,29 @@ def collect_panel_metrics(panel):
         accuracy_series = collect_series(panel['family'], run_dir)
         if not accuracy_series:
             panel_metrics[paper_name] = make_empty_metrics(); continue
-        reach_hours = first_reach_hours(accuracy_series, target_accuracy)
-        if reach_hours is None:
-            panel_metrics[paper_name] = make_empty_metrics(); continue
         gpu_samples = load_gpu_samples(run_dir)
-        panel_metrics[paper_name] = {'time_h': reach_hours,'memory_gb': mean_memory_gb(gpu_samples, reach_hours),'energy_kj': integrate_energy_kj(gpu_samples, reach_hours),'reach_hours': reach_hours,'target_accuracy': target_accuracy}
+        reach_hours = first_reach_hours(accuracy_series, target_accuracy)
+        reached_target = reach_hours is not None
+        used_fallback_cutoff = False
+        if reach_hours is None:
+            if panel_is_mwe(panel):
+                reach_hours = observed_cutoff_hours(
+                    panel,
+                    latest_series_hours(accuracy_series),
+                    latest_gpu_hours(gpu_samples),
+                )
+                used_fallback_cutoff = reach_hours is not None and reach_hours > 0.0
+            if reach_hours is None:
+                panel_metrics[paper_name] = make_empty_metrics(); continue
+        panel_metrics[paper_name] = {
+            'time_h': reach_hours,
+            'memory_gb': mean_memory_gb(gpu_samples, reach_hours),
+            'energy_kj': integrate_energy_kj(gpu_samples, reach_hours),
+            'reach_hours': reach_hours,
+            'target_accuracy': target_accuracy,
+            'reached_target': reached_target,
+            'used_fallback_cutoff': used_fallback_cutoff,
+        }
     baseline_values = [metrics['memory_gb'] for name, metrics in panel_metrics.items() if name != 'VLASelect' and metrics['memory_gb'] > 0.0]
     vlaselect_memory = panel_metrics.get('VLASelect', make_empty_metrics())['memory_gb']
     if baseline_values and vlaselect_memory > 0.0:
@@ -630,7 +701,7 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                 ax.plot(xs, ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
                 max_x = max(max_x, xs[-1])
                 plotted += 1
-                summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
+                summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
             if plotted == 0:
                 ax.set_xlim(0.0, 1.0)
                 ax.set_ylim(0.0, 1.0)

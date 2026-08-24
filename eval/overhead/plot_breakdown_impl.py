@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +13,7 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
+from tensorboard.backend.event_processing import event_accumulator
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -23,6 +25,7 @@ from common.template_pdf_fill import fill_ours_overhead_template
 TABLE_ROOT = SCRIPT_DIR / "overhead_breakdown_table"
 ALL_METHODS_TABLE_ROOT = SCRIPT_DIR / "overhead_breakdown_all_methods_table"
 MODULES_TABLE_ROOT = SCRIPT_DIR / "overhead_breakdown_modules_table"
+SAME_ACC_TABLE_ROOT = SCRIPT_DIR / "overhead_same_acc_table"
 FIG_ALL_METHODS = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS.pdf"
 FIG_ALL_METHODS_SVG = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS.svg"
 FIG_ALL_METHODS_PNG = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS.png"
@@ -103,6 +106,25 @@ MODULE_SPECS = [
     ("online_rl_completion_seconds", "Online RL", "#E45756"),
 ]
 NO_DATA_TEXT = "No data"
+SAME_ACC_FAMILY_CONFIGS = {
+    "edgevla": {"metric_key": "eval_success_once", "loader": "history"},
+    "octo": {"metric_key": "eval/success_once", "loader": "tensorboard"},
+    "tinyvla": {"metric_key": "train_success_once", "loader": "history"},
+    "vla_adapter_new": {"metric_key": "train_success_once", "loader": "history"},
+}
+SAME_ACC_VLASELECT_METHODS_BY_FAMILY = {
+    "octo": ["ours_single_agent", "ours"],
+    "vla_adapter_new": ["ours"],
+    "tinyvla": ["ours"],
+    "edgevla": ["ours", "ours_single_agent"],
+}
+SAME_ACC_HISTORY_METRIC_ALIASES_BY_FAMILY = {
+    "octo": ("eval_success_once", "eval/success_once", "success_once"),
+    "vla_adapter_new": ("train_success_once", "eval_success_once", "success_once"),
+    "tinyvla": ("train_success_once", "eval_success_once", "success_once"),
+    "edgevla": ("eval_success_once", "success_once"),
+}
+NON_ONLINE_MODULE_KEYS = tuple(key for key, _, _ in MODULE_SPECS if key != "online_rl_completion_seconds")
 
 
 def available_sans_serif_fonts() -> list[str]:
@@ -135,6 +157,28 @@ def _safe_float(value: Any) -> float:
         return float(value)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _finite_float_or_none(value: Any) -> float | None:
+    try:
+        if value is None:
+            return None
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    return result if math.isfinite(result) else None
+
+
+def _resolve_eval_path(raw_path: str) -> Path:
+    path = Path(raw_path)
+    return path if path.is_absolute() else (EVAL_ROOT / raw_path).resolve()
+
+
+def _display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(EVAL_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def _extract_module_breakdown(payload: dict[str, Any]) -> dict[str, float]:
@@ -192,10 +236,149 @@ def load_method_breakdown(run_dir: Path) -> MethodBreakdown:
                 sampling_seconds=sampling,
                 training_seconds=training,
                 has_data=True,
-                source=str(candidate.relative_to(EVAL_ROOT)),
+                source=_display_path(candidate),
                 module_breakdown=module_breakdown,
             )
     return MethodBreakdown(module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS})
+
+
+def _load_history(run_dir: Path) -> list[dict[str, Any]]:
+    payload = _read_json(run_dir / "metrics_history.json")
+    if not isinstance(payload, dict):
+        return []
+    history = payload.get("history", [])
+    return [item for item in history if isinstance(item, dict)] if isinstance(history, list) else []
+
+
+def _collect_history_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+    series: list[tuple[float, float]] = []
+    for index, metric in enumerate(_load_history(run_dir)):
+        value = _finite_float_or_none(metric.get(metric_key))
+        if value is None:
+            continue
+        elapsed_hours = _finite_float_or_none(metric.get("elapsed_hours"))
+        x_value = elapsed_hours if elapsed_hours is not None else float(index)
+        series.append((x_value, value))
+    return series
+
+
+def _find_tb_dir(run_dir: Path) -> Path | None:
+    for candidate in (run_dir / "tb", run_dir / "[agent]" / "tb"):
+        if candidate.is_dir():
+            return candidate
+    for search_root in (run_dir, run_dir.parent):
+        if not search_root.exists():
+            continue
+        nested = sorted(path for path in search_root.glob("**/tb") if path.is_dir())
+        if nested:
+            return nested[0]
+    return None
+
+
+def _collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+    tb_dir = _find_tb_dir(run_dir)
+    if tb_dir is None:
+        return []
+    try:
+        accumulator = event_accumulator.EventAccumulator(
+            str(tb_dir),
+            size_guidance={event_accumulator.SCALARS: 0},
+        )
+        accumulator.Reload()
+    except Exception:
+        return []
+    tags = accumulator.Tags().get("scalars", [])
+    if metric_key not in tags:
+        return []
+    events = accumulator.Scalars(metric_key)
+    if not events:
+        return []
+    base_time = events[0].wall_time
+    return [((event.wall_time - base_time) / 3600.0, float(event.value)) for event in events]
+
+
+def _extract_history_success_value(family: str, metric: dict[str, Any]) -> float | None:
+    for key in SAME_ACC_HISTORY_METRIC_ALIASES_BY_FAMILY.get(family, ()): 
+        value = _finite_float_or_none(metric.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _collect_same_acc_series(family: str, run_dir: Path) -> list[tuple[float, float]]:
+    config = SAME_ACC_FAMILY_CONFIGS[family]
+    if config["loader"] == "tensorboard":
+        return _collect_tensorboard_series(run_dir, config["metric_key"])
+    return _collect_history_series(run_dir, config["metric_key"])
+
+
+def _pick_same_acc_vlaselect_method(methods: list[dict[str, Any]], family: str) -> dict[str, Any] | None:
+    by_name = {method.get("name"): method for method in methods if isinstance(method, dict)}
+    for name in SAME_ACC_VLASELECT_METHODS_BY_FAMILY.get(family, []):
+        if name in by_name:
+            return by_name[name]
+    return None
+
+
+def _first_reach_hours(series: list[tuple[float, float]], target_accuracy: float) -> float | None:
+    for elapsed_hours, value in series:
+        if value >= target_accuracy:
+            return elapsed_hours
+    return None
+
+
+def _resolve_same_acc_manifest_path(top_manifest: dict[str, Any]) -> Path | None:
+    raw_path = str(top_manifest.get("same_acc_manifest", "")).strip()
+    candidates: list[Path] = []
+    if raw_path:
+        candidates.append(_resolve_eval_path(raw_path))
+    latest_path = SAME_ACC_TABLE_ROOT / "latest.txt"
+    if latest_path.exists():
+        stamp = latest_path.read_text(encoding="utf-8").strip()
+        if stamp:
+            candidates.append((SAME_ACC_TABLE_ROOT / stamp / "manifest.json").resolve())
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _load_same_acc_vlaselect_times_seconds(top_manifest: dict[str, Any]) -> tuple[dict[str, float], str]:
+    manifest_path = _resolve_same_acc_manifest_path(top_manifest)
+    if manifest_path is None:
+        return {}, ""
+    payload = _read_json(manifest_path)
+    if not isinstance(payload, dict):
+        return {}, _display_path(manifest_path)
+    panels = payload.get("families", payload.get("panels", []))
+    times_by_family: dict[str, float] = {}
+    for panel in panels:
+        if not isinstance(panel, dict):
+            continue
+        family = str(panel.get("family", ""))
+        if family not in FAMILY_ORDER:
+            continue
+        suite_manifest_ref = str(panel.get("suite_manifest", ""))
+        if not suite_manifest_ref:
+            continue
+        suite_manifest = _read_json(_resolve_eval_path(suite_manifest_ref))
+        if not isinstance(suite_manifest, dict):
+            continue
+        methods = [method for method in suite_manifest.get("methods", []) if isinstance(method, dict)]
+        vlaselect_method = _pick_same_acc_vlaselect_method(methods, family)
+        if vlaselect_method is None:
+            continue
+        run_dir_ref = str(vlaselect_method.get("run_dir", ""))
+        if not run_dir_ref:
+            continue
+        series = _collect_same_acc_series(family, _resolve_eval_path(run_dir_ref))
+        if not series:
+            continue
+        target_accuracy = max(value for _, value in series)
+        reach_hours = _first_reach_hours(series, target_accuracy)
+        if reach_hours is not None:
+            times_by_family[family] = reach_hours * 3600.0
+    return times_by_family, _display_path(manifest_path)
 
 
 def _default_top_manifest() -> dict[str, Any]:
@@ -220,6 +403,7 @@ def _default_top_manifest() -> dict[str, Any]:
         "figure_modules_output": "overhead/FIG_BREAKDOWN_MODULES.pdf",
         "all_methods_csv": "overhead/overhead_breakdown_table/BREAKDOWN_ALL_METHODS.csv",
         "modules_csv": "overhead/overhead_breakdown_table/BREAKDOWN_MODULES.csv",
+        "same_acc_manifest": "",
         "panels": panels,
         "families": panels,
     }
@@ -274,8 +458,7 @@ def _load_suite_manifest(panel: dict[str, Any]) -> dict[str, Any] | None:
     manifest_ref = panel.get("suite_manifest") or ""
     if not manifest_ref:
         return None
-    manifest_path = EVAL_ROOT / manifest_ref
-    payload = _read_json(manifest_path)
+    payload = _read_json(_resolve_eval_path(str(manifest_ref)))
     return payload if isinstance(payload, dict) else None
 
 
@@ -296,6 +479,7 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
     output_root.mkdir(parents=True, exist_ok=True)
     all_rows: list[dict[str, Any]] = []
     module_rows: list[dict[str, Any]] = []
+    same_acc_times_seconds, same_acc_source = _load_same_acc_vlaselect_times_seconds(manifest)
 
     for family, panel in _family_panels(manifest).items():
         suite_manifest = _load_suite_manifest(panel)
@@ -315,7 +499,7 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
         family_module_row_added = False
         for method in ordered_methods:
             run_dir_ref = method.get("run_dir") or ""
-            run_dir = EVAL_ROOT / run_dir_ref if run_dir_ref else Path("")
+            run_dir = _resolve_eval_path(str(run_dir_ref)) if run_dir_ref else Path("")
             breakdown = load_method_breakdown(run_dir) if run_dir_ref else MethodBreakdown(module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS})
             display_name = _normalize_display_name(method["name"], method.get("display_name", ""))
             all_rows.append(
@@ -333,7 +517,14 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
                 }
             )
             if method["name"] in {"ours", "ours_single_agent"}:
-                module_breakdown = breakdown.module_breakdown or {key: 0.0 for key, _, _ in MODULE_SPECS}
+                module_breakdown = dict(breakdown.module_breakdown or {key: 0.0 for key, _, _ in MODULE_SPECS})
+                same_acc_runtime_seconds = _safe_float(same_acc_times_seconds.get(family))
+                runtime_source = breakdown.source
+                if same_acc_runtime_seconds > 0.0:
+                    non_online_total = sum(_safe_float(module_breakdown.get(key, 0.0)) for key in NON_ONLINE_MODULE_KEYS)
+                    module_breakdown["online_rl_completion_seconds"] = max(same_acc_runtime_seconds - non_online_total, 0.0)
+                    runtime_source = same_acc_source or runtime_source
+                total_seconds = sum(_safe_float(module_breakdown.get(key, 0.0)) for key, _, _ in MODULE_SPECS)
                 module_rows.append(
                     {
                         "family": family,
@@ -341,9 +532,11 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
                         "workload_name": panel.get("workload_name", WORKLOAD_NAMES[family]),
                         "display_name": display_name,
                         **module_breakdown,
-                        "total_seconds": sum(module_breakdown.values()),
-                        "has_module_data": int(any(value > 0.0 for value in module_breakdown.values())),
+                        "total_seconds": total_seconds,
+                        "has_module_data": int(any(_safe_float(value) > 0.0 for value in module_breakdown.values())),
                         "source": breakdown.source,
+                        "runtime_source": runtime_source,
+                        "same_acc_runtime_seconds": same_acc_runtime_seconds,
                     }
                 )
                 family_module_row_added = True
@@ -360,6 +553,8 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
                     "total_seconds": 0.0,
                     "has_module_data": 0,
                     "source": "",
+                    "runtime_source": same_acc_source if same_acc_source else "",
+                    "same_acc_runtime_seconds": _safe_float(same_acc_times_seconds.get(family)),
                 }
             )
 
@@ -390,6 +585,8 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
             "total_seconds",
             "has_module_data",
             "source",
+            "runtime_source",
+            "same_acc_runtime_seconds",
         ],
         module_rows,
     )

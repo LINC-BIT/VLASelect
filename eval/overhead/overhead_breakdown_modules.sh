@@ -139,8 +139,17 @@ if [[ "$SELECTED_FAMILY_COUNT" -eq 0 ]]; then
     exit 1
 fi
 
+DEFAULT_SAME_ACC_MANIFEST=""
+if [[ -f "overhead/overhead_same_acc_table/latest.txt" ]]; then
+    read -r default_same_acc_stamp < "overhead/overhead_same_acc_table/latest.txt" || true
+    if [[ -n "${default_same_acc_stamp:-}" && -f "overhead/overhead_same_acc_table/${default_same_acc_stamp}/manifest.json" ]]; then
+        DEFAULT_SAME_ACC_MANIFEST="overhead/overhead_same_acc_table/${default_same_acc_stamp}/manifest.json"
+    fi
+fi
+OVERHEAD_SAME_ACC_MANIFEST_OVERRIDE="${OVERHEAD_SAME_ACC_MANIFEST_OVERRIDE:-$DEFAULT_SAME_ACC_MANIFEST}"
+
 refresh_top_manifest() {
-    python - <<'PY' "$PANELS_JSONL" "$MANIFEST_JSON" "$SUITE_STAMP" "$TABLE_ROOT"
+    python - <<'PY' "$PANELS_JSONL" "$MANIFEST_JSON" "$SUITE_STAMP" "$TABLE_ROOT" "$OVERHEAD_SAME_ACC_MANIFEST_OVERRIDE"
 import json
 import sys
 from pathlib import Path
@@ -149,6 +158,7 @@ jsonl_path = Path(sys.argv[1])
 manifest_path = Path(sys.argv[2])
 suite_stamp = sys.argv[3]
 table_root = sys.argv[4]
+same_acc_manifest = sys.argv[5]
 panels = []
 if jsonl_path.exists():
     for raw_line in jsonl_path.read_text(encoding="utf-8").splitlines():
@@ -163,6 +173,7 @@ payload = {
     "all_methods_csv": f"{table_root}/{suite_stamp}/BREAKDOWN_ALL_METHODS.csv",
     "modules_csv": f"{table_root}/{suite_stamp}/BREAKDOWN_MODULES.csv",
     "summary_output": f"{table_root}/{suite_stamp}/breakdown_summary.json",
+    "same_acc_manifest": same_acc_manifest,
     "panels": panels,
     "families": panels,
 }

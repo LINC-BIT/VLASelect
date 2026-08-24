@@ -139,7 +139,7 @@ if [[ "$SELECTED_FAMILY_COUNT" -eq 0 ]]; then
 fi
 
 refresh_top_manifest() {
-    python - <<'PY' "$PANELS_JSONL" "$MANIFEST_JSON" "$SUITE_STAMP" "$TABLE_ROOT"
+    python - <<'PY' "$PANELS_JSONL" "$MANIFEST_JSON" "$SUITE_STAMP" "$TABLE_ROOT" "$MWE" "$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
 import json
 import sys
 from pathlib import Path
@@ -148,6 +148,8 @@ jsonl_path = Path(sys.argv[1])
 manifest_path = Path(sys.argv[2])
 suite_stamp = sys.argv[3]
 table_root = sys.argv[4]
+mwe = sys.argv[5]
+mwe_workload_runtime_limit_seconds = sys.argv[6]
 panels = []
 if jsonl_path.exists():
     for raw_line in jsonl_path.read_text(encoding='utf-8').splitlines():
@@ -160,6 +162,8 @@ payload = {
     'figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf',
     'table2_output': 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv',
     'table3_output': 'overhead/overhead_breakdown_table/TAB_ENERGY.csv',
+    'mwe': mwe,
+    'mwe_workload_runtime_limit_seconds': mwe_workload_runtime_limit_seconds,
     'panels': panels,
     'families': panels,
 }
@@ -171,7 +175,7 @@ append_panel_entry() {
     local family="$1"
     local suite_manifest="$2"
     local launch_log="$3"
-    python - <<'PY' "$PANELS_JSONL" "$family" "$suite_manifest" "$launch_log" "$SUITE_STAMP" "$ENV_CHANGE_TIME_POINTS" "${PANEL_LABEL_BY_FAMILY[$family]}" "${WORKLOAD_NAME_BY_FAMILY[$family]}" "${DISPLAY_NAME_BY_FAMILY[$family]}" "${ENVS_ID_BY_FAMILY[$family]}"
+    python - <<'PY' "$PANELS_JSONL" "$family" "$suite_manifest" "$launch_log" "$SUITE_STAMP" "$ENV_CHANGE_TIME_POINTS" "${PANEL_LABEL_BY_FAMILY[$family]}" "${WORKLOAD_NAME_BY_FAMILY[$family]}" "${DISPLAY_NAME_BY_FAMILY[$family]}" "${ENVS_ID_BY_FAMILY[$family]}" "$MWE" "$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
 import json
 import sys
 from pathlib import Path
@@ -188,6 +192,8 @@ entry = {
     'workload_name': sys.argv[8],
     'display_name': sys.argv[9],
     'envs_id': sys.argv[10],
+    'mwe': sys.argv[11],
+    'mwe_workload_runtime_limit_seconds': sys.argv[12],
 }
 with jsonl_path.open('a', encoding='utf-8') as handle:
     handle.write(json.dumps(entry, ensure_ascii=True) + '\n')

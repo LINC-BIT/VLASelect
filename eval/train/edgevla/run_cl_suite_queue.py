@@ -137,6 +137,13 @@ class SuiteScheduler:
                         break
             self.write_json_atomic(self.manifest_path, manifest)
 
+    def append_train_log_line(self, method: str, message: str) -> None:
+        log_file = self.launch_log_dir / f"{method}.train.log"
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).isoformat()
+        with log_file.open("ab") as handle:
+            handle.write(f"[{timestamp}] {message}\n".encode("utf-8", errors="replace"))
+
     def build_command(self, method: str, gpu: int) -> list[str]:
         env_items = [
             f"CUDA_DEVICES={gpu}",
@@ -218,6 +225,7 @@ class SuiteScheduler:
             return
 
         gpu = self.gpu_by_method[method]
+        self.append_train_log_line(method, f"[queue] method={method} gpu={gpu} wait finished; launching")
         log_file = self.launch_log_dir / f"{method}.train.log"
         pid_file = self.pid_dir / f"{method}.pid"
         log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -267,7 +275,13 @@ class SuiteScheduler:
         )
 
     def run_gpu_queue(self, gpu: int, methods: list[str]) -> None:
-        for method in methods:
+        total = len(methods)
+        for index, method in enumerate(methods, start=1):
+            if index == 1:
+                self.append_train_log_line(method, f"[queue] method={method} gpu={gpu} first in queue; launching when scheduler starts it")
+            else:
+                waiting_for = ",".join(methods[: index - 1])
+                self.append_train_log_line(method, f"[queue] method={method} gpu={gpu} queued at position={index}/{total}; waiting for previous methods on this GPU: {waiting_for}")
             if self.stop_event.is_set():
                 self.update_manifest(method, status="cancelled", finished_at_utc=datetime.now(timezone.utc).isoformat())
                 continue

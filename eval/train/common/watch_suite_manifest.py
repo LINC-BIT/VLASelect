@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-FINAL_METHOD_STATES = {"completed", "failed", "inherited"}
+FINAL_METHOD_STATES = {"completed", "failed", "cancelled", "timed_out", "inherited"}
 FAILURE_MARKERS = (
     "Traceback (most recent call last):",
     "FileNotFoundError:",
@@ -18,6 +18,9 @@ FAILURE_MARKERS = (
     "OutOfMemoryError",
     "Killed",
 )
+QUEUE_WAIT_MARKER = "waiting for pid="
+QUEUE_LAUNCH_MARKER = "wait finished; launching"
+TRAINING_ARTIFACT_DIRS = ("checkpoints", "tb", "analysis")
 
 
 def utc_now_iso() -> str:
@@ -64,9 +67,38 @@ def infer_failed(method: dict[str, Any]) -> bool:
     if any(marker in log_tail for marker in FAILURE_MARKERS):
         return True
     if run_dir.exists():
-        if (run_dir / "checkpoints").exists() or (run_dir / "tb").exists() or (run_dir / "analysis").exists():
+        if any((run_dir / name).exists() for name in TRAINING_ARTIFACT_DIRS):
             return False
     return not log_file.exists() and not run_dir.exists()
+
+
+def has_training_artifacts(run_dir: Path) -> bool:
+    return run_dir.exists() and any((run_dir / name).exists() for name in TRAINING_ARTIFACT_DIRS)
+
+
+def infer_alive_status(method: dict[str, Any], previous_status: str) -> str:
+    run_dir = Path(method.get("run_dir") or "")
+    log_file = Path(method.get("log_file") or "")
+    log_tail = tail_text(log_file)
+
+    if has_training_artifacts(run_dir):
+        return "running"
+
+    if log_tail:
+        lines = [line.strip() for line in log_tail.splitlines() if line.strip()]
+        if any("[queue]" not in line for line in lines):
+            return "running"
+
+        last_wait_index = log_tail.rfind(QUEUE_WAIT_MARKER)
+        last_launch_index = log_tail.rfind(QUEUE_LAUNCH_MARKER)
+        if last_wait_index != -1 and last_launch_index < last_wait_index:
+            return "queued"
+        if last_launch_index != -1:
+            return "launching"
+
+    if previous_status == "queued":
+        return "queued"
+    return "launching"
 
 
 def update_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -75,7 +107,7 @@ def update_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
     failed_count = 0
 
     for method in methods:
-        status = method.get("status") or "launched"
+        status = method.get("status") or "launching"
         if status == "inherited":
             continue
 
@@ -87,7 +119,7 @@ def update_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
             active_count += 1
             if not method.get("started_at_utc"):
                 method["started_at_utc"] = utc_now_iso()
-            method["status"] = "running"
+            method["status"] = infer_alive_status(method, status)
             method["exit_code"] = None
             continue
 

@@ -66,12 +66,7 @@ log() {
 }
 
 print_log_excerpt() {
-    local log_file="$1"
-    local lines="${2:-20}"
-    if [[ -f "$log_file" ]]; then
-        echo "[fig12] last ${lines} lines from ${log_file}:" >&2
-        tail -n "$lines" "$log_file" >&2 || true
-    fi
+    vlaselect_print_log_excerpt "$1" "${2:-20}" "fig12"
 }
 
 run_curve_command() {
@@ -90,8 +85,7 @@ run_curve_command() {
     set -e
 
     if [[ "$rc" -ne 0 ]]; then
-        echo "[fig12] launch failed for ${curve_label} with exit code ${rc}" >&2
-        echo "[fig12] launch log: ${launch_log}" >&2
+        vlaselect_report_command_failure "fig12" "launch failed for ${curve_label}" "$launch_log" "$launch_log" "$rc"
         print_log_excerpt "$launch_log"
         return "$rc"
     fi
@@ -551,8 +545,8 @@ launch_curve() {
 
     if [[ "$SMOKE" == "1" ]]; then
         total_timesteps="16384"
-        num_envs="16"
-        num_eval_envs="4"
+        num_envs="8"
+        num_eval_envs="2"
         num_minibatches="4"
         update_epochs="1"
         max_time="2"

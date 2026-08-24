@@ -8,6 +8,9 @@ export MS_ASSET_DIR="${MS_ASSET_DIR:-$ROOT_DIR/eval/datasets}"
 cd "$ROOT_DIR"
 
 MWE=${MWE:-0}
+if [[ "$MWE" == "1" ]]; then
+  export MWE_MAX_RUNTIME_MINUTES=2
+fi
 OUTPUT_DIR=${OUTPUT_DIR_OVERRIDE:-"$SCRIPT_DIR/outputs/tinyvla_online_rl_cl"}
 RUN_NAME=${RUN_NAME_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}
 ENV_ID=${ENV_ID_OVERRIDE:-OpenCabinetDrawerCabinet1021Default-v1}
@@ -37,6 +40,14 @@ for value in "$SCALING_METHOD" "$KNOWLEDGE_EXCHANGE_GRANULARITY"; do
     exit 2
   fi
 done
+LARGE_AGENT_CHECKPOINT="$ROOT_DIR/eval/ckpt/tinyvla/ours/outputs/bc_open_cabinet_drawer_fbs/20260508-032529/best_policy.pt"
+if [[ "$MWE" == "1" && -n "$SCALING_METHOD" ]]; then
+  LARGE_AGENT_CHECKPOINT="${LARGE_AGENT_CHECKPOINT}.base"
+  [[ -f "$LARGE_AGENT_CHECKPOINT" ]] || {
+    echo "missing MWE base checkpoint: $LARGE_AGENT_CHECKPOINT" >&2
+    exit 2
+  }
+fi
 if [[ -n "${OUTPUT_DIR_OVERRIDE:-}" ]]; then
   OUTPUT_DIR=$OUTPUT_DIR_OVERRIDE
 elif [[ -n "$SCALING_METHOD" ]]; then
@@ -55,7 +66,7 @@ ARGS=(--env-id "$ENV_ID" --output-dir "$OUTPUT_DIR" \
   --weight-decay 1e-6 --gamma 0.8 --gae-lambda 0.9 --clip-coef 0.2 --ent-coef 0.0 --vf-coef 0.5 --max-grad-norm 0.5 --target-kl 0.2 --minibatch-target-kl-factor 1.0 \
   --eval-episodes 50 --eval-every-updates 50 --max-runtime-hours 5.1 --rollout-micro-batch-size 256 --eval-micro-batch-size 256 --update-micro-batch-size 32 \
   --freeze-vla-backbone false --backbone-warmup-updates 0 --save-video false --action-dim 8 --state-dim 44 --env-action-dim 13 --controlled-action-indices "(0,1,2,3,4,5,6,7)" \
-  --large-agent-checkpoint eval/ckpt/tinyvla/ours/outputs/bc_open_cabinet_drawer_fbs/20260508-032529/best_policy.pt \
+  --large-agent-checkpoint "$LARGE_AGENT_CHECKPOINT" \
   --small-model-scaling-strategy target-single-traj --small-model-scaling-policy small \
   --small-model-feedback-schedule before_per_rollout_if_success_improv_is_larger_than_0.2 \
   --small-model-regeneration-schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters \

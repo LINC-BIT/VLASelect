@@ -119,8 +119,6 @@ class MethodState:
 
     def snapshot(self, label: str) -> str | None:
         status = self.effective_status()
-        if status == "queued":
-            return None
         parts = [f"[{label}]", f"method={self.display_name}", f"status={status}"]
         if self.phase and status in {"running", "finished", "completed", "failed"}:
             parts.append(f"phase={self.phase}")

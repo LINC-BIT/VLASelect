@@ -5,6 +5,10 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
 export PYTHONPATH="$ROOT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 cd "$ROOT_DIR"
+MWE=${MWE:-0}
+if [[ "$MWE" == "1" ]]; then
+  export MWE_MAX_RUNTIME_MINUTES=2
+fi
 
 RUN_NAME=${RUN_NAME_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}
 ENV_ID=${ENV_ID_OVERRIDE:-UnitreeG1LiftApple-v1}
@@ -43,6 +47,14 @@ for value in "$SCALING_METHOD" "$KNOWLEDGE_EXCHANGE_GRANULARITY"; do
   fi
 done
 
+LARGE_AGENT_CHECKPOINT="$ROOT_DIR/eval/ckpt/edgevla/ours/outputs/bc_unitree_g1_lift_apple_fbs/20260511-171959/best_policy.pt"
+if [[ "$MWE" == "1" && -n "$SCALING_METHOD" ]]; then
+  LARGE_AGENT_CHECKPOINT="${LARGE_AGENT_CHECKPOINT}.base"
+  [[ -f "$LARGE_AGENT_CHECKPOINT" ]] || {
+    echo "missing MWE base checkpoint: $LARGE_AGENT_CHECKPOINT" >&2
+    exit 2
+  }
+fi
 if [[ -n "${OUTPUT_DIR_OVERRIDE:-}" ]]; then
   OUTPUT_DIR=$OUTPUT_DIR_OVERRIDE
 elif [[ -n "$SCALING_METHOD" ]]; then
@@ -65,7 +77,7 @@ ARGS=(--env-id "$ENV_ID" --output-dir "$OUTPUT_DIR" \
   --eval-episodes 16 --eval-every-updates 1 --max-runtime-hours 400 --rollout-micro-batch-size 256 --eval-micro-batch-size 256 --update-micro-batch-size 32 \
   --rollout-progress-log-interval 10 --freeze-vla-backbone false --backbone-warmup-updates 0 --save-video false \
   --action-dim 12 --state-dim 73 --env-action-dim 25 --controlled-action-indices "(2,4,6,8,10,14,15,16,20,21,22,24)" \
-  --large-agent-checkpoint eval/ckpt/edgevla/ours/outputs/bc_unitree_g1_lift_apple_fbs/20260511-171959/best_policy.pt \
+  --large-agent-checkpoint "$LARGE_AGENT_CHECKPOINT" \
   --small-model-scaling-strategy target-single-traj --small-model-scaling-policy small \
   --small-model-feedback-schedule before_per_rollout_if_success_improv_is_larger_than_0.2 \
   --small-model-regeneration-schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters \

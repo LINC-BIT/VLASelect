@@ -8,6 +8,9 @@ cd "$ROOT_DIR"
 
 # These task/environment values mirror eval/train/vla_adapter_new/ours/run_online_rl_cl.sh.
 MWE=${MWE:-0}
+if [[ "$MWE" == "1" ]]; then
+  export MWE_MAX_RUNTIME_MINUTES=2
+fi
 RUN_NAME=${RUN_NAME_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}
 ENV_ID=${ENV_ID_OVERRIDE:-HoldCubeInHandObjectScaleDown1p2-v1}
 CUDA_VISIBLE_DEVICES=${CUDA_DEVICES:-${CUDA_VISIBLE_DEVICES:-0}}
@@ -56,6 +59,14 @@ else
 fi
 
 # Shorter rollouts emit training accuracy/success metrics more frequently.
+LARGE_AGENT_CHECKPOINT="$ROOT_DIR/eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt"
+if [[ "$MWE" == "1" && -n "$SCALING_METHOD" ]]; then
+  LARGE_AGENT_CHECKPOINT="${LARGE_AGENT_CHECKPOINT}.base"
+  [[ -f "$LARGE_AGENT_CHECKPOINT" ]] || {
+    echo "missing MWE base checkpoint: $LARGE_AGENT_CHECKPOINT" >&2
+    exit 2
+  }
+fi
 ARGS=(--env-id "$ENV_ID" --output-dir "$OUTPUT_DIR" \
   --envs-id "['HoldCubeInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']" \
   --env-change-time-points "[31,62,96,131,151,163,207,247,271,300]" \
@@ -66,7 +77,7 @@ ARGS=(--env-id "$ENV_ID" --output-dir "$OUTPUT_DIR" \
   --weight-decay 1e-6 --gamma 0.8 --gae-lambda 0.9 --clip-coef 0.2 --ent-coef 0.0 --vf-coef 0.5 --max-grad-norm 0.5 --target-kl 0.2 --minibatch-target-kl-factor 1.0 \
   --eval-episodes 50 --eval-every-updates 50 --max-runtime-hours 5.1 --rollout-micro-batch-size 256 --eval-micro-batch-size 256 --update-micro-batch-size 32 \
   --freeze-vla-backbone false --backbone-warmup-updates 0 --save-video false --action-dim 16 --state-dim 105 \
-  --large-agent-checkpoint eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt \
+  --large-agent-checkpoint "$LARGE_AGENT_CHECKPOINT" \
   --small-model-scaling-strategy target-single-traj --small-model-scaling-policy small \
   --small-model-feedback-schedule before_per_rollout_if_success_improv_is_larger_than_0.2 \
   --small-model-regeneration-schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters \

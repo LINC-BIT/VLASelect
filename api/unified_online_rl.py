@@ -227,7 +227,10 @@ def parse_args() -> Args:
         args.small_model_feedback_schedule = "once"
         args.small_model_regeneration_schedule = "once"
         args.total_timesteps = max(args.total_timesteps, 10**12)
-        args.max_runtime_hours = 5.0 / 60.0
+        mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
+        if mwe_runtime_minutes <= 0:
+            raise ValueError("MWE_MAX_RUNTIME_MINUTES must be positive")
+        args.max_runtime_hours = mwe_runtime_minutes / 60.0
         args.early_stop_zero_success_minutes = max(args.early_stop_zero_success_minutes, 5.0)
     return args
 

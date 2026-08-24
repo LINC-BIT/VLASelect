@@ -44,7 +44,7 @@ SMOKE_ENV_OVERRIDES=()
 if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES=(
         TOTAL_TIMESTEPS_OVERRIDE=1024
-        NUM_ENVS_OVERRIDE=8
+        NUM_ENVS_OVERRIDE=4
         NUM_EVAL_ENVS_OVERRIDE=8
         NUM_STEPS_OVERRIDE=16
         NUM_MINIBATCHES_OVERRIDE=2
@@ -52,9 +52,9 @@ if [[ "$SMOKE" == "1" ]]; then
         TRAIN_VIDEO_NUM_ENVS_OVERRIDE=1
         TEST_VIDEO_NUM_ENVS_OVERRIDE=1
         TEST_VIDEO_EPISODES_OVERRIDE=1
-        ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=8
-        EVAL_MICRO_BATCH_SIZE_OVERRIDE=8
-        UPDATE_MICRO_BATCH_SIZE_OVERRIDE=4
+        ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=4
+        EVAL_MICRO_BATCH_SIZE_OVERRIDE=4
+        UPDATE_MICRO_BATCH_SIZE_OVERRIDE=2
         EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45
         MWE_ACTIVE_RUNTIME_ONLY=1
     )
@@ -337,6 +337,11 @@ for method in "${METHOD_ORDER[@]}"; do
         launch_cmd=("${cmd[@]}")
     fi
 
+    method_status="launching"
+    if [[ -n "$wait_for_pid" ]]; then
+        method_status="queued"
+    fi
+
     python "$ROOT_DIR/train/octo/spawn_detached.py" \
         --pid-file "$pid_file" \
         --log-file "$log_file" \
@@ -365,7 +370,7 @@ for method in "${METHOD_ORDER[@]}"; do
         "$method" \
         "${DISPLAY_NAMES[$method]}" \
         "$gpu" \
-        "launched" \
+        "$method_status" \
         "" \
         "$train_pid" \
         "$monitor_pid" \

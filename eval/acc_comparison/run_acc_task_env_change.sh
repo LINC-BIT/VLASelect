@@ -149,12 +149,7 @@ log() {
 }
 
 print_log_excerpt() {
-    local log_file="$1"
-    local lines="${2:-20}"
-    if [[ -f "$log_file" ]]; then
-        echo "[fig7] last ${lines} lines from ${log_file}:" >&2
-        tail -n "$lines" "$log_file" >&2 || true
-    fi
+    vlaselect_print_log_excerpt "$1" "${2:-20}" "fig7"
 }
 
 detect_host_cpu_total() {
@@ -226,8 +221,7 @@ run_launch_command() {
     set -e
 
     if [[ "$rc" -ne 0 ]]; then
-        echo "[fig7] launch failed for ${family} with exit code ${rc}" >&2
-        echo "[fig7] launch log: ${launch_log}" >&2
+        vlaselect_report_command_failure "fig7" "launch failed for ${family}" "$launch_log" "" "$rc"
         print_log_excerpt "$launch_log"
         return "$rc"
     fi
@@ -370,8 +364,7 @@ wait_for_suite_completion() {
             elif [[ "$rc" -eq 2 ]]; then
                 status="waiting_for_manifest"
             else
-                echo "[fig7] failed to inspect suite state for ${family}: ${suite_manifest}" >&2
-                echo "[fig7] launch log: ${launch_log}" >&2
+                vlaselect_report_command_failure "fig7" "failed to inspect suite state for ${family}: ${suite_manifest}" "$launch_log"
                 print_log_excerpt "$launch_log"
                 return "$rc"
             fi
@@ -466,8 +459,7 @@ launch_family_suite() {
     esac
 
     if [[ ! -f "$suite_manifest" ]]; then
-        echo "Suite manifest not found for ${family}: ${suite_manifest}" >&2
-        echo "Launch log: ${launch_log}" >&2
+        vlaselect_report_command_failure "fig7" "suite manifest not found for ${family}: ${suite_manifest}" "$launch_log"
         print_log_excerpt "$launch_log"
         return 1
     fi
@@ -477,7 +469,10 @@ launch_family_suite() {
     if [[ "$TAIL_LOG" == "1" ]]; then
         vlaselect_start_manifest_log_tail "$suite_manifest" "$family"
     fi
-    wait_for_suite_completion "$family" "$suite_manifest" "$launch_log"
+    wait_for_suite_completion "$family" "$suite_manifest" "$launch_log" || return $?
+    if ! vlaselect_report_manifest_failures "$suite_manifest" "fig7" "$family" "$launch_log"; then
+        return 1
+    fi
 }
 
 refresh_top_manifest

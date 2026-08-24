@@ -146,6 +146,128 @@ for method in methods:
 __VLASELECT_LOGS__
 }
 
+vlaselect_print_log_excerpt() {
+    local log_file="$1"
+    local lines="${2:-20}"
+    local prefix="${3:-log}"
+
+    if [[ -f "$log_file" ]]; then
+        echo "[${prefix}] last ${lines} lines from ${log_file}:" >&2
+        tail -n "$lines" "$log_file" >&2 || true
+    fi
+}
+
+vlaselect_report_command_failure() {
+    local prefix="$1"
+    local label="$2"
+    local launch_log="${3:-}"
+    local training_log="${4:-}"
+    local exit_code="${5:-}"
+
+    local message="[${prefix}] error: ${label}"
+    if [[ -n "$exit_code" ]]; then
+        message+=" (exit_code=${exit_code})"
+    fi
+    echo "$message" >&2
+
+    if [[ -n "$launch_log" ]]; then
+        echo "[${prefix}] launch log: ${launch_log}" >&2
+    fi
+    if [[ -n "$training_log" ]]; then
+        echo "[${prefix}] training log: ${training_log}" >&2
+    fi
+}
+
+vlaselect_report_manifest_failures() {
+    local manifest_path="$1"
+    local prefix="$2"
+    local suite_label="${3:-suite}"
+    local launch_log="${4:-}"
+
+    local output=""
+    local rc=0
+    set +e
+    output=$(python - "$manifest_path" "$prefix" "$suite_label" "$launch_log" <<'PY_HELPER'
+import json
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+prefix = sys.argv[2]
+suite_label = sys.argv[3]
+launch_log = sys.argv[4]
+
+try:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+except OSError as exc:
+    print(f"[{prefix}] error ({suite_label}): unable to read manifest {manifest_path}: {exc}")
+    if launch_log:
+        print(f"[{prefix}] launch log ({suite_label}): {launch_log}")
+    raise SystemExit(4)
+except json.JSONDecodeError as exc:
+    print(f"[{prefix}] error ({suite_label}): invalid manifest {manifest_path}: {exc}")
+    if launch_log:
+        print(f"[{prefix}] launch log ({suite_label}): {launch_log}")
+    raise SystemExit(4)
+
+def iter_entries(payload):
+    methods = payload.get("methods")
+    if isinstance(methods, list):
+        for entry in methods:
+            if isinstance(entry, dict):
+                yield entry
+    runs = payload.get("runs")
+    if isinstance(runs, list):
+        for entry in runs:
+            if isinstance(entry, dict):
+                yield entry
+
+failed = []
+for entry in iter_entries(manifest):
+    status = str(entry.get("status") or "").strip().lower()
+    exit_code = entry.get("exit_code")
+    has_failure_status = status in {"failed", "error", "errored", "crashed", "aborted", "timeout", "timed_out"}
+    has_failure_exit_code = isinstance(exit_code, int) and exit_code != 0
+    if has_failure_status or has_failure_exit_code:
+        failed.append(entry)
+
+if not failed:
+    raise SystemExit(0)
+
+if launch_log:
+    print(f"[{prefix}] launch log ({suite_label}): {launch_log}")
+
+for entry in failed:
+    name = str(entry.get("name") or entry.get("method") or entry.get("family") or entry.get("display_name") or "unknown")
+    status = str(entry.get("status") or "failed").strip()
+    exit_code = entry.get("exit_code")
+    log_file = str(entry.get("log_file") or "").strip()
+    run_dir = str(entry.get("run_dir") or "").strip()
+    message = f"[{prefix}] error ({suite_label}/{name}): status={status}"
+    if isinstance(exit_code, int):
+        message += f" exit_code={exit_code}"
+    print(message)
+    if log_file:
+        print(f"[{prefix}] training log ({suite_label}/{name}): {log_file}")
+    elif run_dir:
+        print(f"[{prefix}] training log ({suite_label}/{name}): unavailable; run_dir={run_dir}")
+
+raise SystemExit(3)
+PY_HELPER
+)
+    rc=$?
+    set -e
+
+    if [[ -n "$output" ]]; then
+        printf '%s\n' "$output" >&2
+    fi
+
+    if [[ "$rc" -eq 3 ]]; then
+        return 1
+    fi
+    return "$rc"
+}
+
 vlaselect_cleanup() {
     local rc=$?
     trap - INT TERM EXIT

@@ -177,6 +177,22 @@ manifest_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
 PY
 }
 
+run_launch_command() {
+    local family="$1"
+    local launch_log="$2"
+    shift 2
+
+    set +e
+    "$@" > "$launch_log" 2>&1
+    local rc=$?
+    set -e
+
+    if [[ "$rc" -ne 0 ]]; then
+        vlaselect_report_command_failure "fig9" "launch failed for ${family}" "$launch_log" "" "$rc"
+        return "$rc"
+    fi
+}
+
 append_panel_entry() {
     local family="$1"
     local suite_manifest="$2"
@@ -272,8 +288,7 @@ wait_for_suite_completion() {
             return 0
         fi
         if [[ "$rc" -ne 10 && "$rc" -ne 2 ]]; then
-            echo "[fig9] failed to inspect suite state for ${family}: ${suite_manifest}" >&2
-            echo "[fig9] launch log: ${launch_log}" >&2
+            vlaselect_report_command_failure "fig9" "failed to inspect suite state for ${family}: ${suite_manifest}" "$launch_log"
             return "$rc"
         fi
         echo "[fig9] ${family} still running"
@@ -294,7 +309,8 @@ launch_family_suite() {
 
     case "$family" in
         octo)
-            env \
+            run_launch_command "$family" "$launch_log" \
+                env \
                 SUITE_STAMP="$SUITE_STAMP" \
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
@@ -304,10 +320,11 @@ launch_family_suite() {
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
-                bash "$launch_script" > "$launch_log" 2>&1
+                bash "$launch_script"
             ;;
         vla_adapter_new)
-            env \
+            run_launch_command "$family" "$launch_log" \
+                env \
                 SUITE_STAMP="$SUITE_STAMP" \
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
@@ -317,10 +334,11 @@ launch_family_suite() {
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
-                bash "$launch_script" > "$launch_log" 2>&1
+                bash "$launch_script"
             ;;
         tinyvla)
-            env \
+            run_launch_command "$family" "$launch_log" \
+                env \
                 SUITE_STAMP="$SUITE_STAMP" \
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
@@ -330,10 +348,11 @@ launch_family_suite() {
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
-                bash "$launch_script" > "$launch_log" 2>&1
+                bash "$launch_script"
             ;;
         edgevla)
-            env \
+            run_launch_command "$family" "$launch_log" \
+                env \
                 SUITE_STAMP="$SUITE_STAMP" \
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
@@ -346,7 +365,7 @@ launch_family_suite() {
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
-                bash "$launch_script" > "$launch_log" 2>&1
+                bash "$launch_script"
             ;;
         *)
             echo "Unhandled family: $family" >&2
@@ -355,8 +374,7 @@ launch_family_suite() {
     esac
 
     if [[ ! -f "$suite_manifest" ]]; then
-        echo "Suite manifest not found after launch: $suite_manifest" >&2
-        echo "Launch log: $launch_log" >&2
+        vlaselect_report_command_failure "fig9" "suite manifest not found after launch: ${suite_manifest}" "$launch_log"
         return 1
     fi
 
@@ -365,7 +383,10 @@ launch_family_suite() {
     if [[ "$TAIL_LOG" == "1" ]]; then
         vlaselect_start_manifest_log_tail "$suite_manifest" "$family"
     fi
-    wait_for_suite_completion "$family" "$suite_manifest" "$launch_log"
+    wait_for_suite_completion "$family" "$suite_manifest" "$launch_log" || return $?
+    if ! vlaselect_report_manifest_failures "$suite_manifest" "fig9" "$family" "$launch_log"; then
+        return 1
+    fi
 }
 
 refresh_top_manifest

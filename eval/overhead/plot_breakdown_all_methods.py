@@ -17,7 +17,13 @@ if str(EVAL_ROOT) not in sys.path:
 
 from common.figure_compose import compose_grid_figure
 from common.template_pdf_fill import fill_sampling_training_template
-from plot_breakdown_impl import ALL_METHODS_TABLE_ROOT, load_csv_rows, load_top_manifest_from_table_root, prepare_breakdown_tables
+from plot_breakdown_impl import (
+    ALL_METHODS_TABLE_ROOT,
+    apply_dynamic_time_axis,
+    load_csv_rows,
+    load_top_manifest_from_table_root,
+    prepare_breakdown_tables,
+)
 
 PANEL_DIR = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS_panels"
 FIG_ALL_METHODS = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS.pdf"
@@ -127,8 +133,7 @@ def draw_panels(payload: dict) -> list[Path]:
             hatch='/',
             width=0.72,
         )
-        max_ylim = float(totals.max()) * 1.12 if len(totals) else 1.0
-        ax.set_ylim(0, max_ylim if max_ylim > 0.0 else 1.0)
+        apply_dynamic_time_axis(ax, totals, margin_ratio=0.12, default_upper=1.0)
         ax.grid(axis='y', color='#9A9A9A', alpha=0.55, linewidth=1.0)
         ax.set_axisbelow(True)
         for spine in ax.spines.values():

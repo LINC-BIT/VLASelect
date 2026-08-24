@@ -18,7 +18,7 @@ OUTPUT_DIR_BASE=${OUTPUT_DIR_BASE_OVERRIDE:-$OUTPUT_DIR_BASE_DEFAULT}
 MAX_RUNTIME_HOURS=${MAX_RUNTIME_HOURS_OVERRIDE:-400}
 SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-false}
 CONTINUE_TRAIN_FROM=${CONTINUE_TRAIN_FROM_OVERRIDE:-}
-LARGE_AGENT_CHECKPOINT=${LARGE_AGENT_CHECKPOINT_OVERRIDE:-eval/ckpt/edgevla/ours/outputs/bc_unitree_g1_lift_apple_fbs/20260511-171959/best_policy.pt}
+LARGE_AGENT_CHECKPOINT=${LARGE_AGENT_CHECKPOINT_OVERRIDE:-ckpt/edgevla/ours/outputs/bc_unitree_g1_lift_apple_fbs/20260511-171959/best_policy.pt}
 ENV_ID=${ENV_ID_OVERRIDE:-UnitreeG1LiftApple-v1}
 ENVS_ID=${ENVS_ID_OVERRIDE:-"['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']"}
 ENV_CHANGE_TIME_POINTS=${ENV_CHANGE_TIME_POINTS_OVERRIDE:-"[31,62,96,131,151,163,207,247,271,300]"}
@@ -65,7 +65,7 @@ PYTHON_CMD=(
     --control-mode pd_joint_delta_pos
     --reward-mode normalized_dense
     --obs-mode rgb+state_dict
-    --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object
+    --model-dir ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
     --total-timesteps "$TOTAL_TIMESTEPS"
     --num-envs "$NUM_ENVS"

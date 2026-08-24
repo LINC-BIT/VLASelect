@@ -12,6 +12,7 @@ from train.edgevla.ours.model_with_fbs import convert_to_fbs_model
 
 
 THIS_DIR = Path(__file__).resolve().parent
+DEFAULT_MODEL_DIR = 'ckpt/vla_adapter_new/LIBERO-Object'
 DEFAULT_OUTPUT_DIR = 'train/edgevla/vla_rft/outputs/online_rl'
 DEFAULT_ENVS_ID = "['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']"
 DEFAULT_ENV_CHANGE_TIME_POINTS = '[31,62,96,131,151,163,207,247,271,300]'
@@ -65,6 +66,7 @@ def configure_human_defaults() -> None:
     algo.convert_to_fbs_model = convert_to_fbs_model
     algo.save_json = save_json_with_sources
     algo.load_policy_state_from_checkpoint = load_policy_state_from_checkpoint_or_default
+    algo.DEFAULT_MODEL_DIR = DEFAULT_MODEL_DIR
     algo.DEFAULT_OUTPUT_DIR = DEFAULT_OUTPUT_DIR
     algo.DEFAULT_WORLD_MODEL_CHECKPOINT = DEFAULT_WORLD_MODEL_CHECKPOINT
     algo.DEFAULT_FBS_POLICY_CHECKPOINT = DEFAULT_FBS_POLICY_CHECKPOINT
@@ -76,6 +78,7 @@ def configure_human_defaults() -> None:
         'control_mode': 'pd_joint_delta_pos',
         'reward_mode': 'normalized_dense',
         'obs_mode': 'rgb+state_dict',
+        'model_dir': DEFAULT_MODEL_DIR,
         'output_dir': DEFAULT_OUTPUT_DIR,
         'world_model_checkpoint': DEFAULT_WORLD_MODEL_CHECKPOINT,
         'fbs_policy_checkpoint': DEFAULT_FBS_POLICY_CHECKPOINT,

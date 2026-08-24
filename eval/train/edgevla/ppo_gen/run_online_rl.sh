@@ -43,7 +43,7 @@ PYTHON_CMD=(
     --control-mode pd_joint_delta_pos
     --reward-mode normalized_dense
     --obs-mode rgb+state_dict
-    --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object
+    --model-dir ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
     --static-model-checkpoint "$STATIC_MODEL_CHECKPOINT"
     --total-timesteps "$TOTAL_TIMESTEPS"

@@ -11,6 +11,7 @@ from typing import Any
 import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -427,6 +428,47 @@ def _set_common_axis_style(ax: Any) -> None:
     ax.spines["right"].set_visible(False)
 
 
+def _build_time_axis_locator() -> MaxNLocator:
+    return MaxNLocator(nbins=5, steps=[1, 2, 2.5, 5, 10], min_n_ticks=3)
+
+
+def _dynamic_time_axis_upper(
+    values: np.ndarray | list[float],
+    margin_ratio: float = 0.12,
+    default_upper: float = 1.0,
+) -> float:
+    data = np.asarray(values, dtype=float)
+    data = data[np.isfinite(data)]
+    if data.size == 0:
+        return default_upper
+    max_value = float(np.max(data))
+    if max_value <= 0.0:
+        return default_upper
+
+    raw_upper = max_value * (1.0 + margin_ratio)
+    tick_values = _build_time_axis_locator().tick_values(0.0, raw_upper)
+    positive_ticks = [float(tick) for tick in tick_values if tick > 0.0]
+    if positive_ticks:
+        return positive_ticks[-1]
+    return raw_upper
+
+
+def apply_dynamic_time_axis(
+    ax: Any,
+    values: np.ndarray | list[float],
+    margin_ratio: float = 0.12,
+    default_upper: float = 1.0,
+) -> float:
+    upper = _dynamic_time_axis_upper(
+        values,
+        margin_ratio=margin_ratio,
+        default_upper=default_upper,
+    )
+    ax.set_ylim(0.0, upper)
+    ax.yaxis.set_major_locator(_build_time_axis_locator())
+    return upper
+
+
 def plot_all_methods(rows: list[dict[str, Any]]) -> None:
     grouped = _group_rows(rows, 'family')
     panel_paths: list[Path] = []
@@ -450,8 +492,7 @@ def plot_all_methods(rows: list[dict[str, Any]]) -> None:
         ax.set_ylabel('Time (s)', fontsize=11)
         _set_common_axis_style(ax)
 
-        max_total = float(np.max(sampling + training)) if len(labels) else 0.0
-        ax.set_ylim(0.0, max_total * 1.22 if max_total > 0.0 else 1.0)
+        apply_dynamic_time_axis(ax, sampling + training, margin_ratio=0.12, default_upper=1.0)
         for x_pos, ok in zip(x, has_data):
             if not ok:
                 ax.text(x_pos, ax.get_ylim()[1] * 0.05, NO_DATA_TEXT, rotation=90, ha='center', va='bottom', fontsize=8)

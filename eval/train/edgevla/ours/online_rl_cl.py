@@ -17,6 +17,7 @@ from train.edgevla.env_verify import online_rl_unitree_g1_lift_apple as human_ta
 from train.edgevla.ours.model_with_fbs import convert_to_fbs_model
 
 
+DEFAULT_MODEL_DIR = "ckpt/vla_adapter_new/LIBERO-Object"
 DEFAULT_OUTPUT_DIR = "train/edgevla/ours/outputs/online_rl_cl"
 DEFAULT_ENVS_ID = (
     "['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1',"
@@ -79,6 +80,7 @@ def configure_human_defaults() -> None:
         "control_mode": "pd_joint_delta_pos",
         "reward_mode": "normalized_dense",
         "obs_mode": "rgb+state_dict",
+        "model_dir": DEFAULT_MODEL_DIR,
         "output_dir": DEFAULT_OUTPUT_DIR,
         "num_envs": 128,
         "num_eval_envs": 8,

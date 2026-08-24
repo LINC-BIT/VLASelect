@@ -13,6 +13,7 @@ from train.edgevla.ours.model_with_fbs import convert_to_fbs_model
 
 
 THIS_DIR = Path(__file__).resolve().parent
+DEFAULT_MODEL_DIR = "ckpt/vla_adapter_new/LIBERO-Object"
 DEFAULT_OUTPUT_DIR = "train/edgevla/improv_vla/outputs"
 DEFAULT_ENVS_ID = "['UnitreeG1LiftApple-v1','UnitreeG1LiftApple-v1']"
 DEFAULT_ENV_CHANGE_TIME_POINTS = "[10,20]"
@@ -47,6 +48,7 @@ def configure_human_defaults() -> None:
     human_task.patch_reference_for_humanoid_env()
     algo.convert_to_fbs_model = convert_to_fbs_model
     algo.copy_run_metadata = copy_run_metadata
+    algo.DEFAULT_MODEL_DIR = DEFAULT_MODEL_DIR
     algo.DEFAULT_OUTPUT_DIR = DEFAULT_OUTPUT_DIR
     algo.DEFAULT_ENVS_ID = DEFAULT_ENVS_ID
     algo.DEFAULT_ENV_CHANGE_TIME_POINTS = DEFAULT_ENV_CHANGE_TIME_POINTS
@@ -59,6 +61,7 @@ def configure_human_defaults() -> None:
         "control_mode": "pd_joint_delta_pos",
         "reward_mode": "normalized_dense",
         "obs_mode": "rgb+state_dict",
+        "model_dir": DEFAULT_MODEL_DIR,
         "output_dir": DEFAULT_OUTPUT_DIR,
         "static_model_checkpoint": DEFAULT_STATIC_MODEL_CHECKPOINT,
         "num_envs": 128,

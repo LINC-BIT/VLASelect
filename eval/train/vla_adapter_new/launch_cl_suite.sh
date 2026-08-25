@@ -58,6 +58,8 @@ if [[ "$SMOKE" == "1" ]]; then
         EVAL_MICRO_BATCH_SIZE_OVERRIDE=3
         UPDATE_MICRO_BATCH_SIZE_OVERRIDE=1
         EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45
+        WANDB_MODE=disabled
+        WANDB_SILENT=true
         MWE_ACTIVE_RUNTIME_ONLY=1
     )
 fi
@@ -92,13 +94,13 @@ declare -A GPU_BY_METHOD=(
     [conrft]=0
     [flare]=1
     [improv_vla]=2
-    [edgeta]=5
-    [convertnet]=6
-    [ours]=1
-    [ppo_gen]=3
-    [self_improv]=2
-    [vla_rft]=1
-    [world_env]=2
+    [edgeta]=0
+    [convertnet]=1
+    [ours]=3
+    [ppo_gen]=4
+    [self_improv]=5
+    [vla_rft]=6
+    [world_env]=7
 )
 
 DEFAULT_GPU_BY_METHOD_RAW=""

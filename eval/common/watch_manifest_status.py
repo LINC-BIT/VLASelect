@@ -63,7 +63,11 @@ class MethodState:
                 self.env_id = match.group("env").rstrip(",")
                 break
 
-        if "[setup]" in line and self.phase is None:
+        if "[queue]" in line and "waiting for pid=" in line:
+            self.phase = "queue"
+        elif "[queue]" in line and "wait finished; launching" in line:
+            self.phase = "launching"
+        elif "[setup]" in line and self.phase is None:
             self.phase = "setup"
 
         rollout_match = ROLLOUT_RE.search(line)

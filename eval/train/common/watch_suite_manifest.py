@@ -89,13 +89,11 @@ def find_run_artifact(run_dir: Path, relative_path: str) -> Path | None:
     direct = run_dir / relative_path
     if direct.exists():
         return direct
-    search_roots = [run_dir, run_dir.parent]
-    for search_root in search_roots:
-        if not search_root.exists():
-            continue
-        matches = sorted(path for path in search_root.glob(f"**/{relative_path}") if path.is_file())
-        if matches:
-            return matches[0]
+    if not run_dir.exists():
+        return None
+    matches = sorted(path for path in run_dir.glob(f"**/{relative_path}") if path.is_file())
+    if matches:
+        return matches[0]
     return None
 
 
@@ -165,7 +163,11 @@ def infer_alive_status(method: dict[str, Any], previous_status: str) -> str:
 
     if log_tail:
         lines = [line.strip() for line in log_tail.splitlines() if line.strip()]
-        if any("[queue]" not in line for line in lines):
+        payload_lines = [
+            line for line in lines
+            if not line.startswith("[spawn_detached]") and not line.startswith("[queue]")
+        ]
+        if payload_lines:
             return "running"
 
         last_wait_index = log_tail.rfind(QUEUE_WAIT_MARKER)

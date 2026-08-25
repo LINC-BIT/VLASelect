@@ -203,9 +203,31 @@ def find_gpu_metrics_csv(run_dir: Path) -> Path | None:
             candidates = sorted(search_root.glob('**/analysis/gpu_metrics.csv'))
             if candidates: return candidates[0]
     return None
+
+def find_memory_accounting_json(run_dir: Path) -> Path | None:
+    direct = run_dir / 'analysis' / 'memory_accounting.json'
+    if direct.exists():
+        return direct
+    for search_root in [run_dir, run_dir.parent]:
+        if search_root.exists():
+            candidates = sorted(search_root.glob('**/analysis/memory_accounting.json'))
+            if candidates:
+                return candidates[0]
+    return None
+
+def load_memory_exclusion_mb(run_dir: Path) -> float:
+    path = find_memory_accounting_json(run_dir)
+    if path is None:
+        return 0.0
+    try:
+        payload = load_json(path)
+    except Exception:
+        return 0.0
+    return max(0.0, finite_float(payload.get('excluded_gpu_memory_mb')) or 0.0)
 def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None):
     csv_path = find_gpu_metrics_csv(run_dir)
     if csv_path is None: return []
+    excluded_memory_mb = load_memory_exclusion_mb(run_dir)
     rows = []
     try:
         with csv_path.open('r', encoding='utf-8', newline='') as handle:
@@ -214,12 +236,16 @@ def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None):
                 elapsed_seconds_wall = finite_float(row.get('elapsed_seconds'))
                 if elapsed_seconds_wall is None: continue
                 elapsed_hours_wall = elapsed_seconds_wall / 3600.0
+                raw_gpu_memory_used_mb = finite_float(row.get('gpu_memory_used_mb')) or 0.0
+                adjusted_gpu_memory_used_mb = max(0.0, raw_gpu_memory_used_mb - excluded_memory_mb)
                 rows.append({
                     'elapsed_seconds_wall': elapsed_seconds_wall,
                     'elapsed_hours_wall': elapsed_hours_wall,
                     'elapsed_seconds': elapsed_seconds_wall,
                     'elapsed_hours': elapsed_hours_wall,
-                    'gpu_memory_used_mb': finite_float(row.get('gpu_memory_used_mb')) or 0.0,
+                    'raw_gpu_memory_used_mb': raw_gpu_memory_used_mb,
+                    'excluded_gpu_memory_mb': excluded_memory_mb,
+                    'gpu_memory_used_mb': adjusted_gpu_memory_used_mb,
                     'gpu_power_w': finite_float(row.get('gpu_power_w')) or 0.0,
                 })
     except Exception: return []

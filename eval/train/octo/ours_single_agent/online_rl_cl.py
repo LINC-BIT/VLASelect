@@ -12,6 +12,7 @@ import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
+from train.common.memory_accounting import write_module_memory_exclusion_metadata
 from dataclasses import dataclass
 from typing import List, Optional
 import wandb
@@ -1925,6 +1926,13 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     # generate small model
     print(f'generate small model for online RL')
     large_agent = agent
+    memory_exclusion_path = write_module_memory_exclusion_metadata(
+        output_dir,
+        module=large_agent,
+        label="large_agent",
+        reason="VLASelect large model can be offloaded during small-model online training; exclude its resident parameter/buffer memory from memory-footprint plots.",
+    )
+    print(f"[setup] memory exclusion metadata saved to {memory_exclusion_path}")
     agent, current_small_model_pruning_info = build_initial_trainable_small_model(
         args=args,
         large_agent=large_agent,

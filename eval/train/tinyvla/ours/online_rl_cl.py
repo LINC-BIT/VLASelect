@@ -16,6 +16,7 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
+from train.common.memory_accounting import write_module_memory_exclusion_metadata
 from collections import defaultdict
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
@@ -763,6 +764,13 @@ def train(args: Args) -> None:
     large_agent = convert_to_fbs_model(large_agent, device, max_sparsity=args.max_sparsity).to(device)
     load_policy_state_from_checkpoint(args.large_agent_checkpoint, large_agent)
     large_agent.eval_micro_batch_size = args.eval_micro_batch_size
+    memory_exclusion_path = write_module_memory_exclusion_metadata(
+        output_dir,
+        module=large_agent,
+        label="large_agent",
+        reason="VLASelect large model can be offloaded during small-model online training; exclude its resident parameter/buffer memory from memory-footprint plots.",
+    )
+    print(f"[setup] memory exclusion metadata saved to {memory_exclusion_path}")
 
     envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_envs, record_metrics=True)
     eval_envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_eval_envs, record_metrics=True)

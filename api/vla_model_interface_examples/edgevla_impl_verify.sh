@@ -71,10 +71,10 @@ ARGS=(--env-id "$ENV_ID" --output-dir "$OUTPUT_DIR" \
   --env-change-time-points "[31,62,96,131,151,163,207,247,271,300]" \
   --control-mode pd_joint_delta_pos --reward-mode normalized_dense --obs-mode rgb+state_dict \
   --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object \
-  --num-envs 128 --num-eval-envs 8 --num-steps 64 --num-minibatches 16 --update-epochs 2 \
+  --num-envs 64 --num-eval-envs 8 --num-steps 64 --num-minibatches 16 --update-epochs 2 \
   --learning-rate 6e-5 --head-learning-rate 6e-5 --state-learning-rate 6e-5 --value-head-learning-rate 6e-5 --backbone-learning-rate 6e-5 \
   --weight-decay 1e-6 --gamma 0.99 --gae-lambda 0.95 --clip-coef 0.2 --ent-coef 1e-3 --vf-coef 0.5 --max-grad-norm 0.5 --target-kl 0.02 --minibatch-target-kl-factor 1.0 \
-  --eval-episodes 16 --eval-every-updates 1 --max-runtime-hours 400 --rollout-micro-batch-size 256 --eval-micro-batch-size 256 --update-micro-batch-size 32 \
+  --eval-episodes 16 --eval-every-updates 1 --max-runtime-hours 400 --rollout-micro-batch-size 64 --eval-micro-batch-size 64 --update-micro-batch-size 16 \
   --rollout-progress-log-interval 10 --freeze-vla-backbone false --backbone-warmup-updates 0 --save-video false \
   --action-dim 12 --state-dim 73 --env-action-dim 25 --controlled-action-indices "(2,4,6,8,10,14,15,16,20,21,22,24)" \
   --large-agent-checkpoint "$LARGE_AGENT_CHECKPOINT" \

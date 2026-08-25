@@ -588,6 +588,7 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
         cur_offset += len(group_data) + group_gap
 
     plt.barh(all_x, all_y, color='white', edgecolor=BLACK, lw=2, zorder=10)
+    max_bar_value = max(all_y, default=0.0)
 
     cur_offset = 0
     all_x, all_y = [], []
@@ -611,10 +612,13 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
         cur_offset += len(group_data) + group_gap
 
     plt.barh(all_x, all_y, color='white', edgecolor=RED, lw=2, zorder=10, hatch='/')
+    max_bar_value = max(max_bar_value, max(all_y, default=0.0))
     plt.xlabel('Accuracy')
     plt.tight_layout()
     plt.grid(axis='x')
-    plt.xlim(right=1.0)
+    # Scale the x-axis to the plotted values instead of assuming accuracy is in [0, 1].
+    x_margin = max_bar_value * 0.05
+    plt.xlim(left=0.0, right=max_bar_value + x_margin)
     plt.yticks(raw_x, [''] * len(raw_x))
     plt.savefig(FIGURE_PNG_PATH, dpi=300)
     plt.savefig(FIGURE_SVG_PATH, dpi=300)

@@ -976,6 +976,7 @@ def train(args: Args) -> None:
         stopped_on_minibatch_kl = False
         skipped_updates_on_kl = 0
 
+        update_start_time = time.perf_counter()
         raw_policy.eval()
         for _ in range(args.update_epochs):
             np.random.shuffle(inds)

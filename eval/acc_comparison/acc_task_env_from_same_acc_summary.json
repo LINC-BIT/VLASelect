@@ -11,7 +11,7 @@
     "num_points": 11,
     "avg_accuracy": 0.3181818181818182,
     "final_accuracy": 0.875,
-    "max_minutes": 1.5389725724856058
+    "max_minutes": 0.4748488409638716
   },
   {
     "panel_label": "a",
@@ -25,7 +25,7 @@
     "num_points": 33,
     "avg_accuracy": 0.17803030303030304,
     "final_accuracy": 0.125,
-    "max_minutes": 4.157532473405202
+    "max_minutes": 0.46673581533444425
   },
   {
     "panel_label": "a",
@@ -39,7 +39,7 @@
     "num_points": 11,
     "avg_accuracy": 0.0,
     "final_accuracy": 0.0,
-    "max_minutes": 1.572544018427531
+    "max_minutes": 0.48256517908303065
   },
   {
     "panel_label": "a",
@@ -53,7 +53,7 @@
     "num_points": 33,
     "avg_accuracy": 0.17045454545454544,
     "final_accuracy": 0.25,
-    "max_minutes": 2.703615641593933
+    "max_minutes": 0.42713452957201903
   },
   {
     "panel_label": "a",
@@ -67,7 +67,7 @@
     "num_points": 33,
     "avg_accuracy": 0.19696969696969696,
     "final_accuracy": 0.25,
-    "max_minutes": 3.84713347752889
+    "max_minutes": 0.4219673149171285
   },
   {
     "panel_label": "a",
@@ -81,7 +81,7 @@
     "num_points": 11,
     "avg_accuracy": 0.23863636363636365,
     "final_accuracy": 0.25,
-    "max_minutes": 1.5724007884661357
+    "max_minutes": 0.43096599675191105
   },
   {
     "panel_label": "a",
@@ -95,7 +95,7 @@
     "num_points": 11,
     "avg_accuracy": 0.17045454545454544,
     "final_accuracy": 0.0,
-    "max_minutes": 1.5406836946805318
+    "max_minutes": 0.4246951785996013
   },
   {
     "panel_label": "a",
@@ -109,7 +109,7 @@
     "num_points": 16,
     "avg_accuracy": 0.7265625,
     "final_accuracy": 0.625,
-    "max_minutes": 5.555157681306203
+    "max_minutes": 0.4155262537446106
   },
   {
     "panel_label": "a",
@@ -123,7 +123,7 @@
     "num_points": 16,
     "avg_accuracy": 0.6484375,
     "final_accuracy": 0.75,
-    "max_minutes": 5.388726091384887
+    "max_minutes": 0.40751355381410886
   },
   {
     "panel_label": "a",
@@ -137,6 +137,20 @@
     "num_points": 16,
     "avg_accuracy": 0.75,
     "final_accuracy": 0.75,
-    "max_minutes": 2.565491529305776
+    "max_minutes": 0.42654918742870596
+  },
+  {
+    "panel_label": "c",
+    "workload_name": "Mobile manipulator",
+    "family": "tinyvla",
+    "method": "ours",
+    "display_name": "Ours",
+    "top_manifest": "acc_comparison/acc_task_env_from_same_acc_table/20260825-055319/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-055319/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-055319/ours",
+    "num_points": 2,
+    "avg_accuracy": 0.5,
+    "final_accuracy": 0.0,
+    "max_minutes": 0.5340676811155087
   }
 ]

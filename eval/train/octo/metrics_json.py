@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from train.common.time_breakdown import write_time_breakdown_from_metrics_history
+
 
 def _coerce_scalar(value: Any) -> float | int | bool | None:
     if value is None:
@@ -99,6 +101,7 @@ class JsonMetricsLogger:
         self.history.append(metric)
         save_json(self.latest_path, metric)
         save_json(self.history_path, {"history": self.history})
+        write_time_breakdown_from_metrics_history(self.output_dir, self.history)
 
     def save_final_eval(self, eval_metrics: dict[str, Any] | None) -> None:
         save_json(self.final_eval_path, _scalar_dict(eval_metrics))

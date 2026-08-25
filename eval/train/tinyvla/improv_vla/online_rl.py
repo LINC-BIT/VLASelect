@@ -13,7 +13,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
-from train.common.time_breakdown import write_time_breakdown
+from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, replace
@@ -872,6 +872,13 @@ def train(args: Args) -> None:
                 "online_success_trajectories": float(online_buffer.num_success_trajectories),
             }
             metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+            snapshot_time_breakdown_to_metric(
+                metric,
+                rollout_seconds=partial_rollout_seconds,
+                training_seconds=0.0,
+                cumulative_rollout_seconds=cumulative_rollout_seconds + partial_rollout_seconds,
+                cumulative_training_seconds=cumulative_training_seconds,
+            )
             metrics_history.append(metric)
             save_json(output_dir / "latest_metrics.json", metric)
             save_metrics_history(output_dir, metrics_history)
@@ -1019,6 +1026,13 @@ def train(args: Args) -> None:
                     best_success_once,
                 )
 
+        snapshot_time_breakdown_to_metric(
+            metric,
+            rollout_seconds=rollout_time,
+            training_seconds=update_time,
+            cumulative_rollout_seconds=cumulative_rollout_seconds,
+            cumulative_training_seconds=cumulative_training_seconds,
+        )
         metrics_history.append(metric)
         print(
             f"[train] update={update}/{num_updates} step={global_step} "

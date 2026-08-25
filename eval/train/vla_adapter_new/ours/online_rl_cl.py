@@ -17,7 +17,7 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import write_module_memory_exclusion_metadata
-from train.common.time_breakdown import write_time_breakdown
+from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
@@ -842,6 +842,15 @@ def train(args: Args) -> None:
             "env_index": current_env_index,
         }
         initial_metric.update({f"eval_{k}": v for k, v in initial_eval_metrics.items()})
+        module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
+        snapshot_time_breakdown_to_metric(
+            initial_metric,
+            rollout_seconds=0.0,
+            training_seconds=0.0,
+            cumulative_rollout_seconds=cumulative_rollout_seconds,
+            cumulative_training_seconds=cumulative_training_seconds,
+            module_breakdown=module_breakdown,
+        )
         metrics_history.append(initial_metric)
         current_success_end = float(initial_metric.get("eval_success_at_end", initial_metric.get("eval_success_once", 0.0)))
         success_end_at_last_small_model_feedback = current_success_end
@@ -1169,6 +1178,15 @@ def train(args: Args) -> None:
                     best_success_once,
                 )
 
+        module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
+        snapshot_time_breakdown_to_metric(
+            metric,
+            rollout_seconds=rollout_time,
+            training_seconds=update_time,
+            cumulative_rollout_seconds=cumulative_rollout_seconds,
+            cumulative_training_seconds=cumulative_training_seconds,
+            module_breakdown=module_breakdown,
+        )
         metrics_history.append(metric)
         print(
             f"[train] update={update}/{num_updates} env={current_env_id} reward={metric['reward_mean']:.4f} "

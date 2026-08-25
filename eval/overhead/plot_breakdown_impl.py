@@ -231,13 +231,18 @@ def _load_history_time_breakdown(run_dir: Path) -> MethodBreakdown | None:
     latest_metric = next((metric for metric in reversed(history) if isinstance(metric, dict)), None)
     if latest_metric is None:
         return None
+    module_breakdown = _extract_module_breakdown(latest_metric)
     sampling_seconds = _finite_float_or_none(latest_metric.get("cumulative_rollout_seconds"))
     training_seconds = _finite_float_or_none(latest_metric.get("cumulative_training_seconds"))
     if sampling_seconds is None:
         sampling_seconds = sum(_safe_float(metric.get("rollout_seconds")) for metric in history if isinstance(metric, dict))
     if training_seconds is None:
         training_seconds = sum(_safe_float(metric.get("training_seconds")) for metric in history if isinstance(metric, dict))
-    has_data = (sampling_seconds or 0.0) > 0.0 or (training_seconds or 0.0) > 0.0
+    has_data = (
+        (sampling_seconds or 0.0) > 0.0
+        or (training_seconds or 0.0) > 0.0
+        or any(_safe_float(value) > 0.0 for value in module_breakdown.values())
+    )
     if not has_data:
         return None
     history_path = run_dir / "metrics_history.json"
@@ -246,7 +251,7 @@ def _load_history_time_breakdown(run_dir: Path) -> MethodBreakdown | None:
         training_seconds=float(training_seconds or 0.0),
         has_data=True,
         source=_display_path(history_path),
-        module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS},
+        module_breakdown=module_breakdown,
     )
 
 

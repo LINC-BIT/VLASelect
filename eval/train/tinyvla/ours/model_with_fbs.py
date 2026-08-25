@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     policy = EdgeVLAActorCritic(
-        Path("eval/ckpt/vla_adapter_new/LIBERO-Object"),
+        Path("ckpt/vla_adapter_new/LIBERO-Object"),
         device=device,
     )
     convert_to_fbs_model(policy, device)

@@ -69,6 +69,24 @@ DEFAULT_INIT_POLICY = "ckpt/vla_adapter_new/model_impl/outputs/ppo_hold_cube_in_
 DEFAULT_WORKDIR = "train/tinyvla/model_impl/outputs/ppo_open_cabinet_drawer"
 
 
+def resolve_model_dir_path(model_dir: Path) -> Path:
+    if model_dir.is_absolute():
+        return model_dir
+    candidates = [
+        Path.cwd() / model_dir,
+        THIS_DIR.parents[3] / model_dir,
+    ]
+    model_dir_str = model_dir.as_posix()
+    if model_dir_str.startswith("eval/"):
+        trimmed = Path(model_dir_str[len("eval/"):])
+        candidates.append(Path.cwd() / trimmed)
+        candidates.append(THIS_DIR.parents[2] / trimmed)
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate.resolve()
+    return (Path.cwd() / model_dir).resolve()
+
+
 def backup_run_sources(output_dir: Path) -> None:
     code_dir = mkdir(output_dir / "code")
     sources = {
@@ -346,7 +364,7 @@ class EdgeVLAActorCritic(nn.Module):
         controlled_action_indices: Optional[Tuple[int, ...]] = None,
     ):
         super().__init__()
-        self.model_dir = model_dir
+        self.model_dir = resolve_model_dir_path(model_dir)
         self.device = device
         self.state_dim = state_dim
         self.policy_action_dim = action_dim
@@ -361,33 +379,33 @@ class EdgeVLAActorCritic(nn.Module):
         self.prompt = f"In: What action should the robot take to {TASK_PROMPT}\nOut: "
 
         fallback_bundle = maybe_build_random_init_vla_bundle(
-            model_dir=model_dir,
+            model_dir=self.model_dir,
             prompt=self.prompt,
             device=device,
             num_action_tokens=action_dim,
             action_stats_dim=action_dim,
         )
         if fallback_bundle is None:
-            self.processor = AutoProcessor.from_pretrained(str(model_dir), trust_remote_code=True)
+            self.processor = AutoProcessor.from_pretrained(str(self.model_dir), trust_remote_code=True)
             self.action_tokenizer = ActionTokenizer(self.processor.tokenizer)
             prompt_tokens = self.processor.tokenizer(self.prompt, return_tensors="pt")
             self.register_buffer("prompt_input_ids", prompt_tokens["input_ids"], persistent=False)
             self.register_buffer("prompt_attention_mask", prompt_tokens["attention_mask"], persistent=False)
-            ensure_package("local_edge_vla_pkg", model_dir)
+            ensure_package("local_edge_vla_pkg", self.model_dir)
             config_mod = load_module_from_path(
                 "local_edge_vla_pkg.configuration_prismatic",
-                model_dir / "configuration_prismatic.py",
+                self.model_dir / "configuration_prismatic.py",
             )
             model_mod = load_module_from_path(
                 "local_edge_vla_pkg.modeling_prismatic",
-                model_dir / "modeling_prismatic.py",
+                self.model_dir / "modeling_prismatic.py",
             )
             self.ignore_index = int(getattr(model_mod, "IGNORE_INDEX", -100))
             self.num_tokens = int(getattr(model_mod, "NUM_TOKENS", 64))
 
             self.vla = model_mod.OpenVLAForActionPrediction.from_pretrained(
-                str(model_dir),
-                config=config_mod.OpenVLAConfig.from_pretrained(str(model_dir)),
+                str(self.model_dir),
+                config=config_mod.OpenVLAConfig.from_pretrained(str(self.model_dir)),
                 torch_dtype=torch.bfloat16,
                 low_cpu_mem_usage=True,
                 attn_implementation=get_attention_implementation(),

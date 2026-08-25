@@ -38,6 +38,7 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForVision2Seq, AutoProcessor
 from prismatic.vla.action_tokenizer import ActionTokenizer
 from train.common.random_init_vla import maybe_build_random_init_vla_bundle
+from train.common.time_breakdown import write_time_breakdown_from_metrics_history
 
 
 
@@ -230,6 +231,7 @@ def cleanup_runtime() -> None:
 
 def save_metrics_history(output_dir: Path, metrics_history: List[Dict[str, Any]]) -> None:
     save_json(output_dir / "metrics_history.json", {"history": metrics_history})
+    write_time_breakdown_from_metrics_history(output_dir, metrics_history)
 
 
 def _metric_series(history: List[Dict[str, Any]], key: str) -> Tuple[List[int], List[float]]:

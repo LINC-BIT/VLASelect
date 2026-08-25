@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "",
-    "suite_manifest": ""
+    "top_manifest": "acc_comparison/acc_task_env_from_same_acc_table/20260825-055319/manifest.json",
+    "suite_manifest": "ckpt/tinyvla/cl_suite/20260825-055319/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        300.0
+        0.5607710651712842
       ],
       "ylim": [
         0.0,
@@ -48,11 +48,41 @@
       "grid_alpha": 0.3,
       "summary": {
         "others_average": null,
-        "ours_average": null,
+        "ours_average": 0.5,
         "absolute_improvement_percent": null
       },
-      "series": [],
-      "legend_entries": []
+      "series": [
+        {
+          "name": "ours",
+          "display_name": "Ours",
+          "label": "Ours",
+          "raw_average": 0.5,
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.13360211364924907,
+            0.5340676811155087
+          ],
+          "y": [
+            1.0,
+            0.7
+          ]
+        }
+      ],
+      "legend_entries": [
+        {
+          "name": "ours",
+          "label": "Ours",
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        }
+      ]
     }
   }
 }

@@ -383,7 +383,7 @@ for method in "${METHOD_ORDER[@]}"; do
         >> "$MANIFEST_TSV"
 done
 
-python - <<'PY' "$MANIFEST_TSV" "$MANIFEST_JSON" "$SUITE_STAMP" "$MONITOR_INTERVAL_SECONDS" "$PLOT_INTERVAL_SECONDS" "$INHERITED_SUITE_LABEL" "$RESOURCE_CHANGE_TIME_POINTS" "$RESOURCE_CHANGE_DIRECTIONS" "$RESOURCE_CHANGE_FACTORS"
+python - <<'PY' "$MANIFEST_TSV" "$MANIFEST_JSON" "$SUITE_STAMP" "$MONITOR_INTERVAL_SECONDS" "$PLOT_INTERVAL_SECONDS" "$INHERITED_SUITE_LABEL" "$RESOURCE_CHANGE_TIME_POINTS" "$RESOURCE_CHANGE_DIRECTIONS" "$RESOURCE_CHANGE_FACTORS" "$SMOKE" "${mwe_per_method_runtime_hours:-}"
 import csv
 import json
 import sys
@@ -398,6 +398,8 @@ inherited_suite = sys.argv[6] or None
 resource_change_time_points = sys.argv[7] or None
 resource_change_directions = sys.argv[8] or None
 resource_change_factors = sys.argv[9] or None
+smoke = sys.argv[10] == "1"
+smoke_max_runtime_hours = float(sys.argv[11]) if sys.argv[11] else None
 
 with tsv_path.open("r", encoding="utf-8") as f:
     reader = csv.DictReader(f, delimiter="\t")
@@ -427,8 +429,11 @@ manifest = {
     "resource_change_time_points": resource_change_time_points,
     "resource_change_directions": resource_change_directions,
     "resource_change_factors": resource_change_factors,
+    "smoke": smoke,
     "methods": methods,
 }
+if smoke_max_runtime_hours is not None:
+    manifest["smoke_max_runtime_hours"] = smoke_max_runtime_hours
 json_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 PY
 

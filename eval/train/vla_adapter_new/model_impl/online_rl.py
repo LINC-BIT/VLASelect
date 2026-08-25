@@ -46,7 +46,7 @@ import matplotlib.pyplot as plt
 
 
 TASK_PROMPT = "Grasp a red cube and move it to a target goal position."
-DEFAULT_MODEL_DIR = "eval/ckpt/vla_adapter_new/LIBERO-Object"
+DEFAULT_MODEL_DIR = "ckpt/vla_adapter_new/LIBERO-Object"
 DEFAULT_DEMO_H5 = "datasets/PickCube-v1/motionplanning/trajectory.rgb+depth+state_dict.pd_ee_delta_pos.physx_cpu.h5"
 DEFAULT_WORKDIR = "train/vla_adapter_new/model_impl/outputs"
 

@@ -24,7 +24,7 @@ NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
 ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-256}
 EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-256}
 UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-32}
-STATIC_MODEL_CHECKPOINT=${STATIC_MODEL_CHECKPOINT_OVERRIDE:-eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt}
+STATIC_MODEL_CHECKPOINT=${STATIC_MODEL_CHECKPOINT_OVERRIDE:-ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt}
 
 if [ -n "$EXP_NAME" ]; then
     if [[ "$EXP_NAME" == */* ]]; then
@@ -52,7 +52,7 @@ PYTHON_CMD=(
     --control-mode pd_joint_delta_pos
     --reward-mode normalized_dense
     --obs-mode rgb+state_dict
-    --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object
+    --model-dir ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
     --static-model-checkpoint "$STATIC_MODEL_CHECKPOINT"
     --total-timesteps 100000000

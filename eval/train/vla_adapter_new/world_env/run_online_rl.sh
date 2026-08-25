@@ -64,7 +64,7 @@ PYTHON_CMD=(
     --control-mode pd_joint_delta_pos
     --reward-mode normalized_dense
     --obs-mode rgb+state_dict
-    --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object
+    --model-dir ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
     --world-model-checkpoint "$WORLD_MODEL_CKPT"
     --static-model-checkpoint ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt

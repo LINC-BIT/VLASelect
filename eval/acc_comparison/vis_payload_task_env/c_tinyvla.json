@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_comparison_task_env_table/vrtest-acc-task-110825/manifest.json",
-    "suite_manifest": "ckpt/tinyvla/cl_suite/vrtest-acc-task-110825/manifest.json"
+    "top_manifest": "overhead/overhead_same_acc_table/smoke-20260816-fig9-tinyvla/manifest.json",
+    "suite_manifest": "ckpt/edgevla/cl_suite/smoke-20260816-fig9-tinyvla/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,

@@ -37,6 +37,7 @@ from train.vla_adapter_new.model_impl.online_rl import (
     strip_module_prefix,
 )
 from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
+from train.vla_adapter_new.checkpoint_loading import load_compatible_policy_state
 from train.vla_adapter_new.ours.generate_static_small_model import generate_static_small_model
 from train.vla_adapter_new.ours.model_with_fbs_test import convert_to_fbs_model
 
@@ -279,8 +280,12 @@ class ActionBinTrajectoryBuffer:
 
 
 def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -> Dict[str, Any]:
+    if not checkpoint_path:
+        print("[setup] empty static checkpoint path; keeping current policy initialization")
+        return {}
     if not Path(checkpoint_path).exists():
-        raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
+        print(f"[setup] missing static checkpoint at {checkpoint_path}; keeping current policy initialization")
+        return {}
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     if isinstance(checkpoint, dict) and "policy" in checkpoint:
         policy_state = maybe_apply_checkpoint_noise_to_state_dict(
@@ -294,7 +299,7 @@ def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -
             checkpoint_path=checkpoint_path,
             state_label="checkpoint",
         )
-    policy.load_state_dict(policy_state, strict=True)
+    load_compatible_policy_state(policy_state, policy, checkpoint_path)
     return checkpoint if isinstance(checkpoint, dict) else {}
 
 

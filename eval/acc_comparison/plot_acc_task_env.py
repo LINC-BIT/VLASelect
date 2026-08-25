@@ -111,7 +111,29 @@ def load_history(run_dir: Path) -> list[dict[str, Any]]:
     return [item for item in history if isinstance(item, dict)] if isinstance(history, list) else []
 
 
-def collect_history_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+def rescale_series_minutes(series: list[tuple[float, float]], active_runtime_hours: float | None) -> list[tuple[float, float]]:
+    if active_runtime_hours is None or active_runtime_hours <= 0.0 or not series:
+        return series
+    raw_total_minutes = max((x_value for x_value, _ in series), default=0.0)
+    if raw_total_minutes <= 0.0:
+        return series
+    scale = (active_runtime_hours * 60.0) / raw_total_minutes
+    return [(x_value * scale, y_value) for x_value, y_value in series]
+
+
+def resolve_method_active_runtime_hours(method: dict[str, Any]) -> float | None:
+    actual_runtime_hours = finite_float(method.get('actual_runtime_hours'))
+    smoke_runtime_hours = finite_float(method.get('smoke_max_runtime_hours'))
+    if smoke_runtime_hours is not None and smoke_runtime_hours > 0.0:
+        if actual_runtime_hours is not None and actual_runtime_hours > 0.0:
+            return min(actual_runtime_hours, smoke_runtime_hours)
+        return smoke_runtime_hours
+    if actual_runtime_hours is not None and actual_runtime_hours > 0.0:
+        return actual_runtime_hours
+    return None
+
+
+def collect_history_series(run_dir: Path, metric_key: str, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     series = []
     for index, metric in enumerate(load_history(run_dir)):
         y_value = finite_float(metric.get(metric_key))
@@ -120,7 +142,7 @@ def collect_history_series(run_dir: Path, metric_key: str) -> list[tuple[float, 
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         x_value = elapsed_hours * 60.0 if elapsed_hours is not None else float(index)
         series.append((x_value, y_value))
-    return series
+    return rescale_series_minutes(series, active_runtime_hours)
 
 
 def find_tb_dir(run_dir: Path) -> Path | None:
@@ -139,7 +161,7 @@ def find_tb_dir(run_dir: Path) -> Path | None:
     return None
 
 
-def collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+def collect_tensorboard_series(run_dir: Path, metric_key: str, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     tb_dir = find_tb_dir(run_dir)
     if tb_dir is None:
         return []
@@ -155,14 +177,15 @@ def collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[flo
     if not events:
         return []
     base_time = events[0].wall_time
-    return [((event.wall_time - base_time) / 60.0, float(event.value)) for event in events]
+    series = [((event.wall_time - base_time) / 60.0, float(event.value)) for event in events]
+    return rescale_series_minutes(series, active_runtime_hours)
 
 
-def collect_series(family: str, run_dir: Path) -> list[tuple[float, float]]:
+def collect_series(family: str, run_dir: Path, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     config = FAMILY_CONFIGS[family]
     if config['loader'] == 'tensorboard':
-        return collect_tensorboard_series(run_dir, config['metric_key'])
-    return collect_history_series(run_dir, config['metric_key'])
+        return collect_tensorboard_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
+    return collect_history_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
 
 
 def smooth_values(values: list[float], smoothing: float) -> list[float]:
@@ -197,8 +220,8 @@ def resolve_dynamic_xlim(
             max_x = max(max_x, max(float(x) for x in xs))
     if max_x <= 0.0:
         return list(fallback_xlim)
-    padded_right = max_x * 1.03
-    right = max(max_x + 1.0, padded_right)
+    pad = max(0.02, max_x * 0.05)
+    right = max_x + pad
     return [0.0, right]
 
 
@@ -260,7 +283,8 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
             if not run_dir_raw:
                 continue
             run_dir = resolve_path(run_dir_raw)
-            series = collect_series(panel['family'], run_dir)
+            active_runtime_hours = resolve_method_active_runtime_hours(method)
+            series = collect_series(panel['family'], run_dir, active_runtime_hours=active_runtime_hours)
             if not series:
                 continue
             xs = [point[0] for point in series]

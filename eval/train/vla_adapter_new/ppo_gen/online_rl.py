@@ -43,7 +43,7 @@ from train.vla_adapter_new.ours.model_with_fbs_test import convert_to_fbs_model
 
 DEFAULT_MODEL_DIR = reference.DEFAULT_MODEL_DIR
 DEFAULT_OUTPUT_DIR = "train/vla_adapter_new/ppo_gen/outputs"
-DEFAULT_STATIC_MODEL_CHECKPOINT = "eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt"
+DEFAULT_STATIC_MODEL_CHECKPOINT = "ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt"
 DEFAULT_SUMMARY_NAME = "ppo_gen_training_summary.json"
 DEFAULT_ENVS_ID = "['HoldCubeInHandObjectScaleDown1p2-v1', 'HoldCubeInHandObjectScaleDown1p4-v1']"
 DEFAULT_ENV_CHANGE_TIME_POINTS = "[15, 30]"

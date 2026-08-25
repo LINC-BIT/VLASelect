@@ -112,7 +112,16 @@ def load_history(run_dir: Path) -> list[dict[str, Any]]:
     except Exception: return []
     history = payload.get('history', []) if isinstance(payload, dict) else payload
     return [item for item in history if isinstance(item, dict)] if isinstance(history, list) else []
-def collect_history_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+def rescale_series_hours(series: list[tuple[float, float]], active_runtime_hours: float | None) -> list[tuple[float, float]]:
+    if active_runtime_hours is None or active_runtime_hours <= 0.0 or not series:
+        return series
+    raw_total_hours = max((x_value for x_value, _ in series), default=0.0)
+    if raw_total_hours <= 0.0:
+        return series
+    scale = active_runtime_hours / raw_total_hours
+    return [(x_value * scale, y_value) for x_value, y_value in series]
+
+def collect_history_series(run_dir: Path, metric_key: str, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     series = []
     for index, metric in enumerate(load_history(run_dir)):
         y_value = finite_float(metric.get(metric_key))
@@ -120,7 +129,7 @@ def collect_history_series(run_dir: Path, metric_key: str) -> list[tuple[float, 
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         x_value = elapsed_hours if elapsed_hours is not None else float(index)
         series.append((x_value, y_value))
-    return series
+    return rescale_series_hours(series, active_runtime_hours)
 def find_tb_dir(run_dir: Path) -> Path | None:
     for candidate in [run_dir / 'tb', run_dir / '[agent]' / 'tb']:
         if candidate.is_dir(): return candidate
@@ -129,7 +138,7 @@ def find_tb_dir(run_dir: Path) -> Path | None:
             nested = sorted(path for path in search_root.glob('**/tb') if path.is_dir())
             if nested: return nested[0]
     return None
-def collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+def collect_tensorboard_series(run_dir: Path, metric_key: str, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     tb_dir = find_tb_dir(run_dir)
     if tb_dir is None: return []
     try:
@@ -141,10 +150,13 @@ def collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[flo
     events = accumulator.Scalars(metric_key)
     if not events: return []
     base_time = events[0].wall_time
-    return [((event.wall_time - base_time) / 3600.0, float(event.value)) for event in events]
-def collect_series(family: str, run_dir: Path) -> list[tuple[float, float]]:
+    series = [((event.wall_time - base_time) / 3600.0, float(event.value)) for event in events]
+    return rescale_series_hours(series, active_runtime_hours)
+def collect_series(family: str, run_dir: Path, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     config = FAMILY_CONFIGS[family]
-    return collect_tensorboard_series(run_dir, config['metric_key']) if config['loader'] == 'tensorboard' else collect_history_series(run_dir, config['metric_key'])
+    if config['loader'] == 'tensorboard':
+        return collect_tensorboard_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
+    return collect_history_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
 
 def extract_history_success_value(family: str, metric: dict[str, Any]) -> float | None:
     for key in HISTORY_METRIC_ALIASES_BY_FAMILY.get(family, ()): 
@@ -153,7 +165,7 @@ def extract_history_success_value(family: str, metric: dict[str, Any]) -> float 
             return value
     return None
 
-def collect_segment_success_history(family: str, run_dir: Path) -> dict[int, list[tuple[float, float]]]:
+def collect_segment_success_history(family: str, run_dir: Path, active_runtime_hours: float | None = None) -> dict[int, list[tuple[float, float]]]:
     grouped: dict[int, list[tuple[float, float]]] = {}
     for metric in load_history(run_dir):
         env_index = finite_float(metric.get('current_env_index'))
@@ -162,8 +174,9 @@ def collect_segment_success_history(family: str, run_dir: Path) -> dict[int, lis
         if env_index is None or elapsed_hours is None or success_value is None:
             continue
         grouped.setdefault(int(env_index), []).append((elapsed_hours, success_value))
-    for values in grouped.values():
+    for key, values in grouped.items():
         values.sort(key=lambda item: item[0])
+        grouped[key] = rescale_series_hours(values, active_runtime_hours)
     return grouped
 def smooth_values(values: list[float], smoothing: float) -> list[float]:
     if not values or smoothing <= 0.0: return values
@@ -356,6 +369,13 @@ def average_or_zero(values: list[float]) -> float:
 
 def resolve_method_active_runtime_hours(method: dict[str, Any], fallback_hours: float | None = None) -> float | None:
     runtime_hours = finite_float(method.get('actual_runtime_hours'))
+    smoke_runtime_hours = finite_float(method.get('smoke_max_runtime_hours'))
+    if smoke_runtime_hours is not None and smoke_runtime_hours > 0.0:
+        if runtime_hours is not None and runtime_hours > 0.0:
+            return min(runtime_hours, smoke_runtime_hours)
+        if fallback_hours is not None and fallback_hours > 0.0:
+            return min(fallback_hours, smoke_runtime_hours)
+        return smoke_runtime_hours
     if runtime_hours is not None and runtime_hours > 0.0:
         return runtime_hours
     if fallback_hours is not None and fallback_hours > 0.0:
@@ -395,8 +415,8 @@ def collect_panel_table3_energy(panel):
         if not paper_name:
             continue
         run_dir = resolve_path(method['run_dir'])
-        success_history = collect_segment_success_history(panel['family'], run_dir)
-        active_runtime_hours = resolve_method_active_runtime_hours(method, latest_segment_history_hours(success_history))
+        active_runtime_hours = resolve_method_active_runtime_hours(method)
+        success_history = collect_segment_success_history(panel['family'], run_dir, active_runtime_hours=active_runtime_hours)
         gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
         if not gpu_samples:
             continue
@@ -595,7 +615,8 @@ def collect_panel_metrics(panel):
     vlaselect_method = pick_vlaselect_method(methods, panel['family'])
     if vlaselect_method is None: return {}, 'Baselines / VLASelect avg. memory (GB): No data'
     vlaselect_run_dir = resolve_path(vlaselect_method['run_dir'])
-    vlaselect_series = collect_series(panel['family'], vlaselect_run_dir)
+    vlaselect_active_runtime_hours = resolve_method_active_runtime_hours(vlaselect_method)
+    vlaselect_series = collect_series(panel['family'], vlaselect_run_dir, active_runtime_hours=vlaselect_active_runtime_hours)
     if not vlaselect_series: return {}, 'Baselines / VLASelect avg. memory (GB): No data'
     target_accuracy = max(value for _, value in vlaselect_series)
     panel_metrics = {}
@@ -603,7 +624,8 @@ def collect_panel_metrics(panel):
         paper_name = PAPER_METHOD_BY_INTERNAL.get(method.get('name'))
         if not paper_name: continue
         run_dir = resolve_path(method['run_dir'])
-        accuracy_series = collect_series(panel['family'], run_dir)
+        active_runtime_hours = resolve_method_active_runtime_hours(method)
+        accuracy_series = collect_series(panel['family'], run_dir, active_runtime_hours=active_runtime_hours)
         if not accuracy_series:
             panel_metrics[paper_name] = make_empty_metrics(); continue
         active_runtime_hours = resolve_method_active_runtime_hours(method, latest_series_hours(accuracy_series))

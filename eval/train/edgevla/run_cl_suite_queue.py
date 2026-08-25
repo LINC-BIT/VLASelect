@@ -99,6 +99,7 @@ class SuiteScheduler:
             "resource_change_time_points": self.args.resource_change_time_points or None,
             "resource_change_directions": self.args.resource_change_directions or None,
             "resource_change_factors": self.args.resource_change_factors or None,
+            "smoke_max_runtime_hours": self.args.smoke_max_runtime_hours if self.args.smoke else None,
             "inherited_suite": None,
             "gpu_queues": {str(gpu): methods for gpu, methods in self.gpu_queues.items()},
             "methods": [

@@ -59,7 +59,7 @@ from train.common.random_init_vla import maybe_build_random_init_vla_bundle
 
 
 TASK_PROMPT = "rotate the object in hand quickly without dropping it."
-DEFAULT_MODEL_DIR = "eval/ckpt/vla_adapter_new/LIBERO-Object"
+DEFAULT_MODEL_DIR = "ckpt/vla_adapter_new/LIBERO-Object"
 DEFAULT_WORKDIR = "train/vla_adapter_new/model_impl/outputs/ppo_rotate_hand"
 
 

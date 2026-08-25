@@ -133,7 +133,7 @@ def draw_panels(payload: dict) -> list[Path]:
             hatch='/',
             width=0.72,
         )
-        apply_dynamic_time_axis(ax, totals, margin_ratio=0.12, default_upper=1.0)
+        apply_dynamic_time_axis(ax, totals, margin_ratio=0.12, default_upper=(1.0 / 60.0))
         ax.grid(axis='y', color='#9A9A9A', alpha=0.55, linewidth=1.0)
         ax.set_axisbelow(True)
         for spine in ax.spines.values():

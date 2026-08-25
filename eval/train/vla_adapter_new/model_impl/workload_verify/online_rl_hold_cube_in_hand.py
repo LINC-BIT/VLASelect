@@ -67,7 +67,7 @@ from train.common.random_init_vla import maybe_build_random_init_vla_bundle
 
 
 TASK_PROMPT = "hold the cube in the hand without dropping it."
-DEFAULT_MODEL_DIR = "eval/ckpt/vla_adapter_new/LIBERO-Object"
+DEFAULT_MODEL_DIR = "ckpt/vla_adapter_new/LIBERO-Object"
 DEFAULT_WORKDIR = "train/vla_adapter_new/model_impl/workload_verify/outputs"
 DEFAULT_VERIFY_SUMMARY_NAME = "workload_verify_summary.json"
 

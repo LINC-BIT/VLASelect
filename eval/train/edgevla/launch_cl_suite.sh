@@ -392,7 +392,7 @@ for method in "${METHOD_ORDER[@]}"; do
         "$run_dir" "$log_file" "$script_path" "$output_dir_base" "$run_name" >> "$MANIFEST_TSV"
 done
 
-python - <<'PY' "$MANIFEST_TSV" "$MANIFEST_JSON" "$SUITE_STAMP" "$SMOKE" "$MONITOR_INTERVAL_SECONDS" "$PLOT_INTERVAL_SECONDS" "$SUITE_ENVS_ID" "$SUITE_ENV_CHANGE_TIME_POINTS" "$INHERITED_SUITE_LABEL"
+python - <<'PY' "$MANIFEST_TSV" "$MANIFEST_JSON" "$SUITE_STAMP" "$SMOKE" "$MONITOR_INTERVAL_SECONDS" "$PLOT_INTERVAL_SECONDS" "$SUITE_ENVS_ID" "$SUITE_ENV_CHANGE_TIME_POINTS" "$INHERITED_SUITE_LABEL" "$MWE_PER_METHOD_RUNTIME_HOURS"
 import csv
 import json
 import sys
@@ -407,6 +407,7 @@ plot_interval = float(sys.argv[6])
 envs_id = sys.argv[7]
 env_change_time_points = sys.argv[8]
 inherited_suite = sys.argv[9] or None
+smoke_max_runtime_hours = float(sys.argv[10]) if sys.argv[10] else None
 
 with tsv_path.open("r", encoding="utf-8") as f:
     methods = []
@@ -436,6 +437,7 @@ manifest = {
     "envs_id": envs_id,
     "env_change_time_points": env_change_time_points,
     "inherited_suite": inherited_suite,
+    "smoke_max_runtime_hours": smoke_max_runtime_hours if smoke else None,
     "methods": methods,
 }
 json_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")

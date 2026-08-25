@@ -16,6 +16,9 @@ LOG_FILE=${LOG_FILE_OVERRIDE:-$LOG_FILE}
 EXP_NAME=${EXP_NAME:-}
 RUN_NAME=${RUN_NAME_OVERRIDE:-}
 OUTPUT_DIR_BASE=${OUTPUT_DIR_BASE_OVERRIDE:-$OUTPUT_DIR_BASE_DEFAULT}
+ENV_ID=${ENV_ID_OVERRIDE:-HoldCubeInHandObjectScaleDown1p2-v1}
+ENVS_ID=${ENVS_ID_OVERRIDE:-"['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']"}
+ENV_CHANGE_TIME_POINTS=${ENV_CHANGE_TIME_POINTS_OVERRIDE:-"[31,62,96,131,151,163,207,247,271,300]"}
 MAX_RUNTIME_HOURS=${MAX_RUNTIME_HOURS_OVERRIDE:-5.1}
 SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-false}
 CONTINUE_TRAIN_FROM=${CONTINUE_TRAIN_FROM_OVERRIDE:-}
@@ -27,6 +30,7 @@ TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
 NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
 UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-2}
 EVAL_EVERY_UPDATES=${EVAL_EVERY_UPDATES_OVERRIDE:-50}
+EVAL_EPISODES=${EVAL_EPISODES_OVERRIDE:-50}
 ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-256}
 EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-256}
 UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-32}
@@ -56,13 +60,13 @@ PYTHON_CMD=(
     python -u "$SCRIPT_DIR/online_rl_cl.py"
     --mode train
     --seed 1
-    --env-id HoldCubeInHandObjectScaleDown1p2-v1
-    --envs-id "['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']"
-    --env-change-time-points "[31,62,96,131,151,163,207,247,271,300]"
+    --env-id "$ENV_ID"
+    --envs-id "$ENVS_ID"
+    --env-change-time-points "$ENV_CHANGE_TIME_POINTS"
     --control-mode pd_joint_delta_pos
     --reward-mode normalized_dense
     --obs-mode rgb+state_dict
-    --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object
+    --model-dir ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
     --total-timesteps "$TOTAL_TIMESTEPS"
     --num-envs "$NUM_ENVS"
@@ -84,7 +88,7 @@ PYTHON_CMD=(
     --max-grad-norm 0.5
     --target-kl 0.2
     --minibatch-target-kl-factor 1.0
-    --eval-episodes 50
+    --eval-episodes "$EVAL_EPISODES"
     --eval-every-updates "$EVAL_EVERY_UPDATES"
     --max-runtime-hours "$MAX_RUNTIME_HOURS"
     --rollout-micro-batch-size "$ROLLOUT_MICRO_BATCH_SIZE"

@@ -524,10 +524,16 @@ def sample_supervised_batch(
         batches.append(online_buffer.sample_batch(online_size, device))
     if len(batches) == 1:
         return batches[0]
+    def _concat_field(field: str) -> torch.Tensor:
+        tensors = [batch[field] for batch in batches]
+        ref_dtype = tensors[0].dtype
+        if any(t.dtype != ref_dtype for t in tensors[1:]):
+            tensors = [t if t.dtype == ref_dtype else t.to(dtype=ref_dtype) for t in tensors]
+        return torch.cat(tensors, dim=0)
     return {
-        "rgb": torch.cat([batch["rgb"] for batch in batches], dim=0),
-        "state": torch.cat([batch["state"] for batch in batches], dim=0),
-        "action_bins": torch.cat([batch["action_bins"] for batch in batches], dim=0),
+        "rgb": _concat_field("rgb"),
+        "state": _concat_field("state"),
+        "action_bins": _concat_field("action_bins"),
     }
 
 

@@ -820,6 +820,38 @@ def train(args: Args) -> None:
     update_at_last_small_model_regeneration = None
     current_success_end = None
 
+    if start_update <= 1 and global_step == 0:
+        initial_eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
+        initial_metric = {
+            "update": 0,
+            "global_step": 0,
+            "elapsed_hours": runtime_tracker.current_hours(),
+            "env_id": current_env_id,
+            "env_index": current_env_index,
+        }
+        initial_metric.update({f"eval_{k}": v for k, v in initial_eval_metrics.items()})
+        metrics_history.append(initial_metric)
+        current_success_end = float(initial_metric.get("eval_success_at_end", initial_metric.get("eval_success_once", 0.0)))
+        success_end_at_last_small_model_feedback = current_success_end
+        success_end_at_last_small_model_regeneration = current_success_end
+        update_at_last_small_model_regeneration = 0
+        if initial_metric.get("eval_success_once", initial_metric.get("eval_success", 0.0)) >= best_success_once:
+            best_success_once = float(initial_metric.get("eval_success_once", initial_metric.get("eval_success", 0.0)))
+            save_training_checkpoint(
+                output_dir / "best_policy.pt",
+                large_agent,
+                small_agent,
+                optimizer,
+                current_pruning_info,
+                0,
+                0,
+                best_success_once,
+            )
+        save_json(output_dir / "latest_metrics.json", initial_metric)
+        save_metrics_history(output_dir, metrics_history)
+        plot_metrics_history(output_dir, metrics_history)
+        plot_success_time_curve(output_dir, metrics_history)
+
     def maybe_switch_envs():
         nonlocal envs, eval_envs, next_obs, next_done, current_env_id, current_env_index
         if continual_env_schedule is None:
@@ -861,7 +893,7 @@ def train(args: Args) -> None:
             small_agent.configure_trainable_modules(train_backbone=True)
             reference.set_optimizer_group_lr(optimizer, "vla", args.backbone_learning_rate)
 
-        if update % args.eval_every_updates == 0 or update == start_update:
+        if update % args.eval_every_updates == 0 or (update == start_update and not metrics_history):
             eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
             current_success_end = float(eval_metrics.get("success_at_end", eval_metrics.get("success_once", 0.0)))
             if success_end_at_last_small_model_feedback is None:

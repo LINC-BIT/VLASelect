@@ -16,6 +16,9 @@ LOG_FILE=${LOG_FILE_OVERRIDE:-$LOG_FILE}
 EXP_NAME=${EXP_NAME:-}
 RUN_NAME=${RUN_NAME_OVERRIDE:-}
 OUTPUT_DIR_BASE=${OUTPUT_DIR_BASE_OVERRIDE:-$OUTPUT_DIR_BASE_DEFAULT}
+ENV_ID=${ENV_ID_OVERRIDE:-HoldHammerInHandObjectScaleDown1p6-v1}
+ENVS_ID=${ENVS_ID_OVERRIDE:-"['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']"}
+ENV_CHANGE_TIME_POINTS=${ENV_CHANGE_TIME_POINTS_OVERRIDE:-"[31,62,96,131,151,163,207,247,271,300]"}
 WORLD_MODEL_CKPT=${WORLD_MODEL_CKPT_OVERRIDE:-${WORLD_MODEL_CHECKPOINT_OVERRIDE:-${WORLD_MODEL_CKPT:-ckpt/vla_adapter_new/world_env/outputs/world_model/20260503-075340/checkpoints/best_with_reference.pt}}}
 RESUME_FROM=${RESUME_FROM_OVERRIDE:-}
 SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-false}
@@ -55,9 +58,9 @@ PYTHON_CMD=(
     python "$SCRIPT_DIR/online_rl.py"
     --mode train
     --seed 1
-    --env-id HoldHammerInHandObjectScaleDown1p6-v1
-    --envs-id "['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']"
-    --env-change-time-points "[31,62,96,131,151,163,207,247,271,300]"
+    --env-id "$ENV_ID"
+    --envs-id "$ENVS_ID"
+    --env-change-time-points "$ENV_CHANGE_TIME_POINTS"
     --control-mode pd_joint_delta_pos
     --reward-mode normalized_dense
     --obs-mode rgb+state_dict

@@ -1,0 +1,33 @@
+{
+  "suite_stamp": "scan-tinyvla-env1-1787577055",
+  "table_root": "acc_comparison/task_env_scan/tinyvla",
+  "figure_output": "acc_comparison/FIG_ACC_TASK_ENV.pdf",
+  "panels": [
+    {
+      "family": "tinyvla",
+      "suite_manifest": "ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/manifest.json",
+      "suite_root": "ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055",
+      "launch_log": "acc_comparison/task_env_scan/tinyvla/scan-tinyvla-env1-1787577055/launch_logs/tinyvla.log",
+      "suite_stamp": "scan-tinyvla-env1-1787577055",
+      "env_change_time_points": "[31, 62, 96, 131, 151, 163, 207, 247, 271, 300]",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "display_name": "TinyVLA",
+      "envs_id": "['OpenCabinetDrawerCabinet1016ScaleUp1p3-v1', 'OpenCabinetDrawerCabinet1021Default-v1', 'OpenCabinetDrawerCabinet1027Default-v1', 'OpenCabinetDrawerCabinet1016ScaleUp1p3-v1', 'OpenCabinetDrawerCabinet1032Default-v1', 'OpenCabinetDrawerCabinet1033ScaleUp1p3-v1', 'OpenCabinetDrawerCabinet1027Default-v1', 'OpenCabinetDrawerCabinet1021Default-v1', 'OpenCabinetDrawerCabinet1032Default-v1', 'OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']"
+    }
+  ],
+  "families": [
+    {
+      "family": "tinyvla",
+      "suite_manifest": "ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/manifest.json",
+      "suite_root": "ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055",
+      "launch_log": "acc_comparison/task_env_scan/tinyvla/scan-tinyvla-env1-1787577055/launch_logs/tinyvla.log",
+      "suite_stamp": "scan-tinyvla-env1-1787577055",
+      "env_change_time_points": "[31, 62, 96, 131, 151, 163, 207, 247, 271, 300]",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "display_name": "TinyVLA",
+      "envs_id": "['OpenCabinetDrawerCabinet1016ScaleUp1p3-v1', 'OpenCabinetDrawerCabinet1021Default-v1', 'OpenCabinetDrawerCabinet1027Default-v1', 'OpenCabinetDrawerCabinet1016ScaleUp1p3-v1', 'OpenCabinetDrawerCabinet1032Default-v1', 'OpenCabinetDrawerCabinet1033ScaleUp1p3-v1', 'OpenCabinetDrawerCabinet1027Default-v1', 'OpenCabinetDrawerCabinet1021Default-v1', 'OpenCabinetDrawerCabinet1032Default-v1', 'OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']"
+    }
+  ]
+}

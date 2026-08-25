@@ -597,7 +597,13 @@ class SuccessfulTrajectoryBuffer:
 def concat_batches(batches):
     merged = {}
     for key in batches[0]:
-        merged[key] = torch.cat([batch[key] for batch in batches], dim=0)
+        tensors = [batch[key] for batch in batches]
+        # Expert demos and online rollouts can carry different integer dtypes
+        # for image-like tensors; align them before concatenation.
+        ref_dtype = tensors[0].dtype
+        if any(t.dtype != ref_dtype for t in tensors[1:]):
+            tensors = [t if t.dtype == ref_dtype else t.to(dtype=ref_dtype) for t in tensors]
+        merged[key] = torch.cat(tensors, dim=0)
     return merged
 
 

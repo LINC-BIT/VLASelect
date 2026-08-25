@@ -18,6 +18,10 @@ LAUNCH_LOG_DIR="${RUN_ROOT}/launch_logs"
 PANELS_JSONL="${RUN_ROOT}/panels.jsonl"
 MANIFEST_JSON="${RUN_ROOT}/manifest.json"
 LATEST_POINTER="${TABLE_ROOT}/latest.txt"
+ACC_COMPAT_TABLE_ROOT="${ACC_COMPAT_TABLE_ROOT_OVERRIDE:-acc_comparison/acc_task_env_from_same_acc_table}"
+ACC_COMPAT_RUN_ROOT="${ACC_COMPAT_TABLE_ROOT}/${SUITE_STAMP}"
+ACC_COMPAT_MANIFEST_JSON="${ACC_COMPAT_RUN_ROOT}/manifest.json"
+ACC_COMPAT_LATEST_POINTER="${ACC_COMPAT_TABLE_ROOT}/latest.txt"
 
 TAIL_LOG="${TAIL_LOG:-1}"
 MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-30}"
@@ -29,6 +33,24 @@ ENABLE_SELF_CURVE_WATCHER="${ENABLE_SELF_CURVE_WATCHER:-0}"
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 MWE="${MWE:-0}"
+BASELINE_PRETRAIN_CKPT_NOISE_SCALE="${BASELINE_PRETRAIN_CKPT_NOISE_SCALE:-${CKPT_NOISE_SCALE:-}}"
+BASELINE_PRETRAIN_CKPT_NOISE_SEED="${BASELINE_PRETRAIN_CKPT_NOISE_SEED:-${CKPT_NOISE_SEED:-0}}"
+SAME_ACC_BREAKDOWN_COMPAT="${SAME_ACC_BREAKDOWN_COMPAT:-1}"
+SAME_ACC_ACCURACY_COMPAT="${SAME_ACC_ACCURACY_COMPAT:-1}"
+ACC_COMPAT_FIGURE_STEM="${ACC_COMPAT_FIGURE_STEM:-FIG_ACC_TASK_ENV_FROM_SAME_ACC}"
+ACC_COMPAT_SUMMARY_STEM="${ACC_COMPAT_SUMMARY_STEM:-acc_task_env_from_same_acc_summary}"
+ACC_COMPAT_PANEL_DIR="${ACC_COMPAT_PANEL_DIR:-${ACC_COMPAT_FIGURE_STEM}_panels}"
+ACC_COMPAT_VIS_PAYLOAD_DIR="${ACC_COMPAT_VIS_PAYLOAD_DIR:-vis_payload_task_env_from_same_acc}"
+
+if [[ -n "$BASELINE_PRETRAIN_CKPT_NOISE_SCALE" && -z "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE:-}" ]]; then
+    export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="$BASELINE_PRETRAIN_CKPT_NOISE_SCALE"
+fi
+if [[ -n "$BASELINE_PRETRAIN_CKPT_NOISE_SEED" && -z "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED:-}" ]]; then
+    export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED="$BASELINE_PRETRAIN_CKPT_NOISE_SEED"
+fi
+if [[ -n "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE:-}" && "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE}" != "0" && "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE}" != "0.0" ]]; then
+    echo "[fig9] baseline pretrained checkpoint noise scale=${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE} seed=${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED:-0}"
+fi
 
 : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
 export MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS
@@ -41,10 +63,10 @@ fi
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "overhead_same_acc.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 
-EDGEVLA_ENVS_ID="${EDGEVLA_ENVS_ID:-['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']}"
-TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']}"
+EDGEVLA_ENVS_ID="${EDGEVLA_ENVS_ID:-['UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']}"
+TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']}"
 VLA_ADAPTER_NEW_ENVS_ID="${VLA_ADAPTER_NEW_ENVS_ID:-['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']}"
-OCTO_ENVS_ID="${OCTO_ENVS_ID:-['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']}"
+OCTO_ENVS_ID="${OCTO_ENVS_ID:-['PickCubeColorTempHigher50-v1','PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeObjectScaleDown1p2-v1']}"
 ENV_CHANGE_TIME_POINTS="${ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
 
 vlaselect_apply_env_id_order OCTO_ENVS_ID ENV_CHANGE_TIME_POINTS
@@ -175,6 +197,36 @@ payload = {
 }
 manifest_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
 PY
+}
+
+refresh_accuracy_compat_manifest() {
+    mkdir -p "$ACC_COMPAT_RUN_ROOT"
+    python - <<'PY' "$PANELS_JSONL" "$ACC_COMPAT_MANIFEST_JSON" "$SUITE_STAMP" "$ACC_COMPAT_TABLE_ROOT" "$ACC_COMPAT_FIGURE_STEM"
+import json
+import sys
+from pathlib import Path
+
+jsonl_path = Path(sys.argv[1])
+manifest_path = Path(sys.argv[2])
+suite_stamp = sys.argv[3]
+table_root = sys.argv[4]
+figure_stem = sys.argv[5]
+panels = []
+if jsonl_path.exists():
+    for raw_line in jsonl_path.read_text(encoding='utf-8').splitlines():
+        raw_line = raw_line.strip()
+        if raw_line:
+            panels.append(json.loads(raw_line))
+payload = {
+    'suite_stamp': suite_stamp,
+    'table_root': table_root,
+    'figure_output': f'acc_comparison/{figure_stem}.pdf',
+    'panels': panels,
+    'families': panels,
+}
+manifest_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+PY
+    printf "%s\n" "$SUITE_STAMP" > "$ACC_COMPAT_LATEST_POINTER"
 }
 
 run_launch_command() {
@@ -404,3 +456,27 @@ echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.png"
 echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.svg"
 echo "[fig9] plotting will write table: ${SCRIPT_DIR}/overhead_breakdown_table/TAB_OVERHEAD.csv"
 echo "[fig9] plotting will write table: ${SCRIPT_DIR}/overhead_breakdown_table/TAB_ENERGY.csv"
+
+if [[ "$SAME_ACC_ACCURACY_COMPAT" == "1" ]]; then
+    refresh_accuracy_compat_manifest
+    env \
+        PLOT_ACC_TABLE_ROOT="$ACC_COMPAT_TABLE_ROOT" \
+        PLOT_ACC_FIGURE_STEM="$ACC_COMPAT_FIGURE_STEM" \
+        PLOT_ACC_SUMMARY_STEM="$ACC_COMPAT_SUMMARY_STEM" \
+        PLOT_ACC_PANEL_DIR="$ACC_COMPAT_PANEL_DIR" \
+        PLOT_ACC_VIS_PAYLOAD_DIR="$ACC_COMPAT_VIS_PAYLOAD_DIR" \
+        python acc_comparison/plot_acc_task_env.py
+    echo "[fig9-compat] accuracy manifest saved to ${ACC_COMPAT_MANIFEST_JSON}"
+    echo "[fig9-compat] accuracy latest pointer updated at ${ACC_COMPAT_LATEST_POINTER}"
+    echo "[fig9-compat] wrote figure: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_FIGURE_STEM}.pdf"
+    echo "[fig9-compat] wrote figure: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_FIGURE_STEM}.png"
+    echo "[fig9-compat] wrote figure: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_FIGURE_STEM}.svg"
+    echo "[fig9-compat] wrote summary: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_SUMMARY_STEM}.csv"
+fi
+
+if [[ "$SAME_ACC_BREAKDOWN_COMPAT" == "1" ]]; then
+    python overhead/plot_breakdown_impl.py --manifest "$MANIFEST_JSON" --prepare-only
+    echo "[fig9-compat] wrote: ${RUN_ROOT}/BREAKDOWN_ALL_METHODS.csv"
+    echo "[fig9-compat] wrote: ${RUN_ROOT}/BREAKDOWN_MODULES.csv"
+    echo "[fig9-compat] wrote: ${RUN_ROOT}/breakdown_summary.json"
+fi

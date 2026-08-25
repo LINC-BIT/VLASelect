@@ -9,7 +9,21 @@ EXP_NAME=${EXP_NAME:-}
 TAIL_LOG=${TAIL_LOG:-1}
 LAUNCH_DIRECT=${LAUNCH_DIRECT:-0}
 LOG_FILE=${LOG_FILE_OVERRIDE:-$LOG_FILE}
+ENV_ID=${ENV_ID_OVERRIDE:-PickCubeObjectScaleUp1p2-v1}
+ENVS_ID=${ENVS_ID_OVERRIDE:-"['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']"}
+ENV_CHANGE_TIME_POINTS=${ENV_CHANGE_TIME_POINTS_OVERRIDE:-"[31,62,96,131,151,163,207,247,271,300]"}
 ENV_CONFIG_PATH=${ENV_CONFIG_PATH_OVERRIDE:-datasets/PickCube-v1/motionplanning/trajectory.rgb+depth+state_dict.pd_ee_delta_pos.physx_cpu.json}
+STATE_NORM_STATS_PATH=${STATE_NORM_STATS_PATH_OVERRIDE:-ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth}
+CHECKPOINT_PATH=${CHECKPOINT_PATH_OVERRIDE:-ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt}
+TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
+NUM_ENVS=${NUM_ENVS_OVERRIDE:-256}
+NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-32}
+NUM_STEPS=${NUM_STEPS_OVERRIDE:-50}
+NUM_EVAL_STEPS=${NUM_EVAL_STEPS_OVERRIDE:-50}
+NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
+UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-1}
+EVAL_FREQ=${EVAL_FREQ_OVERRIDE:-1}
+MAX_TIME=${MAX_TIME_OVERRIDE:-301}
 
 EXTRA_ARGS=()
 RUN_DIR=""
@@ -20,22 +34,24 @@ fi
 
 PYTHON_CMD=(
     python -u -m train.octo.ppo_gen.online_rl
-    --env-id PickCubeObjectScaleUp1p2-v1
-    --envs-id "['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']"
-    --env-change-time-points "[31,62,96,131,151,163,207,247,271,300]"
+    --env-id "$ENV_ID"
+    --envs-id "$ENVS_ID"
+    --env-change-time-points "$ENV_CHANGE_TIME_POINTS"
     --env_config_path "$ENV_CONFIG_PATH"
-    --state-norm-stats-path ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth
-    --checkpoint ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt
-    --total_timesteps 100000000
+    --state-norm-stats-path "$STATE_NORM_STATS_PATH"
+    --checkpoint "$CHECKPOINT_PATH"
+    --total_timesteps "$TOTAL_TIMESTEPS"
     --learning_rate 3e-5
-    --eval_freq 1
+    --eval_freq "$EVAL_FREQ"
     --max-sparsity 0.8
-    --num_envs 256
-    --num_eval_envs 32
-    --num_minibatches 16
-    --update_epochs 1
+    --num_envs "$NUM_ENVS"
+    --num_eval_envs "$NUM_EVAL_ENVS"
+    --num_steps "$NUM_STEPS"
+    --num_eval_steps "$NUM_EVAL_STEPS"
+    --num_minibatches "$NUM_MINIBATCHES"
+    --update_epochs "$UPDATE_EPOCHS"
     --tag ppo_gen_baseline
-    --max_time 301
+    --max_time "$MAX_TIME"
     "${EXTRA_ARGS[@]}"
 )
 

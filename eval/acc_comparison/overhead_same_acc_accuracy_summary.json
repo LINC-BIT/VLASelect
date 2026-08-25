@@ -1,0 +1,58 @@
+[
+  {
+    "panel_label": "d",
+    "workload_name": "Humanoid robot",
+    "family": "edgevla",
+    "method": "conrft",
+    "display_name": "ConRFT",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/smoke-20260816-fig9h/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/conrft/run",
+    "num_points": 2,
+    "avg_accuracy": 0.0,
+    "final_accuracy": 0.0,
+    "max_minutes": 0.2201191584269206
+  },
+  {
+    "panel_label": "d",
+    "workload_name": "Humanoid robot",
+    "family": "edgevla",
+    "method": "flare",
+    "display_name": "FLaRe",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/smoke-20260816-fig9h/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/flare/run",
+    "num_points": 1,
+    "avg_accuracy": 0.0,
+    "final_accuracy": 0.0,
+    "max_minutes": 0.0
+  },
+  {
+    "panel_label": "d",
+    "workload_name": "Humanoid robot",
+    "family": "edgevla",
+    "method": "improv_vla",
+    "display_name": "Improv-VLA",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/smoke-20260816-fig9h/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/improv_vla/run",
+    "num_points": 2,
+    "avg_accuracy": 0.0,
+    "final_accuracy": 0.0,
+    "max_minutes": 0.10470271905263265
+  },
+  {
+    "panel_label": "d",
+    "workload_name": "Humanoid robot",
+    "family": "edgevla",
+    "method": "ppo_gen",
+    "display_name": "PPO-Gen",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/smoke-20260816-fig9h/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/smoke-20260816-fig9h/ppo_gen/run",
+    "num_points": 2,
+    "avg_accuracy": 0.0,
+    "final_accuracy": 0.0,
+    "max_minutes": 0.11638400157292683
+  }
+]

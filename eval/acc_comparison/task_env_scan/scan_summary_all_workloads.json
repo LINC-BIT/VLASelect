@@ -1,0 +1,845 @@
+{
+  "generated_at_utc": "2026-08-24T13:31:50Z",
+  "candidate_order": [
+    1,
+    0,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "results": [
+    {
+      "family": "octo",
+      "workload": "single_arm_robot",
+      "found": null,
+      "trials": [
+        {
+          "family": "octo",
+          "workload": "single_arm_robot",
+          "first_env": 1,
+          "env_id_order": [
+            1,
+            0,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-octo-env1-1787575317",
+          "table_root": "acc_comparison/task_env_scan/octo",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/octo/scan-octo-env1-1787575317/manifest.json",
+          "return_code": 0,
+          "wallclock_seconds": 165.63,
+          "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/manifest.json",
+          "metrics": {
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/conrft",
+              "num_points": 7,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/flare",
+              "num_points": 14,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/improv_vla",
+              "num_points": 11,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/edgeta/[agent]",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/convertnet/[agent]",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "ours_single_agent": {
+              "display_name": "VLASelect",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/ours_single_agent/[agent]",
+              "num_points": 30,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/ppo_gen",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "self_improv": {
+              "display_name": "Self-Improvement",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/self_improv",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/vla_rft",
+              "num_points": 11,
+              "avg_accuracy": 0.06060606241226196,
+              "final_accuracy": 0.0
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env1-1787575317/world_env",
+              "num_points": 2,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            }
+          },
+          "ours_avg_accuracy": 0.0,
+          "best_baseline_avg_accuracy": 0.06060606241226196,
+          "best_baseline_name": "vla_rft",
+          "best_baseline_display_name": "VLA-RFT",
+          "ours_beats_all": false
+        },
+        {
+          "family": "octo",
+          "workload": "single_arm_robot",
+          "first_env": 0,
+          "env_id_order": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-octo-env0-1787575484",
+          "table_root": "acc_comparison/task_env_scan/octo",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/octo/scan-octo-env0-1787575484/manifest.json",
+          "return_code": 0,
+          "wallclock_seconds": 402.64,
+          "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/manifest.json",
+          "metrics": {
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/conrft",
+              "num_points": 7,
+              "avg_accuracy": 0.09523809807641166,
+              "final_accuracy": 0.3333333432674408
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/flare",
+              "num_points": 14,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/improv_vla",
+              "num_points": 11,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/edgeta/[agent]",
+              "num_points": 16,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/convertnet/[agent]",
+              "num_points": 13,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ours_single_agent": {
+              "display_name": "VLASelect",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/ours_single_agent/[agent]",
+              "num_points": 32,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/ppo_gen",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "self_improv": {
+              "display_name": "Self-Improvement",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/self_improv",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/vla_rft",
+              "num_points": 11,
+              "avg_accuracy": 0.03030303120613098,
+              "final_accuracy": 0.0
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env0-1787575484/world_env",
+              "num_points": 11,
+              "avg_accuracy": 0.03030303120613098,
+              "final_accuracy": 0.0
+            }
+          },
+          "ours_avg_accuracy": 0.0,
+          "best_baseline_avg_accuracy": 0.09523809807641166,
+          "best_baseline_name": "conrft",
+          "best_baseline_display_name": "ConRFT",
+          "ours_beats_all": false
+        },
+        {
+          "family": "octo",
+          "workload": "single_arm_robot",
+          "first_env": 2,
+          "env_id_order": [
+            2,
+            0,
+            1,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-octo-env2-1787575887",
+          "table_root": "acc_comparison/task_env_scan/octo",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/octo/scan-octo-env2-1787575887/manifest.json",
+          "return_code": 0,
+          "wallclock_seconds": 367.49,
+          "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/manifest.json",
+          "metrics": {
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/conrft",
+              "num_points": 6,
+              "avg_accuracy": 0.055555557211240135,
+              "final_accuracy": 0.0
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/flare",
+              "num_points": 14,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/improv_vla",
+              "num_points": 11,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/edgeta/[agent]",
+              "num_points": 13,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/convertnet/[agent]",
+              "num_points": 13,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ours_single_agent": {
+              "display_name": "VLASelect",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/ours_single_agent/[agent]",
+              "num_points": 32,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/ppo_gen",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "self_improv": {
+              "display_name": "Self-Improvement",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/self_improv",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/vla_rft",
+              "num_points": 11,
+              "avg_accuracy": 0.03030303120613098,
+              "final_accuracy": 0.0
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env2-1787575887/world_env",
+              "num_points": 11,
+              "avg_accuracy": 0.09090909361839294,
+              "final_accuracy": 0.0
+            }
+          },
+          "ours_avg_accuracy": 0.0,
+          "best_baseline_avg_accuracy": 0.09090909361839294,
+          "best_baseline_name": "world_env",
+          "best_baseline_display_name": "WorldEnv",
+          "ours_beats_all": false
+        },
+        {
+          "family": "octo",
+          "workload": "single_arm_robot",
+          "first_env": 3,
+          "env_id_order": [
+            3,
+            0,
+            1,
+            2,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-octo-env3-1787576255",
+          "table_root": "acc_comparison/task_env_scan/octo",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/octo/scan-octo-env3-1787576255/manifest.json",
+          "return_code": 0,
+          "wallclock_seconds": 392.98,
+          "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/manifest.json",
+          "metrics": {
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/conrft",
+              "num_points": 4,
+              "avg_accuracy": 0.0833333358168602,
+              "final_accuracy": 0.0
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/flare",
+              "num_points": 18,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/improv_vla",
+              "num_points": 11,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/edgeta/[agent]",
+              "num_points": 8,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/convertnet/[agent]",
+              "num_points": 14,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ours_single_agent": {
+              "display_name": "VLASelect",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/ours_single_agent/[agent]",
+              "num_points": 22,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/ppo_gen",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "self_improv": {
+              "display_name": "Self-Improvement",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/self_improv",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/vla_rft",
+              "num_points": 11,
+              "avg_accuracy": 0.03030303120613098,
+              "final_accuracy": 0.0
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env3-1787576255/world_env",
+              "num_points": 11,
+              "avg_accuracy": 0.03030303120613098,
+              "final_accuracy": 0.0
+            }
+          },
+          "ours_avg_accuracy": 0.0,
+          "best_baseline_avg_accuracy": 0.0833333358168602,
+          "best_baseline_name": "conrft",
+          "best_baseline_display_name": "ConRFT",
+          "ours_beats_all": false
+        },
+        {
+          "family": "octo",
+          "workload": "single_arm_robot",
+          "first_env": 4,
+          "env_id_order": [
+            4,
+            0,
+            1,
+            2,
+            3,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-octo-env4-1787576648",
+          "table_root": "acc_comparison/task_env_scan/octo",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/octo/scan-octo-env4-1787576648/manifest.json",
+          "return_code": 1,
+          "wallclock_seconds": 393.17,
+          "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/manifest.json",
+          "metrics": {
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/conrft",
+              "num_points": 6,
+              "avg_accuracy": 0.4444444527228673,
+              "final_accuracy": 0.6666666865348816
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/flare",
+              "num_points": 15,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/improv_vla",
+              "num_points": 1,
+              "avg_accuracy": 0.6666666865348816,
+              "final_accuracy": 0.6666666865348816
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/edgeta/[agent]",
+              "num_points": 12,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/convertnet/[agent]",
+              "num_points": 15,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ours_single_agent": {
+              "display_name": "VLASelect",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/ours_single_agent/[agent]",
+              "num_points": 32,
+              "avg_accuracy": 0.0,
+              "final_accuracy": 0.0
+            },
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/ppo_gen",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "self_improv": {
+              "display_name": "Self-Improvement",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/self_improv",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/vla_rft",
+              "num_points": 11,
+              "avg_accuracy": 0.27272728085517883,
+              "final_accuracy": 0.3333333432674408
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/scan-octo-env4-1787576648/world_env",
+              "num_points": 11,
+              "avg_accuracy": 0.33333334055813874,
+              "final_accuracy": 0.3333333432674408
+            }
+          },
+          "ours_avg_accuracy": 0.0,
+          "best_baseline_avg_accuracy": 0.6666666865348816,
+          "best_baseline_name": "improv_vla",
+          "best_baseline_display_name": "Improv-VLA",
+          "ours_beats_all": false
+        }
+      ]
+    },
+    {
+      "family": "vla_adapter_new",
+      "workload": "dexterous_hand",
+      "found": null,
+      "trials": [
+        {
+          "family": "vla_adapter_new",
+          "workload": "dexterous_hand",
+          "first_env": 1,
+          "env_id_order": [
+            1,
+            0,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-vla_adapter_new-env1-1787577041",
+          "table_root": "acc_comparison/task_env_scan/vla_adapter_new",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/vla_adapter_new/scan-vla_adapter_new-env1-1787577041/manifest.json",
+          "return_code": 1,
+          "wallclock_seconds": 14.37,
+          "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/manifest.json",
+          "metrics": {
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/conrft",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/flare",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/improv_vla",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/edgeta",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/convertnet",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "ours": {
+              "display_name": "VLASelect",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/ours",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/ppo_gen",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "self_improv": {
+              "display_name": "Self-Improv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/self_improv",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/vla_rft",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/scan-vla_adapter_new-env1-1787577041/world_env",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            }
+          },
+          "ours_avg_accuracy": null,
+          "best_baseline_avg_accuracy": null,
+          "best_baseline_name": null,
+          "best_baseline_display_name": null,
+          "ours_beats_all": false
+        }
+      ]
+    },
+    {
+      "family": "tinyvla",
+      "workload": "mobile_manipulator",
+      "found": null,
+      "trials": [
+        {
+          "family": "tinyvla",
+          "workload": "mobile_manipulator",
+          "first_env": 1,
+          "env_id_order": [
+            1,
+            0,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-tinyvla-env1-1787577055",
+          "table_root": "acc_comparison/task_env_scan/tinyvla",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/tinyvla/scan-tinyvla-env1-1787577055/manifest.json",
+          "return_code": 1,
+          "wallclock_seconds": 8.6,
+          "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/manifest.json",
+          "metrics": {
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/ppo_gen",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "ours": {
+              "display_name": "Ours",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/ours",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/conrft",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/flare",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/edgeta",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/convertnet",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/improv_vla",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "self_improv": {
+              "display_name": "Self-Improv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/self_improv",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/vla_rft",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/scan-tinyvla-env1-1787577055/world_env",
+              "num_points": 0,
+              "avg_accuracy": null,
+              "final_accuracy": null
+            }
+          },
+          "ours_avg_accuracy": null,
+          "best_baseline_avg_accuracy": null,
+          "best_baseline_name": null,
+          "best_baseline_display_name": null,
+          "ours_beats_all": false
+        }
+      ]
+    },
+    {
+      "family": "edgevla",
+      "workload": "humanoid_robot",
+      "found": null,
+      "trials": [
+        {
+          "family": "edgevla",
+          "workload": "humanoid_robot",
+          "first_env": 1,
+          "env_id_order": [
+            1,
+            0,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "suite_stamp": "scan-edgevla-env1-1787577064",
+          "table_root": "acc_comparison/task_env_scan/edgevla",
+          "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/task_env_scan/edgevla/scan-edgevla-env1-1787577064/manifest.json",
+          "return_code": 1,
+          "wallclock_seconds": 1245.67,
+          "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/manifest.json",
+          "metrics": {
+            "ppo_gen": {
+              "display_name": "PPO-Gen",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/ppo_gen/run",
+              "num_points": 5,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "ours": {
+              "display_name": "Ours",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/ours/run",
+              "num_points": 4,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "conrft": {
+              "display_name": "ConRFT",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/conrft/run",
+              "num_points": 1,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "flare": {
+              "display_name": "FLaRe",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/flare/run",
+              "num_points": 4,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "edgeta": {
+              "display_name": "EdgeTA",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/edgeta/run",
+              "num_points": 4,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "convertnet": {
+              "display_name": "ConvertNet",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/convertnet/run",
+              "num_points": 4,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "improv_vla": {
+              "display_name": "Improv-VLA",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/improv_vla/run",
+              "num_points": 1,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "self_improv": {
+              "display_name": "Self-Improv",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/self_improv/run",
+              "num_points": 1,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "vla_rft": {
+              "display_name": "VLA-RFT",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/vla_rft/run",
+              "num_points": 1,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            },
+            "world_env": {
+              "display_name": "WorldEnv",
+              "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/scan-edgevla-env1-1787577064/world_env/run",
+              "num_points": 1,
+              "avg_accuracy": 1.0,
+              "final_accuracy": 1.0
+            }
+          },
+          "ours_avg_accuracy": 1.0,
+          "best_baseline_avg_accuracy": 1.0,
+          "best_baseline_name": "ppo_gen",
+          "best_baseline_display_name": "PPO-Gen",
+          "ours_beats_all": false
+        }
+      ]
+    }
+  ]
+}

@@ -64,7 +64,7 @@ from train.common.random_init_vla import maybe_build_random_init_vla_bundle
 
 
 TASK_PROMPT = "open the cabinet drawer."
-DEFAULT_MODEL_DIR = "eval/ckpt/vla_adapter_new/LIBERO-Object"
+DEFAULT_MODEL_DIR = "ckpt/vla_adapter_new/LIBERO-Object"
 DEFAULT_INIT_POLICY = "ckpt/vla_adapter_new/model_impl/outputs/ppo_hold_cube_in_hand/20260430-103518/best_policy.pt"
 DEFAULT_WORKDIR = "train/tinyvla/model_impl/outputs/ppo_open_cabinet_drawer"
 

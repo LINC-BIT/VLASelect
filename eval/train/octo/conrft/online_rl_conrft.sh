@@ -13,6 +13,9 @@ TAIL_LOG=${TAIL_LOG:-1}
 LAUNCH_DIRECT=${LAUNCH_DIRECT:-0}
 SMOKE=${SMOKE:-0}
 LOG_FILE=${LOG_FILE_OVERRIDE:-$LOG_FILE}
+ENV_ID=${ENV_ID_OVERRIDE:-PickCubeLightStronger50-v1}
+ENVS_ID=${ENVS_ID_OVERRIDE:-"['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']"}
+ENV_CHANGE_TIME_POINTS=${ENV_CHANGE_TIME_POINTS_OVERRIDE:-"[31,62,96,131,151,163,207,247,271,300]"}
 ENV_CONFIG_PATH=${ENV_CONFIG_PATH_OVERRIDE:-datasets/PickCube-v1/motionplanning/trajectory.rgb+depth+state_dict.pd_ee_delta_pos.physx_cpu.json}
 EXPERT_DEMO_PATH=${EXPERT_DEMO_PATH_OVERRIDE:-datasets/PickCube-v1/motionplanning/trajectory.rgb+depth+state_dict.pd_ee_delta_pos.physx_cpu.h5}
 STATE_NORM_STATS_PATH=${STATE_NORM_STATS_PATH_OVERRIDE:-ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth}
@@ -85,9 +88,9 @@ fi
 
 PYTHON_CMD=(
     python -u -m train.octo.conrft.online_rl
-    --env-id PickCubeLightStronger50-v1
-    --envs-id "['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']"
-    --env-change-time-points "[31,62,96,131,151,163,207,247,271,300]"
+    --env-id "$ENV_ID"
+    --envs-id "$ENVS_ID"
+    --env-change-time-points "$ENV_CHANGE_TIME_POINTS"
     --env_config_path "$ENV_CONFIG_PATH"
     --expert_demo_path "$EXPERT_DEMO_PATH"
     --state-norm-stats-path "$STATE_NORM_STATS_PATH"

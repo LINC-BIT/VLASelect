@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -18,14 +19,18 @@ from common.figure_compose import compose_grid_figure
 from common.template_pdf_fill import fill_accuracy_template
 from common.vis_line_draw import apply_matplotlib_style, draw_plot
 
-TABLE_ROOT = SCRIPT_DIR / 'acc_comparison_task_env_table'
-FIGURE_PATH = SCRIPT_DIR / 'FIG_ACC_TASK_ENV.pdf'
-FIGURE_SVG_PATH = SCRIPT_DIR / 'FIG_ACC_TASK_ENV.svg'
-FIGURE_PNG_PATH = SCRIPT_DIR / 'FIG_ACC_TASK_ENV.png'
-SUMMARY_CSV_PATH = SCRIPT_DIR / 'acc_task_env_summary.csv'
-SUMMARY_JSON_PATH = SCRIPT_DIR / 'acc_task_env_summary.json'
-PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_ACC_TASK_ENV_panels'
-VIS_PAYLOAD_DIR = SCRIPT_DIR / 'vis_payload_task_env'
+TABLE_ROOT = Path(os.environ.get('PLOT_ACC_TABLE_ROOT', SCRIPT_DIR / 'acc_comparison_task_env_table'))
+FIGURE_STEM = os.environ.get('PLOT_ACC_FIGURE_STEM', 'FIG_ACC_TASK_ENV')
+SUMMARY_STEM = os.environ.get('PLOT_ACC_SUMMARY_STEM', 'acc_task_env_summary')
+PANEL_OUTPUT_SUBDIR = os.environ.get('PLOT_ACC_PANEL_DIR', f'{FIGURE_STEM}_panels')
+VIS_PAYLOAD_SUBDIR = os.environ.get('PLOT_ACC_VIS_PAYLOAD_DIR', 'vis_payload_task_env')
+FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.pdf'
+FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.svg'
+FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.png'
+SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
+SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
+PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
+VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
 
 PAPER_PANELS = [
     {'panel_label': 'a', 'family': 'octo', 'display_name': 'Octo', 'workload_name': 'Single-arm robot'},

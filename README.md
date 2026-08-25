@@ -543,17 +543,18 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     run_training(model_impl, parse_args())
     ```
 
-- **Minimum working example**:
+There are two ways for verifications:
+
+- **Minimum working example (completed within 3 minutes and 20GB memory)**:
   
-  We provide an example implementation in `api/vla_model_interface_examples/vla_adapter_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]](imgs/3.1.1-mwe.png)
+  We provide an example implementation in `api/vla_model_interface_examples/vla_adapter_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]](imgs/3.1.1.png)
     ```bash
-    # completed within 5 minutes
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
     ```
 
-- **Full run**:
+- **Full run (completed within 3 hours and 60GB memory)**:
   
-  You can also run the full working example by the command below. [[Example running results]]()
+  You can also run the full working example by the command below. 
   ```bash
   bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
   ```
@@ -607,25 +608,28 @@ PowerInfer: Fast Large Language Model Serving with a Consumer-grade GPU". You ca
     run_training(model_impl, parse_args(), EdgeTAScaling())
     ```
 
-**Minimum working example**: 
-- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.2-mwe.png)
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
-  ```
-- **Test one scaling method**. You can run one specific scaling method on VLA-Adapter by the command below.
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh --scaling-method <scaling_method_name>
-  ```
+There are three different ways for verifications:
 
-**Full run**:
-- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. [[Example running results]]()
-  ```bash
-  bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
-  ```
-- **Test one scaling method**. You can run one specific scaling method on VLA-Adapter by the command below.
-  ```bash
-  bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh --scaling-method <scaling_method_name>
-  ```
+- **Minimum working example on three representative scaling methods (completed within 20 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of three representative scaling methods (one knowledge distillation, one dynamic pruning, and EdgeTA) on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.2.png)
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
+    ```
+
+- **Minimum working example on all scaling methods (completed within 60 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. 
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
+    ```
+
+- **Full run (completed within 40 hours and 60GB memory)**: 
+
+  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. 
+    ```bash
+    bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
+    ```
 
 
 #### 3.1.3 Supporting different knowledge exchange granularities
@@ -649,25 +653,21 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
     run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
     ```
 
-**Minimum working example**: 
-- **Comparing all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.3-mwe.png)
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
-  ```
-- **Test one granularity**. You can run one specific granularity on VLA-Adapter by the command below:
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh --knowledge-exchange-granularity <granularity>
-  ```
+There are two ways for verifications:
 
-**Full run**:
-- **Compare all granularities**. You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]]()
-  ```bash
-  bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
-  ```
-- **Test one granularity**. You can run one specific granularity on VLA-Adapter by the command below:
-  ```bash
-  bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh --knowledge-exchange-granularity <granularity>
-  ```
+- **Minimum working example (completed within 20 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.1.3.png)
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+    ```
+
+- **Full run (completed within 12 hours and 60GB memory)**:
+
+  You can run the minimum working examples of all granularities on VLA-Adapter by the command below. 
+    ```bash
+    bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+    ```
 
 ### 3.2 Example 2: TinyVLA
 
@@ -722,17 +722,18 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
     run_training(model_impl, parse_args())
     ```
 
-- **Minimum working example**:
+There are two ways for verifications:
+
+- **Minimum working example (completed within 3 minutes and 20GB memory)**:
   
-  We provide an example implementation in `api/vla_model_interface_examples/tinyvla_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]]()
+  We provide an example implementation in `api/vla_model_interface_examples/tinyvla_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]](imgs/3.2.1.png)
     ```bash
-    # completed within 5 minutes
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
     ```
 
-- **Full run**:
+- **Full run (completed within 3 hours and 60GB memory)**:
   
-  You can also run the full working example by the command below. [[Example running results]]()
+  You can also run the full working example by the command below. 
   ```bash
   bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
   ```
@@ -775,25 +776,28 @@ run_training(model_impl, parse_args(), LLMPrunerScaling())
 run_training(model_impl, parse_args(), EdgeTAScaling())
 ```
 
-**Minimum working example**: 
-- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on TinyVLA by the command below. [[Example running results]](imgs/3.2.2-mwe.png)
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
-  ```
-- **Test one scaling method**. You can run one specific scaling method on TinyVLA by the command below.
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh --scaling-method <scaling_method_name>
-  ```
+There are three different ways for verifications:
 
-**Full run**:
-- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on TinyVLA by the command below. [[Example running results]]()
-  ```bash
-  bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
-  ```
-- **Test one scaling method**. You can run one specific scaling method on TinyVLA by the command below.
-  ```bash
-  bash api/vla_model_interface_examples/tinyvla_impl_verify.sh --scaling-method <scaling_method_name>
-  ```
+- **Minimum working example on three representative scaling methods (completed within 20 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of three representative scaling methods (one knowledge distillation, one dynamic pruning, and EdgeTA) on VLA-Adapter by the command below. [[Example running results]](imgs/3.2.2.png)
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods-only4.sh
+    ```
+
+- **Minimum working example on all scaling methods (completed within 60 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below.
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
+    ```
+
+- **Full run (completed within 40 hours and 60GB memory)**: 
+
+  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. [[Example running results]]()
+    ```bash
+    bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
+    ```
 
 #### 3.2.3 Supporting different knowledge exchange granularities
 
@@ -815,25 +819,22 @@ run_training(model_impl, parse_args(), AttentionHeadKnowledgeExchange())
 run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 ```
 
-**Minimum working example**: 
-- **Comparing all granularities**. You can run the minimum working examples of all granularities on TinyVLA by the command below. [[Example running results]](imgs/3.2.3-mwe.png)
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
-  ```
-- **Test one granularity**. You can run one specific granularity on TinyVLA by the command below:
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh --knowledge-exchange-granularity <granularity>
-  ```
+There are two ways for verifications:
 
-**Full run**:
-- **Compare all granularities**. You can run the minimum working examples of all granularities on TinyVLA by the command below. [[Example running results]]()
-  ```bash
-  bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
-  ```
-- **Test one granularity**. You can run one specific granularity on TinyVLA by the command below:
-  ```bash
-  bash api/vla_model_interface_examples/tinyvla_impl_verify.sh --knowledge-exchange-granularity <granularity>
-  ```
+- **Minimum working example (completed within 20 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.2.3.png)
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
+    ```
+
+- **Full run (completed within 12 hours and 60GB memory)**:
+
+  You can run the minimum working examples of all granularities on VLA-Adapter by the command below.
+    ```bash
+    bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
+    ```
+
 
 ### 3.3 Example 3: EdgeVLA
 
@@ -888,17 +889,19 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
     run_training(model_impl, parse_args())
     ```
 
-- **Minimum working example**:
+There are two ways for verifications:
+
+- **Minimum working example (completed within 3 minutes and 20GB memory)**:
   
-  We provide an example implementation in `api/vla_model_interface_examples/edgevla_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]]()
+  We provide an example implementation in `api/vla_model_interface_examples/edgevla_impl.py`, and a corresponding script of minimum running example as below. [[Example running results]](imgs/3.3.1.png)
     ```bash
     # completed within 5 minutes
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
     ```
 
-- **Full run**:
+- **Full run (completed within 3 hours and 60GB memory)**:
   
-  You can also run the full working example by the command below. [[Example running results]]()
+  You can also run the full working example by the command below. 
   ```bash
   bash api/vla_model_interface_examples/edgevla_impl_verify.sh
   ```
@@ -941,25 +944,28 @@ run_training(model_impl, parse_args(), LLMPrunerScaling())
 run_training(model_impl, parse_args(), EdgeTAScaling())
 ```
 
-**Minimum working example**: 
-- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on EdgeVLA by the command below. [[Example running results]]()
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
-  ```
-- **Test one scaling method**. You can run one specific scaling method on EdgeVLA by the command below.
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh --scaling-method <scaling_method_name>
-  ```
+There are three different ways for verifications:
 
-**Full run**:
-- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on EdgeVLA by the command below. [[Example running results]]()
-  ```bash
-  bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
-  ```
-- **Test one scaling method**. You can run one specific scaling method on EdgeVLA by the command below.
-  ```bash
-  bash api/vla_model_interface_examples/edgevla_impl_verify.sh --scaling-method <scaling_method_name>
-  ```
+- **Minimum working example on three representative scaling methods (completed within 20 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of three representative scaling methods (one knowledge distillation, one dynamic pruning, and EdgeTA) on VLA-Adapter by the command below. [[Example running results]](imgs/3.3.2.png)
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods-only4.sh
+    ```
+
+- **Minimum working example on all scaling methods (completed within 60 minutes and 20GB memory)**: 
+
+  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. 
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
+    ```
+
+- **Full run (completed within 40 hours and 60GB memory)**: 
+
+  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. 
+    ```bash
+    bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
+    ```
 
 #### 3.3.3 Supporting different knowledge exchange granularities
 
@@ -981,23 +987,18 @@ run_training(model_impl, parse_args(), AttentionHeadKnowledgeExchange())
 run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 ```
 
-**Minimum working example**: 
-- **Comparing all granularities**. You can run the minimum working examples of all granularities on EdgeVLA by the command below. [[Example running results]]()
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
-  ```
-- **Test one granularity**. You can run one specific granularity on EdgeVLA by the command below:
-  ```bash
-  MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh --knowledge-exchange-granularity <granularity>
-  ```
+There are two ways for verifications:
 
-**Full run**:
-- **Compare all granularities**. You can run the minimum working examples of all granularities on EdgeVLA by the command below. [[Example running results]]()
-  ```bash
-  bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
-  ```
-- **Test one granularity**. You can run one specific granularity on EdgeVLA by the command below:
-  ```bash
-  bash api/vla_model_interface_examples/edgevla_impl_verify.sh --knowledge-exchange-granularity <granularity>
-  ```
+- **Minimum working example (completed within 20 minutes and 20GB memory)**: 
 
+  You can run the minimum working examples of all granularities on VLA-Adapter by the command below. [[Example running results]](imgs/3.3.3.png)
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
+    ```
+
+- **Full run (completed within 12 hours and 60GB memory)**:
+
+  You can run the minimum working examples of all granularities on VLA-Adapter by the command below. 
+    ```bash
+    bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
+    ```

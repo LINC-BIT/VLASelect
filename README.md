@@ -818,21 +818,21 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 **Minimum working example**: 
 - **Comparing all granularities**. You can run the minimum working examples of all granularities on TinyVLA by the command below. [[Example running results]](imgs/3.2.3-mwe.png)
   ```bash
-  MWE=1 bash api/vla_model_interface_examples/tiny_vla_impl_verify-all_granularities.sh
+  MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
   ```
 - **Test one granularity**. You can run one specific granularity on TinyVLA by the command below:
   ```bash
-  MWE=1 bash api/vla_model_interface_examples/tiny_vla_impl_verify.sh --knowledge-exchange-granularity <granularity>
+  MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh --knowledge-exchange-granularity <granularity>
   ```
 
 **Full run**:
 - **Compare all granularities**. You can run the minimum working examples of all granularities on TinyVLA by the command below. [[Example running results]]()
   ```bash
-  bash api/vla_model_interface_examples/tiny_vla_impl_verify-all_granularities.sh
+  bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
   ```
 - **Test one granularity**. You can run one specific granularity on TinyVLA by the command below:
   ```bash
-  bash api/vla_model_interface_examples/tiny_vla_impl_verify.sh --knowledge-exchange-granularity <granularity>
+  bash api/vla_model_interface_examples/tinyvla_impl_verify.sh --knowledge-exchange-granularity <granularity>
   ```
 
 ### 3.3 Example 3: EdgeVLA
@@ -894,8 +894,6 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
     ```bash
     # completed within 5 minutes
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
-    # draw the running results
-    python api/draw.py
     ```
 
 - **Full run**:
@@ -986,20 +984,20 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 **Minimum working example**: 
 - **Comparing all granularities**. You can run the minimum working examples of all granularities on EdgeVLA by the command below. [[Example running results]]()
   ```bash
-  MWE=1 bash api/vla_model_interface_examples/tiny_vla_impl_verify-all_granularities.sh
+  MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
   ```
 - **Test one granularity**. You can run one specific granularity on EdgeVLA by the command below:
   ```bash
-  MWE=1 bash api/vla_model_interface_examples/tiny_vla_impl_verify.sh --knowledge-exchange-granularity <granularity>
+  MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh --knowledge-exchange-granularity <granularity>
   ```
 
 **Full run**:
 - **Compare all granularities**. You can run the minimum working examples of all granularities on EdgeVLA by the command below. [[Example running results]]()
   ```bash
-  bash api/vla_model_interface_examples/tiny_vla_impl_verify-all_granularities.sh
+  bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
   ```
 - **Test one granularity**. You can run one specific granularity on EdgeVLA by the command below:
   ```bash
-  bash api/vla_model_interface_examples/tiny_vla_impl_verify.sh --knowledge-exchange-granularity <granularity>
+  bash api/vla_model_interface_examples/edgevla_impl_verify.sh --knowledge-exchange-granularity <granularity>
   ```
 

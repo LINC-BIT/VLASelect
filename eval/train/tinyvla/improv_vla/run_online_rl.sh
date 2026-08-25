@@ -21,9 +21,19 @@ RUN_NAME=${RUN_NAME_OVERRIDE:-}
 SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-false}
 NUM_ENVS=${NUM_ENVS_OVERRIDE:-128}
 NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
+NUM_STEPS=${NUM_STEPS_OVERRIDE:-100}
+TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
+NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
+UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-2}
+EVAL_EVERY_UPDATES=${EVAL_EVERY_UPDATES_OVERRIDE:-50}
+EVAL_EPISODES=${EVAL_EPISODES_OVERRIDE:-50}
 ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-256}
 EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-256}
 UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-32}
+RUN_SETUP_SMOKE=${RUN_SETUP_SMOKE_OVERRIDE:-false}
+TRAIN_VIDEO_NUM_ENVS=${TRAIN_VIDEO_NUM_ENVS_OVERRIDE:-4}
+TEST_VIDEO_NUM_ENVS=${TEST_VIDEO_NUM_ENVS_OVERRIDE:-4}
+TEST_VIDEO_EPISODES=${TEST_VIDEO_EPISODES_OVERRIDE:-4}
 
 if [ -n "$EXP_NAME" ]; then
     if [[ "$EXP_NAME" == */* ]]; then
@@ -54,12 +64,12 @@ PYTHON_CMD=(
     --model-dir ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
     --static-model-checkpoint ckpt/tinyvla/ours/outputs/bc_open_cabinet_drawer_fbs/20260508-032529/best_policy.pt
-    --total-timesteps 100000000
-    --num-envs 128
+    --total-timesteps "$TOTAL_TIMESTEPS"
+    --num-envs "$NUM_ENVS"
     --num-eval-envs "$NUM_EVAL_ENVS"
-    --num-steps 100
-    --num-minibatches 16
-    --update-epochs 2
+    --num-steps "$NUM_STEPS"
+    --num-minibatches "$NUM_MINIBATCHES"
+    --update-epochs "$UPDATE_EPOCHS"
     --learning-rate 6e-5
     --backbone-learning-rate 6e-5
     --head-learning-rate 6e-5
@@ -75,8 +85,8 @@ PYTHON_CMD=(
     --max-grad-norm 0.5
     --target-kl 0.02
     --minibatch-target-kl-factor 1.0
-    --eval-episodes 50
-    --eval-every-updates 50
+    --eval-episodes "$EVAL_EPISODES"
+    --eval-every-updates "$EVAL_EVERY_UPDATES"
     --max-runtime-hours "$MAX_RUNTIME_HOURS"
     --rollout-micro-batch-size "$ROLLOUT_MICRO_BATCH_SIZE"
     --eval-micro-batch-size "$EVAL_MICRO_BATCH_SIZE"
@@ -84,12 +94,12 @@ PYTHON_CMD=(
     --rollout-progress-log-interval 10
     --freeze-vla-backbone false
     --backbone-warmup-updates 0
-    --run-setup-smoke false
-    --save-video true
+    --run-setup-smoke "$RUN_SETUP_SMOKE"
+    --save-video "$SAVE_VIDEO"
     --save-train-video-freq 10
-    --train-video-num-envs 4
-    --test-video-num-envs 4
-    --test-video-episodes 4
+    --train-video-num-envs "$TRAIN_VIDEO_NUM_ENVS"
+    --test-video-num-envs "$TEST_VIDEO_NUM_ENVS"
+    --test-video-episodes "$TEST_VIDEO_EPISODES"
     --action-dim 8
     --env-action-dim 13
     --state-dim 44

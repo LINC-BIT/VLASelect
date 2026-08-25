@@ -19,6 +19,18 @@ MAX_RUNTIME_HOURS=${MAX_RUNTIME_HOURS_OVERRIDE:-5.1}
 EARLY_STOP_ZERO_SUCCESS_MINUTES=${EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE:-45000}
 RUN_NAME=${RUN_NAME_OVERRIDE:-}
 SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-false}
+NUM_ENVS=${NUM_ENVS_OVERRIDE:-256}
+NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
+NUM_STEPS=${NUM_STEPS_OVERRIDE:-50}
+TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
+NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
+UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-2}
+EVAL_EVERY_UPDATES=${EVAL_EVERY_UPDATES_OVERRIDE:-20}
+EVAL_EPISODES=${EVAL_EPISODES_OVERRIDE:-50}
+ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-256}
+EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-256}
+UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-32}
+RUN_SETUP_SMOKE=${RUN_SETUP_SMOKE_OVERRIDE:-false}
 
 if [ -n "$EXP_NAME" ]; then
     if [[ "$EXP_NAME" == */* ]]; then
@@ -50,12 +62,12 @@ PYTHON_CMD=(
     --output-dir "$OUTPUT_DIR_BASE"
     --teacher-checkpoint ckpt/vla_adapter_new/model_impl/outputs/ppo_hold_cube_in_hand/20260430-103518/best_policy.pt
     --static-model-checkpoint ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt
-    --total-timesteps 100000000
-    --num-envs 256
-    --num-eval-envs 8
-    --num-steps 50
-    --num-minibatches 16
-    --update-epochs 2
+    --total-timesteps "$TOTAL_TIMESTEPS"
+    --num-envs "$NUM_ENVS"
+    --num-eval-envs "$NUM_EVAL_ENVS"
+    --num-steps "$NUM_STEPS"
+    --num-minibatches "$NUM_MINIBATCHES"
+    --update-epochs "$UPDATE_EPOCHS"
     --backbone-learning-rate 3e-5
     --head-learning-rate 3e-5
     --state-learning-rate 3e-5
@@ -70,16 +82,16 @@ PYTHON_CMD=(
     --max-grad-norm 0.5
     --target-kl 0.2
     --minibatch-target-kl-factor 1.0
-    --eval-episodes 50
-    --eval-every-updates 20
+    --eval-episodes "$EVAL_EPISODES"
+    --eval-every-updates "$EVAL_EVERY_UPDATES"
     --max-runtime-hours "$MAX_RUNTIME_HOURS"
-    --rollout-micro-batch-size 256
-    --eval-micro-batch-size 256
-    --update-micro-batch-size 32
+    --rollout-micro-batch-size "$ROLLOUT_MICRO_BATCH_SIZE"
+    --eval-micro-batch-size "$EVAL_MICRO_BATCH_SIZE"
+    --update-micro-batch-size "$UPDATE_MICRO_BATCH_SIZE"
     --rollout-progress-log-interval 10
     --freeze-vla-backbone false
     --backbone-warmup-updates 0
-    --run-setup-smoke false
+    --run-setup-smoke "$RUN_SETUP_SMOKE"
     --save-video "$SAVE_VIDEO"
     --action-dim 16
     --state-dim 105

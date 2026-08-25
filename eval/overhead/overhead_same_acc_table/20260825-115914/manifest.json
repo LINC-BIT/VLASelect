@@ -34,6 +34,20 @@
       "envs_id": "['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']",
       "mwe": "1",
       "mwe_workload_runtime_limit_seconds": "240"
+    },
+    {
+      "family": "tinyvla",
+      "suite_manifest": "ckpt/tinyvla/cl_suite/20260825-115914/manifest.json",
+      "suite_root": "ckpt/tinyvla/cl_suite/20260825-115914",
+      "launch_log": "overhead/overhead_same_acc_table/20260825-115914/launch_logs/tinyvla.log",
+      "suite_stamp": "20260825-115914",
+      "env_change_time_points": "[31,62,96,131,151,163,207,247,271,300]",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "display_name": "TinyVLA",
+      "envs_id": "['OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']",
+      "mwe": "1",
+      "mwe_workload_runtime_limit_seconds": "240"
     }
   ],
   "families": [
@@ -62,6 +76,20 @@
       "workload_name": "Dexterous hand",
       "display_name": "VLA-Adapter",
       "envs_id": "['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']",
+      "mwe": "1",
+      "mwe_workload_runtime_limit_seconds": "240"
+    },
+    {
+      "family": "tinyvla",
+      "suite_manifest": "ckpt/tinyvla/cl_suite/20260825-115914/manifest.json",
+      "suite_root": "ckpt/tinyvla/cl_suite/20260825-115914",
+      "launch_log": "overhead/overhead_same_acc_table/20260825-115914/launch_logs/tinyvla.log",
+      "suite_stamp": "20260825-115914",
+      "env_change_time_points": "[31,62,96,131,151,163,207,247,271,300]",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "display_name": "TinyVLA",
+      "envs_id": "['OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']",
       "mwe": "1",
       "mwe_workload_runtime_limit_seconds": "240"
     }

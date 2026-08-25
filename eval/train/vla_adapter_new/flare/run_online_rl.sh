@@ -21,9 +21,16 @@ RUN_NAME=${RUN_NAME_OVERRIDE:-}
 SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-false}
 NUM_ENVS=${NUM_ENVS_OVERRIDE:-128}
 NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
+NUM_STEPS=${NUM_STEPS_OVERRIDE:-50}
+TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
+NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
+UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-1}
+EVAL_EVERY_UPDATES=${EVAL_EVERY_UPDATES_OVERRIDE:-20}
+EVAL_EPISODES=${EVAL_EPISODES_OVERRIDE:-50}
 ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-128}
 EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-128}
 UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-16}
+RUN_SETUP_SMOKE=${RUN_SETUP_SMOKE_OVERRIDE:-false}
 
 if [ -n "$EXP_NAME" ]; then
     if [[ "$EXP_NAME" == */* ]]; then
@@ -54,12 +61,12 @@ PYTHON_CMD=(
     --model-dir ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
     --static-model-checkpoint ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt
-    --total-timesteps 100000000
+    --total-timesteps "$TOTAL_TIMESTEPS"
     --num-envs "$NUM_ENVS"
     --num-eval-envs "$NUM_EVAL_ENVS"
-    --num-steps 50
-    --num-minibatches 16
-    --update-epochs 1
+    --num-steps "$NUM_STEPS"
+    --num-minibatches "$NUM_MINIBATCHES"
+    --update-epochs "$UPDATE_EPOCHS"
     --backbone-learning-rate 2e-5
     --head-learning-rate 2e-5
     --state-learning-rate 2e-5
@@ -73,15 +80,15 @@ PYTHON_CMD=(
     --max-grad-norm 0.5
     --target-kl 0.2
     --minibatch-target-kl-factor 1.0
-    --eval-episodes 50
-    --eval-every-updates 20
+    --eval-episodes "$EVAL_EPISODES"
+    --eval-every-updates "$EVAL_EVERY_UPDATES"
     --max-runtime-hours "$MAX_RUNTIME_HOURS"
     --rollout-micro-batch-size "$ROLLOUT_MICRO_BATCH_SIZE"
     --eval-micro-batch-size "$EVAL_MICRO_BATCH_SIZE"
     --update-micro-batch-size "$UPDATE_MICRO_BATCH_SIZE"
     --rollout-progress-log-interval 10
     --freeze-vla-backbone false
-    --run-setup-smoke false
+    --run-setup-smoke "$RUN_SETUP_SMOKE"
     --save-video "$SAVE_VIDEO"
     --action-dim 16
     --state-dim 105

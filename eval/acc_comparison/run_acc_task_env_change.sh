@@ -30,8 +30,15 @@ MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
+ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS="${ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS:-60}"
 
-: "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+if [[ -z "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS+x}" ]]; then
+    USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS=0
+    MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS=$((ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS * 10))
+else
+    USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS=1
+    : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+fi
 export MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS
 if [[ "$MWE" == "1" ]]; then
     EDGEVLA_SMOKE="1"
@@ -147,6 +154,15 @@ for item in items:
         resolved.append(item)
 print(','.join(resolved))
 PY
+}
+
+count_selected_methods() {
+    local raw_selection="$1"
+    if [[ -z "$raw_selection" ]]; then
+        echo 10
+        return
+    fi
+    printf '%s' "$raw_selection" | tr ',' '\n' | awk 'NF {c++} END { if (c < 1) c = 1; print c }'
 }
 
 mkdir -p "$RUN_ROOT" "$LAUNCH_LOG_DIR"
@@ -422,8 +438,14 @@ launch_family_suite() {
     local envs_id="${ENVS_ID_BY_FAMILY[$family]}"
     local env_id="${ENV_ID_BY_FAMILY[$family]}"
     local family_methods=""
+    local family_mwe_workload_runtime_limit_seconds="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
+    local selected_method_count=10
 
     family_methods="$(resolve_methods_for_family "$family" "$METHODS")"
+    if [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
+        selected_method_count="$(count_selected_methods "$family_methods")"
+        family_mwe_workload_runtime_limit_seconds=$((selected_method_count * ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS))
+    fi
 
     vlaselect_register_cleanup_manifest "$suite_manifest"
 
@@ -441,7 +463,7 @@ launch_family_suite() {
                 ENABLE_SELF_CURVE_WATCHER="$ENABLE_SELF_CURVE_WATCHER" \
                 METHODS="$family_methods" \
                 SMOKE="$MWE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENV_ID_OVERRIDE="$env_id" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
@@ -456,7 +478,7 @@ launch_family_suite() {
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 METHODS="$family_methods" \
                 SMOKE="$MWE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENV_ID_OVERRIDE="$env_id" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
@@ -472,7 +494,7 @@ launch_family_suite() {
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 METHODS="$family_methods" \
                 SMOKE="$MWE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENV_ID_OVERRIDE="$env_id" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
@@ -489,7 +511,7 @@ launch_family_suite() {
                 QUEUED_PER_GPU="$EDGEVLA_QUEUED_PER_GPU" \
                 METHODS="$family_methods" \
                 SMOKE="$EDGEVLA_SMOKE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENV_ID_OVERRIDE="$env_id" \
                 SUITE_ENVS_ID="$envs_id" \
                 SUITE_ENV_CHANGE_TIME_POINTS="$ENV_CHANGE_TIME_POINTS" \

@@ -214,6 +214,38 @@ def _remove_sampling_training_text(page, reader: PdfReader) -> None:
         page[NameObject('/Contents')] = stream
 
 
+def _rewrite_sampling_training_legend_sampling_marker(page, reader: PdfReader) -> None:
+    content = ContentStream(page.get_contents(), reader)
+    ops = content.operations
+    rewritten = []
+    changed = False
+    index = 0
+    while index < len(ops):
+        operands, op = ops[index]
+        if (
+            op == b're'
+            and len(operands) == 4
+            and abs(float(operands[0]) - 344.58) < 0.1
+            and abs(float(operands[1]) - 484.98) < 0.1
+            and abs(float(operands[2]) - 28.32) < 0.1
+            and abs(float(operands[3]) - 15.0) < 0.1
+            and index + 1 < len(ops)
+            and ops[index + 1][1] == b'f*'
+        ):
+            rewritten.append(([NumberObject(1)], b'g'))
+            rewritten.append((operands, op))
+            rewritten.append((ops[index + 1][0], ops[index + 1][1]))
+            rewritten.append(([NumberObject(0)], b'g'))
+            changed = True
+            index += 2
+            continue
+        rewritten.append((operands, op))
+        index += 1
+    if changed:
+        content.operations = rewritten
+        _write_content_stream(page, content)
+
+
 def _remove_memory_annotations(page, reader: PdfReader) -> None:
     content = ContentStream(page.get_contents(), reader)
     filtered = []
@@ -549,6 +581,7 @@ def fill_sampling_training_template(output_pdf_path: Path, panel_paths: list[Pat
     def rewrite(page, reader):
         _remove_sampling_training_bars(page, reader)
         _remove_sampling_training_text(page, reader)
+        _rewrite_sampling_training_legend_sampling_marker(page, reader)
         _expand_sampling_training_page(page, extra_bottom=12.0)
         _lower_sampling_training_captions(page, reader, delta_y=10.0)
 
@@ -557,6 +590,7 @@ def fill_sampling_training_template(output_pdf_path: Path, panel_paths: list[Pat
         output_pdf_path,
         zip(panel_paths, boxes),
         rewrite_hook=rewrite,
+        preserve_xobject_names={'/Image55'},
     )
 
 def _remove_ours_overhead_labels(page, reader: PdfReader) -> None:

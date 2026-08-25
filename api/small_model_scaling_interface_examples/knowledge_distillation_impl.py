@@ -36,6 +36,7 @@ class KnowledgeDistillationSmallModelScalingInterface(SmallModelScalingInterface
         action_loss_weight: float = 1.0,
         value_loss_weight: float = 0.5,
         max_samples: int = 128,
+        randomize_student_parameters: bool = True,
     ) -> None:
         if distillation_steps < 0:
             raise ValueError("distillation_steps must be non-negative")
@@ -49,6 +50,7 @@ class KnowledgeDistillationSmallModelScalingInterface(SmallModelScalingInterface
         self.action_loss_weight = float(action_loss_weight)
         self.value_loss_weight = float(value_loss_weight)
         self.max_samples = int(max_samples)
+        self.randomize_student_parameters = bool(randomize_student_parameters)
 
     def after_small_model_scaling(
         self,
@@ -83,7 +85,8 @@ class KnowledgeDistillationSmallModelScalingInterface(SmallModelScalingInterface
         device: torch.device,
         reference_api: Any,
     ) -> None:
-        self._randomize_student_parameters(small_agent)
+        if self.randomize_student_parameters:
+            self._randomize_student_parameters(small_agent)
         rgbs = sample_batch["rgbs"]
         if isinstance(rgbs, torch.Tensor):
             rgbs = rgbs.detach().cpu().numpy()
@@ -176,8 +179,12 @@ class KnowledgeDistillationSmallModelScalingInterface(SmallModelScalingInterface
         print(f"[distill-init] reset_parameters modules={reset_count}")
 
 
-def make_knowledge_distillation_interface() -> KnowledgeDistillationSmallModelScalingInterface:
-    return KnowledgeDistillationSmallModelScalingInterface()
+def make_knowledge_distillation_interface(
+    *, randomize_student_parameters: bool = True
+) -> KnowledgeDistillationSmallModelScalingInterface:
+    return KnowledgeDistillationSmallModelScalingInterface(
+        randomize_student_parameters=randomize_student_parameters
+    )
 
 
 def main() -> None:

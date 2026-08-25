@@ -79,7 +79,7 @@ class Args:
     total_timesteps: int = 100000000
     max_time: Optional[float] = None
     learning_rate: float = 2e-5
-    num_envs: int = 256
+    num_envs: int = 64
     num_eval_envs: int = 32
     partial_reset: bool = True
     eval_partial_reset: bool = False

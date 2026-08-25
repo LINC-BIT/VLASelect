@@ -153,13 +153,22 @@ class _DistillationScaling(_EnvironmentAwareScaling):
 
     objective = "logit"
 
-    def __init__(self, *, distillation_steps: int = 4, learning_rate: float = 1e-5, temperature: float = 2.0, max_samples: int = 128) -> None:
+    def __init__(
+        self,
+        *,
+        distillation_steps: int = 4,
+        learning_rate: float = 1e-5,
+        temperature: float = 2.0,
+        max_samples: int = 128,
+        randomize_student_parameters: bool = True,
+    ) -> None:
         if distillation_steps < 0 or learning_rate <= 0 or temperature <= 0 or max_samples <= 0:
             raise ValueError("invalid distillation hyperparameter")
         self.distillation_steps = int(distillation_steps)
         self.learning_rate = float(learning_rate)
         self.temperature = float(temperature)
         self.max_samples = int(max_samples)
+        self.randomize_student_parameters = bool(randomize_student_parameters)
 
     def after_small_model_scaling(self, *, large_agent: nn.Module, small_agent: nn.Module, sample_batch: dict, **kwargs: Any) -> None:
         if self.distillation_steps == 0:
@@ -173,10 +182,12 @@ class _DistillationScaling(_EnvironmentAwareScaling):
         return log_prob, value.view(-1)
 
     def _distill(self, teacher: nn.Module, student: nn.Module, sample_batch: dict, device: torch.device, reference_api: Any) -> None:
-        # FBS materialization copies teacher channels.  Distillation methods start
-        # from an independent initialization, as in the original KD formulation.
-        reset_count = _randomize_student_parameters(student)
-        print(f"[distill-init] reset_parameters modules={reset_count}")
+        # FBS materialization copies teacher channels.  Random reinitialization is
+        # configurable because some model families intentionally distill from those
+        # retained channels instead of starting from an independent initialization.
+        if self.randomize_student_parameters:
+            reset_count = _randomize_student_parameters(student)
+            print(f"[distill-init] reset_parameters modules={reset_count}")
         rgbs = sample_batch["rgbs"].detach().cpu().numpy() if isinstance(sample_batch["rgbs"], torch.Tensor) else np.asarray(sample_batch["rgbs"])
         states = np.asarray(sample_batch["states"], dtype=np.float32)
         action_bins = sample_batch.get("action_bins")
@@ -335,7 +346,11 @@ class LLMInAFlashScaling(_EnvironmentAwareScaling):
             return super().generate_initial_small_model(large_agent=large_agent, args=args, eval_envs=eval_envs, device=device, adapter=adapter, reference_api=reference_api)
 
 
-def make_scaling_method(name: str) -> SmallModelScalingInterface:
+def make_scaling_method(
+    name: str,
+    *,
+    randomize_student_parameters: Optional[bool] = None,
+) -> SmallModelScalingInterface:
     factories = {
         "llm_pruner": LLMPrunerScaling,
         "logit_distillation": LogitDistillationScaling,
@@ -349,7 +364,10 @@ def make_scaling_method(name: str) -> SmallModelScalingInterface:
         "edgeta": EdgeTAScaling,
     }
     try:
-        return factories[name]()
+        factory = factories[name]
+        if randomize_student_parameters is not None and issubclass(factory, _DistillationScaling):
+            return factory(randomize_student_parameters=randomize_student_parameters)
+        return factory()
     except KeyError as exc:
         raise ValueError(f"unknown scaling method {name!r}; supported: {', '.join(sorted(factories))}") from exc
 

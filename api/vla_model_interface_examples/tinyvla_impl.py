@@ -13,7 +13,7 @@ from api.knowledge_exchange_interface_examples.attention_head_grained import mak
 from api.knowledge_exchange_interface_examples.block_grained import make_block_grained_interface
 from api.knowledge_exchange_interface_examples.layer_grained import make_layer_grained_interface
 from api.small_model_scaling_interface import SmallModelScalingInterface
-from api.small_model_scaling_interface_examples.scaling_methods import SCALING_METHODS
+from api.small_model_scaling_interface_examples.scaling_methods import SCALING_METHODS, make_scaling_method
 from api.unified_online_rl import parse_args, run_training
 from api.vla_model_interface_examples._reference_adapter import TinyVLAImplementation, make_tinyvla
 
@@ -29,11 +29,10 @@ def resolve_small_model_interface(args):
     if args.scaling_method and args.knowledge_exchange_granularity:
         raise ValueError("--scaling-method and --knowledge-exchange-granularity are mutually exclusive")
     if args.scaling_method:
-        try:
-            return SCALING_METHODS[args.scaling_method]()
-        except KeyError as exc:
+        if args.scaling_method not in SCALING_METHODS:
             supported = ", ".join(sorted(SCALING_METHODS))
-            raise ValueError(f"unknown scaling method {args.scaling_method!r}; supported: {supported}") from exc
+            raise ValueError(f"unknown scaling method {args.scaling_method!r}; supported: {supported}")
+        return make_scaling_method(args.scaling_method, randomize_student_parameters=False)
     if args.knowledge_exchange_granularity:
         try:
             return KNOWLEDGE_EXCHANGE_GRANULARITIES[args.knowledge_exchange_granularity]()

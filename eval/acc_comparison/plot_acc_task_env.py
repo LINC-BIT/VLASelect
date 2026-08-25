@@ -66,6 +66,13 @@ FAMILY_CONFIGS = {
     'vla_adapter_new': {'metric_key': 'train_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
 }
 
+HISTORY_METRIC_ALIASES_BY_FAMILY = {
+    'octo': ('eval_success_once', 'success_once'),
+    'vla_adapter_new': ('train_success_once', 'eval_success_once', 'success_once'),
+    'tinyvla': ('train_success_once', 'eval_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'success_once'),
+}
+
 RENDER_CONFIG = {
     'smoothing': 0.7,
     'matplotlib': {
@@ -133,10 +140,14 @@ def resolve_method_active_runtime_hours(method: dict[str, Any]) -> float | None:
     return None
 
 
-def collect_history_series(run_dir: Path, metric_key: str, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
+def collect_history_series(run_dir: Path, metric_keys: tuple[str, ...], active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     series = []
     for index, metric in enumerate(load_history(run_dir)):
-        y_value = finite_float(metric.get(metric_key))
+        y_value = None
+        for key in metric_keys:
+            y_value = finite_float(metric.get(key))
+            if y_value is not None:
+                break
         if y_value is None:
             continue
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
@@ -185,7 +196,8 @@ def collect_series(family: str, run_dir: Path, active_runtime_hours: float | Non
     config = FAMILY_CONFIGS[family]
     if config['loader'] == 'tensorboard':
         return collect_tensorboard_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
-    return collect_history_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
+    metric_keys = HISTORY_METRIC_ALIASES_BY_FAMILY.get(family, (config['metric_key'],))
+    return collect_history_series(run_dir, metric_keys, active_runtime_hours=active_runtime_hours)
 
 
 def smooth_values(values: list[float], smoothing: float) -> list[float]:

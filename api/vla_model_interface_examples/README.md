@@ -52,6 +52,11 @@ constructor-only. Run its verification entry point with:
 MWE=1 bash api/small_model_scaling_interface_examples/knowledge_distillation_impl_verify.sh
 ```
 
+Distillation strategies expose the constructor option
+`randomize_student_parameters` (enabled by default). VLA-Adapter keeps the default
+random initialization, while EdgeVLA and TinyVLA disable it so distillation starts
+from the channels retained during FBS materialization.
+
 An adapter must implement the API groups below. The adapter is also responsible for
 declaring the model architecture explicitly. Architecture discovery from checkpoint files
 is not part of the contract.

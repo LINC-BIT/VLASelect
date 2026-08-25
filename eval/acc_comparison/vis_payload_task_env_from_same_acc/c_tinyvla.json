@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "acc_comparison/acc_task_env_from_same_acc_table/20260825-055319/manifest.json",
-    "suite_manifest": "ckpt/tinyvla/cl_suite/20260825-055319/manifest.json"
+    "top_manifest": "acc_comparison/acc_task_env_from_same_acc_table/20260825-072408/manifest.json",
+    "suite_manifest": "ckpt/tinyvla/cl_suite/20260825-072408/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        0.5607710651712842
+        5.743782959215751
       ],
       "ylim": [
         0.0,
@@ -47,32 +47,370 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": null,
-        "ours_average": 0.5,
-        "absolute_improvement_percent": null
+        "others_average": 0.47481663131419516,
+        "ours_average": 0.625,
+        "absolute_improvement_percent": 15.018336868580484
       },
       "series": [
+        {
+          "name": "conrft",
+          "display_name": "ConRFT",
+          "label": "ConRFT",
+          "raw_average": 0.57,
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.7311882269335911
+          ],
+          "y": [
+            0.14000000059604645,
+            0.39800000041723255
+          ]
+        },
+        {
+          "name": "flare",
+          "display_name": "FLaRe",
+          "label": "FLaRe",
+          "raw_average": 0.578431,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            1.876812351466894
+          ],
+          "y": [
+            0.1568627506494522,
+            0.4098039254546166
+          ]
+        },
+        {
+          "name": "improv_vla",
+          "display_name": "Improv-VLA",
+          "label": "Improv-VLA",
+          "raw_average": 0.578431,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            1.5220329223501419
+          ],
+          "y": [
+            0.1568627506494522,
+            0.4098039254546166
+          ]
+        },
+        {
+          "name": "self_improv",
+          "display_name": "Self-Improv",
+          "label": "Self-Improv",
+          "raw_average": 0.368056,
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.06098552675005825,
+            0.12098119036721378,
+            0.23263488501737206,
+            0.34127365878375715,
+            5.470269484967382
+          ],
+          "y": [
+            0.125,
+            0.38750000000000007,
+            0.38375000000000004,
+            0.343625,
+            0.2780375,
+            0.29462625
+          ]
+        },
+        {
+          "name": "ppo_gen",
+          "display_name": "PPO-Gen",
+          "label": "PPO-Gen",
+          "raw_average": 0.578431,
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            1.522143255516615
+          ],
+          "y": [
+            0.1568627506494522,
+            0.4098039254546166
+          ]
+        },
+        {
+          "name": "vla_rft",
+          "display_name": "VLA-RFT",
+          "label": "VLA-RFT",
+          "raw_average": 0.26875,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.05636869801215482,
+            0.12662099777453414,
+            0.2282058715692327,
+            0.3395125198013447,
+            0.40015770106682985,
+            0.4575300983284886,
+            0.5685509960128337,
+            0.6736849944552271,
+            0.7772909650177804,
+            0.8813620661168029,
+            0.9421041387064574,
+            0.9976141674735656,
+            1.060282652805281,
+            1.1177219600109352,
+            1.2210157304177853,
+            1.3290827078390564,
+            1.442207958240025,
+            1.5509593302114826,
+            1.6705964011654333
+          ],
+          "y": [
+            0.125,
+            0.38750000000000007,
+            0.38375000000000004,
+            0.343625,
+            0.3530375,
+            0.24712625,
+            0.472988375,
+            0.4060918625,
+            0.28426430375,
+            0.311485012625,
+            0.3305395088375,
+            0.23137765618624997,
+            0.19946435933037499,
+            0.4396250515312625,
+            0.30773753607188375,
+            0.21541627525031862,
+            0.150791392675223,
+            0.10555397487265611,
+            0.11138778241085928,
+            0.07797144768760149
+          ]
+        },
+        {
+          "name": "world_env",
+          "display_name": "WorldEnv",
+          "label": "WorldEnv",
+          "raw_average": 0.25625,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.055625623917525985,
+            0.10815541877939211,
+            0.22536293548699243,
+            0.34388609644380447,
+            0.4075047417649647,
+            0.46443212499450665,
+            0.5742667462383649,
+            0.6839179651072226,
+            0.7968380110918533,
+            0.9064879645384577,
+            0.9733275063397488,
+            1.026781183104093,
+            1.128909268443612,
+            1.2335638082522313,
+            1.340514388268639,
+            1.4505399886022396,
+            1.513653787161022,
+            1.5644893700062965,
+            1.673181735647571
+          ],
+          "y": [
+            0.125,
+            0.38750000000000007,
+            0.38375000000000004,
+            0.343625,
+            0.3530375,
+            0.24712625,
+            0.472988375,
+            0.4060918625,
+            0.35926430375,
+            0.326485012625,
+            0.3410395088375,
+            0.23872765618625,
+            0.279609359330375,
+            0.3457265515312625,
+            0.24200858607188375,
+            0.16940601025031862,
+            0.11858420717522303,
+            0.08300894502265611,
+            0.05810626151585928,
+            0.04067438306110149
+          ]
+        },
+        {
+          "name": "edgeta",
+          "display_name": "EdgeTA",
+          "label": "EdgeTA",
+          "raw_average": 0.45,
+          "style": {
+            "color": "#A6A6A6",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.1325574723838751,
+            0.27504056281759404,
+            0.398623337399719,
+            0.6465013954992174
+          ],
+          "y": [
+            0.25,
+            0.47500000000000003,
+            0.40750000000000003,
+            0.43525,
+            0.379675
+          ]
+        },
+        {
+          "name": "convertnet",
+          "display_name": "ConvertNet",
+          "label": "ConvertNet",
+          "raw_average": 0.625,
+          "style": {
+            "color": "#CEBB6C",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.6687073020836881
+          ],
+          "y": [
+            0.25,
+            0.47500000000000003
+          ]
+        },
         {
           "name": "ours",
           "display_name": "Ours",
           "label": "Ours",
-          "raw_average": 0.5,
+          "raw_average": 0.625,
           "style": {
             "color": "#C44E52",
             "linestyle": "-",
             "linewidth": 3.6
           },
           "x": [
-            0.13360211364924907,
-            0.5340676811155087
+            0.0,
+            0.6020621422833452
           ],
           "y": [
-            1.0,
-            0.7
+            0.25,
+            0.47500000000000003
           ]
         }
       ],
       "legend_entries": [
+        {
+          "name": "conrft",
+          "label": "ConRFT",
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "flare",
+          "label": "FLaRe",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "improv_vla",
+          "label": "Improv-VLA",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "self_improv",
+          "label": "Self-Improv",
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ppo_gen",
+          "label": "PPO-Gen",
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "vla_rft",
+          "label": "VLA-RFT",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "world_env",
+          "label": "WorldEnv",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "edgeta",
+          "label": "EdgeTA",
+          "style": {
+            "color": "#A6A6A6",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "convertnet",
+          "label": "ConvertNet",
+          "style": {
+            "color": "#CEBB6C",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
         {
           "name": "ours",
           "label": "Ours",

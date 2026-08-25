@@ -804,7 +804,7 @@ There are three different ways for verifications:
 
 - **Full run (completed within 40 hours and 60GB memory)**: 
 
-  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. [[Example running results]]()
+  You can run the minimum working examples of all scaling methods on VLA-Adapter by the command below. 
     ```bash
     bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
     ```

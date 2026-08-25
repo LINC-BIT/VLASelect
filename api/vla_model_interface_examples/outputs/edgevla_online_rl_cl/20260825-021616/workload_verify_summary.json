@@ -1,0 +1,45 @@
+{
+  "env_id": "UnitreeG1LiftCubeObjectScaleDown1p3-v1",
+  "envs_id": [
+    "UnitreeG1LiftCubeObjectScaleDown1p3-v1",
+    "UnitreeG1LiftCubeLightWeaker50-v1",
+    "UnitreeG1LiftCubeLightWeaker50-v1",
+    "UnitreeG1LiftCubeObjectPurple-v1",
+    "UnitreeG1LiftSphereLightStronger50-v1",
+    "UnitreeG1LiftCubeColorTempLower50-v1",
+    "UnitreeG1LiftCubeObjectScaleDown1p1-v1",
+    "UnitreeG1LiftSphereObjectScaleDown1p3-v1",
+    "UnitreeG1LiftCubeColorTempLower50-v1",
+    "UnitreeG1LiftCubeObjectPurple-v1"
+  ],
+  "change_time_points": [
+    31.0,
+    62.0,
+    96.0,
+    131.0,
+    151.0,
+    163.0,
+    207.0,
+    247.0,
+    271.0,
+    300.0
+  ],
+  "output_dir": "/home/zcr/vlaselect/api/vla_model_interface_examples/outputs/edgevla_online_rl_cl/20260825-021616",
+  "stop_reason": "time_limit",
+  "elapsed_hours": 0.03330315178467168,
+  "train_success_once_summary": {
+    "initial": 0.0,
+    "final": 1.0,
+    "average": 0.5,
+    "max": 1.0,
+    "improvement": 1.0
+  },
+  "train_success_at_end_summary": {
+    "initial": null,
+    "final": null,
+    "average": null,
+    "max": null,
+    "improvement": null
+  },
+  "num_metric_points": 24
+}

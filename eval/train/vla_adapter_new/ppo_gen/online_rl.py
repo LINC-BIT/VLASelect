@@ -43,7 +43,7 @@ from train.vla_adapter_new.ours.model_with_fbs_test import convert_to_fbs_model
 
 DEFAULT_MODEL_DIR = reference.DEFAULT_MODEL_DIR
 DEFAULT_OUTPUT_DIR = "train/vla_adapter_new/ppo_gen/outputs"
-DEFAULT_STATIC_MODEL_CHECKPOINT = "ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt"
+DEFAULT_STATIC_MODEL_CHECKPOINT = "eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt"
 DEFAULT_SUMMARY_NAME = "ppo_gen_training_summary.json"
 DEFAULT_ENVS_ID = "['HoldCubeInHandObjectScaleDown1p2-v1', 'HoldCubeInHandObjectScaleDown1p4-v1']"
 DEFAULT_ENV_CHANGE_TIME_POINTS = "[15, 30]"
@@ -227,6 +227,47 @@ def build_runtime_envs(
     return envs, eval_envs, test_video_envs
 
 
+def _filter_compatible_policy_state(
+    policy_state: Dict[str, Any],
+    policy: nn.Module,
+    checkpoint_path: str,
+) -> Dict[str, Any]:
+    current_state = policy.state_dict()
+    compatible_state: Dict[str, Any] = {}
+    missing_keys: List[str] = []
+    shape_mismatches: List[Tuple[str, Tuple[int, ...], Tuple[int, ...]]] = []
+
+    for key, value in policy_state.items():
+        current_value = current_state.get(key)
+        if current_value is None:
+            missing_keys.append(key)
+            continue
+        if tuple(value.shape) != tuple(current_value.shape):
+            shape_mismatches.append((key, tuple(value.shape), tuple(current_value.shape)))
+            continue
+        compatible_state[key] = value
+
+    skipped_count = len(missing_keys) + len(shape_mismatches)
+    if skipped_count > 0:
+        print(
+            f"[setup] static checkpoint {checkpoint_path} is only partially compatible with the current model; "
+            f"loading {len(compatible_state)} tensors and skipping {skipped_count}"
+        )
+        for key, checkpoint_shape, current_shape in shape_mismatches[:10]:
+            print(
+                f"[setup] skipped shape mismatch: {key} "
+                f"checkpoint={list(checkpoint_shape)} current={list(current_shape)}"
+            )
+        if len(shape_mismatches) > 10:
+            print(f"[setup] ... and {len(shape_mismatches) - 10} more shape mismatches")
+        if missing_keys:
+            preview = ", ".join(missing_keys[:10])
+            suffix = "" if len(missing_keys) <= 10 else ", ..."
+            print(f"[setup] skipped missing keys from checkpoint target model: {preview}{suffix}")
+
+    return compatible_state
+
+
 def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -> Dict[str, Any]:
     if not checkpoint_path:
         print("[setup] empty static checkpoint path; keeping current policy initialization")
@@ -247,7 +288,18 @@ def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -
             checkpoint_path=checkpoint_path,
             state_label="checkpoint",
         )
-    policy.load_state_dict(policy_state, strict=True)
+    compatible_policy_state = _filter_compatible_policy_state(policy_state, policy, checkpoint_path)
+    if not compatible_policy_state:
+        print(
+            f"[setup] no compatible tensors found in static checkpoint {checkpoint_path}; "
+            "keeping current policy initialization"
+        )
+        return checkpoint if isinstance(checkpoint, dict) else {}
+    missing_keys, unexpected_keys = policy.load_state_dict(compatible_policy_state, strict=False)
+    if unexpected_keys:
+        print(f"[setup] unexpected keys ignored while loading static checkpoint: {unexpected_keys}")
+    if missing_keys:
+        print(f"[setup] keeping {len(missing_keys)} model tensors from the current initialization")
     return checkpoint if isinstance(checkpoint, dict) else {}
 
 

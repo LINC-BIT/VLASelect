@@ -1,0 +1,11 @@
+{
+  "update": 23,
+  "num_updates": 62500000000,
+  "rollout_step": 4,
+  "num_steps": 4,
+  "elapsed_hours": 0.03256545598272674,
+  "partial_reward_means": [
+    0.0013984055258333683,
+    0.001300796982832253
+  ]
+}

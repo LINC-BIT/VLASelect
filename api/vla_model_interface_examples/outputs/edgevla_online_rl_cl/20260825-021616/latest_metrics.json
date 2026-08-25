@@ -1,0 +1,18 @@
+{
+  "update": 23,
+  "global_step": 368,
+  "reward_mean": 0.001300796982832253,
+  "gae_return_mean": 0.005910065490752459,
+  "value_mean": 0.003002169309183955,
+  "explained_variance": -1.1057603721553733e-09,
+  "approx_kl": 0.0,
+  "clipfrac": 0.0,
+  "pg_loss": 2.60770320892334e-08,
+  "v_loss": 5.327936762000718e-06,
+  "entropy": 5.545177459716797,
+  "stopped_on_minibatch_kl": false,
+  "skipped_updates_on_kl": 0,
+  "elapsed_hours": 0.03330315178467168,
+  "env_id": "UnitreeG1LiftCubeObjectScaleDown1p3-v1",
+  "env_index": 0
+}

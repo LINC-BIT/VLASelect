@@ -24,6 +24,7 @@ NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
 ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-256}
 EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-256}
 UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-32}
+STATIC_MODEL_CHECKPOINT=${STATIC_MODEL_CHECKPOINT_OVERRIDE:-eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt}
 
 if [ -n "$EXP_NAME" ]; then
     if [[ "$EXP_NAME" == */* ]]; then
@@ -53,7 +54,7 @@ PYTHON_CMD=(
     --obs-mode rgb+state_dict
     --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object
     --output-dir "$OUTPUT_DIR_BASE"
-    --static-model-checkpoint ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt
+    --static-model-checkpoint "$STATIC_MODEL_CHECKPOINT"
     --total-timesteps 100000000
     --num-envs "$NUM_ENVS"
     --num-eval-envs "$NUM_EVAL_ENVS"
@@ -107,6 +108,7 @@ else
     echo "ENV_ID=$ENV_ID"
     echo "ENVS_ID=$ENVS_ID"
     echo "ENV_CHANGE_TIME_POINTS=$ENV_CHANGE_TIME_POINTS"
+    echo "STATIC_MODEL_CHECKPOINT=$STATIC_MODEL_CHECKPOINT"
     echo "EXP_NAME=$EXP_NAME"
     echo "RUN_NAME=$RUN_NAME"
 

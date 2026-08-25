@@ -5,13 +5,7 @@ import os
 import re
 import sys
 import time
-
-from train.common.mwe_runtime import ActiveRuntimeTracker
-from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
-from collections import defaultdict
-from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
 
 THIS_DIR = Path(__file__).resolve().parent
 PARENT_DIR = THIS_DIR.parent
@@ -19,6 +13,12 @@ REPO_ROOT = THIS_DIR.parents[2]
 for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
     if str(candidate) not in sys.path:
         sys.path.insert(0, str(candidate))
+
+from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
+from collections import defaultdict
+from dataclasses import asdict, dataclass, replace
+from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
 
 import gymnasium as gym
 import matplotlib

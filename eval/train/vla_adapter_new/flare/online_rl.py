@@ -5,19 +5,19 @@ import os
 import shutil
 import sys
 import time
+from pathlib import Path
+
+THIS_DIR = Path(__file__).resolve().parent
+REPO_ROOT = THIS_DIR.parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import asdict, dataclass, replace
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
-
-THIS_DIR = Path(__file__).resolve().parent
-REPO_ROOT = THIS_DIR.parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 import torch
 import torch.nn as nn

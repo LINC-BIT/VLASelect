@@ -10,6 +10,7 @@ source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
 source "${EVAL_ROOT}/common/env_order.sh"
 source "${EVAL_ROOT}/common/mwe_time.sh"
+source "${EVAL_ROOT}/common/resource_summary.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="ablation/ablation_table"
@@ -38,6 +39,7 @@ if [[ "$MWE" == "1" ]]; then
     SMOKE=1
     ABLATION_SELECTION="${ABLATION_SELECTION:-scaling_law_function:with_scaling_law,scaling_law_function:without_scaling_law}"
 fi
+vlaselect_resource_summary_start "run_ablation.sh"
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "run_ablation.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 

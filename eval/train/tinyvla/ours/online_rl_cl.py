@@ -17,7 +17,12 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import write_module_memory_exclusion_metadata
-from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
+from train.common.time_breakdown import (
+    empty_module_breakdown,
+    snapshot_time_breakdown_to_metric,
+    update_combined_search_enhancement_seconds,
+    write_time_breakdown,
+)
 from collections import defaultdict
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
@@ -651,7 +656,11 @@ def regenerate_small_model_in_place(
     eval_envs,
     device: torch.device,
 ):
+    search_start_time = time.perf_counter()
     sample = collect_sample_for_small_model_generation(args, large_agent=large_agent, small_agent=small_agent, eval_envs=eval_envs, device=device)
+    search_seconds = time.perf_counter() - search_start_time
+
+    enhancer_start_time = time.perf_counter()
     regenerated_small_agent, new_pruning_info = generate_static_small_model_with_returning_pruning_info(
         large_agent,
         sample_batch=sample,
@@ -688,7 +697,8 @@ def regenerate_small_model_in_place(
                 f"[regen] replaced_ratio avg={sum(replaced_ratios) / len(replaced_ratios):.4f} "
                 f"min={min(replaced_ratios):.4f} max={max(replaced_ratios):.4f}"
             )
-    return new_pruning_info
+    enhancer_seconds = time.perf_counter() - enhancer_start_time
+    return new_pruning_info, search_seconds, enhancer_seconds
 
 
 def maybe_load_training_checkpoint(
@@ -754,12 +764,7 @@ def train(args: Args) -> None:
     print(f"[setup] output_dir={output_dir}")
     print(f"[setup] current_env={current_env_id}")
 
-    module_breakdown = {
-        "workload_initialization_seconds": 0.0,
-        "optimal_network_search_and_selective_model_enhancement_seconds": 0.0,
-        "selective_knowledge_accumulation_seconds": 0.0,
-        "online_rl_completion_seconds": 0.0,
-    }
+    module_breakdown = empty_module_breakdown()
     cumulative_rollout_seconds = 0.0
     cumulative_training_seconds = 0.0
 
@@ -786,7 +791,7 @@ def train(args: Args) -> None:
     envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_envs, record_metrics=True)
     eval_envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_eval_envs, record_metrics=True)
     module_breakdown["workload_initialization_seconds"] += time.perf_counter() - workload_init_start_time
-    model_search_start_time = time.perf_counter()
+    search_start_time = time.perf_counter()
     initial_sample = collect_sample_for_small_model_generation(
         args,
         large_agent=large_agent,
@@ -794,6 +799,9 @@ def train(args: Args) -> None:
         eval_envs=eval_envs,
         device=device,
     )
+    module_breakdown["optimal_network_searcher_seconds"] += time.perf_counter() - search_start_time
+
+    enhancer_start_time = time.perf_counter()
     small_agent, current_pruning_info = generate_static_small_model_with_returning_pruning_info(
         large_agent,
         sample_batch=initial_sample,
@@ -801,12 +809,11 @@ def train(args: Args) -> None:
         dtype=torch.bfloat16,
         verify=True,
     )
-    module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
-        time.perf_counter() - model_search_start_time
-    )
     restore_small_policy_dtypes(small_agent, device)
     small_agent.configure_trainable_modules(train_backbone=not args.freeze_vla_backbone and args.backbone_warmup_updates <= 0)
     small_agent.eval_micro_batch_size = args.eval_micro_batch_size
+    module_breakdown["selective_model_enhancer_seconds"] += time.perf_counter() - enhancer_start_time
+    update_combined_search_enhancement_seconds(module_breakdown)
     optimizer = reference.build_optimizer(args, small_agent)
 
     start_update, global_step, best_success_once, resumed_pruning_info = maybe_load_training_checkpoint(
@@ -986,8 +993,7 @@ def train(args: Args) -> None:
             update_at_last_regeneration=update_at_last_small_model_regeneration,
         ):
             print("[ours] regenerate small model before rollout")
-            regeneration_start_time = time.perf_counter()
-            current_pruning_info = regenerate_small_model_in_place(
+            current_pruning_info, search_seconds, enhancer_seconds = regenerate_small_model_in_place(
                 large_agent,
                 small_agent,
                 current_pruning_info,
@@ -996,9 +1002,9 @@ def train(args: Args) -> None:
                 eval_envs,
                 device,
             )
-            module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
-                time.perf_counter() - regeneration_start_time
-            )
+            module_breakdown["optimal_network_searcher_seconds"] += search_seconds
+            module_breakdown["selective_model_enhancer_seconds"] += enhancer_seconds
+            update_combined_search_enhancement_seconds(module_breakdown)
             success_end_at_last_small_model_regeneration = current_success_end
             update_at_last_small_model_regeneration = update
 

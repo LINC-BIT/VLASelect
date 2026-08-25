@@ -7,7 +7,9 @@ VLASELECT_INTERRUPT_CLEANUP_LOADED=1
 
 declare -ag VLASELECT_CLEANUP_MANIFESTS=()
 declare -ag VLASELECT_CLEANUP_PIDS=()
+declare -ag VLASELECT_EXIT_CALLBACKS=()
 VLASELECT_CLEANUP_TRAP_INSTALLED=0
+VLASELECT_CLEANUP_RUNNING=0
 
 vlaselect_register_cleanup_manifest() {
     local manifest_path="$1"
@@ -21,6 +23,29 @@ vlaselect_register_cleanup_pid() {
     if [[ -n "$pid" ]]; then
         VLASELECT_CLEANUP_PIDS+=("$pid")
     fi
+}
+
+vlaselect_register_exit_callback() {
+    local callback_name="$1"
+    [[ -n "$callback_name" ]] || return 0
+
+    local existing
+    for existing in "${VLASELECT_EXIT_CALLBACKS[@]}"; do
+        if [[ "$existing" == "$callback_name" ]]; then
+            return 0
+        fi
+    done
+    VLASELECT_EXIT_CALLBACKS+=("$callback_name")
+}
+
+vlaselect_run_exit_callbacks() {
+    local exit_status="$1"
+    local callback_name
+    for callback_name in "${VLASELECT_EXIT_CALLBACKS[@]}"; do
+        if declare -F "$callback_name" >/dev/null 2>&1; then
+            "$callback_name" "$exit_status" || true
+        fi
+    done
 }
 
 vlaselect_collect_manifest_pids() {
@@ -271,6 +296,13 @@ PY_HELPER
 vlaselect_cleanup() {
     local rc=$?
     trap - INT TERM EXIT
+
+    if [[ "$VLASELECT_CLEANUP_RUNNING" == "1" ]]; then
+        exit "$rc"
+    fi
+    VLASELECT_CLEANUP_RUNNING=1
+
+    vlaselect_run_exit_callbacks "$rc"
 
     local -A seen_pids=()
     local pid

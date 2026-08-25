@@ -52,9 +52,27 @@ SCRIPT_BY_METHOD = {
     "vla_rft": "train/edgevla/vla_rft/run_online_rl.sh",
     "world_env": "train/edgevla/world_env/run_online_rl.sh",
 }
-def build_gpu_queues(gpu_by_method: dict[str, int]) -> dict[int, list[str]]:
+
+
+def select_methods(raw_selection: str) -> list[str]:
+    if not raw_selection:
+        return list(METHOD_ORDER)
+    methods: list[str] = []
+    for item in raw_selection.split(","):
+        method = item.strip()
+        if not method:
+            continue
+        if method not in SCRIPT_BY_METHOD:
+            raise ValueError(f"Unknown method: {method}")
+        methods.append(method)
+    if not methods:
+        raise ValueError("No methods selected.")
+    return methods
+
+
+def build_gpu_queues(method_order: list[str], gpu_by_method: dict[str, int]) -> dict[int, list[str]]:
     queues: dict[int, list[str]] = {}
-    for method in METHOD_ORDER:
+    for method in method_order:
         gpu = gpu_by_method[method]
         queues.setdefault(gpu, []).append(method)
     return queues
@@ -68,9 +86,10 @@ class SuiteScheduler:
         self.launch_log_dir = self.suite_root / "launch_logs"
         self.pid_dir = self.suite_root / "pids"
         self.manifest_path = args.manifest
+        self.method_order = select_methods(args.methods)
         override_map = get_method_gpu_override_map(args.gpu_by_method_override)
-        self.gpu_by_method = resolve_method_gpu_map(METHOD_ORDER, GPU_BY_METHOD, override_map)
-        self.gpu_queues = build_gpu_queues(self.gpu_by_method)
+        self.gpu_by_method = resolve_method_gpu_map(self.method_order, GPU_BY_METHOD, override_map)
+        self.gpu_queues = build_gpu_queues(self.method_order, self.gpu_by_method)
         self.lock = threading.Lock()
         self.stop_event = threading.Event()
         self.current_processes: dict[str, subprocess.Popen[Any]] = {}
@@ -101,6 +120,7 @@ class SuiteScheduler:
             "resource_change_factors": self.args.resource_change_factors or None,
             "smoke_max_runtime_hours": self.args.smoke_max_runtime_hours if self.args.smoke else None,
             "inherited_suite": None,
+            "selected_methods": self.method_order,
             "gpu_queues": {str(gpu): methods for gpu, methods in self.gpu_queues.items()},
             "methods": [
                 {
@@ -120,7 +140,7 @@ class SuiteScheduler:
                     "output_dir_base": str(self.suite_root / method),
                     "run_name": "run",
                 }
-                for method in METHOD_ORDER
+                for method in self.method_order
             ],
         }
 
@@ -334,6 +354,7 @@ def main() -> None:
     parser.add_argument("--resource-change-time-points", default="")
     parser.add_argument("--resource-change-directions", default="")
     parser.add_argument("--resource-change-factors", default="")
+    parser.add_argument("--methods", default="")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--gpu-by-method-override", default="")
     parser.add_argument("--smoke-max-runtime-hours", type=float, default=0.0084)

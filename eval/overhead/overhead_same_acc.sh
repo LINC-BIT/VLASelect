@@ -10,6 +10,7 @@ source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
 source "${EVAL_ROOT}/common/env_order.sh"
 source "${EVAL_ROOT}/common/mwe_time.sh"
+source "${EVAL_ROOT}/common/resource_summary.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}" 
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-overhead/overhead_same_acc_table}"
@@ -32,11 +33,13 @@ EDGEVLA_SMOKE="${EDGEVLA_SMOKE:-0}"
 ENABLE_SELF_CURVE_WATCHER="${ENABLE_SELF_CURVE_WATCHER:-0}"
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
+METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
 BASELINE_PRETRAIN_CKPT_NOISE_SCALE="${BASELINE_PRETRAIN_CKPT_NOISE_SCALE:-${CKPT_NOISE_SCALE:-}}"
 BASELINE_PRETRAIN_CKPT_NOISE_SEED="${BASELINE_PRETRAIN_CKPT_NOISE_SEED:-${CKPT_NOISE_SEED:-0}}"
 SAME_ACC_BREAKDOWN_COMPAT="${SAME_ACC_BREAKDOWN_COMPAT:-1}"
 SAME_ACC_ACCURACY_COMPAT="${SAME_ACC_ACCURACY_COMPAT:-1}"
+SAME_ACC_METHOD_ACTIVE_RUNTIME_SECONDS="${SAME_ACC_METHOD_ACTIVE_RUNTIME_SECONDS:-60}"
 ACC_COMPAT_FIGURE_STEM="${ACC_COMPAT_FIGURE_STEM:-FIG_ACC_TASK_ENV_FROM_SAME_ACC}"
 ACC_COMPAT_SUMMARY_STEM="${ACC_COMPAT_SUMMARY_STEM:-acc_task_env_from_same_acc_summary}"
 ACC_COMPAT_PANEL_DIR="${ACC_COMPAT_PANEL_DIR:-${ACC_COMPAT_FIGURE_STEM}_panels}"
@@ -52,7 +55,13 @@ if [[ -n "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE:-}" && "${VLASELECT_BAS
     echo "[fig9] baseline pretrained checkpoint noise scale=${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE} seed=${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED:-0}"
 fi
 
-: "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+if [[ -z "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS+x}" ]]; then
+    USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS=0
+    MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS=$((SAME_ACC_METHOD_ACTIVE_RUNTIME_SECONDS * 10))
+else
+    USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS=1
+    : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
+fi
 export MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS
 if [[ "$MWE" == "1" ]]; then
     EDGEVLA_SMOKE="1"
@@ -60,6 +69,7 @@ if [[ "$MWE" == "1" ]]; then
     PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-5}"
     SUITE_WAIT_POLL_SECONDS="${SUITE_WAIT_POLL_SECONDS:-5}"
 fi
+vlaselect_resource_summary_start "overhead_same_acc.sh"
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "overhead_same_acc.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 
@@ -135,6 +145,41 @@ select_families() {
         return
     fi
     printf "%s" "$raw_selection" | tr ',' '\n' | awk 'NF {gsub(/^[ \t]+|[ \t]+$/, ""); print}'
+}
+
+resolve_methods_for_family() {
+    local family="$1"
+    local raw_selection="$2"
+    if [[ -z "$raw_selection" ]]; then
+        return 0
+    fi
+    python - <<'PY' "$family" "$raw_selection"
+import sys
+
+family = sys.argv[1]
+raw = sys.argv[2]
+items = [item.strip() for item in raw.split(',') if item.strip()]
+resolved = []
+for item in items:
+    if item == 'vlaselect':
+        resolved.append('ours_single_agent' if family == 'octo' else 'ours')
+    elif item == 'ours' and family == 'octo':
+        resolved.append('ours_single_agent')
+    elif item == 'ours_single_agent' and family != 'octo':
+        resolved.append('ours')
+    else:
+        resolved.append(item)
+print(','.join(resolved))
+PY
+}
+
+count_selected_methods() {
+    local raw_selection="$1"
+    if [[ -z "$raw_selection" ]]; then
+        echo 10
+        return
+    fi
+    printf '%s' "$raw_selection" | tr ',' '\n' | awk 'NF {c++} END { if (c < 1) c = 1; print c }'
 }
 
 mkdir -p "$RUN_ROOT" "$LAUNCH_LOG_DIR"
@@ -249,7 +294,8 @@ append_panel_entry() {
     local family="$1"
     local suite_manifest="$2"
     local launch_log="$3"
-    python - <<'PY' "$PANELS_JSONL" "$family" "$suite_manifest" "$launch_log" "$SUITE_STAMP" "$ENV_CHANGE_TIME_POINTS" "${PANEL_LABEL_BY_FAMILY[$family]}" "${WORKLOAD_NAME_BY_FAMILY[$family]}" "${DISPLAY_NAME_BY_FAMILY[$family]}" "${ENVS_ID_BY_FAMILY[$family]}" "$MWE" "$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
+    local family_runtime_limit_seconds="$4"
+    python - <<'PY' "$PANELS_JSONL" "$family" "$suite_manifest" "$launch_log" "$SUITE_STAMP" "$ENV_CHANGE_TIME_POINTS" "${PANEL_LABEL_BY_FAMILY[$family]}" "${WORKLOAD_NAME_BY_FAMILY[$family]}" "${DISPLAY_NAME_BY_FAMILY[$family]}" "${ENVS_ID_BY_FAMILY[$family]}" "$MWE" "$family_runtime_limit_seconds"
 import json
 import sys
 from pathlib import Path
@@ -354,6 +400,15 @@ launch_family_suite() {
     local suite_manifest="${SUITE_MANIFEST_BY_FAMILY[$family]}"
     local launch_log="${LAUNCH_LOG_DIR}/${family}.log"
     local envs_id="${ENVS_ID_BY_FAMILY[$family]}"
+    local family_methods=""
+    local family_mwe_workload_runtime_limit_seconds="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
+    local selected_method_count=10
+
+    family_methods="$(resolve_methods_for_family "$family" "$METHODS")"
+    if [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
+        selected_method_count="$(count_selected_methods "$family_methods")"
+        family_mwe_workload_runtime_limit_seconds=$((selected_method_count * SAME_ACC_METHOD_ACTIVE_RUNTIME_SECONDS))
+    fi
 
     vlaselect_register_cleanup_manifest "$suite_manifest"
 
@@ -368,8 +423,9 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 ENABLE_SELF_CURVE_WATCHER="$ENABLE_SELF_CURVE_WATCHER" \
+                METHODS="$family_methods" \
                 SMOKE="$MWE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script"
@@ -381,8 +437,9 @@ launch_family_suite() {
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
+                METHODS="$family_methods" \
                 SMOKE="$MWE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
@@ -395,8 +452,9 @@ launch_family_suite() {
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
+                METHODS="$family_methods" \
                 SMOKE="$MWE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
                 ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
@@ -410,8 +468,9 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 QUEUED_PER_GPU="$EDGEVLA_QUEUED_PER_GPU" \
+                METHODS="$family_methods" \
                 SMOKE="$EDGEVLA_SMOKE" \
-                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
+                MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 SUITE_ENVS_ID="$envs_id" \
                 SUITE_ENV_CHANGE_TIME_POINTS="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
@@ -431,7 +490,7 @@ launch_family_suite() {
     fi
 
     vlaselect_print_suite_training_logs "$suite_manifest" "fig9" "$family"
-    append_panel_entry "$family" "$suite_manifest" "$launch_log"
+    append_panel_entry "$family" "$suite_manifest" "$launch_log" "$family_mwe_workload_runtime_limit_seconds"
     if [[ "$TAIL_LOG" == "1" ]]; then
         vlaselect_start_manifest_log_tail "$suite_manifest" "$family"
     fi

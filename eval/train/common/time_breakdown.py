@@ -7,10 +7,24 @@ from typing import Any
 
 MODULE_KEYS = (
     "workload_initialization_seconds",
+    "optimal_network_searcher_seconds",
+    "selective_model_enhancer_seconds",
     "optimal_network_search_and_selective_model_enhancement_seconds",
     "selective_knowledge_accumulation_seconds",
     "online_rl_completion_seconds",
 )
+
+
+def empty_module_breakdown() -> dict[str, float]:
+    return {key: 0.0 for key in MODULE_KEYS}
+
+
+def update_combined_search_enhancement_seconds(module_breakdown: dict[str, Any]) -> dict[str, Any]:
+    module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] = (
+        float(module_breakdown.get("optimal_network_searcher_seconds", 0.0))
+        + float(module_breakdown.get("selective_model_enhancer_seconds", 0.0))
+    )
+    return module_breakdown
 
 
 def _normalized_module_breakdown(module_breakdown: dict[str, Any] | None) -> dict[str, float]:
@@ -21,6 +35,9 @@ def _normalized_module_breakdown(module_breakdown: dict[str, Any] | None) -> dic
             payload[key] = float(raw.get(key, 0.0))
         except (TypeError, ValueError):
             payload[key] = 0.0
+    split_total = payload["optimal_network_searcher_seconds"] + payload["selective_model_enhancer_seconds"]
+    if split_total > 0.0:
+        payload["optimal_network_search_and_selective_model_enhancement_seconds"] = split_total
     return payload
 
 

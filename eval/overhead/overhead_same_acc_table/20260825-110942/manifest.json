@@ -1,0 +1,11 @@
+{
+  "suite_stamp": "20260825-110942",
+  "table_root": "overhead/overhead_same_acc_table",
+  "figure_output": "overhead/FIG_MEMORY_FOOTPOINT.pdf",
+  "table2_output": "overhead/overhead_breakdown_table/TAB_OVERHEAD.csv",
+  "table3_output": "overhead/overhead_breakdown_table/TAB_ENERGY.csv",
+  "mwe": "1",
+  "mwe_workload_runtime_limit_seconds": "300",
+  "panels": [],
+  "families": []
+}

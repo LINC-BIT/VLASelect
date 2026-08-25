@@ -79,11 +79,13 @@ EXPECTED_METHODS = {
         ("world_env", "WorldEnv"),
     ],
     "tinyvla": [
-        ("ppo_gen", "PPO-Gen"),
-        ("ours", "VLASelect"),
         ("conrft", "ConRFT"),
         ("flare", "FLaRe"),
         ("improv_vla", "Improv-VLA"),
+        ("edgeta", "EdgeTA"),
+        ("convertnet", "ConvertNet"),
+        ("ours", "VLASelect"),
+        ("ppo_gen", "PPO-Gen"),
         ("self_improv", "Self-Improv"),
         ("vla_rft", "VLA-RFT"),
         ("world_env", "WorldEnv"),
@@ -92,11 +94,19 @@ EXPECTED_METHODS = {
         ("conrft", "ConRFT"),
         ("flare", "FLaRe"),
         ("improv_vla", "Improv-VLA"),
+        ("edgeta", "EdgeTA"),
+        ("convertnet", "ConvertNet"),
+        ("ours", "VLASelect"),
         ("ppo_gen", "PPO-Gen"),
+        ("self_improv", "Self-Improv"),
+        ("vla_rft", "VLA-RFT"),
+        ("world_env", "WorldEnv"),
     ],
 }
 MODULE_SPECS = [
     ("workload_initialization_seconds", "Workload init", "#4C78A8"),
+    ("optimal_network_searcher_seconds", "Optimal network searcher", "#3c3c3c"),
+    ("selective_model_enhancer_seconds", "Selective model enhancer", "#8f8f8f"),
     (
         "optimal_network_search_and_selective_model_enhancement_seconds",
         "Net search + SME",
@@ -104,6 +114,11 @@ MODULE_SPECS = [
     ),
     ("selective_knowledge_accumulation_seconds", "SKA", "#54A24B"),
     ("online_rl_completion_seconds", "Online RL", "#E45756"),
+]
+MODULE_FIGURE_SPECS = [
+    ("optimal_network_searcher_seconds", "Optimal network searcher", "#3c3c3c", ""),
+    ("selective_model_enhancer_seconds", "Selective model enhancer", "#8f8f8f", ""),
+    ("selective_knowledge_accumulation_seconds", "Selective knowledge accumulator", "#d6d6d6", "/"),
 ]
 NO_DATA_TEXT = "No data"
 SAME_ACC_FAMILY_CONFIGS = {
@@ -124,7 +139,7 @@ SAME_ACC_HISTORY_METRIC_ALIASES_BY_FAMILY = {
     "tinyvla": ("train_success_once", "eval_success_once", "success_once"),
     "edgevla": ("eval_success_once", "success_once"),
 }
-NON_ONLINE_MODULE_KEYS = tuple(key for key, _, _ in MODULE_SPECS if key != "online_rl_completion_seconds")
+MODULE_FIGURE_KEYS = tuple(key for key, _, _, _ in MODULE_FIGURE_SPECS)
 
 
 def available_sans_serif_fonts() -> list[str]:
@@ -195,6 +210,12 @@ def _extract_module_breakdown(payload: dict[str, Any]) -> dict[str, float]:
     if any(key in payload for key, _, _ in MODULE_SPECS):
         return {key: _safe_float(payload.get(key, 0.0)) for key, _, _ in MODULE_SPECS}
     return {key: 0.0 for key, _, _ in MODULE_SPECS}
+
+
+def _has_module_figure_data(module_breakdown: dict[str, Any] | None) -> bool:
+    if not isinstance(module_breakdown, dict):
+        return False
+    return any(_safe_float(module_breakdown.get(key, 0.0)) > 0.0 for key in MODULE_FIGURE_KEYS)
 
 
 def _extract_sampling_training(payload: dict[str, Any]) -> tuple[float, float, bool]:
@@ -404,6 +425,39 @@ def _first_reach_hours(series: list[tuple[float, float]], target_accuracy: float
     return None
 
 
+def _metric_active_runtime_seconds(metric: dict[str, Any]) -> float | None:
+    rollout = _finite_float_or_none(metric.get("cumulative_rollout_seconds"))
+    training = _finite_float_or_none(metric.get("cumulative_training_seconds"))
+    if rollout is not None or training is not None:
+        return float(rollout or 0.0) + float(training or 0.0)
+    time_breakdown = metric.get("time_breakdown")
+    if isinstance(time_breakdown, dict):
+        sampling = _finite_float_or_none(time_breakdown.get("sampling_seconds"))
+        training = _finite_float_or_none(time_breakdown.get("training_seconds"))
+        if sampling is not None or training is not None:
+            return float(sampling or 0.0) + float(training or 0.0)
+    return None
+
+
+def _load_same_acc_reach_metric(family: str, run_dir: Path) -> dict[str, Any] | None:
+    history = _load_history(run_dir)
+    if not history:
+        return None
+    target_accuracy: float | None = None
+    for metric in history:
+        value = _extract_history_success_value(family, metric)
+        if value is None:
+            continue
+        target_accuracy = value if target_accuracy is None else max(target_accuracy, value)
+    if target_accuracy is None:
+        return None
+    for metric in history:
+        value = _extract_history_success_value(family, metric)
+        if value is not None and value >= target_accuracy:
+            return metric
+    return None
+
+
 def _resolve_same_acc_manifest_path(top_manifest: dict[str, Any]) -> Path | None:
     raw_path = str(top_manifest.get("same_acc_manifest", "")).strip()
     candidates: list[Path] = []
@@ -448,14 +502,57 @@ def _load_same_acc_vlaselect_times_seconds(top_manifest: dict[str, Any]) -> tupl
         run_dir_ref = str(vlaselect_method.get("run_dir", ""))
         if not run_dir_ref:
             continue
-        series = _collect_same_acc_series(family, _resolve_eval_path(run_dir_ref))
-        if not series:
+        reach_metric = _load_same_acc_reach_metric(family, _resolve_eval_path(run_dir_ref))
+        if not isinstance(reach_metric, dict):
             continue
-        target_accuracy = max(value for _, value in series)
-        reach_hours = _first_reach_hours(series, target_accuracy)
-        if reach_hours is not None:
-            times_by_family[family] = reach_hours * 3600.0
+        active_runtime_seconds = _metric_active_runtime_seconds(reach_metric)
+        if active_runtime_seconds is not None:
+            times_by_family[family] = active_runtime_seconds
     return times_by_family, _display_path(manifest_path)
+
+
+def _load_same_acc_vlaselect_module_breakdowns(top_manifest: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], str]:
+    manifest_path = _resolve_same_acc_manifest_path(top_manifest)
+    if manifest_path is None:
+        return {}, ""
+    payload = _read_json(manifest_path)
+    if not isinstance(payload, dict):
+        return {}, _display_path(manifest_path)
+    panels = payload.get("families", payload.get("panels", []))
+    module_rows: dict[str, dict[str, Any]] = {}
+    for panel in panels:
+        if not isinstance(panel, dict):
+            continue
+        family = str(panel.get("family", ""))
+        if family not in FAMILY_ORDER:
+            continue
+        suite_manifest_ref = str(panel.get("suite_manifest", ""))
+        if not suite_manifest_ref:
+            continue
+        suite_manifest = _read_json(_resolve_eval_path(suite_manifest_ref))
+        if not isinstance(suite_manifest, dict):
+            continue
+        methods = [method for method in suite_manifest.get("methods", []) if isinstance(method, dict)]
+        vlaselect_method = _pick_same_acc_vlaselect_method(methods, family)
+        if vlaselect_method is None:
+            continue
+        run_dir_ref = str(vlaselect_method.get("run_dir", ""))
+        if not run_dir_ref:
+            continue
+        run_dir = _resolve_eval_path(run_dir_ref)
+        reach_metric = _load_same_acc_reach_metric(family, run_dir)
+        if not isinstance(reach_metric, dict):
+            continue
+        module_breakdown = _extract_module_breakdown(reach_metric)
+        active_runtime_seconds = _metric_active_runtime_seconds(reach_metric)
+        if active_runtime_seconds is not None:
+            module_breakdown["online_rl_completion_seconds"] = active_runtime_seconds
+        module_rows[family] = {
+            "module_breakdown": module_breakdown,
+            "active_runtime_seconds": float(active_runtime_seconds or 0.0),
+            "source": _display_path(run_dir / "metrics_history.json"),
+        }
+    return module_rows, _display_path(manifest_path)
 
 
 def _default_top_manifest() -> dict[str, Any]:
@@ -557,6 +654,7 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
     all_rows: list[dict[str, Any]] = []
     module_rows: list[dict[str, Any]] = []
     same_acc_times_seconds, same_acc_source = _load_same_acc_vlaselect_times_seconds(manifest)
+    same_acc_module_breakdowns, same_acc_module_source = _load_same_acc_vlaselect_module_breakdowns(manifest)
 
     for family, panel in _family_panels(manifest).items():
         suite_manifest = _load_suite_manifest(panel)
@@ -597,11 +695,17 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
                 module_breakdown = dict(breakdown.module_breakdown or {key: 0.0 for key, _, _ in MODULE_SPECS})
                 same_acc_runtime_seconds = _safe_float(same_acc_times_seconds.get(family))
                 runtime_source = breakdown.source
-                if same_acc_runtime_seconds > 0.0:
-                    non_online_total = sum(_safe_float(module_breakdown.get(key, 0.0)) for key in NON_ONLINE_MODULE_KEYS)
-                    module_breakdown["online_rl_completion_seconds"] = max(same_acc_runtime_seconds - non_online_total, 0.0)
+                same_acc_module_row = same_acc_module_breakdowns.get(family)
+                module_source = breakdown.source
+                if isinstance(same_acc_module_row, dict):
+                    candidate_breakdown = same_acc_module_row.get("module_breakdown")
+                    if _has_module_figure_data(candidate_breakdown):
+                        module_breakdown = dict(candidate_breakdown)
+                        module_source = str(same_acc_module_row.get("source") or module_source)
+                        runtime_source = str(same_acc_module_row.get("source") or same_acc_module_source or runtime_source)
+                elif same_acc_runtime_seconds > 0.0:
                     runtime_source = same_acc_source or runtime_source
-                total_seconds = sum(_safe_float(module_breakdown.get(key, 0.0)) for key, _, _ in MODULE_SPECS)
+                total_seconds = sum(_safe_float(module_breakdown.get(key, 0.0)) for key in MODULE_FIGURE_KEYS)
                 module_rows.append(
                     {
                         "family": family,
@@ -610,8 +714,8 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
                         "display_name": display_name,
                         **module_breakdown,
                         "total_seconds": total_seconds,
-                        "has_module_data": int(any(_safe_float(value) > 0.0 for value in module_breakdown.values())),
-                        "source": breakdown.source,
+                        "has_module_data": int(_has_module_figure_data(module_breakdown)),
+                        "source": module_source,
                         "runtime_source": runtime_source,
                         "same_acc_runtime_seconds": same_acc_runtime_seconds,
                     }
@@ -796,19 +900,6 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
     workloads = [f"Workload {idx + 1}:{WORKLOAD_NAMES[family]}" for idx, family in enumerate(FAMILY_ORDER)]
     y_positions = np.arange(len(workloads))
 
-    module_labels = (
-        "Optimal network searcher",
-        "Selective model enhancer",
-        "Selective knowledge accumulator",
-    )
-    module_colors = ("#3c3c3c", "#8f8f8f", "#d6d6d6")
-    module_hatches = ("", "", "/")
-    module_keys = (
-        "workload_initialization_seconds",
-        "optimal_network_search_and_selective_model_enhancement_seconds",
-        "selective_knowledge_accumulation_seconds",
-    )
-
     plt.rcParams.update(
         {
             "font.family": "sans-serif",
@@ -822,11 +913,10 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
     )
 
     values = np.array(
-        [[_safe_float(grouped.get(family, {}).get(key, 0.0)) for key in module_keys] for family in FAMILY_ORDER],
-        dtype=float,
-    )
-    training_times = np.array(
-        [_safe_float(grouped.get(family, {}).get("online_rl_completion_seconds", 0.0)) for family in FAMILY_ORDER],
+        [
+            [_safe_float(grouped.get(family, {}).get(key, 0.0)) for key, _, _, _ in MODULE_FIGURE_SPECS]
+            for family in FAMILY_ORDER
+        ],
         dtype=float,
     )
 
@@ -834,7 +924,7 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
     fig, ax = plt.subplots(figsize=(8.4, fig_height), constrained_layout=False)
 
     left = np.zeros(len(FAMILY_ORDER), dtype=float)
-    for module_index, (label, color, hatch) in enumerate(zip(module_labels, module_colors, module_hatches)):
+    for module_index, (_, label, color, hatch) in enumerate(MODULE_FIGURE_SPECS):
         ax.barh(
             y_positions,
             values[:, module_index],
@@ -869,25 +959,12 @@ def plot_modules(rows: list[dict[str, Any]]) -> None:
                 ax.text(0.02, idx, NO_DATA_TEXT, ha='left', va='center', fontsize=9)
     else:
         totals = np.sum(values, axis=1)
-        max_total = float(np.max(totals))
-        max_training = float(np.max(training_times)) if len(training_times) else 0.0
-        right_padding = max(0.15 * max_total, 0.06 * max_training, 6.0)
-        ax.set_xlim(0.0, max_total + right_padding)
-        text_offset = max(0.02 * max_total, 1.0)
+        upper = _dynamic_time_axis_upper(totals, margin_ratio=0.12, default_upper=1.0)
+        ax.set_xlim(0.0, upper)
         for idx, family in enumerate(FAMILY_ORDER):
             row = grouped.get(family)
             if not row or int(row.get("has_module_data", 0)) != 1:
-                continue
-            total = float(totals[idx])
-            training_time = float(training_times[idx])
-            ax.text(
-                total + text_offset,
-                idx,
-                f"training time: {training_time:.1f}s",
-                ha='left',
-                va='center',
-                fontsize=12,
-            )
+                ax.text(0.02 * upper, idx, NO_DATA_TEXT, ha='left', va='center', fontsize=9)
 
     fig.tight_layout()
     fig.savefig(FIG_MODULES, dpi=300, bbox_inches='tight')

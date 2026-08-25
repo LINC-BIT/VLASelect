@@ -13,7 +13,12 @@ import time
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import write_module_memory_exclusion_metadata
-from train.common.time_breakdown import write_time_breakdown
+from train.common.time_breakdown import (
+    empty_module_breakdown,
+    snapshot_time_breakdown_to_metric,
+    update_combined_search_enhancement_seconds,
+    write_time_breakdown,
+)
 from dataclasses import dataclass
 from typing import List, Optional
 import wandb
@@ -1266,6 +1271,7 @@ def set_trainable_small_model_sparsity(model: nn.Module, k: float) -> None:
 
 
 def build_initial_trainable_small_model(args, large_agent, eval_envs, env_kwargs, device):
+    search_start_time = time.perf_counter()
     sample_for_gen_small_model = collect_sample_for_small_model_generation(
         args=args,
         large_agent=large_agent,
@@ -1274,11 +1280,14 @@ def build_initial_trainable_small_model(args, large_agent, eval_envs, env_kwargs
         env_kwargs=env_kwargs,
         device=device,
     )
+    search_seconds = time.perf_counter() - search_start_time
+
+    enhancer_start_time = time.perf_counter()
 
     if args.small_model_training_variant == 'pruned':
         from ours.pretrain_fbs_model.main import generate_small_cnn_with_verify
 
-        return generate_small_cnn_with_verify(
+        small_agent, pruning_info = generate_small_cnn_with_verify(
             large_agent,
             args.max_sparsity,
             sample_for_gen_small_model,
@@ -1286,11 +1295,14 @@ def build_initial_trainable_small_model(args, large_agent, eval_envs, env_kwargs
             return_pruning_info=True,
             ab_strategy=args.small_model_ab_strategy,
         )
+        enhancer_seconds = time.perf_counter() - enhancer_start_time
+        return small_agent, pruning_info, search_seconds, enhancer_seconds
 
     if args.small_model_training_variant == 'frozen':
         small_agent = deepcopy(large_agent)
         set_trainable_small_model_sparsity(small_agent, args.max_sparsity)
-        return small_agent, None
+        enhancer_seconds = time.perf_counter() - enhancer_start_time
+        return small_agent, None, search_seconds, enhancer_seconds
 
     raise NotImplementedError(
         f"Unknown small_model_training_variant: {args.small_model_training_variant}"
@@ -1441,6 +1453,7 @@ def regenerate_small_model_in_place(
     )
     from ours.pretrain_fbs_model.main import generate_small_cnn_with_verify
 
+    search_start_time = time.perf_counter()
     sample_for_gen_small_model = collect_sample_for_small_model_generation(
         args=args,
         large_agent=large_agent,
@@ -1449,6 +1462,9 @@ def regenerate_small_model_in_place(
         env_kwargs=env_kwargs,
         device=device,
     )
+    search_seconds = time.perf_counter() - search_start_time
+
+    enhancer_start_time = time.perf_counter()
     regenerated_small_agent, new_pruning_info = generate_small_cnn_with_verify(
         large_agent,
         args.max_sparsity,
@@ -1486,7 +1502,8 @@ def regenerate_small_model_in_place(
             new_pruning_info=new_pruning_info,
             previous_pruning_info=current_pruning_info,
         )
-    return new_pruning_info
+    enhancer_seconds = time.perf_counter() - enhancer_start_time
+    return new_pruning_info, search_seconds, enhancer_seconds
 
 import copy
 
@@ -1786,12 +1803,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     continual_env_schedule = build_continual_env_schedule(args)
     current_env_index = 0
     current_env_id = args.env_id if continual_env_schedule is None else continual_env_schedule.env_ids[0]
-    module_breakdown = {
-        "workload_initialization_seconds": 0.0,
-        "optimal_network_search_and_selective_model_enhancement_seconds": 0.0,
-        "selective_knowledge_accumulation_seconds": 0.0,
-        "online_rl_completion_seconds": 0.0,
-    }
+    module_breakdown = empty_module_breakdown()
     workload_init_start_time = time.perf_counter()
     envs, eval_envs = make_envs_for_env_id(
         args,
@@ -1944,17 +1956,16 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         reason="VLASelect large model can be offloaded during small-model online training; exclude its resident parameter/buffer memory from memory-footprint plots.",
     )
     print(f"[setup] memory exclusion metadata saved to {memory_exclusion_path}")
-    model_search_start_time = time.perf_counter()
-    agent, current_small_model_pruning_info = build_initial_trainable_small_model(
+    agent, current_small_model_pruning_info, search_seconds, enhancer_seconds = build_initial_trainable_small_model(
         args=args,
         large_agent=large_agent,
         eval_envs=eval_envs,
         env_kwargs=env_kwargs,
         device=device,
     )
-    module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
-        time.perf_counter() - model_search_start_time
-    )
+    module_breakdown["optimal_network_searcher_seconds"] += search_seconds
+    module_breakdown["selective_model_enhancer_seconds"] += enhancer_seconds
+    update_combined_search_enhancement_seconds(module_breakdown)
     ricl_demo_bank = None
     if args.enable_ricl_injection:
         ricl_demo_bank = RiclDemoBank(
@@ -2125,21 +2136,31 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             current_elapsed_minutes = elapsed_minutes
             if current_elapsed_minutes is None:
                 current_elapsed_minutes = runtime_tracker.current_minutes()
-            json_metrics.append(
-                build_metric_entry(
-                    update=iteration,
-                    global_step=global_step,
-                    current_env_id=current_env_id,
-                    current_env_index=current_env_index,
-                    elapsed_minutes=current_elapsed_minutes,
-                    eval_metrics=last_eval_metrics,
-                    extras={
-                        "best_success_once": best_success_once,
-                        "best_success_at_end": best_success_end,
-                        "eval_time": cumulative_times.get("eval_time", 0.0),
-                    },
-                )
+            metric_entry = build_metric_entry(
+                update=iteration,
+                global_step=global_step,
+                current_env_id=current_env_id,
+                current_env_index=current_env_index,
+                elapsed_minutes=current_elapsed_minutes,
+                eval_metrics=last_eval_metrics,
+                extras={
+                    "best_success_once": best_success_once,
+                    "best_success_at_end": best_success_end,
+                    "eval_time": cumulative_times.get("eval_time", 0.0),
+                },
             )
+            module_breakdown["online_rl_completion_seconds"] = float(
+                cumulative_times.get("rollout_time", 0.0) + cumulative_times.get("update_time", 0.0)
+            )
+            snapshot_time_breakdown_to_metric(
+                metric_entry,
+                rollout_seconds=0.0,
+                training_seconds=0.0,
+                cumulative_rollout_seconds=float(cumulative_times.get("rollout_time", 0.0)),
+                cumulative_training_seconds=float(cumulative_times.get("update_time", 0.0)),
+                module_breakdown=module_breakdown,
+            )
+            json_metrics.append(metric_entry)
 
             if avg_success_once >= best_success_once:
                 best_success_once = avg_success_once
@@ -2228,8 +2249,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             iteration_at_last_regeneration=iteration_at_last_small_model_regeneration,
         ):
             print(f'Client {agent_name} regenerate small model before rollout')
-            regeneration_start_time = time.perf_counter()
-            current_small_model_pruning_info = regenerate_small_model_in_place(
+            current_small_model_pruning_info, search_seconds, enhancer_seconds = regenerate_small_model_in_place(
                 large_agent=large_agent,
                 small_agent=agent,
                 current_pruning_info=current_small_model_pruning_info,
@@ -2239,9 +2259,9 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 env_kwargs=env_kwargs,
                 device=device,
             )
-            module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
-                time.perf_counter() - regeneration_start_time
-            )
+            module_breakdown["optimal_network_searcher_seconds"] += search_seconds
+            module_breakdown["selective_model_enhancer_seconds"] += enhancer_seconds
+            update_combined_search_enhancement_seconds(module_breakdown)
             success_end_at_last_small_model_regeneration = current_success_end
             iteration_at_last_small_model_regeneration = iteration
 

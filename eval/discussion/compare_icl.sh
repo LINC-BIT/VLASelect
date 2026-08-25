@@ -7,6 +7,7 @@ EVAL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/mwe_time.sh"
+source "${EVAL_ROOT}/common/resource_summary.sh"
 
 CUDA_DEVICES=${CUDA_DEVICES:-0}
 MODEL_SELECTION="${MODEL_SELECTION:-}"
@@ -20,6 +21,7 @@ STAMP=${ICL_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}
 ICL_ENV_CHANGE_TIME_POINTS="${ICL_ENV_CHANGE_TIME_POINTS:-[1000000]}"
 
 : "${MWE_TOTAL_RUNTIME_LIMIT_SECONDS:=240}"
+vlaselect_resource_summary_start "compare_icl.sh"
 vlaselect_install_cleanup_trap
 
 MWE_PER_METHOD_RUNTIME_SECONDS=""

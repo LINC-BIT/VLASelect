@@ -16,6 +16,7 @@ PID_DIR="${SUITE_ROOT}/pids"
 
 INHERIT_SUITE_FROM="${INHERIT_SUITE_FROM:-}"
 RERUN_METHODS="${RERUN_METHODS:-}"
+METHODS="${METHODS:-${RUN_METHODS:-}}"
 SMOKE="${SMOKE:-0}"
 
 MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-30}"
@@ -213,6 +214,30 @@ resolve_suite_root() {
     )
 }
 
+select_methods() {
+    local raw_selection="$1"
+    if [[ -z "$raw_selection" ]]; then
+        printf "%s\n" "${METHOD_ORDER[@]}"
+        return
+    fi
+    printf "%s" "$raw_selection" | tr ',' '\n' | awk 'NF {gsub(/^[ \t]+|[ \t]+$/, ""); print}'
+}
+
+declare -a SELECTED_METHODS=()
+while IFS= read -r method; do
+    [[ -z "$method" ]] && continue
+    if [[ -z "${SCRIPT_BY_METHOD[$method]+x}" ]]; then
+        echo "Unknown method: $method" >&2
+        exit 1
+    fi
+    SELECTED_METHODS+=("$method")
+done < <(select_methods "$METHODS")
+
+if [[ "${#SELECTED_METHODS[@]}" -eq 0 ]]; then
+    echo "No methods selected." >&2
+    exit 1
+fi
+
 declare -A SHOULD_RUN=()
 if [[ -n "$INHERIT_SUITE_FROM" ]]; then
     for method in "${METHOD_ORDER[@]}"; do
@@ -220,6 +245,9 @@ if [[ -n "$INHERIT_SUITE_FROM" ]]; then
     done
 else
     for method in "${METHOD_ORDER[@]}"; do
+        SHOULD_RUN["$method"]=0
+    done
+    for method in "${SELECTED_METHODS[@]}"; do
         SHOULD_RUN["$method"]=1
     done
 fi
@@ -230,19 +258,20 @@ if [[ -z "$INHERIT_SUITE_FROM" && -n "$RERUN_METHODS" ]]; then
 fi
 
 if [[ -n "$RERUN_METHODS" ]]; then
-    method_selection="$(printf '%s' "$RERUN_METHODS" | tr ',' ' ')"
-    read -r -a requested_methods <<< "$method_selection"
-    if [[ "${#requested_methods[@]}" -eq 0 ]]; then
-        echo "RERUN_METHODS is set but empty after parsing: $RERUN_METHODS" >&2
-        exit 1
-    fi
-    for method in "${requested_methods[@]}"; do
+    rerun_method_count=0
+    while IFS= read -r method; do
+        [[ -z "$method" ]] && continue
+        rerun_method_count=$((rerun_method_count + 1))
         if [[ -z "${SCRIPT_BY_METHOD[$method]+x}" ]]; then
             echo "Unknown method in RERUN_METHODS: $method" >&2
             exit 1
         fi
         SHOULD_RUN["$method"]=1
-    done
+    done < <(select_methods "$RERUN_METHODS")
+    if [[ "$rerun_method_count" -eq 0 ]]; then
+        echo "RERUN_METHODS is set but empty after parsing: $RERUN_METHODS" >&2
+        exit 1
+    fi
 fi
 
 INHERITED_SUITE_ROOT=""

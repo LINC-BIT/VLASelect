@@ -7,6 +7,7 @@ REPO_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 cd "$REPO_ROOT/eval"
 source "${REPO_ROOT}/eval/common/interrupt_cleanup.sh"
 source "${REPO_ROOT}/eval/common/sanity_check.sh"
+source "${REPO_ROOT}/eval/common/resource_summary.sh"
 
 FAMILY=${MODEL_SIZE_LIMIT_FAMILY:-tinyvla}
 MODEL_DIR=${MODEL_SIZE_LIMIT_MODEL_DIR:-}
@@ -35,6 +36,7 @@ if [[ "$MWE" == "1" ]]; then
     BUDGET_GB=${MODEL_SIZE_LIMIT_BUDGET_GB:-8,16}
     TRAIN_BATCH_SIZE=${MODEL_SIZE_LIMIT_TRAIN_BATCH_SIZE:-1}
 fi
+vlaselect_resource_summary_start "sweep_model_size.sh"
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "sweep_model_size.sh" "${REPO_ROOT}/eval" "$MWE" "16" "8"
 

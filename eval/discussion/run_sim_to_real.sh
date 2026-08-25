@@ -7,6 +7,7 @@ SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 EVAL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SIM_ROOT="${EVAL_ROOT}/sim_to_real"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
+source "${EVAL_ROOT}/common/resource_summary.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 RESULT_ROOT="${SIM_ROOT}/sim_to_real_results/${SUITE_STAMP}"
@@ -26,6 +27,7 @@ if [[ "$MWE" == "1" && "${MWE_TIMEOUT_APPLIED:-0}" != "1" ]]; then
     fi
     echo "[warn] timeout command not found; MWE runtime is not hard-capped" >&2
 fi
+vlaselect_resource_summary_start "run_sim_to_real.sh"
 vlaselect_install_cleanup_trap
 
 case "${SIM_TO_REAL_PLATFORM}" in

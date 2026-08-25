@@ -1,5 +1,5 @@
-family,panel_label,workload_name,display_name,workload_initialization_seconds,optimal_network_search_and_selective_model_enhancement_seconds,selective_knowledge_accumulation_seconds,online_rl_completion_seconds,total_seconds,has_module_data,source,runtime_source,same_acc_runtime_seconds
-tinyvla,c,Mobile manipulator,VLASelect,5.774388237972744,96.62341429496882,0.0,0.0,102.39780253294157,1,ckpt/tinyvla/cl_suite/20260825-072408/ours/time_breakdown.json,overhead/overhead_same_acc_table/20260825-072408/manifest.json,36.123728537000716
-octo,a,Single-arm robot,VLASelect,0.0,0.0,0.0,0.0,0.0,0,,,0.0
-vla_adapter_new,b,Dexterous hand,VLASelect,0.0,0.0,0.0,0.0,0.0,0,,,0.0
-edgevla,d,Humanoid robot,VLASelect,0.0,0.0,0.0,0.0,0.0,0,,,0.0
+family,panel_label,workload_name,display_name,workload_initialization_seconds,optimal_network_searcher_seconds,selective_model_enhancer_seconds,optimal_network_search_and_selective_model_enhancement_seconds,selective_knowledge_accumulation_seconds,online_rl_completion_seconds,total_seconds,has_module_data,source,runtime_source,same_acc_runtime_seconds
+tinyvla,c,Mobile manipulator,VLASelect,5.774388237972744,0.0,0.0,96.62341429496882,0.0,36.123728537000716,0.0,0,ckpt/tinyvla/cl_suite/20260825-072408/ours/time_breakdown.json,ckpt/tinyvla/cl_suite/20260825-072408/ours/time_breakdown.json,36.123728537000716
+octo,a,Single-arm robot,VLASelect,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,,,0.0
+vla_adapter_new,b,Dexterous hand,VLASelect,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,,,0.0
+edgevla,d,Humanoid robot,VLASelect,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,,,0.0

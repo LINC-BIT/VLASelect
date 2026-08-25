@@ -244,6 +244,8 @@ On machines with fewer CPU cores, you can reduce the default host-side thread us
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash run_acc_task_env_change.sh`.
 
+4. **Select methods**: For example, to run only `Self-Improv`, `VLA-RFT`, `WorldEnv`, and `VLASelect`, run `METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change.sh`.
+
 The result file will be stored as `acc_comparison/FIG_ACC_TASK_ENV.pdf`, which corresponds to Fig. 8 in the paper.
 
 **Accuracy Under Available Resource Changes**
@@ -266,6 +268,8 @@ python3 plot_acc_res_change.py
 ```
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash run_acc_res_change.sh`.
+
+4. **Select methods**: For example, to run only `Self-Improv`, `VLA-RFT`, `WorldEnv`, and `VLASelect`, run `METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_res_change.sh`.
 
 The result file will be stored as `acc_comparison/FIG_ACC_RESOURCE.pdf`, which corresponds to Fig. 8 in the paper.
 
@@ -292,6 +296,8 @@ python3 plot_overhead.py
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash overhead_same_acc.sh`.
 
+4. **Select methods**: For example, to run only `Self-Improv`, `VLA-RFT`, `WorldEnv`, and `VLASelect`, run `METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_same_acc.sh`.
+
 The result files will be stored as `overhead/FIG_MEMORY_FOOTPOINT.pdf`, `overhead/overhead_breakdown_table/TAB_OVERHEAD.csv`, and `overhead/overhead_breakdown_table/TAB_ENERGY.csv`, which correspond to Fig. 9, Table 2, and Table 3 in the paper, respectively.
 
 
@@ -315,6 +321,8 @@ python3 plot_breakdown_modules.py
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash overhead_breakdown_modules.sh`.
 
+4. **Select methods**: For example, to run only `Self-Improv`, `VLA-RFT`, `WorldEnv`, and `VLASelect`, run `METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_modules.sh`.
+
 The result file will be stored as `overhead/FIG_BREAKDOWN_MODULES.pdf`, which corresponds to Fig. 10 in the paper.
 
 **Time Breakdown of Sampling and Training for All Methods**
@@ -336,6 +344,8 @@ python3 plot_breakdown_all_methods.py
 ```
 
 3. **Switch models**: For example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash overhead_breakdown_all_methods.sh`.
+
+4. **Select methods**: For example, to run only `Self-Improv`, `VLA-RFT`, `WorldEnv`, and `VLASelect`, run `METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods.sh`.
 
 The result file will be stored as `overhead/FIG_BREAKDOWN_ALL_METHODS.pdf`, which corresponds to Fig. 11 in the paper.
 

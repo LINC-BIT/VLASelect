@@ -9,6 +9,7 @@ EVAL_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
 source "${EVAL_ROOT}/common/mwe_time.sh"
+source "${EVAL_ROOT}/common/resource_summary.sh"
 
 STAMP=${MULTI_AGENT_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}
 CUDA_DEVICES=${CUDA_DEVICES:-0}
@@ -78,6 +79,7 @@ if [[ "$MWE" == "1" ]]; then
     MAX_TIME=${MULTI_AGENT_MAX_TIME_MINUTES:-4.5}
 fi
 
+vlaselect_resource_summary_start "run_multi_agent.sh"
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "run_multi_agent.sh" "$EVAL_ROOT" "$MWE" "50" "16"
 

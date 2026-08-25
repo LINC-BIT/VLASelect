@@ -9,6 +9,7 @@ cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
 source "${EVAL_ROOT}/common/env_order.sh"
+source "${EVAL_ROOT}/common/resource_summary.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-acc_comparison/acc_comparison_task_env_table}"
@@ -27,6 +28,7 @@ EDGEVLA_SMOKE="${EDGEVLA_SMOKE:-0}"
 ENABLE_SELF_CURVE_WATCHER="${ENABLE_SELF_CURVE_WATCHER:-0}"
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
+METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
 
 : "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS:=300}"
@@ -37,6 +39,7 @@ if [[ "$MWE" == "1" ]]; then
     PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-5}"
     SUITE_WAIT_POLL_SECONDS="${SUITE_WAIT_POLL_SECONDS:-5}"
 fi
+vlaselect_resource_summary_start "run_acc_task_env_change.sh"
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "run_acc_task_env_change.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 
@@ -118,6 +121,32 @@ select_families() {
         return
     fi
     printf "%s" "$raw_selection" | tr ',' '\n' | awk 'NF {gsub(/^[ \t]+|[ \t]+$/, ""); print}'
+}
+
+resolve_methods_for_family() {
+    local family="$1"
+    local raw_selection="$2"
+    if [[ -z "$raw_selection" ]]; then
+        return 0
+    fi
+    python - <<'PY' "$family" "$raw_selection"
+import sys
+
+family = sys.argv[1]
+raw = sys.argv[2]
+items = [item.strip() for item in raw.split(',') if item.strip()]
+resolved = []
+for item in items:
+    if item == 'vlaselect':
+        resolved.append('ours_single_agent' if family == 'octo' else 'ours')
+    elif item == 'ours' and family == 'octo':
+        resolved.append('ours_single_agent')
+    elif item == 'ours_single_agent' and family != 'octo':
+        resolved.append('ours')
+    else:
+        resolved.append(item)
+print(','.join(resolved))
+PY
 }
 
 mkdir -p "$RUN_ROOT" "$LAUNCH_LOG_DIR"
@@ -392,6 +421,9 @@ launch_family_suite() {
     local launch_log="${LAUNCH_LOG_DIR}/${family}.log"
     local envs_id="${ENVS_ID_BY_FAMILY[$family]}"
     local env_id="${ENV_ID_BY_FAMILY[$family]}"
+    local family_methods=""
+
+    family_methods="$(resolve_methods_for_family "$family" "$METHODS")"
 
     vlaselect_register_cleanup_manifest "$suite_manifest"
 
@@ -407,6 +439,7 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 ENABLE_SELF_CURVE_WATCHER="$ENABLE_SELF_CURVE_WATCHER" \
+                METHODS="$family_methods" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENV_ID_OVERRIDE="$env_id" \
@@ -421,6 +454,7 @@ launch_family_suite() {
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
+                METHODS="$family_methods" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENV_ID_OVERRIDE="$env_id" \
@@ -436,6 +470,7 @@ launch_family_suite() {
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
+                METHODS="$family_methods" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENV_ID_OVERRIDE="$env_id" \
@@ -452,6 +487,7 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 QUEUED_PER_GPU="$EDGEVLA_QUEUED_PER_GPU" \
+                METHODS="$family_methods" \
                 SMOKE="$EDGEVLA_SMOKE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" \
                 ENV_ID_OVERRIDE="$env_id" \

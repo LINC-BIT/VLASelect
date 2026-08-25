@@ -7,6 +7,7 @@ EVAL_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
+source "${EVAL_ROOT}/common/resource_summary.sh"
 
 STAMP=${VLA_APPLICABILITY_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}
 SHORT_TRAIN=${VLA_APPLICABILITY_SHORT_TRAIN:-${VLA_APPLICABILITY_SMOKE:-1}}
@@ -25,6 +26,7 @@ if [[ "$MWE" == "1" ]]; then
     SHORT_TRAIN=1
     WAIT_FOR_COMPLETION=1
 fi
+vlaselect_resource_summary_start "run_vla_models.sh"
 vlaselect_install_cleanup_trap
 vlaselect_run_sanity_check "run_vla_models.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 vlaselect_register_cleanup_manifest "$MANIFEST_PATH"

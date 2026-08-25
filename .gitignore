@@ -15,6 +15,7 @@ docker/
 pip-wheel-metadata/
 eval/datasets/
 eval/overhead/mock_preview/
+api/vla_model_interface_examples/
 
 # Logs and local run outputs
 *.log

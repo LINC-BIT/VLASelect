@@ -30,6 +30,7 @@ DOWNLOAD_MANISKILL_DATA=${DOWNLOAD_MANISKILL_DATA:-1}
 CONTAINER_HOME=${CONTAINER_HOME:-}
 CONTAINER_MS_ASSET_DIR=${CONTAINER_MS_ASSET_DIR:-}
 CONTAINER_MANISKILL_DATA_DIR=${CONTAINER_MANISKILL_DATA_DIR:-}
+CONTAINER_PARTNET_DATA_DIR=${CONTAINER_PARTNET_DATA_DIR:-}
 HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-120}
 
 log() {
@@ -90,6 +91,11 @@ resolve_container_paths() {
 
     if [[ -z "$CONTAINER_MANISKILL_DATA_DIR" ]]; then
         CONTAINER_MANISKILL_DATA_DIR="$CONTAINER_MS_ASSET_DIR/data"
+    fi
+
+    if [[ -z "$CONTAINER_PARTNET_DATA_DIR" ]]; then
+        # Keep only PartNet-Mobility in the repository's shared dataset path.
+        CONTAINER_PARTNET_DATA_DIR="$CONTAINER_REPO_DIR/eval/datasets/data"
     fi
 }
 
@@ -360,7 +366,8 @@ PY
 }
 
 ensure_container_maniskill_dirs() {
-    docker exec "$CONTAINER_NAME" bash -lc "mkdir -p '$CONTAINER_MANISKILL_DATA_DIR'"
+    docker exec "$CONTAINER_NAME" bash -lc \
+        "mkdir -p '$CONTAINER_MANISKILL_DATA_DIR' '$CONTAINER_PARTNET_DATA_DIR'"
 }
 
 download_hf_maniskill_data() {
@@ -391,7 +398,8 @@ download_hf_maniskill_data() {
 
     if [[ "$status" -eq 0 ]]; then
         log "downloading ManiSkill assets from Hugging Face repo: $HF_MANISKILL_DATA_REPO"
-        log "target directory: $CONTAINER_MANISKILL_DATA_DIR (inside container)"
+        log "target directory for regular ManiSkill data: $CONTAINER_MANISKILL_DATA_DIR (inside container)"
+        log "target directory for PartNet-Mobility: $CONTAINER_PARTNET_DATA_DIR (inside container)"
         if [[ -n "$HF_MANISKILL_DATA_LIST" ]]; then
             log "ManiSkill data list: $HF_MANISKILL_DATA_LIST"
         elif [[ -f "$ROOT_DIR/hf_maniskill_data_paths.txt" ]]; then
@@ -400,7 +408,7 @@ download_hf_maniskill_data() {
             log "ManiSkill data list: built into dep.sh"
         fi
 
-        docker exec             -e HF_MANISKILL_DATA_REPO="$HF_MANISKILL_DATA_REPO"             -e HF_MANISKILL_DATA_REPO_TYPE="$HF_MANISKILL_DATA_REPO_TYPE"             -e HF_MANISKILL_DATA_REVISION="$HF_MANISKILL_DATA_REVISION"             -e HF_MANISKILL_DATA_LOCAL_DIR="$CONTAINER_MANISKILL_DATA_DIR"             -e HF_MANISKILL_DATA_PATTERNS_JSON="$patterns_json"             -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT"             -e HF_TOKEN             -e HTTP_PROXY             -e HTTPS_PROXY             -e ALL_PROXY             -e NO_PROXY             "$CONTAINER_NAME"             bash -lc "python - <<'PY_HF_DATA'
+        docker exec             -e HF_MANISKILL_DATA_REPO="$HF_MANISKILL_DATA_REPO"             -e HF_MANISKILL_DATA_REPO_TYPE="$HF_MANISKILL_DATA_REPO_TYPE"             -e HF_MANISKILL_DATA_REVISION="$HF_MANISKILL_DATA_REVISION"             -e HF_MANISKILL_DATA_LOCAL_DIR="$CONTAINER_MANISKILL_DATA_DIR"             -e HF_MANISKILL_PARTNET_LOCAL_DIR="$CONTAINER_PARTNET_DATA_DIR"             -e HF_MANISKILL_DATA_PATTERNS_JSON="$patterns_json"             -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT"             -e HF_TOKEN             -e HTTP_PROXY             -e HTTPS_PROXY             -e ALL_PROXY             -e NO_PROXY             "$CONTAINER_NAME"             bash -lc "python - <<'PY_HF_DATA'
 import json
 import os
 from pathlib import Path
@@ -410,12 +418,13 @@ from huggingface_hub import snapshot_download
 repo_id = os.environ['HF_MANISKILL_DATA_REPO']
 repo_type = os.environ['HF_MANISKILL_DATA_REPO_TYPE']
 revision = os.environ['HF_MANISKILL_DATA_REVISION']
-local_dir = Path(os.environ['HF_MANISKILL_DATA_LOCAL_DIR'])
+regular_local_dir = Path(os.environ['HF_MANISKILL_DATA_LOCAL_DIR'])
+partnet_local_dir = Path(os.environ['HF_MANISKILL_PARTNET_LOCAL_DIR'])
 patterns = json.loads(os.environ['HF_MANISKILL_DATA_PATTERNS_JSON'])
 token = os.environ.get('HF_TOKEN') or None
 
 
-def snapshot_with_patterns(allow_patterns):
+def snapshot_with_patterns(allow_patterns, local_dir):
     if not allow_patterns:
         return
     snapshot_download(
@@ -428,11 +437,17 @@ def snapshot_with_patterns(allow_patterns):
     )
 
 
-archive_patterns = [pattern for pattern in patterns if pattern.lower().endswith('.zip')]
-regular_patterns = [pattern for pattern in patterns if not pattern.lower().endswith('.zip')]
+partnet_patterns = [pattern for pattern in patterns if pattern == 'partnet_mobility' or pattern.startswith('partnet_mobility/')]
+regular_patterns = [pattern for pattern in patterns if pattern not in partnet_patterns]
+partnet_archive_patterns = [pattern for pattern in partnet_patterns if pattern.lower().endswith('.zip')]
+partnet_regular_patterns = [pattern for pattern in partnet_patterns if not pattern.lower().endswith('.zip')]
+archive_patterns = [pattern for pattern in regular_patterns if pattern.lower().endswith('.zip')]
+regular_patterns = [pattern for pattern in regular_patterns if not pattern.lower().endswith('.zip')]
 
-snapshot_with_patterns(regular_patterns)
-snapshot_with_patterns(archive_patterns)
+snapshot_with_patterns(regular_patterns, regular_local_dir)
+snapshot_with_patterns(archive_patterns, regular_local_dir)
+snapshot_with_patterns(partnet_regular_patterns, partnet_local_dir)
+snapshot_with_patterns(partnet_archive_patterns, partnet_local_dir)
 
 
 def safe_extract_zip(zip_path: Path, target_dir: Path) -> None:
@@ -448,11 +463,14 @@ def safe_extract_zip(zip_path: Path, target_dir: Path) -> None:
         zf.extractall(target_dir)
 
 
-for archive_pattern in archive_patterns:
-    for archive_path in sorted(local_dir.glob(archive_pattern)):
+for archive_pattern, archive_dir in [
+    *[(pattern, regular_local_dir) for pattern in archive_patterns],
+    *[(pattern, partnet_local_dir) for pattern in partnet_archive_patterns],
+]:
+    for archive_path in sorted(archive_dir.glob(archive_pattern)):
         if not archive_path.is_file():
             continue
-        safe_extract_zip(archive_path, local_dir)
+        safe_extract_zip(archive_path, archive_dir)
         archive_path.unlink()
 PY_HF_DATA" || status=$?
     fi
@@ -575,6 +593,7 @@ print_summary() {
 [dep.sh] ipc mode       : $DOCKER_IPC
 [dep.sh] pid mode       : $DOCKER_PID
 [dep.sh] ManiSkill data : $CONTAINER_NAME:$CONTAINER_MANISKILL_DATA_DIR
+[dep.sh] PartNet data   : $CONTAINER_NAME:$CONTAINER_PARTNET_DATA_DIR
 [dep.sh] repo mount     : $HOST_REPO_DIR -> $CONTAINER_REPO_DIR
 [dep.sh] start script   : $START_SCRIPT_PATH
 

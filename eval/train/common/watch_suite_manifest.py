@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import time
@@ -76,6 +77,84 @@ def has_training_artifacts(run_dir: Path) -> bool:
     return run_dir.exists() and any((run_dir / name).exists() for name in TRAINING_ARTIFACT_DIRS)
 
 
+def finite_float(value: Any) -> float | None:
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    return result
+
+
+def find_run_artifact(run_dir: Path, relative_path: str) -> Path | None:
+    direct = run_dir / relative_path
+    if direct.exists():
+        return direct
+    search_roots = [run_dir, run_dir.parent]
+    for search_root in search_roots:
+        if not search_root.exists():
+            continue
+        matches = sorted(path for path in search_root.glob(f"**/{relative_path}") if path.is_file())
+        if matches:
+            return matches[0]
+    return None
+
+
+def load_actual_runtime_hours(run_dir: Path) -> tuple[float | None, str | None]:
+    history_path = find_run_artifact(run_dir, 'metrics_history.json')
+    if history_path is None:
+        return None, None
+    try:
+        payload = json.loads(history_path.read_text(encoding='utf-8'))
+    except Exception:
+        return None, str(history_path)
+    history = payload.get('history', []) if isinstance(payload, dict) else payload
+    if not isinstance(history, list) or not history:
+        return None, str(history_path)
+    for metric in reversed(history):
+        if not isinstance(metric, dict):
+            continue
+        elapsed_hours = finite_float(metric.get('elapsed_hours'))
+        if elapsed_hours is not None and elapsed_hours >= 0.0:
+            return elapsed_hours, str(history_path)
+    return None, str(history_path)
+
+
+def load_gpu_monitor_elapsed_hours(run_dir: Path) -> tuple[float | None, str | None]:
+    csv_path = find_run_artifact(run_dir, 'analysis/gpu_metrics.csv')
+    if csv_path is None:
+        return None, None
+    last_elapsed_seconds = None
+    try:
+        with csv_path.open('r', encoding='utf-8', newline='') as handle:
+            for row in csv.DictReader(handle):
+                value = finite_float(row.get('elapsed_seconds'))
+                if value is not None:
+                    last_elapsed_seconds = value
+    except Exception:
+        return None, str(csv_path)
+    if last_elapsed_seconds is None:
+        return None, str(csv_path)
+    return last_elapsed_seconds / 3600.0, str(csv_path)
+
+
+def refresh_runtime_metadata(method: dict[str, Any]) -> None:
+    run_dir = Path(method.get('run_dir') or '')
+    if not run_dir.exists():
+        return
+    actual_runtime_hours, history_path = load_actual_runtime_hours(run_dir)
+    if history_path is not None:
+        method['metrics_history_path'] = history_path
+    if actual_runtime_hours is not None:
+        method['actual_runtime_hours'] = actual_runtime_hours
+        method['actual_runtime_seconds'] = actual_runtime_hours * 3600.0
+    gpu_monitor_hours, gpu_metrics_path = load_gpu_monitor_elapsed_hours(run_dir)
+    if gpu_metrics_path is not None:
+        method['gpu_metrics_path'] = gpu_metrics_path
+    if gpu_monitor_hours is not None:
+        method['gpu_monitor_elapsed_hours'] = gpu_monitor_hours
+        method['gpu_monitor_elapsed_seconds'] = gpu_monitor_hours * 3600.0
+
+
 def infer_alive_status(method: dict[str, Any], previous_status: str) -> str:
     run_dir = Path(method.get("run_dir") or "")
     log_file = Path(method.get("log_file") or "")
@@ -107,6 +186,7 @@ def update_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
     failed_count = 0
 
     for method in methods:
+        refresh_runtime_metadata(method)
         status = method.get("status") or "launching"
         if status == "inherited":
             continue

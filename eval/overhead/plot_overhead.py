@@ -190,7 +190,7 @@ def find_gpu_metrics_csv(run_dir: Path) -> Path | None:
             candidates = sorted(search_root.glob('**/analysis/gpu_metrics.csv'))
             if candidates: return candidates[0]
     return None
-def load_gpu_samples(run_dir: Path):
+def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None):
     csv_path = find_gpu_metrics_csv(run_dir)
     if csv_path is None: return []
     rows = []
@@ -198,11 +198,28 @@ def load_gpu_samples(run_dir: Path):
         with csv_path.open('r', encoding='utf-8', newline='') as handle:
             reader = csv.DictReader(handle)
             for row in reader:
-                elapsed_seconds = finite_float(row.get('elapsed_seconds'))
-                if elapsed_seconds is None: continue
-                rows.append({'elapsed_seconds': elapsed_seconds,'elapsed_hours': elapsed_seconds / 3600.0,'gpu_memory_used_mb': finite_float(row.get('gpu_memory_used_mb')) or 0.0,'gpu_power_w': finite_float(row.get('gpu_power_w')) or 0.0})
+                elapsed_seconds_wall = finite_float(row.get('elapsed_seconds'))
+                if elapsed_seconds_wall is None: continue
+                elapsed_hours_wall = elapsed_seconds_wall / 3600.0
+                rows.append({
+                    'elapsed_seconds_wall': elapsed_seconds_wall,
+                    'elapsed_hours_wall': elapsed_hours_wall,
+                    'elapsed_seconds': elapsed_seconds_wall,
+                    'elapsed_hours': elapsed_hours_wall,
+                    'gpu_memory_used_mb': finite_float(row.get('gpu_memory_used_mb')) or 0.0,
+                    'gpu_power_w': finite_float(row.get('gpu_power_w')) or 0.0,
+                })
     except Exception: return []
-    return sorted(rows, key=lambda item: item['elapsed_seconds'])
+    rows = sorted(rows, key=lambda item: item['elapsed_seconds_wall'])
+    if rows and active_runtime_hours is not None and active_runtime_hours > 0.0:
+        wall_total_hours = rows[-1]['elapsed_hours_wall']
+        if wall_total_hours > 0.0:
+            scale = active_runtime_hours / wall_total_hours
+            for row in rows:
+                row['elapsed_hours'] = row['elapsed_hours_wall'] * scale
+                row['elapsed_seconds'] = row['elapsed_hours'] * 3600.0
+                row['active_time_scale'] = scale
+    return rows
 def first_reach_hours(series, target_accuracy):
     for x_value, y_value in series:
         if y_value >= target_accuracy: return x_value
@@ -337,6 +354,15 @@ def first_reach_hours_in_window(series: list[tuple[float, float]], target_accura
 def average_or_zero(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
+def resolve_method_active_runtime_hours(method: dict[str, Any], fallback_hours: float | None = None) -> float | None:
+    runtime_hours = finite_float(method.get('actual_runtime_hours'))
+    if runtime_hours is not None and runtime_hours > 0.0:
+        return runtime_hours
+    if fallback_hours is not None and fallback_hours > 0.0:
+        return fallback_hours
+    return None
+
+
 def collect_panel_table3_energy(panel):
     suite_manifest_raw = panel.get('suite_manifest')
     if not suite_manifest_raw:
@@ -370,7 +396,8 @@ def collect_panel_table3_energy(panel):
             continue
         run_dir = resolve_path(method['run_dir'])
         success_history = collect_segment_success_history(panel['family'], run_dir)
-        gpu_samples = load_gpu_samples(run_dir)
+        active_runtime_hours = resolve_method_active_runtime_hours(method, latest_segment_history_hours(success_history))
+        gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
         if not gpu_samples:
             continue
         fallback_cutoff_hours = observed_cutoff_hours(
@@ -579,7 +606,8 @@ def collect_panel_metrics(panel):
         accuracy_series = collect_series(panel['family'], run_dir)
         if not accuracy_series:
             panel_metrics[paper_name] = make_empty_metrics(); continue
-        gpu_samples = load_gpu_samples(run_dir)
+        active_runtime_hours = resolve_method_active_runtime_hours(method, latest_series_hours(accuracy_series))
+        gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
         reach_hours = first_reach_hours(accuracy_series, target_accuracy)
         reached_target = reach_hours is not None
         used_fallback_cutoff = False
@@ -681,7 +709,8 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                 if metrics['reach_hours'] <= 0.0:
                     continue
                 run_dir = resolve_path(method['run_dir'])
-                gpu_samples = load_gpu_samples(run_dir)
+                active_runtime_hours = resolve_method_active_runtime_hours(method, metrics['reach_hours'])
+                gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
                 points = [
                     (sample['elapsed_hours'], sample['gpu_memory_used_mb'] / 1024.0)
                     for sample in gpu_samples
@@ -697,9 +726,17 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                     ys = filter_short_reference_drops(xs, ys, reference_gb)
                     if panel['family'] == 'edgevla' and internal_name == 'flare':
                         ys = filter_short_reference_spikes(xs, ys, reference_gb)
+                if xs and ys:
+                    drop_x = metrics['reach_hours']
+                    stable_y = ys[-1]
+                    if xs[-1] < drop_x:
+                        xs.append(drop_x)
+                        ys.append(stable_y)
+                    xs.append(drop_x)
+                    ys.append(0.0)
                 style = METHOD_STYLES.get(internal_name, {})
                 ax.plot(xs, ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
-                max_x = max(max_x, xs[-1])
+                max_x = max(max_x, metrics['reach_hours'])
                 plotted += 1
                 summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
             if plotted == 0:

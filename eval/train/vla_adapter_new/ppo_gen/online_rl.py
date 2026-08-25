@@ -13,6 +13,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.time_breakdown import write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict
 from dataclasses import asdict, dataclass, replace
@@ -521,6 +522,8 @@ def train(args: Args) -> None:
     train_start_time = time.time()
     training_start_time = time.monotonic()
     runtime_tracker = ActiveRuntimeTracker.from_env(wall_clock_start_time=training_start_time)
+    cumulative_rollout_seconds = 0.0
+    cumulative_training_seconds = 0.0
     stop_reason = "completed"
     stopped_early_zero_success = False
 
@@ -711,6 +714,7 @@ def train(args: Args) -> None:
                     ).view(-1)
 
         if abort_during_rollout:
+            partial_rollout_seconds = time.perf_counter() - rollout_start_time
             metric = {
                 "update": update,
                 "global_step": global_step,
@@ -739,10 +743,12 @@ def train(args: Args) -> None:
             print(f"[train] aborting during rollout update={update}/{num_updates} reason={abort_reason}")
             stop_reason = abort_reason or stop_reason
             stopped_early_zero_success = abort_reason == "early_stop_zero_success"
+            cumulative_rollout_seconds += partial_rollout_seconds
             break
 
         rollout_time = time.perf_counter() - rollout_start_time
         runtime_tracker.add_active_seconds(rollout_time)
+        cumulative_rollout_seconds += rollout_time
 
         with torch.no_grad():
             next_value = reference.batched_get_value_no_grad(
@@ -822,6 +828,7 @@ def train(args: Args) -> None:
 
         update_time = time.perf_counter() - update_start_time
         runtime_tracker.add_active_seconds(update_time)
+        cumulative_training_seconds += update_time
 
         metric = {
             "update": update,
@@ -955,6 +962,12 @@ def train(args: Args) -> None:
             "eval_success_once_summary": summarize_success_series(metrics_history, "eval_success_once"),
             "eval_success_at_end_summary": summarize_success_series(metrics_history, "eval_success_at_end"),
         },
+    )
+
+    write_time_breakdown(
+        output_dir,
+        sampling_seconds=cumulative_rollout_seconds,
+        training_seconds=cumulative_training_seconds,
     )
 
     close_envs(envs, eval_envs, test_video_envs)

@@ -224,6 +224,72 @@ def _candidate_breakdown_paths(run_dir: Path) -> list[Path]:
     return [path for path in candidates if path.exists()]
 
 
+def _load_history_time_breakdown(run_dir: Path) -> MethodBreakdown | None:
+    history = _load_history(run_dir)
+    if not history:
+        return None
+    latest_metric = next((metric for metric in reversed(history) if isinstance(metric, dict)), None)
+    if latest_metric is None:
+        return None
+    sampling_seconds = _finite_float_or_none(latest_metric.get("cumulative_rollout_seconds"))
+    training_seconds = _finite_float_or_none(latest_metric.get("cumulative_training_seconds"))
+    if sampling_seconds is None:
+        sampling_seconds = sum(_safe_float(metric.get("rollout_seconds")) for metric in history if isinstance(metric, dict))
+    if training_seconds is None:
+        training_seconds = sum(_safe_float(metric.get("training_seconds")) for metric in history if isinstance(metric, dict))
+    has_data = (sampling_seconds or 0.0) > 0.0 or (training_seconds or 0.0) > 0.0
+    if not has_data:
+        return None
+    history_path = run_dir / "metrics_history.json"
+    return MethodBreakdown(
+        sampling_seconds=float(sampling_seconds or 0.0),
+        training_seconds=float(training_seconds or 0.0),
+        has_data=True,
+        source=_display_path(history_path),
+        module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS},
+    )
+
+
+def _load_tensorboard_time_breakdown(run_dir: Path) -> MethodBreakdown | None:
+    tb_dir = _find_tb_dir(run_dir)
+    if tb_dir is None:
+        return None
+    try:
+        accumulator = event_accumulator.EventAccumulator(
+            str(tb_dir),
+            size_guidance={event_accumulator.SCALARS: 0},
+        )
+        accumulator.Reload()
+    except Exception:
+        return None
+    tags = set(accumulator.Tags().get("scalars", []))
+
+    def scalar_total(tag: str) -> float:
+        if tag not in tags:
+            return 0.0
+        try:
+            return sum(float(event.value) for event in accumulator.Scalars(tag))
+        except Exception:
+            return 0.0
+
+    sampling_seconds = scalar_total("time/rollout_time")
+    training_seconds = (
+        scalar_total("time/update_time")
+        + scalar_total("time/rl_update_time")
+        + scalar_total("time/sl_time")
+    )
+    has_data = sampling_seconds > 0.0 or training_seconds > 0.0
+    if not has_data:
+        return None
+    return MethodBreakdown(
+        sampling_seconds=sampling_seconds,
+        training_seconds=training_seconds,
+        has_data=True,
+        source=_display_path(tb_dir),
+        module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS},
+    )
+
+
 def load_method_breakdown(run_dir: Path) -> MethodBreakdown:
     for candidate in _candidate_breakdown_paths(run_dir):
         payload = _read_json(candidate)
@@ -239,6 +305,12 @@ def load_method_breakdown(run_dir: Path) -> MethodBreakdown:
                 source=_display_path(candidate),
                 module_breakdown=module_breakdown,
             )
+    history_breakdown = _load_history_time_breakdown(run_dir)
+    if history_breakdown is not None:
+        return history_breakdown
+    tensorboard_breakdown = _load_tensorboard_time_breakdown(run_dir)
+    if tensorboard_breakdown is not None:
+        return tensorboard_breakdown
     return MethodBreakdown(module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS})
 
 

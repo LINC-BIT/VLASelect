@@ -13,6 +13,7 @@ import time
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import write_module_memory_exclusion_metadata
+from train.common.time_breakdown import write_time_breakdown
 from dataclasses import dataclass
 from typing import List, Optional
 import wandb
@@ -1785,6 +1786,13 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     continual_env_schedule = build_continual_env_schedule(args)
     current_env_index = 0
     current_env_id = args.env_id if continual_env_schedule is None else continual_env_schedule.env_ids[0]
+    module_breakdown = {
+        "workload_initialization_seconds": 0.0,
+        "optimal_network_search_and_selective_model_enhancement_seconds": 0.0,
+        "selective_knowledge_accumulation_seconds": 0.0,
+        "online_rl_completion_seconds": 0.0,
+    }
+    workload_init_start_time = time.perf_counter()
     envs, eval_envs = make_envs_for_env_id(
         args,
         current_env_id,
@@ -1792,6 +1800,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         run_name,
         current_env_index,
     )
+    module_breakdown["workload_initialization_seconds"] += time.perf_counter() - workload_init_start_time
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     max_episode_steps = gym_utils.find_max_episode_steps_value(envs._env)
@@ -1887,6 +1896,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             f"Client {agent_name} switching env from {previous_env_id} to {current_env_id} "
             f"at elapsed={elapsed_minutes:.2f} minutes"
         )
+        workload_init_start_time = time.perf_counter()
         close_envs(envs, eval_envs)
         envs = None
         eval_envs = None
@@ -1901,6 +1911,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)
         eval_obs, _ = eval_envs.reset(seed=args.seed + current_env_index)
         next_done = torch.zeros(args.num_envs, device=device)
+        module_breakdown["workload_initialization_seconds"] += time.perf_counter() - workload_init_start_time
         return True, False, elapsed_minutes
 
     # 多agent逻辑，暂不需要
@@ -1933,12 +1944,16 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         reason="VLASelect large model can be offloaded during small-model online training; exclude its resident parameter/buffer memory from memory-footprint plots.",
     )
     print(f"[setup] memory exclusion metadata saved to {memory_exclusion_path}")
+    model_search_start_time = time.perf_counter()
     agent, current_small_model_pruning_info = build_initial_trainable_small_model(
         args=args,
         large_agent=large_agent,
         eval_envs=eval_envs,
         env_kwargs=env_kwargs,
         device=device,
+    )
+    module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
+        time.perf_counter() - model_search_start_time
     )
     ricl_demo_bank = None
     if args.enable_ricl_injection:
@@ -2194,12 +2209,14 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             success_end_at_last_feedback=success_end_at_last_small_model_feedback,
         ):
             print(f'Client {agent_name} feedback small model before rollout')
+            feedback_start_time = time.perf_counter()
             feedback_small_model_to_large_model(
                 large_agent=large_agent,
                 small_agent=agent,
                 current_pruning_info=current_small_model_pruning_info,
                 args=args,
             )
+            module_breakdown["selective_knowledge_accumulation_seconds"] += time.perf_counter() - feedback_start_time
             success_end_at_last_small_model_feedback = current_success_end
 
         if should_regenerate_small_model_before_rollout(
@@ -2211,6 +2228,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             iteration_at_last_regeneration=iteration_at_last_small_model_regeneration,
         ):
             print(f'Client {agent_name} regenerate small model before rollout')
+            regeneration_start_time = time.perf_counter()
             current_small_model_pruning_info = regenerate_small_model_in_place(
                 large_agent=large_agent,
                 small_agent=agent,
@@ -2220,6 +2238,9 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 eval_envs=eval_envs,
                 env_kwargs=env_kwargs,
                 device=device,
+            )
+            module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
+                time.perf_counter() - regeneration_start_time
             )
             success_end_at_last_small_model_regeneration = current_success_end
             iteration_at_last_small_model_regeneration = iteration
@@ -2596,6 +2617,13 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     # client.close()
     if last_eval_metrics is not None:
         json_metrics.save_final_eval(last_eval_metrics)
+    module_breakdown["online_rl_completion_seconds"] = float(cumulative_times["rollout_time"] + cumulative_times["update_time"])
+    write_time_breakdown(
+        output_dir,
+        sampling_seconds=float(cumulative_times["rollout_time"]),
+        training_seconds=float(cumulative_times["update_time"]),
+        module_breakdown=module_breakdown,
+    )
     close_envs(envs, eval_envs)
     envs = None
     eval_envs = None

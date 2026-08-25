@@ -17,6 +17,7 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import write_module_memory_exclusion_metadata
+from train.common.time_breakdown import write_time_breakdown
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
@@ -743,6 +744,15 @@ def train(args: Args) -> None:
     print(f"[setup] output_dir={output_dir}")
     print(f"[setup] current_env={current_env_id}")
 
+    module_breakdown = {
+        "workload_initialization_seconds": 0.0,
+        "optimal_network_search_and_selective_model_enhancement_seconds": 0.0,
+        "selective_knowledge_accumulation_seconds": 0.0,
+        "online_rl_completion_seconds": 0.0,
+    }
+    cumulative_rollout_seconds = 0.0
+    cumulative_training_seconds = 0.0
+
     large_agent = reference.HandVLAAdapterActorCritic(
         Path(args.model_dir),
         device=device,
@@ -760,8 +770,11 @@ def train(args: Args) -> None:
     )
     print(f"[setup] memory exclusion metadata saved to {memory_exclusion_path}")
 
+    workload_init_start_time = time.perf_counter()
     envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_envs, record_metrics=True)
     eval_envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_eval_envs, record_metrics=True)
+    module_breakdown["workload_initialization_seconds"] += time.perf_counter() - workload_init_start_time
+    model_search_start_time = time.perf_counter()
     initial_sample = collect_sample_for_small_model_generation(
         args,
         large_agent=large_agent,
@@ -775,6 +788,9 @@ def train(args: Args) -> None:
         device=device,
         dtype=torch.bfloat16,
         verify=True,
+    )
+    module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
+        time.perf_counter() - model_search_start_time
     )
     restore_small_policy_dtypes(small_agent, device)
     small_agent.configure_trainable_modules(train_backbone=not args.freeze_vla_backbone and args.backbone_warmup_updates <= 0)
@@ -864,6 +880,7 @@ def train(args: Args) -> None:
         print(
             f"[env] switching from {previous_env_id} to {current_env_id} at elapsed={elapsed_minutes:.2f} minutes"
         )
+        workload_init_start_time = time.perf_counter()
         close_envs(envs, eval_envs)
         envs = None
         eval_envs = None
@@ -872,6 +889,7 @@ def train(args: Args) -> None:
         eval_envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_eval_envs, record_metrics=True)
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)
         next_done = torch.zeros(args.num_envs, device=device)
+        module_breakdown["workload_initialization_seconds"] += time.perf_counter() - workload_init_start_time
         return True, False, elapsed_minutes
 
     for update in range(start_update, num_updates + 1):
@@ -928,12 +946,14 @@ def train(args: Args) -> None:
             success_end_at_last_feedback=success_end_at_last_small_model_feedback,
         ):
             print("[ours] feedback small model before rollout")
+            feedback_start_time = time.perf_counter()
             feedback_static_small_model_to_large_model(
                 large_agent,
                 small_agent,
                 current_pruning_info,
                 alpha=args.small_model_feedback_alpha,
             )
+            module_breakdown["selective_knowledge_accumulation_seconds"] += time.perf_counter() - feedback_start_time
             success_end_at_last_small_model_feedback = current_success_end
 
         if should_regenerate_small_model_before_rollout(
@@ -945,6 +965,7 @@ def train(args: Args) -> None:
             update_at_last_regeneration=update_at_last_small_model_regeneration,
         ):
             print("[ours] regenerate small model before rollout")
+            regeneration_start_time = time.perf_counter()
             current_pruning_info = regenerate_small_model_in_place(
                 large_agent,
                 small_agent,
@@ -953,6 +974,9 @@ def train(args: Args) -> None:
                 args,
                 eval_envs,
                 device,
+            )
+            module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] += (
+                time.perf_counter() - regeneration_start_time
             )
             success_end_at_last_small_model_regeneration = current_success_end
             update_at_last_small_model_regeneration = update
@@ -1032,6 +1056,7 @@ def train(args: Args) -> None:
 
         rollout_time = time.perf_counter() - rollout_start_time
         runtime_tracker.add_active_seconds(rollout_time)
+        cumulative_rollout_seconds += rollout_time
 
         with torch.no_grad():
             next_value = reference.batched_get_value_no_grad(
@@ -1105,6 +1130,7 @@ def train(args: Args) -> None:
 
         update_time = time.perf_counter() - update_start_time
         runtime_tracker.add_active_seconds(update_time)
+        cumulative_training_seconds += update_time
 
         metric = {
             "update": update,
@@ -1188,6 +1214,13 @@ def train(args: Args) -> None:
     plot_metrics_history(output_dir, metrics_history)
     plot_success_time_curve(output_dir, metrics_history)
     last_metric = metrics_history[-1] if metrics_history else {}
+    module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
+    write_time_breakdown(
+        output_dir,
+        sampling_seconds=cumulative_rollout_seconds,
+        training_seconds=cumulative_training_seconds,
+        module_breakdown=module_breakdown,
+    )
     save_workload_verify_summary(
         output_dir,
         {

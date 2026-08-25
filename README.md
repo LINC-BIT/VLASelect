@@ -776,7 +776,7 @@ run_training(model_impl, parse_args(), EdgeTAScaling())
 ```
 
 **Minimum working example**: 
-- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on TinyVLA by the command below. [[Example running results]]()
+- **Compare all scaling methods**. You can run the minimum working examples of all scaling methods on TinyVLA by the command below. [[Example running results]](imgs/3.2.2-mwe.png)
   ```bash
   MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
   ```
@@ -816,7 +816,7 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 ```
 
 **Minimum working example**: 
-- **Comparing all granularities**. You can run the minimum working examples of all granularities on TinyVLA by the command below. [[Example running results]]()
+- **Comparing all granularities**. You can run the minimum working examples of all granularities on TinyVLA by the command below. [[Example running results]](imgs/3.2.3-mwe.png)
   ```bash
   MWE=1 bash api/vla_model_interface_examples/tiny_vla_impl_verify-all_granularities.sh
   ```

@@ -76,6 +76,55 @@ def collect_descendants(root_pid: int, snapshot: dict[int, ProcInfo]) -> set[int
     return seen
 
 
+def load_manifest_paths(list_path: Path | None) -> list[Path]:
+    if list_path is None or not list_path.exists():
+        return []
+
+    result: list[Path] = []
+    seen: set[str] = set()
+    try:
+        raw_text = list_path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+
+    for raw_line in raw_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        path = Path(line)
+        resolved = str(path.resolve()) if path.is_absolute() else str(path)
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        result.append(path)
+    return result
+
+
+def collect_manifest_pids(manifest_paths: list[Path]) -> set[int]:
+    target_keys = {"pid", "monitor_pid", "scheduler_pid", "plotter_pid", "watcher_pid", "train_pid"}
+    pids: set[int] = set()
+
+    def walk(value: object) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key in target_keys and isinstance(child, int) and child > 0:
+                    pids.add(child)
+                walk(child)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    for manifest_path in manifest_paths:
+        if not manifest_path.is_file():
+            continue
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        walk(payload)
+    return pids
+
+
 def load_gpu_process_memory_mib() -> dict[int, float]:
     result = subprocess.run(
         ["nvidia-smi", "--query-compute-apps=pid,used_memory", "--format=csv,noheader,nounits"],
@@ -112,6 +161,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root-pid", type=int, required=True)
     parser.add_argument("--output-json", type=Path, required=True)
+    parser.add_argument("--manifest-list-path", type=Path, default=None)
     parser.add_argument("--poll-seconds", type=float, default=2.0)
     args = parser.parse_args()
 
@@ -148,6 +198,13 @@ def main() -> None:
     while True:
         snapshot = load_process_snapshot()
         tracked_pids = collect_descendants(args.root_pid, snapshot)
+
+        manifest_paths = load_manifest_paths(args.manifest_list_path)
+        manifest_pids = collect_manifest_pids(manifest_paths)
+        tracked_pids.update(manifest_pids)
+        for pid in manifest_pids:
+            tracked_pids.update(collect_descendants(pid, snapshot))
+
         tracked_pids.discard(self_pid)
 
         cpu_ram_kib = 0

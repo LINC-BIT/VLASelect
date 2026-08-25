@@ -11,11 +11,19 @@ VLASELECT_RESOURCE_SUMMARY_LABEL=""
 VLASELECT_RESOURCE_SUMMARY_ROOT_PID=""
 VLASELECT_RESOURCE_SUMMARY_MONITOR_PID=""
 VLASELECT_RESOURCE_SUMMARY_STATE_FILE=""
+VLASELECT_RESOURCE_SUMMARY_MANIFEST_LIST_FILE=""
 VLASELECT_RESOURCE_SUMMARY_START_EPOCH=""
 VLASELECT_RESOURCE_SUMMARY_INTERVAL_SECONDS="${VLASELECT_RESOURCE_MONITOR_INTERVAL_SECONDS:-2}"
 
 VLASELECT_RESOURCE_SUMMARY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VLASELECT_RESOURCE_SUMMARY_MONITOR_SCRIPT="${VLASELECT_RESOURCE_SUMMARY_DIR}/monitor_process_tree_resources.py"
+
+vlaselect_resource_summary_register_manifest() {
+    local manifest_path="$1"
+    [[ "$VLASELECT_RESOURCE_SUMMARY_ACTIVE" == "1" ]] || return 0
+    [[ -n "$manifest_path" && -n "$VLASELECT_RESOURCE_SUMMARY_MANIFEST_LIST_FILE" ]] || return 0
+    printf '%s\n' "$manifest_path" >> "$VLASELECT_RESOURCE_SUMMARY_MANIFEST_LIST_FILE"
+}
 
 vlaselect_resource_summary_start() {
     local label="${1:-$(basename "$0")}"
@@ -34,10 +42,12 @@ vlaselect_resource_summary_start() {
     local safe_label
     safe_label="$(printf '%s' "$label" | tr -c 'A-Za-z0-9._-' '_')"
     VLASELECT_RESOURCE_SUMMARY_STATE_FILE="$(mktemp "$tmp_root/${safe_label}.XXXXXX.json")"
+    VLASELECT_RESOURCE_SUMMARY_MANIFEST_LIST_FILE="$(mktemp "$tmp_root/${safe_label}.XXXXXX.manifests")"
 
     python3 -u "$VLASELECT_RESOURCE_SUMMARY_MONITOR_SCRIPT" \
         --root-pid "$VLASELECT_RESOURCE_SUMMARY_ROOT_PID" \
         --output-json "$VLASELECT_RESOURCE_SUMMARY_STATE_FILE" \
+        --manifest-list-path "$VLASELECT_RESOURCE_SUMMARY_MANIFEST_LIST_FILE" \
         --poll-seconds "$VLASELECT_RESOURCE_SUMMARY_INTERVAL_SECONDS" &
     VLASELECT_RESOURCE_SUMMARY_MONITOR_PID="$!"
     VLASELECT_RESOURCE_SUMMARY_ACTIVE=1

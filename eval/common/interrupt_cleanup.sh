@@ -15,6 +15,9 @@ vlaselect_register_cleanup_manifest() {
     local manifest_path="$1"
     if [[ -n "$manifest_path" ]]; then
         VLASELECT_CLEANUP_MANIFESTS+=("$manifest_path")
+        if declare -F vlaselect_resource_summary_register_manifest >/dev/null 2>&1; then
+            vlaselect_resource_summary_register_manifest "$manifest_path" || true
+        fi
     fi
 }
 

@@ -20,6 +20,7 @@ from common.template_pdf_fill import fill_accuracy_template
 from common.vis_line_draw import apply_matplotlib_style, draw_plot
 
 TABLE_ROOT = Path(os.environ.get('PLOT_ACC_TABLE_ROOT', SCRIPT_DIR / 'acc_comparison_task_env_table'))
+MANIFEST_OVERRIDE = os.environ.get('PLOT_ACC_MANIFEST', '').strip()
 FIGURE_STEM = os.environ.get('PLOT_ACC_FIGURE_STEM', 'FIG_ACC_TASK_ENV')
 SUMMARY_STEM = os.environ.get('PLOT_ACC_SUMMARY_STEM', 'acc_task_env_summary')
 PANEL_OUTPUT_SUBDIR = os.environ.get('PLOT_ACC_PANEL_DIR', f'{FIGURE_STEM}_panels')
@@ -31,6 +32,15 @@ SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
 SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
 VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
+FROM_SAME_ACC_HINTS = (
+    str(FIGURE_STEM),
+    str(SUMMARY_STEM),
+    str(PANEL_OUTPUT_SUBDIR),
+    str(VIS_PAYLOAD_SUBDIR),
+    str(TABLE_ROOT),
+)
+LIMIT_SERIES_TO_THREE_POINTS = any('from_same_acc' in hint.lower() for hint in FROM_SAME_ACC_HINTS)
+MAX_SERIES_POINTS = 3
 
 PAPER_PANELS = [
     {'panel_label': 'a', 'family': 'octo', 'display_name': 'Octo', 'workload_name': 'Single-arm robot'},
@@ -62,15 +72,22 @@ LEGEND_ORDER = [
 FAMILY_CONFIGS = {
     'edgevla': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 301.0]},
     'octo': {'metric_key': 'eval/success_once', 'loader': 'tensorboard', 'default_xlim': [0.0, 301.0]},
-    'tinyvla': {'metric_key': 'train_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
-    'vla_adapter_new': {'metric_key': 'train_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
+    'tinyvla': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
+    'vla_adapter_new': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
 }
 
 HISTORY_METRIC_ALIASES_BY_FAMILY = {
     'octo': ('eval_success_once', 'success_once'),
-    'vla_adapter_new': ('train_success_once', 'eval_success_once', 'success_once'),
-    'tinyvla': ('train_success_once', 'eval_success_once', 'success_once'),
-    'edgevla': ('eval_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
+}
+
+MWE_HISTORY_METRIC_ALIASES_BY_FAMILY = {
+    'octo': ('eval_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
 }
 
 RENDER_CONFIG = {
@@ -106,6 +123,14 @@ def finite_float(value: Any) -> float | None:
     return result if math.isfinite(result) else None
 
 
+def parse_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'y', 'on'}
+
+
 def load_history(run_dir: Path) -> list[dict[str, Any]]:
     history_path = run_dir / 'metrics_history.json'
     if not history_path.exists():
@@ -138,6 +163,15 @@ def resolve_method_active_runtime_hours(method: dict[str, Any]) -> float | None:
     if actual_runtime_hours is not None and actual_runtime_hours > 0.0:
         return actual_runtime_hours
     return None
+
+
+def panel_is_mwe(panel: dict[str, Any]) -> bool:
+    return parse_bool(panel.get('mwe', False))
+
+
+def history_metric_keys_for_family(family: str, *, mwe: bool = False) -> tuple[str, ...]:
+    alias_map = MWE_HISTORY_METRIC_ALIASES_BY_FAMILY if mwe else HISTORY_METRIC_ALIASES_BY_FAMILY
+    return alias_map.get(family, (FAMILY_CONFIGS[family]['metric_key'],))
 
 
 def collect_history_series(run_dir: Path, metric_keys: tuple[str, ...], active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
@@ -192,12 +226,19 @@ def collect_tensorboard_series(run_dir: Path, metric_key: str, active_runtime_ho
     return rescale_series_minutes(series, active_runtime_hours)
 
 
-def collect_series(family: str, run_dir: Path, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
+def collect_series(
+    family: str,
+    run_dir: Path,
+    active_runtime_hours: float | None = None,
+    *,
+    force_history: bool = False,
+    metric_keys: tuple[str, ...] | None = None,
+) -> list[tuple[float, float]]:
     config = FAMILY_CONFIGS[family]
-    if config['loader'] == 'tensorboard':
+    resolved_metric_keys = metric_keys or history_metric_keys_for_family(family)
+    if config['loader'] == 'tensorboard' and not force_history:
         return collect_tensorboard_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
-    metric_keys = HISTORY_METRIC_ALIASES_BY_FAMILY.get(family, (config['metric_key'],))
-    return collect_history_series(run_dir, metric_keys, active_runtime_hours=active_runtime_hours)
+    return collect_history_series(run_dir, resolved_metric_keys, active_runtime_hours=active_runtime_hours)
 
 
 def smooth_values(values: list[float], smoothing: float) -> list[float]:
@@ -227,7 +268,7 @@ def resolve_dynamic_xlim(
 ) -> list[float]:
     max_x = 0.0
     for series in series_payload:
-        xs = series.get('x', [])
+        xs = series.get('x_full', series.get('x', []))
         if xs:
             max_x = max(max_x, max(float(x) for x in xs))
     if max_x <= 0.0:
@@ -237,9 +278,54 @@ def resolve_dynamic_xlim(
     return [0.0, right]
 
 
+def select_evenly_spaced_point_indices(num_points: int, target_points: int) -> list[int]:
+    if num_points <= 0 or target_points <= 0:
+        return []
+    if num_points <= target_points:
+        return list(range(num_points))
+    if target_points == 1:
+        return [0]
+    last_index = num_points - 1
+    indices = []
+    for slot in range(target_points):
+        index = round(slot * last_index / (target_points - 1))
+        indices.append(index)
+    deduped = []
+    seen = set()
+    for index in indices:
+        if index in seen:
+            continue
+        deduped.append(index)
+        seen.add(index)
+    for index in range(num_points):
+        if len(deduped) >= target_points:
+            break
+        if index in seen:
+            continue
+        deduped.append(index)
+        seen.add(index)
+    deduped.sort()
+    return deduped[:target_points]
+
+
+def maybe_reduce_series_points(xs: list[float], ys: list[float]) -> tuple[list[float], list[float]]:
+    if not LIMIT_SERIES_TO_THREE_POINTS or len(xs) <= MAX_SERIES_POINTS:
+        return xs, ys
+    indices = select_evenly_spaced_point_indices(len(xs), MAX_SERIES_POINTS)
+    reduced_xs = [xs[index] for index in indices]
+    reduced_ys = [ys[index] for index in indices]
+    return reduced_xs, reduced_ys
+
+
 def iter_manifest_panel_entries() -> list[tuple[Path, dict[str, Any]]]:
     entries: list[tuple[Path, dict[str, Any]]] = []
-    for manifest_path in sorted(TABLE_ROOT.glob('*/manifest.json')):
+    if MANIFEST_OVERRIDE:
+        manifest_paths = [Path(MANIFEST_OVERRIDE).expanduser().resolve()]
+    else:
+        manifest_paths = sorted(TABLE_ROOT.glob('*/manifest.json'))
+    for manifest_path in manifest_paths:
+        if not manifest_path.exists():
+            continue
         try:
             payload = load_json(manifest_path)
         except Exception:
@@ -278,6 +364,8 @@ def resolve_panel_entry(panel_defaults: dict[str, Any]) -> dict[str, Any]:
 
 def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, float | None]]:
     config = FAMILY_CONFIGS[panel['family']]
+    use_train_history_only = panel_is_mwe(panel)
+    metric_keys = history_metric_keys_for_family(panel['family'], mwe=use_train_history_only)
     summary_rows: list[dict[str, Any]] = []
     series_payload = []
     others_avg: list[float] = []
@@ -296,13 +384,22 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 continue
             run_dir = resolve_path(run_dir_raw)
             active_runtime_hours = resolve_method_active_runtime_hours(method)
-            series = collect_series(panel['family'], run_dir, active_runtime_hours=active_runtime_hours)
+            series = collect_series(
+                panel['family'],
+                run_dir,
+                active_runtime_hours=active_runtime_hours,
+                force_history=use_train_history_only,
+                metric_keys=metric_keys,
+            )
+            if method['name'] in {'ours', 'ours_single_agent'}:
+                series = [(x, y) for x, y in series if y > 0.0]
             if not series:
                 continue
-            xs = [point[0] for point in series]
-            ys_raw = [point[1] for point in series]
-            ys = smooth_values(ys_raw, smoothing)
-            average = sum(ys_raw) / len(ys_raw)
+            xs_full = [point[0] for point in series]
+            ys_raw_full = [point[1] for point in series]
+            ys_full = smooth_values(ys_raw_full, smoothing)
+            xs, ys = maybe_reduce_series_points(xs_full, ys_full)
+            average = sum(ys_raw_full) / len(ys_raw_full)
             style = METHOD_STYLES.get(method['name'], {'color': '#000000', 'linestyle': '-', 'linewidth': 3.6})
             display_name = method.get('display_name', method['name'])
             series_payload.append({
@@ -313,6 +410,8 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 'style': style,
                 'x': xs,
                 'y': ys,
+                'x_full': xs_full,
+                'point_count': len(xs),
             })
             legend_entries.append({'name': method['name'], 'label': display_name, 'style': style})
             if method['name'] in {'ours', 'ours_single_agent'}:
@@ -328,10 +427,10 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 'top_manifest': panel.get('_top_manifest', ''),
                 'suite_manifest': str(suite_manifest_path),
                 'run_dir': str(run_dir),
-                'num_points': len(series),
+                'num_points': len(xs),
                 'avg_accuracy': average,
-                'final_accuracy': ys_raw[-1],
-                'max_minutes': xs[-1],
+                'final_accuracy': ys_raw_full[-1],
+                'max_minutes': xs_full[-1],
             })
 
     others_mean = sum(others_avg) / len(others_avg) if others_avg else math.nan
@@ -343,6 +442,17 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         'absolute_improvement_percent': improvement_percent if math.isfinite(improvement_percent) else None,
     }
     xlim = resolve_dynamic_xlim(series_payload, config['default_xlim'])
+    if LIMIT_SERIES_TO_THREE_POINTS:
+        x_axis_right = float(xlim[1])
+        for series in series_payload:
+            xs = [float(x) for x in series.get('x', [])]
+            if not xs:
+                continue
+            last_x = xs[-1]
+            if last_x <= 0.0 or x_axis_right <= 0.0:
+                continue
+            scale = x_axis_right / last_x
+            series['x'] = [x * scale for x in xs]
 
     payload = {
         'source': {
@@ -352,7 +462,7 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         'render_config': RENDER_CONFIG,
         'plots': {
             'success_once': {
-                'tag': config['metric_key'],
+                'tag': metric_keys[0] if use_train_history_only else config['metric_key'],
                 'output_stem': f"{panel['panel_label']}_{panel['family']}",
                 'xlabel': 'Time (minutes)',
                 'ylabel': 'Success Rate',

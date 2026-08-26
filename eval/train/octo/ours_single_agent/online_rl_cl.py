@@ -12,7 +12,11 @@ import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
-from train.common.memory_accounting import write_module_memory_exclusion_metadata
+from train.common.memory_accounting import (
+    DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
+    MemoryPhaseTracker,
+    write_module_memory_exclusion_metadata,
+)
 from train.common.time_breakdown import (
     empty_module_breakdown,
     snapshot_time_breakdown_to_metric,
@@ -44,6 +48,7 @@ from ours.libs.train_with_fbs.lib_transformer import svd_decompose_linear
 from ours.utils.dl.common.model import get_module, set_module
 
 from train.octo.metrics_json import JsonMetricsLogger, build_metric_entry
+from train.common.mwe_eval import append_episode_metric_batch, summarize_episode_metric_tensors, use_train_success_only
 from train.octo.ours.evolving_envs import PickCubeEnvMutable
 
 
@@ -1073,13 +1078,16 @@ def collect_best_return_trajectory(agent, eval_envs, num_steps, reset_seed=None)
     running_trajectories = [[] for _ in range(num_envs)]
     running_returns = [0.0 for _ in range(num_envs)]
     finished_trajectories = []
+    forward_seconds = 0.0
 
     with torch.no_grad():
         for _ in range(num_steps):
             for env_idx in range(num_envs):
                 running_trajectories[env_idx].append(_extract_single_env_obs(eval_obs, env_idx))
 
+            forward_start_time = time.perf_counter()
             actions = agent.get_action(eval_obs, deterministic=True)
+            forward_seconds += time.perf_counter() - forward_start_time
             eval_obs, rewards, terminations, truncations, _ = eval_envs.step(actions)
 
             reward_values = torch.as_tensor(rewards).detach().cpu().view(-1)
@@ -1115,18 +1123,18 @@ def collect_best_return_trajectory(agent, eval_envs, num_steps, reset_seed=None)
     if len(finished_trajectories) == 0:
         raise RuntimeError("Failed to collect any trajectory for small model generation")
 
-    return max(finished_trajectories, key=lambda item: item["return"])
+    return max(finished_trajectories, key=lambda item: item["return"]), forward_seconds
 
 
 def collect_best_return_trajectory_sample(agent, eval_envs, num_steps, device, reset_seed=None):
-    best_trajectory = collect_best_return_trajectory(
+    best_trajectory, forward_seconds = collect_best_return_trajectory(
         agent=agent,
         eval_envs=eval_envs,
         num_steps=num_steps,
         reset_seed=reset_seed,
     )
     sample_for_gen_small_model = _stack_trajectory_obs(best_trajectory["obs"], device)
-    return sample_for_gen_small_model, best_trajectory["return"]
+    return sample_for_gen_small_model, best_trajectory["return"], forward_seconds
 
 
 def resolve_generation_policy_agent(args, large_agent, small_agent=None):
@@ -1157,7 +1165,7 @@ def collect_sample_for_small_model_generation(args, large_agent, small_agent, ev
             'rgb': target_eval_obs['rgb'].to(device),
             'depth': target_eval_obs['depth'].to(device),
             'state': target_eval_obs['state'].to(device)
-        }
+        }, 0.0
 
     if args.small_model_generation_strategy == 'target-single':
         target_eval_obs, _ = eval_envs.reset()
@@ -1165,7 +1173,7 @@ def collect_sample_for_small_model_generation(args, large_agent, small_agent, ev
             'rgb': target_eval_obs['rgb'].to(device)[0: 1],
             'depth': target_eval_obs['depth'].to(device)[0: 1],
             'state': target_eval_obs['state'].to(device)[0: 1]
-        }
+        }, 0.0
 
     if args.small_model_generation_strategy == 'target-single-traj':
         generation_agent, generation_policy = resolve_generation_policy_agent(
@@ -1176,14 +1184,14 @@ def collect_sample_for_small_model_generation(args, large_agent, small_agent, ev
         if generation_policy == 'better':
             comparison_seed = random.randint(0, 2**31 - 1)
             print('use better policy to collect best target trajectory for small model generation')
-            large_sample, large_return = collect_best_return_trajectory_sample(
+            large_sample, large_return, large_forward_seconds = collect_best_return_trajectory_sample(
                 agent=large_agent,
                 eval_envs=eval_envs,
                 num_steps=args.num_eval_steps,
                 device=device,
                 reset_seed=comparison_seed,
             )
-            small_sample, small_return = collect_best_return_trajectory_sample(
+            small_sample, small_return, small_forward_seconds = collect_best_return_trajectory_sample(
                 agent=small_agent,
                 eval_envs=eval_envs,
                 num_steps=args.num_eval_steps,
@@ -1206,10 +1214,11 @@ def collect_sample_for_small_model_generation(args, large_agent, small_agent, ev
                 f"chosen_return={chosen_return:.4f}, "
                 f"steps={chosen_sample['rgb'].shape[0]}"
             )
-            return chosen_sample
+            forward_seconds = large_forward_seconds + small_forward_seconds
+            return chosen_sample, forward_seconds
 
         print(f'use {generation_policy} model policy to collect best target trajectory for small model generation')
-        sample_for_gen_small_model, best_return = collect_best_return_trajectory_sample(
+        sample_for_gen_small_model, best_return, forward_seconds = collect_best_return_trajectory_sample(
             agent=generation_agent,
             eval_envs=eval_envs,
             num_steps=args.num_eval_steps,
@@ -1219,7 +1228,7 @@ def collect_sample_for_small_model_generation(args, large_agent, small_agent, ev
             f"use best target trajectory for small model generation: "
             f"return={best_return:.4f}, steps={sample_for_gen_small_model['rgb'].shape[0]}"
         )
-        return sample_for_gen_small_model
+        return sample_for_gen_small_model, forward_seconds
 
     if args.small_model_generation_strategy == 'source':
         env_kwargs_for_source = dict(env_kwargs)
@@ -1250,7 +1259,7 @@ def collect_sample_for_small_model_generation(args, large_agent, small_agent, ev
                 'rgb': source_eval_obs['rgb'].to(device)[0: 1],
                 'depth': source_eval_obs['depth'].to(device)[0: 1],
                 'state': source_eval_obs['state'].to(device)[0: 1]
-            }
+            }, 0.0
         finally:
             source_eval_envs.close()
 
@@ -1272,7 +1281,7 @@ def set_trainable_small_model_sparsity(model: nn.Module, k: float) -> None:
 
 def build_initial_trainable_small_model(args, large_agent, eval_envs, env_kwargs, device):
     search_start_time = time.perf_counter()
-    sample_for_gen_small_model = collect_sample_for_small_model_generation(
+    sample_for_gen_small_model, forward_seconds = collect_sample_for_small_model_generation(
         args=args,
         large_agent=large_agent,
         small_agent=None,
@@ -1296,13 +1305,13 @@ def build_initial_trainable_small_model(args, large_agent, eval_envs, env_kwargs
             ab_strategy=args.small_model_ab_strategy,
         )
         enhancer_seconds = time.perf_counter() - enhancer_start_time
-        return small_agent, pruning_info, search_seconds, enhancer_seconds
+        return small_agent, pruning_info, forward_seconds, enhancer_seconds
 
     if args.small_model_training_variant == 'frozen':
         small_agent = deepcopy(large_agent)
         set_trainable_small_model_sparsity(small_agent, args.max_sparsity)
         enhancer_seconds = time.perf_counter() - enhancer_start_time
-        return small_agent, None, search_seconds, enhancer_seconds
+        return small_agent, None, forward_seconds, enhancer_seconds
 
     raise NotImplementedError(
         f"Unknown small_model_training_variant: {args.small_model_training_variant}"
@@ -1454,7 +1463,7 @@ def regenerate_small_model_in_place(
     from ours.pretrain_fbs_model.main import generate_small_cnn_with_verify
 
     search_start_time = time.perf_counter()
-    sample_for_gen_small_model = collect_sample_for_small_model_generation(
+    sample_for_gen_small_model, forward_seconds = collect_sample_for_small_model_generation(
         args=args,
         large_agent=large_agent,
         small_agent=small_agent,
@@ -1503,7 +1512,7 @@ def regenerate_small_model_in_place(
             previous_pruning_info=current_pruning_info,
         )
     enhancer_seconds = time.perf_counter() - enhancer_start_time
-    return new_pruning_info, search_seconds, enhancer_seconds
+    return new_pruning_info, forward_seconds, enhancer_seconds
 
 import copy
 
@@ -1783,6 +1792,8 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
     run_name = f"{base_runname}/{agent_name}"
     output_dir = Path(f"ckpt/{run_name}")
+    memory_phase_tracker = MemoryPhaseTracker(output_dir)
+    memory_phase_tracker.mark("setup", force=True)
     json_metrics = JsonMetricsLogger(output_dir)
 
     
@@ -1804,6 +1815,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     current_env_index = 0
     current_env_id = args.env_id if continual_env_schedule is None else continual_env_schedule.env_ids[0]
     module_breakdown = empty_module_breakdown()
+    memory_phase_tracker.mark("workload_initialization")
     workload_init_start_time = time.perf_counter()
     envs, eval_envs = make_envs_for_env_id(
         args,
@@ -1908,6 +1920,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             f"Client {agent_name} switching env from {previous_env_id} to {current_env_id} "
             f"at elapsed={elapsed_minutes:.2f} minutes"
         )
+        memory_phase_tracker.mark("workload_initialization")
         workload_init_start_time = time.perf_counter()
         close_envs(envs, eval_envs)
         envs = None
@@ -1954,18 +1967,21 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         module=large_agent,
         label="large_agent",
         reason="VLASelect large model can be offloaded during small-model online training; exclude its resident parameter/buffer memory from memory-footprint plots.",
+        excluded_runtime_phase_names=DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
     )
     print(f"[setup] memory exclusion metadata saved to {memory_exclusion_path}")
-    agent, current_small_model_pruning_info, search_seconds, enhancer_seconds = build_initial_trainable_small_model(
+    memory_phase_tracker.mark("large_model_runtime_excluded")
+    agent, current_small_model_pruning_info, forward_seconds, enhancer_seconds = build_initial_trainable_small_model(
         args=args,
         large_agent=large_agent,
         eval_envs=eval_envs,
         env_kwargs=env_kwargs,
         device=device,
     )
-    module_breakdown["optimal_network_searcher_seconds"] += search_seconds
-    module_breakdown["selective_model_enhancer_seconds"] += enhancer_seconds
+    module_breakdown["large_model_forward_seconds"] += forward_seconds
+    module_breakdown["small_model_generation_seconds"] += enhancer_seconds
     update_combined_search_enhancement_seconds(module_breakdown)
+    memory_phase_tracker.mark("evaluation")
     ricl_demo_bank = None
     if args.enable_ricl_injection:
         ricl_demo_bank = RiclDemoBank(
@@ -2039,6 +2055,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     best_success_end = 0.
     last_eval_metrics = None
     current_success_end = None
+    last_train_metrics = {}
     if args.small_model_training_variant == 'frozen':
         if args.small_model_feedback_schedule not in {None, 'once'} or args.small_model_regeneration_schedule != 'once':
             print('frozen small-model ablation disables knowledge accumulation and neuron swapping; forcing feedback/regeneration schedules to once')
@@ -2072,125 +2089,136 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         sparsity_list = [args.max_sparsity]
 
         final_values = torch.zeros((args.num_steps, args.num_envs), device=device)
+        train_episode_metrics = defaultdict(list)
         agent.eval()
         if iteration % args.eval_freq == 1 or iteration == start_iter_idx or args.eval_freq == 1:
-            print(f"Client {agent_name} Evaluating")
+            avg_success_once = None
+            avg_success_end = None
+            skip_metric_snapshot = use_train_success_only() and not last_train_metrics
 
-            avg_success_once = 0.
-            avg_success_end = 0.
+            if skip_metric_snapshot:
+                print(f"Client {agent_name} train-success-only snapshot skipped because no completed training episodes were observed yet")
+            elif use_train_success_only():
+                if "success_once" in last_train_metrics:
+                    avg_success_once = float(last_train_metrics["success_once"])
+                if "success_at_end" in last_train_metrics:
+                    avg_success_end = float(last_train_metrics["success_at_end"])
+            else:
+                memory_phase_tracker.mark("evaluation")
+                print(f"Client {agent_name} Evaluating")
 
-            
-            for test_sparsity in sparsity_list:
-                test_sparsity_str = f'{test_sparsity:.4f}'
-                set_trainable_small_model_sparsity(agent, test_sparsity)
+                success_once_values = []
+                success_end_values = []
+                for test_sparsity in sparsity_list:
+                    test_sparsity_str = f'{test_sparsity:.4f}'
+                    set_trainable_small_model_sparsity(agent, test_sparsity)
 
-                stime = time.perf_counter()
-                eval_obs, _ = eval_envs.reset()
-                eval_metrics = defaultdict(list)
-                num_episodes = 0
-                for _ in range(args.num_eval_steps):
-                    with torch.no_grad():
-                        eval_obs, eval_rew, eval_terminations, eval_truncations, eval_infos = eval_envs.step(agent.get_action(eval_obs, deterministic=True))
-                        if "final_info" in eval_infos:
-                            mask = eval_infos["_final_info"]
-                            num_episodes += mask.sum()
-                            for k, v in eval_infos["final_info"]["episode"].items():
-                                eval_metrics[k].append(v)
-                # print(f"Evaluated {args.num_eval_steps * args.num_eval_envs} steps resulting in {num_episodes} episodes")
-                for k, v in eval_metrics.items():
-                    mean = torch.stack(v).float().mean()
-                    if logger is not None:
-                        logger.add_scalar(f"eval/{k}_{test_sparsity_str}", mean, global_step)
-                    # print(f"eval_{k}_mean (sparsity={test_sparsity_str}) = {mean}")
+                    stime = time.perf_counter()
+                    eval_obs, _ = eval_envs.reset()
+                    eval_metrics = defaultdict(list)
+                    num_episodes = 0
+                    for _ in range(args.num_eval_steps):
+                        with torch.no_grad():
+                            eval_obs, eval_rew, eval_terminations, eval_truncations, eval_infos = eval_envs.step(agent.get_action(eval_obs, deterministic=True))
+                            if "final_info" in eval_infos:
+                                mask = eval_infos["_final_info"]
+                                num_episodes += mask.sum()
+                                for k, v in eval_infos["final_info"]["episode"].items():
+                                    eval_metrics[k].append(v)
+                    for k, v in eval_metrics.items():
+                        mean = torch.stack(v).float().mean()
+                        if logger is not None:
+                            logger.add_scalar(f"eval/{k}_{test_sparsity_str}", mean, global_step)
 
-                    if k == 'success_once':
-                        avg_success_once += mean
-                    if k == 'success_at_end':
-                        avg_success_end += mean
+                        if k == 'success_once':
+                            success_once_values.append(float(mean))
+                        if k == 'success_at_end':
+                            success_end_values.append(float(mean))
 
-                if logger is not None and test_sparsity < 0.001:
-                    eval_time = time.perf_counter() - stime
-                    cumulative_times["eval_time"] += eval_time
-                    logger.add_scalar("time/eval_time", eval_time, global_step)
+                        if logger is not None and test_sparsity < 0.001:
+                            eval_time = time.perf_counter() - stime
+                            cumulative_times["eval_time"] += eval_time
+                            logger.add_scalar("time/eval_time", eval_time, global_step)
 
-            avg_success_once /= len(sparsity_list)
-            logger.add_scalar(f"eval/success_once", avg_success_once, global_step)
-            avg_success_end /= len(sparsity_list)
-            logger.add_scalar(f"eval/success_end", avg_success_end, global_step)
-            current_success_end = float(avg_success_end)
-            if success_end_at_last_small_model_feedback is None:
-                success_end_at_last_small_model_feedback = current_success_end
-            if success_end_at_last_small_model_regeneration is None:
-                success_end_at_last_small_model_regeneration = current_success_end
-                iteration_at_last_small_model_regeneration = iteration
-            # 多agent逻辑，暂不需要
-            # client.report_metrics(time.time() - start_time, {
-            #     'success_once': float(avg_success_once),
-            #     'success_at_end': float(avg_success_end)
-            # })
-            print(f"Client {agent_name} eval success_once={avg_success_once:.4f}, success_at_end={avg_success_end:.4f}")
-            last_eval_metrics = {
-                "success_once": float(avg_success_once),
-                "success_at_end": float(avg_success_end),
-            }
-            current_elapsed_minutes = elapsed_minutes
-            if current_elapsed_minutes is None:
-                current_elapsed_minutes = runtime_tracker.current_minutes()
-            metric_entry = build_metric_entry(
-                update=iteration,
-                global_step=global_step,
-                current_env_id=current_env_id,
-                current_env_index=current_env_index,
-                elapsed_minutes=current_elapsed_minutes,
-                eval_metrics=last_eval_metrics,
-                extras={
-                    "best_success_once": best_success_once,
-                    "best_success_at_end": best_success_end,
-                    "eval_time": cumulative_times.get("eval_time", 0.0),
-                },
-            )
-            module_breakdown["online_rl_completion_seconds"] = float(
-                cumulative_times.get("rollout_time", 0.0) + cumulative_times.get("update_time", 0.0)
-            )
-            snapshot_time_breakdown_to_metric(
-                metric_entry,
-                rollout_seconds=0.0,
-                training_seconds=0.0,
-                cumulative_rollout_seconds=float(cumulative_times.get("rollout_time", 0.0)),
-                cumulative_training_seconds=float(cumulative_times.get("update_time", 0.0)),
-                module_breakdown=module_breakdown,
-            )
-            json_metrics.append(metric_entry)
+                if success_once_values:
+                    avg_success_once = float(sum(success_once_values) / len(success_once_values))
+                    logger.add_scalar(f"eval/success_once", avg_success_once, global_step)
+                if success_end_values:
+                    avg_success_end = float(sum(success_end_values) / len(success_end_values))
+                    logger.add_scalar(f"eval/success_end", avg_success_end, global_step)
+            if not skip_metric_snapshot:
+                if avg_success_once is not None:
+                    print(f"Client {agent_name} eval success_once={avg_success_once:.4f}")
+                if avg_success_end is not None:
+                    current_success_end = float(avg_success_end)
+                    if success_end_at_last_small_model_feedback is None:
+                        success_end_at_last_small_model_feedback = current_success_end
+                    if success_end_at_last_small_model_regeneration is None:
+                        success_end_at_last_small_model_regeneration = current_success_end
+                        iteration_at_last_small_model_regeneration = iteration
+                    print(f"Client {agent_name} eval success_at_end={avg_success_end:.4f}")
+                last_eval_metrics = {}
+                if avg_success_once is not None:
+                    last_eval_metrics["success_once"] = float(avg_success_once)
+                if avg_success_end is not None:
+                    last_eval_metrics["success_at_end"] = float(avg_success_end)
+                if last_eval_metrics:
+                    current_elapsed_minutes = elapsed_minutes
+                    if current_elapsed_minutes is None:
+                        current_elapsed_minutes = runtime_tracker.current_minutes()
+                    metric_entry = build_metric_entry(
+                        update=iteration,
+                        global_step=global_step,
+                        current_env_id=current_env_id,
+                        current_env_index=current_env_index,
+                        elapsed_minutes=current_elapsed_minutes,
+                        eval_metrics=last_eval_metrics,
+                        extras={
+                            "best_success_once": best_success_once,
+                            "best_success_at_end": best_success_end,
+                            "eval_time": cumulative_times.get("eval_time", 0.0),
+                        },
+                    )
+                    module_breakdown["online_rl_completion_seconds"] = float(
+                        cumulative_times.get("rollout_time", 0.0) + cumulative_times.get("update_time", 0.0)
+                    )
+                    snapshot_time_breakdown_to_metric(
+                        metric_entry,
+                        rollout_seconds=0.0,
+                        training_seconds=0.0,
+                        cumulative_rollout_seconds=float(cumulative_times.get("rollout_time", 0.0)),
+                        cumulative_training_seconds=float(cumulative_times.get("update_time", 0.0)),
+                        module_breakdown=module_breakdown,
+                    )
+                    json_metrics.append(metric_entry)
 
-            if avg_success_once >= best_success_once:
-                best_success_once = avg_success_once
-                os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
-                torch.save(
-                    build_agent_checkpoint_payload(
-                        agent,
-                        optimizer,
-                        iteration,
-                        success_once=best_success_once,
-                    ),
-                    f"ckpt/{run_name}/checkpoints/best_success_once.pt",
-                )
-                # client.save_feature_aggregators(f"ckpt/{run_name}/checkpoints/best_success_once.pt.feature_aggregators")
-            if avg_success_end >= best_success_end:
-                best_success_end = avg_success_end
-                os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
-                torch.save(
-                    build_agent_checkpoint_payload(
-                        agent,
-                        optimizer,
-                        iteration,
-                        success_at_end=best_success_end,
-                    ),
-                    f"ckpt/{run_name}/checkpoints/best_success_end.pt",
-                )
-                # client.save_feature_aggregators(f"ckpt/{run_name}/checkpoints/best_success_end.pt.feature_aggregators")
+                if avg_success_once is not None and avg_success_once >= best_success_once:
+                    best_success_once = avg_success_once
+                    os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
+                    torch.save(
+                        build_agent_checkpoint_payload(
+                            agent,
+                            optimizer,
+                            iteration,
+                            success_once=best_success_once,
+                        ),
+                        f"ckpt/{run_name}/checkpoints/best_success_once.pt",
+                    )
+                if avg_success_end is not None and avg_success_end >= best_success_end:
+                    best_success_end = avg_success_end
+                    os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
+                    torch.save(
+                        build_agent_checkpoint_payload(
+                            agent,
+                            optimizer,
+                            iteration,
+                            success_at_end=best_success_end,
+                        ),
+                        f"ckpt/{run_name}/checkpoints/best_success_end.pt",
+                    )
 
-            if args.evaluate:
-                break
+                if args.evaluate:
+                    break
         if args.save_model and (iteration % args.eval_freq == 1 or args.eval_freq == 1):
             # model_path = f"ckpt/{run_name}/ckpt_{iteration}.pt"
             # torch.save(agent.state_dict(), model_path)
@@ -2229,6 +2257,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             current_success_end=current_success_end,
             success_end_at_last_feedback=success_end_at_last_small_model_feedback,
         ):
+            memory_phase_tracker.mark("large_model_runtime_excluded")
             print(f'Client {agent_name} feedback small model before rollout')
             feedback_start_time = time.perf_counter()
             feedback_small_model_to_large_model(
@@ -2237,7 +2266,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 current_pruning_info=current_small_model_pruning_info,
                 args=args,
             )
-            module_breakdown["selective_knowledge_accumulation_seconds"] += time.perf_counter() - feedback_start_time
+            module_breakdown["small_model_feedback_seconds"] += time.perf_counter() - feedback_start_time
             success_end_at_last_small_model_feedback = current_success_end
 
         if should_regenerate_small_model_before_rollout(
@@ -2248,8 +2277,9 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             success_end_at_last_regeneration=success_end_at_last_small_model_regeneration,
             iteration_at_last_regeneration=iteration_at_last_small_model_regeneration,
         ):
+            memory_phase_tracker.mark("large_model_runtime_excluded")
             print(f'Client {agent_name} regenerate small model before rollout')
-            current_small_model_pruning_info, search_seconds, enhancer_seconds = regenerate_small_model_in_place(
+            current_small_model_pruning_info, forward_seconds, enhancer_seconds = regenerate_small_model_in_place(
                 large_agent=large_agent,
                 small_agent=agent,
                 current_pruning_info=current_small_model_pruning_info,
@@ -2259,13 +2289,14 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 env_kwargs=env_kwargs,
                 device=device,
             )
-            module_breakdown["optimal_network_searcher_seconds"] += search_seconds
-            module_breakdown["selective_model_enhancer_seconds"] += enhancer_seconds
+            module_breakdown["large_model_forward_seconds"] += forward_seconds
+            module_breakdown["small_model_generation_seconds"] += enhancer_seconds
             update_combined_search_enhancement_seconds(module_breakdown)
             success_end_at_last_small_model_regeneration = current_success_end
             iteration_at_last_small_model_regeneration = iteration
 
         # Switch back to train mode for rollout and PPO update
+        memory_phase_tracker.mark("online_rl_rollout")
         agent.train()
 
         if args.max_time is not None:
@@ -2332,12 +2363,14 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 done_mask = infos["_final_info"]
                 for k, v in final_info["episode"].items():
                     logger.add_scalar(f"train/{k}", v[done_mask].float().mean(), global_step)
+                append_episode_metric_batch(train_episode_metrics, final_info["episode"], done_mask)
 
                 for k in infos["final_observation"]:
                     infos["final_observation"][k] = infos["final_observation"][k][done_mask]
                 with torch.no_grad():
                     final_values[step, torch.arange(args.num_envs, device=device)[done_mask]] = agent.get_value(infos["final_observation"]).view(-1)
         rollout_time = time.perf_counter() - rollout_time
+        last_train_metrics = summarize_episode_metric_tensors(train_episode_metrics)
         runtime_tracker.add_active_seconds(rollout_time)
         cumulative_times["rollout_time"] += rollout_time
 
@@ -2416,6 +2449,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
         # Optimizing the policy and value network
         agent.train()
+        memory_phase_tracker.mark("online_rl_training")
         b_inds = np.arange(args.batch_size)
         clipfracs = []
         update_time = time.perf_counter()
@@ -2652,8 +2686,31 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         logger.close()
 
 
+def apply_mwe_overrides(args: Args) -> Args:
+    if os.environ.get("MWE", "0") == "1":
+        # Keep the same training path while using a deliberately tiny footprint for
+        # verification runs. VLA language-model activations dominate memory during
+        # PPO, so MWE prioritizes proving the path is runnable over throughput.
+        args.num_envs = 4
+        args.num_eval_envs = 1
+        args.num_steps = 4
+        args.num_eval_steps = 4
+        args.update_epochs = 1
+        args.num_minibatches = 2
+        # Initialization still exercises the selected scaling method, while the
+        # repeated regeneration path is outside this minimal run and can require
+        # architecture-specific checkpoint shapes.
+        args.small_model_feedback_schedule = "once"
+        args.small_model_regeneration_schedule = "once"
+        args.total_timesteps = max(args.total_timesteps, 10**12)
+        mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
+        if mwe_runtime_minutes <= 0:
+            raise ValueError("MWE_MAX_RUNTIME_MINUTES must be positive")
+        args.max_time = mwe_runtime_minutes
+    return args
+
 if __name__ == "__main__":
-    args = tyro.cli(Args)
+    args = apply_mwe_overrides(tyro.cli(Args))
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size

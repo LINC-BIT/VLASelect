@@ -25,16 +25,24 @@ ACC_COMPAT_MANIFEST_JSON="${ACC_COMPAT_RUN_ROOT}/manifest.json"
 ACC_COMPAT_LATEST_POINTER="${ACC_COMPAT_TABLE_ROOT}/latest.txt"
 
 TAIL_LOG="${TAIL_LOG:-1}"
-MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-30}"
+MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-5}"
 PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-60}"
 SUITE_WAIT_POLL_SECONDS="${SUITE_WAIT_POLL_SECONDS:-30}"
 EDGEVLA_QUEUED_PER_GPU="${EDGEVLA_QUEUED_PER_GPU:-1}"
+SAME_ACC_GPU="${SAME_ACC_GPU:-0}"
 EDGEVLA_SMOKE="${EDGEVLA_SMOKE:-0}"
 ENABLE_SELF_CURVE_WATCHER="${ENABLE_SELF_CURVE_WATCHER:-0}"
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
+if [[ -z "${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY+x}" ]]; then
+    if [[ "$MWE" == "1" ]]; then
+        export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=1
+    else
+        export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=0
+    fi
+fi
 BASELINE_PRETRAIN_CKPT_NOISE_SCALE="${BASELINE_PRETRAIN_CKPT_NOISE_SCALE:-${CKPT_NOISE_SCALE:-}}"
 BASELINE_PRETRAIN_CKPT_NOISE_SEED="${BASELINE_PRETRAIN_CKPT_NOISE_SEED:-${CKPT_NOISE_SEED:-0}}"
 SAME_ACC_BREAKDOWN_COMPAT="${SAME_ACC_BREAKDOWN_COMPAT:-1}"
@@ -76,7 +84,7 @@ vlaselect_run_sanity_check "overhead_same_acc.sh" "$EVAL_ROOT" "$MWE" "16" "8"
 EDGEVLA_ENVS_ID="${EDGEVLA_ENVS_ID:-['UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']}"
 TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']}"
 VLA_ADAPTER_NEW_ENVS_ID="${VLA_ADAPTER_NEW_ENVS_ID:-['HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']}"
-OCTO_ENVS_ID="${OCTO_ENVS_ID:-['PickCubeColorTempHigher50-v1','PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeObjectScaleDown1p2-v1']}"
+OCTO_ENVS_ID="${OCTO_ENVS_ID:-['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']}"
 ENV_CHANGE_TIME_POINTS="${ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
 
 vlaselect_apply_env_id_order OCTO_ENVS_ID ENV_CHANGE_TIME_POINTS
@@ -232,11 +240,12 @@ if jsonl_path.exists():
 payload = {
     'suite_stamp': suite_stamp,
     'table_root': table_root,
-    'figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf',
-    'table2_output': 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv',
-    'table3_output': 'overhead/overhead_breakdown_table/TAB_ENERGY.csv',
+    'figure_output': f'{table_root}/{suite_stamp}/FIG_MEMORY_FOOTPOINT.pdf',
+    'table2_output': f'{table_root}/{suite_stamp}/overhead_breakdown_table/TAB_OVERHEAD.csv',
+    'table3_output': f'{table_root}/{suite_stamp}/overhead_breakdown_table/TAB_ENERGY.csv',
     'mwe': mwe,
     'mwe_workload_runtime_limit_seconds': mwe_workload_runtime_limit_seconds,
+    'same_acc_manifest': str(manifest_path),
     'panels': panels,
     'families': panels,
 }
@@ -265,7 +274,7 @@ if jsonl_path.exists():
 payload = {
     'suite_stamp': suite_stamp,
     'table_root': table_root,
-    'figure_output': f'acc_comparison/{figure_stem}.pdf',
+    'figure_output': f'{table_root}/{suite_stamp}/{figure_stem}.pdf',
     'panels': panels,
     'families': panels,
 }
@@ -403,8 +412,30 @@ launch_family_suite() {
     local family_methods=""
     local family_mwe_workload_runtime_limit_seconds="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
     local selected_method_count=10
+    local family_gpu_override=""
+    local family_method_order=""
 
     family_methods="$(resolve_methods_for_family "$family" "$METHODS")"
+    # Keep every selected method in this family on the same GPU. The outer
+    # loop waits for each family before starting the next one, so the full
+    # suite is single-GPU and serial as well.
+    if [[ "$family" == "octo" ]]; then
+        family_method_order="conrft,flare,improv_vla,edgeta,convertnet,ours_single_agent,ppo_gen,self_improv,vla_rft,world_env"
+    else
+        family_method_order="conrft,flare,improv_vla,edgeta,convertnet,ours,ppo_gen,self_improv,vla_rft,world_env"
+    fi
+    local methods_for_override="$family_methods"
+    if [[ -z "$methods_for_override" ]]; then
+        methods_for_override="$family_method_order"
+    fi
+    local method
+    while IFS= read -r method; do
+        [[ -z "$method" ]] && continue
+        if [[ -n "$family_gpu_override" ]]; then
+            family_gpu_override+=","
+        fi
+        family_gpu_override+="${method}=${SAME_ACC_GPU}"
+    done < <(printf "%s" "$methods_for_override" | tr ',' '\n' | awk 'NF {gsub(/^[ \t]+|[ \t]+$/, ""); print}')
     if [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
         selected_method_count="$(count_selected_methods "$family_methods")"
         family_mwe_workload_runtime_limit_seconds=$((selected_method_count * SAME_ACC_METHOD_ACTIVE_RUNTIME_SECONDS))
@@ -424,6 +455,7 @@ launch_family_suite() {
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 ENABLE_SELF_CURVE_WATCHER="$ENABLE_SELF_CURVE_WATCHER" \
                 METHODS="$family_methods" \
+                GPU_BY_METHOD_OVERRIDE="$family_gpu_override" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENVS_ID_OVERRIDE="$envs_id" \
@@ -438,6 +470,7 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 METHODS="$family_methods" \
+                GPU_BY_METHOD_OVERRIDE="$family_gpu_override" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENVS_ID_OVERRIDE="$envs_id" \
@@ -453,6 +486,7 @@ launch_family_suite() {
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
                 METHODS="$family_methods" \
+                GPU_BY_METHOD_OVERRIDE="$family_gpu_override" \
                 SMOKE="$MWE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENVS_ID_OVERRIDE="$envs_id" \
@@ -467,7 +501,8 @@ launch_family_suite() {
                 TAIL_LOG="$TAIL_LOG" \
                 MONITOR_INTERVAL_SECONDS="$MONITOR_INTERVAL_SECONDS" \
                 PLOT_INTERVAL_SECONDS="$PLOT_INTERVAL_SECONDS" \
-                QUEUED_PER_GPU="$EDGEVLA_QUEUED_PER_GPU" \
+                QUEUED_PER_GPU="1" \
+                GPU_BY_METHOD_OVERRIDE="$family_gpu_override" \
                 METHODS="$family_methods" \
                 SMOKE="$EDGEVLA_SMOKE" \
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
@@ -510,27 +545,35 @@ refresh_top_manifest
 
 echo "[fig9] manifest saved to ${MANIFEST_JSON}"
 echo "[fig9] latest pointer updated at ${LATEST_POINTER}"
-echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.pdf"
-echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.png"
-echo "[fig9] plotting will write figure: ${SCRIPT_DIR}/FIG_MEMORY_FOOTPOINT.svg"
-echo "[fig9] plotting will write table: ${SCRIPT_DIR}/overhead_breakdown_table/TAB_OVERHEAD.csv"
-echo "[fig9] plotting will write table: ${SCRIPT_DIR}/overhead_breakdown_table/TAB_ENERGY.csv"
+echo "[fig9] plotting will write figure: ${RUN_ROOT}/FIG_MEMORY_FOOTPOINT.pdf"
+echo "[fig9] plotting will write figure: ${RUN_ROOT}/FIG_MEMORY_FOOTPOINT.png"
+echo "[fig9] plotting will write figure: ${RUN_ROOT}/FIG_MEMORY_FOOTPOINT.svg"
+echo "[fig9] plotting will write table: ${RUN_ROOT}/overhead_breakdown_table/TAB_OVERHEAD.csv"
+echo "[fig9] plotting will write table: ${RUN_ROOT}/overhead_breakdown_table/TAB_ENERGY.csv"
+
+python overhead/plot_overhead.py \
+    --manifest "$MANIFEST_JSON" \
+    --output-root "$RUN_ROOT"
+echo "[fig9] memory figure saved under: ${RUN_ROOT}/FIG_MEMORY_FOOTPOINT.{pdf,png,svg}"
+echo "[fig9] memory summary saved under: ${RUN_ROOT}/overhead_same_acc_summary.json"
 
 if [[ "$SAME_ACC_ACCURACY_COMPAT" == "1" ]]; then
     refresh_accuracy_compat_manifest
+    ACC_COMPAT_RUN_ROOT_ABS="$(cd "$ACC_COMPAT_RUN_ROOT" && pwd)"
     env \
         PLOT_ACC_TABLE_ROOT="$ACC_COMPAT_TABLE_ROOT" \
-        PLOT_ACC_FIGURE_STEM="$ACC_COMPAT_FIGURE_STEM" \
-        PLOT_ACC_SUMMARY_STEM="$ACC_COMPAT_SUMMARY_STEM" \
-        PLOT_ACC_PANEL_DIR="$ACC_COMPAT_PANEL_DIR" \
-        PLOT_ACC_VIS_PAYLOAD_DIR="$ACC_COMPAT_VIS_PAYLOAD_DIR" \
+        PLOT_ACC_MANIFEST="$ACC_COMPAT_MANIFEST_JSON" \
+        PLOT_ACC_FIGURE_STEM="${ACC_COMPAT_RUN_ROOT_ABS}/${ACC_COMPAT_FIGURE_STEM}" \
+        PLOT_ACC_SUMMARY_STEM="${ACC_COMPAT_RUN_ROOT_ABS}/${ACC_COMPAT_SUMMARY_STEM}" \
+        PLOT_ACC_PANEL_DIR="${ACC_COMPAT_RUN_ROOT_ABS}/${ACC_COMPAT_PANEL_DIR}" \
+        PLOT_ACC_VIS_PAYLOAD_DIR="${ACC_COMPAT_RUN_ROOT_ABS}/${ACC_COMPAT_VIS_PAYLOAD_DIR}" \
         python acc_comparison/plot_acc_task_env.py
     echo "[fig9-compat] accuracy manifest saved to ${ACC_COMPAT_MANIFEST_JSON}"
     echo "[fig9-compat] accuracy latest pointer updated at ${ACC_COMPAT_LATEST_POINTER}"
-    echo "[fig9-compat] wrote figure: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_FIGURE_STEM}.pdf"
-    echo "[fig9-compat] wrote figure: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_FIGURE_STEM}.png"
-    echo "[fig9-compat] wrote figure: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_FIGURE_STEM}.svg"
-    echo "[fig9-compat] wrote summary: ${EVAL_ROOT}/acc_comparison/${ACC_COMPAT_SUMMARY_STEM}.csv"
+    echo "[fig9-compat] wrote figure: ${ACC_COMPAT_RUN_ROOT}/${ACC_COMPAT_FIGURE_STEM}.pdf"
+    echo "[fig9-compat] wrote figure: ${ACC_COMPAT_RUN_ROOT}/${ACC_COMPAT_FIGURE_STEM}.png"
+    echo "[fig9-compat] wrote figure: ${ACC_COMPAT_RUN_ROOT}/${ACC_COMPAT_FIGURE_STEM}.svg"
+    echo "[fig9-compat] wrote summary: ${ACC_COMPAT_RUN_ROOT}/${ACC_COMPAT_SUMMARY_STEM}.csv"
 fi
 
 if [[ "$SAME_ACC_BREAKDOWN_COMPAT" == "1" ]]; then

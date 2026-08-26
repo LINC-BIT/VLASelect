@@ -1,0 +1,9 @@
+{
+  "success_once": 1.0,
+  "success_at_end": 1.0,
+  "fail_once": 0.0,
+  "fail_at_end": 0.0,
+  "return": 14.657173156738281,
+  "episode_len": 75.0,
+  "reward": 0.1954289823770523
+}

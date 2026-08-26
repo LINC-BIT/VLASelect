@@ -31,6 +31,13 @@ FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
 ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS="${ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS:-60}"
+if [[ -z "${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY+x}" ]]; then
+    if [[ "$MWE" == "1" ]]; then
+        export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=1
+    else
+        export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=0
+    fi
+fi
 
 if [[ -z "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS+x}" ]]; then
     USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS=0
@@ -280,7 +287,7 @@ run_launch_command() {
 }
 
 refresh_top_manifest() {
-    python - <<'PY' "$PANELS_JSONL" "$MANIFEST_JSON" "$SUITE_STAMP" "$TABLE_ROOT"
+    python - <<'PY' "$PANELS_JSONL" "$MANIFEST_JSON" "$SUITE_STAMP" "$TABLE_ROOT" "$MWE" "$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
 import json
 import sys
 from pathlib import Path
@@ -289,6 +296,8 @@ jsonl_path = Path(sys.argv[1])
 manifest_path = Path(sys.argv[2])
 suite_stamp = sys.argv[3]
 table_root = sys.argv[4]
+mwe = sys.argv[5]
+mwe_workload_runtime_limit_seconds = sys.argv[6]
 panels = []
 if jsonl_path.exists():
     for raw_line in jsonl_path.read_text(encoding='utf-8').splitlines():
@@ -300,6 +309,8 @@ payload = {
     'suite_stamp': suite_stamp,
     'table_root': table_root,
     'figure_output': 'acc_comparison/FIG_ACC_TASK_ENV.pdf',
+    'mwe': mwe,
+    'mwe_workload_runtime_limit_seconds': mwe_workload_runtime_limit_seconds,
     'panels': panels,
     'families': panels,
 }
@@ -311,7 +322,8 @@ append_panel_entry() {
     local family="$1"
     local suite_manifest="$2"
     local launch_log="$3"
-    python - <<'PY' "$PANELS_JSONL" "$family" "$suite_manifest" "$launch_log" "$SUITE_STAMP" "$ENV_CHANGE_TIME_POINTS" "${PANEL_LABEL_BY_FAMILY[$family]}" "${WORKLOAD_NAME_BY_FAMILY[$family]}" "${DISPLAY_NAME_BY_FAMILY[$family]}" "${ENVS_ID_BY_FAMILY[$family]}"
+    local family_mwe_workload_runtime_limit_seconds="$4"
+    python - <<'PY' "$PANELS_JSONL" "$family" "$suite_manifest" "$launch_log" "$SUITE_STAMP" "$ENV_CHANGE_TIME_POINTS" "${PANEL_LABEL_BY_FAMILY[$family]}" "${WORKLOAD_NAME_BY_FAMILY[$family]}" "${DISPLAY_NAME_BY_FAMILY[$family]}" "${ENVS_ID_BY_FAMILY[$family]}" "$MWE" "$family_mwe_workload_runtime_limit_seconds"
 import json
 import sys
 from pathlib import Path
@@ -328,6 +340,8 @@ entry = {
     'workload_name': sys.argv[8],
     'display_name': sys.argv[9],
     'envs_id': sys.argv[10],
+    'mwe': sys.argv[11],
+    'mwe_workload_runtime_limit_seconds': sys.argv[12],
 }
 with jsonl_path.open('a', encoding='utf-8') as handle:
     handle.write(json.dumps(entry, ensure_ascii=True) + '\n')
@@ -533,7 +547,7 @@ launch_family_suite() {
     fi
 
     vlaselect_print_suite_training_logs "$suite_manifest" "fig7" "$family"
-    append_panel_entry "$family" "$suite_manifest" "$launch_log"
+    append_panel_entry "$family" "$suite_manifest" "$launch_log" "$family_mwe_workload_runtime_limit_seconds"
     if [[ "$TAIL_LOG" == "1" ]]; then
         vlaselect_start_manifest_log_tail "$suite_manifest" "$family"
     fi

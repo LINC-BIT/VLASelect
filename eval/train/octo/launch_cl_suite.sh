@@ -51,12 +51,12 @@ FALLBACK_ENV_CONFIG_PATH="${SUITE_ROOT}/fallback_env_config.json"
 SMOKE_ENV_OVERRIDES=()
 if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES=(
-        TOTAL_TIMESTEPS_OVERRIDE=1024
+        TOTAL_TIMESTEPS_OVERRIDE=24576
         NUM_ENVS_OVERRIDE=2
         NUM_EVAL_ENVS_OVERRIDE=8
         NUM_STEPS_OVERRIDE=16
         NUM_EVAL_STEPS_OVERRIDE=50
-        EVAL_FREQ_OVERRIDE=2
+        EVAL_FREQ_OVERRIDE=4
         NUM_MINIBATCHES_OVERRIDE=2
         UPDATE_EPOCHS_OVERRIDE=1
         SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1
@@ -324,6 +324,27 @@ if [[ "$SMOKE" == "1" ]]; then
     SMOKE_ENV_OVERRIDES+=(MAX_TIME_OVERRIDE="$mwe_per_method_runtime_minutes")
 fi
 
+filter_method_smoke_overrides() {
+    local method="$1"
+    shift || true
+    local -a raw_overrides=("$@")
+    local -a filtered_overrides=()
+    local entry key
+    for entry in "${raw_overrides[@]}"; do
+        key="${entry%%=*}"
+        if [[ "$method" == "ours_single_agent" ]]; then
+            case "$key" in
+                TOTAL_TIMESTEPS_OVERRIDE|NUM_ENVS_OVERRIDE|NUM_EVAL_ENVS_OVERRIDE|NUM_STEPS_OVERRIDE|NUM_EVAL_STEPS_OVERRIDE|EVAL_FREQ_OVERRIDE|NUM_MINIBATCHES_OVERRIDE|UPDATE_EPOCHS_OVERRIDE|SUPERVISED_UPDATES_PER_ITER_OVERRIDE|SUPERVISED_BATCH_SIZE_OVERRIDE|MAX_TIME_OVERRIDE)
+                    continue
+                    ;;
+            esac
+        fi
+        filtered_overrides+=("$entry")
+    done
+    printf '%s
+' "${filtered_overrides[@]}"
+}
+
 declare -A LAST_PID_BY_GPU=()
 
 for method in "${METHOD_ORDER[@]}"; do
@@ -340,12 +361,19 @@ for method in "${METHOD_ORDER[@]}"; do
     fi
 
     if [[ "${SHOULD_RUN[$method]}" != "1" ]]; then
+        if [[ -n "$INHERITED_SUITE_LABEL" ]]; then
+            method_status="inherited"
+            inherited_from="$INHERITED_SUITE_LABEL"
+        else
+            method_status="skipped"
+            inherited_from=""
+        fi
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
             "$method" \
             "${DISPLAY_NAMES[$method]}" \
             "$gpu" \
-            "inherited" \
-            "$INHERITED_SUITE_LABEL" \
+            "$method_status" \
+            "$inherited_from" \
             "" \
             "" \
             "$run_dir" \
@@ -396,8 +424,23 @@ for method in "${METHOD_ORDER[@]}"; do
         RESOURCE_CHANGE_DIRECTIONS_OVERRIDE="$RESOURCE_CHANGE_DIRECTIONS"
         RESOURCE_CHANGE_FACTORS_OVERRIDE="$RESOURCE_CHANGE_FACTORS"
         ENV_CONFIG_PATH_OVERRIDE="$EFFECTIVE_ENV_CONFIG_PATH"
-        "${SMOKE_ENV_OVERRIDES[@]}"
     )
+    if [[ "$SMOKE" == "1" ]]; then
+        mapfile -t method_smoke_overrides < <(filter_method_smoke_overrides "$method" "${SMOKE_ENV_OVERRIDES[@]}")
+        cmd+=("${method_smoke_overrides[@]}")
+    fi
+    if [[ "$SMOKE" == "1" && "$method" == "ours_single_agent" ]]; then
+        cmd+=(
+            MWE=1
+            MWE_MAX_RUNTIME_MINUTES="$mwe_per_method_runtime_minutes"
+        )
+    fi
+    if [[ "$SMOKE" == "1" && ( "$method" == "edgeta" || "$method" == "convertnet" ) ]]; then
+        cmd+=(
+            NUM_ENVS_OVERRIDE=2
+            EVAL_FREQ_OVERRIDE=15
+        )
+    fi
     if [[ "$SMOKE" == "1" && ( "$method" == "conrft" || "$method" == "improv_vla" ) ]]; then
         cmd+=(
             EXPERT_DEMO_PATH_OVERRIDE="$SMOKE_SHARED_EXPERT_DEMO_PATH"

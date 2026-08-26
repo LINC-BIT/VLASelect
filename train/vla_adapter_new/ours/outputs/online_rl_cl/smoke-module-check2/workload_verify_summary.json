@@ -1,0 +1,50 @@
+{
+  "env_id": "HoldCubeInHandObjectScaleDown1p2-v1",
+  "envs_id": [
+    "HoldCubeInHandObjectScaleDown1p2-v1"
+  ],
+  "change_time_points": [
+    9999.0
+  ],
+  "output_dir": "train/vla_adapter_new/ours/outputs/online_rl_cl/smoke-module-check2",
+  "stop_reason": "completed",
+  "elapsed_hours": 0.004766451101976499,
+  "train_success_once_summary": {
+    "initial": 0.0,
+    "final": 0.0,
+    "average": 0.0,
+    "max": 0.0,
+    "improvement": 0.0
+  },
+  "train_success_at_end_summary": {
+    "initial": 0.0,
+    "final": 0.0,
+    "average": 0.0,
+    "max": 0.0,
+    "improvement": 0.0
+  },
+  "eval_success_once_summary": {
+    "initial": 0.0,
+    "final": 1.0,
+    "average": 0.6666666666666666,
+    "max": 1.0,
+    "improvement": 1.0
+  },
+  "eval_success_at_end_summary": {
+    "initial": 0.0,
+    "final": 1.0,
+    "average": 0.6666666666666666,
+    "max": 1.0,
+    "improvement": 1.0
+  },
+  "final_eval_metrics": {
+    "success_once": 1.0,
+    "success_at_end": 1.0,
+    "fail_once": 0.0,
+    "fail_at_end": 0.0,
+    "return": 14.657173156738281,
+    "episode_len": 75.0,
+    "reward": 0.1954289823770523
+  },
+  "num_metric_points": 9
+}

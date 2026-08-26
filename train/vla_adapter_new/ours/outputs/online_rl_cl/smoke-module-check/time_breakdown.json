@@ -1,0 +1,44 @@
+{
+  "sampling_seconds": 5.459477135969792,
+  "training_seconds": 0.15408376400591806,
+  "time_breakdown": {
+    "sampling_seconds": 5.459477135969792,
+    "training_seconds": 0.15408376400591806,
+    "module_breakdown": {
+      "workload_initialization_seconds": 3.751819444994908,
+      "large_model_forward_seconds": 0.5830431230133399,
+      "small_model_generation_seconds": 0.1438399680191651,
+      "large_model_forward_and_small_model_generation_seconds": 0.726883091032505,
+      "small_model_feedback_seconds": 0.0,
+      "online_rl_completion_seconds": 5.61356089997571,
+      "optimal_network_searcher_seconds": 0.5830431230133399,
+      "selective_model_enhancer_seconds": 0.1438399680191651,
+      "optimal_network_search_and_selective_model_enhancement_seconds": 0.726883091032505,
+      "selective_knowledge_accumulation_seconds": 0.0
+    }
+  },
+  "module_breakdown": {
+    "workload_initialization_seconds": 3.751819444994908,
+    "large_model_forward_seconds": 0.5830431230133399,
+    "small_model_generation_seconds": 0.1438399680191651,
+    "large_model_forward_and_small_model_generation_seconds": 0.726883091032505,
+    "small_model_feedback_seconds": 0.0,
+    "online_rl_completion_seconds": 5.61356089997571,
+    "optimal_network_searcher_seconds": 0.5830431230133399,
+    "selective_model_enhancer_seconds": 0.1438399680191651,
+    "optimal_network_search_and_selective_model_enhancement_seconds": 0.726883091032505,
+    "selective_knowledge_accumulation_seconds": 0.0
+  },
+  "vlaselect_module_breakdown": {
+    "workload_initialization_seconds": 3.751819444994908,
+    "large_model_forward_seconds": 0.5830431230133399,
+    "small_model_generation_seconds": 0.1438399680191651,
+    "large_model_forward_and_small_model_generation_seconds": 0.726883091032505,
+    "small_model_feedback_seconds": 0.0,
+    "online_rl_completion_seconds": 5.61356089997571,
+    "optimal_network_searcher_seconds": 0.5830431230133399,
+    "selective_model_enhancer_seconds": 0.1438399680191651,
+    "optimal_network_search_and_selective_model_enhancement_seconds": 0.726883091032505,
+    "selective_knowledge_accumulation_seconds": 0.0
+  }
+}

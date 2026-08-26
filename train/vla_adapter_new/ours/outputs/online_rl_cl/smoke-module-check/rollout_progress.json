@@ -1,0 +1,11 @@
+{
+  "update": 3,
+  "num_updates": 8,
+  "rollout_step": 8,
+  "num_steps": 8,
+  "elapsed_hours": 0.001480930694977158,
+  "partial_reward_means": [
+    0.011250697076320648,
+    0.012653913348913193
+  ]
+}

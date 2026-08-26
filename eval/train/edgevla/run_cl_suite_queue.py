@@ -181,32 +181,55 @@ class SuiteScheduler:
             f"RESOURCE_CHANGE_FACTORS_OVERRIDE={self.args.resource_change_factors}",
         ]
         if self.args.smoke:
-            env_items.extend(
-                [
-                    "TOTAL_TIMESTEPS_OVERRIDE=1024",
-                    "NUM_ENVS_OVERRIDE=2",
-                    "NUM_EVAL_ENVS_OVERRIDE=8",
-                    "NUM_STEPS_OVERRIDE=16",
-                    "NUM_MINIBATCHES_OVERRIDE=2",
-                    "UPDATE_EPOCHS_OVERRIDE=1",
-                    "EVAL_EVERY_UPDATES_OVERRIDE=2",
-                    "EVAL_EPISODES_OVERRIDE=8",
-                    f"MAX_RUNTIME_HOURS_OVERRIDE={self.args.smoke_max_runtime_hours}",
-                    "EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45",
-                    "ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=2",
-                    "EVAL_MICRO_BATCH_SIZE_OVERRIDE=3",
-                    "UPDATE_MICRO_BATCH_SIZE_OVERRIDE=1",
-                    "ROLLOUT_PROGRESS_LOG_INTERVAL_OVERRIDE=1",
-                    "SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1",
-                    "SUPERVISED_BATCH_SIZE_OVERRIDE=2",
-                    "ONLINE_BUFFER_CAPACITY_OVERRIDE=256",
-                    "EXPERT_BUFFER_CAPACITY_OVERRIDE=256",
-                    "EXPERT_TARGET_SUCCESS_TRAJECTORIES_OVERRIDE=0",
-                    "EXPERT_COLLECT_NUM_ENVS_OVERRIDE=1",
-                    "EXPERT_COLLECT_MAX_STEPS_OVERRIDE=128",
-                    "MWE_ACTIVE_RUNTIME_ONLY=1",
+            smoke_env_items = [
+                "TOTAL_TIMESTEPS_OVERRIDE=1024",
+                "NUM_ENVS_OVERRIDE=2",
+                "NUM_EVAL_ENVS_OVERRIDE=8",
+                "NUM_STEPS_OVERRIDE=16",
+                "NUM_MINIBATCHES_OVERRIDE=2",
+                "UPDATE_EPOCHS_OVERRIDE=1",
+                "EVAL_EVERY_UPDATES_OVERRIDE=15",
+                "EVAL_EPISODES_OVERRIDE=8",
+                f"MAX_RUNTIME_HOURS_OVERRIDE={self.args.smoke_max_runtime_hours}",
+                "EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE=45",
+                "ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE=2",
+                "EVAL_MICRO_BATCH_SIZE_OVERRIDE=3",
+                "UPDATE_MICRO_BATCH_SIZE_OVERRIDE=1",
+                "ROLLOUT_PROGRESS_LOG_INTERVAL_OVERRIDE=1",
+                "SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1",
+                "SUPERVISED_BATCH_SIZE_OVERRIDE=2",
+                "ONLINE_BUFFER_CAPACITY_OVERRIDE=256",
+                "EXPERT_BUFFER_CAPACITY_OVERRIDE=256",
+                "EXPERT_TARGET_SUCCESS_TRAJECTORIES_OVERRIDE=0",
+                "EXPERT_COLLECT_NUM_ENVS_OVERRIDE=1",
+                "EXPERT_COLLECT_MAX_STEPS_OVERRIDE=128",
+                "MWE_ACTIVE_RUNTIME_ONLY=1",
+            ]
+            if method == "ours":
+                excluded_keys = {
+                    "TOTAL_TIMESTEPS_OVERRIDE",
+                    "NUM_ENVS_OVERRIDE",
+                    "NUM_EVAL_ENVS_OVERRIDE",
+                    "NUM_STEPS_OVERRIDE",
+                    "NUM_MINIBATCHES_OVERRIDE",
+                    "UPDATE_EPOCHS_OVERRIDE",
+                    "ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE",
+                    "EVAL_MICRO_BATCH_SIZE_OVERRIDE",
+                    "UPDATE_MICRO_BATCH_SIZE_OVERRIDE",
+                    "MAX_RUNTIME_HOURS_OVERRIDE",
+                }
+                smoke_env_items = [
+                    item for item in smoke_env_items if item.split("=", 1)[0] not in excluded_keys
                 ]
-            )
+            env_items.extend(smoke_env_items)
+            if method == "ours":
+                env_items.extend(
+                    [
+                        "MWE=1",
+                        f"MWE_MAX_RUNTIME_MINUTES={self.args.smoke_max_runtime_hours * 60.0:.6f}",
+                        "EVAL_EVERY_UPDATES_OVERRIDE=32",
+                    ]
+                )
         return ["env", *env_items, "bash", SCRIPT_BY_METHOD[method]]
 
     def start_monitor(self, method: str, gpu: int, train_pid: int) -> subprocess.Popen[Any]:

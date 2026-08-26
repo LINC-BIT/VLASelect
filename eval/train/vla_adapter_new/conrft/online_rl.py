@@ -67,7 +67,7 @@ class Args:
     teacher_checkpoint: str = DEFAULT_TEACHER_CHECKPOINT
     static_model_checkpoint: str = DEFAULT_STATIC_MODEL_CHECKPOINT
     resume_from: Optional[str] = None
-    num_envs: int = 256
+    num_envs: int = 128
     num_eval_envs: int = 8
     num_steps: int = 50
     total_timesteps: int = 100_000_000

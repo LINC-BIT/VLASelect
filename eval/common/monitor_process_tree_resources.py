@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import signal
@@ -151,6 +152,61 @@ def load_gpu_process_memory_mib() -> dict[int, float]:
         by_pid[pid] = by_pid.get(pid, 0.0) + used_mib
     return by_pid
 
+def collect_manifest_run_dirs(manifest_paths: list[Path]) -> set[Path]:
+    run_dirs: set[Path] = set()
+
+    def walk(value: object) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key == "run_dir" and isinstance(child, str) and child.strip():
+                    path = Path(child.strip())
+                    run_dirs.add(path if path.is_absolute() else (Path.cwd() / path))
+                walk(child)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    for manifest_path in manifest_paths:
+        if not manifest_path.is_file():
+            continue
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        walk(payload)
+    return run_dirs
+
+
+def load_gpu_csv_peak_mib(csv_path: Path) -> float:
+    if not csv_path.is_file():
+        return 0.0
+    try:
+        with csv_path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            peak = 0.0
+            for row in reader:
+                value = row.get("gpu_memory_used_mb")
+                if value is None or str(value).strip() == "":
+                    value = row.get("gpu_device_memory_used_mb")
+                try:
+                    current = float(value)
+                except (TypeError, ValueError):
+                    continue
+                if current > peak:
+                    peak = current
+            return peak
+    except OSError:
+        return 0.0
+
+
+def load_manifest_gpu_peak_mib(manifest_paths: list[Path]) -> float:
+    peak = 0.0
+    for run_dir in collect_manifest_run_dirs(manifest_paths):
+        csv_peak = load_gpu_csv_peak_mib(run_dir / "analysis" / "gpu_metrics.csv")
+        if csv_peak > peak:
+            peak = csv_peak
+    return peak
+
 
 def write_json(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -223,6 +279,12 @@ def main() -> None:
         else:
             current_vram_mib = 0.0
             current_vram_pid_count = 0
+
+        if current_vram_mib <= 0.0 and manifest_paths:
+            manifest_gpu_peak_mib = load_manifest_gpu_peak_mib(manifest_paths)
+            if manifest_gpu_peak_mib > current_vram_mib:
+                current_vram_mib = manifest_gpu_peak_mib
+                current_vram_pid_count = max(current_vram_pid_count, 1 if manifest_gpu_peak_mib > 0.0 else 0)
 
         payload["samples"] = int(payload.get("samples", 0)) + 1
         payload["last_sampled_at_utc"] = datetime.now(timezone.utc).isoformat()

@@ -50,7 +50,7 @@ if [[ "$SMOKE" == "1" ]]; then
         NUM_STEPS_OVERRIDE=16
         NUM_MINIBATCHES_OVERRIDE=2
         UPDATE_EPOCHS_OVERRIDE=1
-        EVAL_EVERY_UPDATES_OVERRIDE=2
+        EVAL_EVERY_UPDATES_OVERRIDE=15
         EVAL_EPISODES_OVERRIDE=8
         TRAIN_VIDEO_NUM_ENVS_OVERRIDE=1
         TEST_VIDEO_NUM_ENVS_OVERRIDE=1
@@ -265,8 +265,30 @@ if [[ "$SMOKE" == "1" ]]; then
         mwe_per_method_runtime_seconds=1
     fi
     mwe_per_method_runtime_hours="$(awk -v sec="$mwe_per_method_runtime_seconds" 'BEGIN { printf "%.6f", sec / 3600 }')"
+    mwe_per_method_runtime_minutes="$(awk -v sec="$mwe_per_method_runtime_seconds" 'BEGIN { printf "%.6f", sec / 60 }')"
     SMOKE_ENV_OVERRIDES+=(MAX_RUNTIME_HOURS_OVERRIDE="$mwe_per_method_runtime_hours")
 fi
+
+filter_method_smoke_overrides() {
+    local method="$1"
+    shift || true
+    local -a raw_overrides=("$@")
+    local -a filtered_overrides=()
+    local entry key
+    for entry in "${raw_overrides[@]}"; do
+        key="${entry%%=*}"
+        if [[ "$method" == "ours" ]]; then
+            case "$key" in
+                TOTAL_TIMESTEPS_OVERRIDE|NUM_ENVS_OVERRIDE|NUM_EVAL_ENVS_OVERRIDE|NUM_STEPS_OVERRIDE|NUM_MINIBATCHES_OVERRIDE|UPDATE_EPOCHS_OVERRIDE|ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE|EVAL_MICRO_BATCH_SIZE_OVERRIDE|UPDATE_MICRO_BATCH_SIZE_OVERRIDE|MAX_RUNTIME_HOURS_OVERRIDE)
+                    continue
+                    ;;
+            esac
+        fi
+        filtered_overrides+=("$entry")
+    done
+    printf '%s
+' "${filtered_overrides[@]}"
+}
 
 mkdir -p "$SUITE_ROOT" "$PLOTS_DIR" "$LAUNCH_LOG_DIR"
 rm -rf "$PID_DIR"
@@ -285,12 +307,19 @@ for method in "${METHOD_ORDER[@]}"; do
     run_dir="ckpt/${exp_name}"
 
     if [[ "${SHOULD_RUN[$method]}" != "1" ]]; then
+        if [[ -n "$INHERITED_SUITE_LABEL" ]]; then
+            method_status="inherited"
+            inherited_from="$INHERITED_SUITE_LABEL"
+        else
+            method_status="skipped"
+            inherited_from=""
+        fi
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
             "$method" \
             "${DISPLAY_NAMES[$method]}" \
             "$gpu" \
-            "inherited" \
-            "$INHERITED_SUITE_LABEL" \
+            "$method_status" \
+            "$inherited_from" \
             "" \
             "" \
             "$run_dir" \
@@ -353,9 +382,19 @@ for method in "${METHOD_ORDER[@]}"; do
         RESOURCE_CHANGE_TIME_POINTS_OVERRIDE="$RESOURCE_CHANGE_TIME_POINTS"
         RESOURCE_CHANGE_DIRECTIONS_OVERRIDE="$RESOURCE_CHANGE_DIRECTIONS"
         RESOURCE_CHANGE_FACTORS_OVERRIDE="$RESOURCE_CHANGE_FACTORS"
-        "${SMOKE_ENV_OVERRIDES[@]}"
-        bash "$script_path"
     )
+    if [[ "$SMOKE" == "1" ]]; then
+        mapfile -t method_smoke_overrides < <(filter_method_smoke_overrides "$method" "${SMOKE_ENV_OVERRIDES[@]}")
+        cmd+=("${method_smoke_overrides[@]}")
+    fi
+    if [[ "$SMOKE" == "1" && "$method" == "ours" ]]; then
+        cmd+=(
+            MWE=1
+            MWE_MAX_RUNTIME_MINUTES="$mwe_per_method_runtime_minutes"
+            EVAL_EVERY_UPDATES_OVERRIDE=32
+        )
+    fi
+    cmd+=(bash "$script_path")
 
     wait_for_pid="${LAST_PID_BY_GPU[$gpu]:-}"
     cmd_escaped="$(printf '%q ' "${cmd[@]}")"

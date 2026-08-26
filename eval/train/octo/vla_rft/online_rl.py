@@ -43,6 +43,7 @@ from ours.pretrain_fbs_model.main import add_FBS_into_cnn, generate_small_cnn_wi
 from ours.utils.dl.common.model import get_module, set_module
 from train.octo.model import Actor
 from train.octo.metrics_json import JsonMetricsLogger, build_metric_entry
+from train.common.mwe_eval import append_episode_metric_batch, summarize_episode_metric_tensors, use_train_success_only
 from train.octo.ours.deft_multiple_models.online_rl import Agent, DictArray
 from train.octo.ours.evolving_envs import PickCubeEnvMutable
 from train.octo.vla_rft.draw_online_rl_acc import draw_success_curve
@@ -79,7 +80,7 @@ class Args:
     total_timesteps: int = 100000000
     max_time: Optional[float] = None
     learning_rate: float = 2e-5
-    num_envs: int = 64
+    num_envs: int = 128
     num_eval_envs: int = 32
     partial_reset: bool = True
     eval_partial_reset: bool = False
@@ -630,7 +631,16 @@ def make_envs_for_env_id(args: Args, env_id: str, env_kwargs: dict, run_name: st
 
 
 @torch.no_grad()
-def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step: int):
+def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step: int, train_episode_metrics=None):
+    if use_train_success_only():
+        mean_metrics = summarize_episode_metric_tensors(train_episode_metrics or {})
+        if "success_at_end" in mean_metrics:
+            print(
+                "[eval] "
+                f"global_step={global_step} "
+                f"success_at_end={mean_metrics['success_at_end']:.4f}"
+            )
+        return mean_metrics
     set_sparsity(agent, args.max_sparsity)
     agent.eval()
     metrics = defaultdict(list)
@@ -651,11 +661,12 @@ def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step
         mean_metrics[key] = mean_value
         if logger is not None:
             logger.add_scalar(f"eval/{key}", mean_value, global_step)
-    for key in ("success_once", "success_at_end"):
-        if key not in mean_metrics:
-            mean_metrics[key] = 0.0
-            if logger is not None:
-                logger.add_scalar(f"eval/{key}", 0.0, global_step)
+    if "success_at_end" in mean_metrics:
+        print(
+            "[eval] "
+            f"global_step={global_step} "
+            f"success_at_end={mean_metrics['success_at_end']:.4f}"
+        )
     return mean_metrics
 
 
@@ -887,6 +898,7 @@ def main():
                 group["lr"] = lr_now
 
         final_values = torch.zeros((args.num_steps, args.num_envs), device=device)
+        train_episode_metrics = defaultdict(list)
         rollout_start = time.perf_counter()
         reward_info_last = {}
         for step in range(args.num_steps):
@@ -910,6 +922,7 @@ def main():
 
             if "final_info" in infos:
                 done_mask = infos["_final_info"]
+                append_episode_metric_batch(train_episode_metrics, infos["final_info"]["episode"], done_mask)
                 done_indices = torch.arange(args.num_envs, device=device)[done_mask]
                 if logger is not None:
                     for key, value in infos["final_info"]["episode"].items():
@@ -996,10 +1009,15 @@ def main():
 
         update_time = time.perf_counter() - update_start
         runtime_tracker.add_active_seconds(update_time)
-        metrics = evaluate(agent, eval_envs, args, logger, global_step)
+        should_run_eval = iteration % args.eval_freq == 0 or iteration == args.num_iterations
+        if not should_run_eval:
+            continue
+        metrics = evaluate(agent, eval_envs, args, logger, global_step, train_episode_metrics=train_episode_metrics)
         curve_output_path = maybe_draw_success_curve(run_name, args, logger)
-        success_once = metrics.get("success_once", 0.0)
-        success_end = metrics.get("success_at_end", 0.0)
+        success_once = metrics.get("success_once")
+        success_end = metrics.get("success_at_end")
+        success_once_display = float(success_once) if success_once is not None else float("nan")
+        success_end_display = float(success_end) if success_end is not None else float("nan")
         last_eval_metrics = dict(metrics)
         json_metrics.append(
             build_metric_entry(
@@ -1020,7 +1038,7 @@ def main():
             )
         )
         print(
-            f"iter={iteration} success_once={success_once:.4f} success_end={success_end:.4f} "
+            f"iter={iteration} success_once={success_once_display:.4f} success_end={success_end_display:.4f} "
             f"env_reward={env_rewards.mean().item():.4f} verified_reward={verified_rewards.mean().item():.4f} "
             f"curve={curve_output_path}"
         )
@@ -1045,7 +1063,7 @@ def main():
             for key, value in reward_info_last.items():
                 logger.add_scalar(f"world_model/{key}", value, global_step)
 
-        if success_once >= best_success_once:
+        if success_once is not None and success_once >= best_success_once:
             best_success_once = success_once
             save_checkpoint(
                 run_name,
@@ -1053,9 +1071,9 @@ def main():
                 agent,
                 optimizer,
                 iteration,
-                {"success_once": best_success_once, "success_at_end": success_end},
+                {k: v for k, v in {"success_once": best_success_once, "success_at_end": success_end}.items() if v is not None},
             )
-        if success_end >= best_success_end:
+        if success_end is not None and success_end >= best_success_end:
             best_success_end = success_end
             save_checkpoint(
                 run_name,
@@ -1063,7 +1081,7 @@ def main():
                 agent,
                 optimizer,
                 iteration,
-                {"success_once": success_once, "success_at_end": best_success_end},
+                {k: v for k, v in {"success_once": success_once, "success_at_end": best_success_end}.items() if v is not None},
             )
 
         if args.save_model and iteration % args.eval_freq == 0:
@@ -1073,7 +1091,7 @@ def main():
                 agent,
                 optimizer,
                 iteration,
-                {"success_once": success_once, "success_at_end": success_end},
+                {k: v for k, v in {"success_once": success_once, "success_at_end": success_end}.items() if v is not None},
             )
 
         _, should_stop_for_schedule, elapsed_minutes = maybe_switch_envs()

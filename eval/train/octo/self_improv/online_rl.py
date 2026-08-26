@@ -41,6 +41,7 @@ from ours.pretrain_fbs_model.main import add_FBS_into_cnn, generate_small_cnn_wi
 from ours.utils.dl.common.model import get_module, set_module
 from train.octo.model import Actor
 from train.octo.metrics_json import JsonMetricsLogger, build_metric_entry
+from train.common.mwe_eval import append_episode_metric_batch, summarize_episode_metric_tensors, use_train_success_only
 from train.octo.ours.evolving_envs import PickCubeEnvMutable
 
 
@@ -71,7 +72,7 @@ class Args:
     total_timesteps: int = 100000000
     max_time: Optional[float] = None
     learning_rate: float = 3e-5
-    num_envs: int = 64
+    num_envs: int = 128
     num_eval_envs: int = 32
     partial_reset: bool = True
     eval_partial_reset: bool = False
@@ -760,7 +761,16 @@ def calibrate_success_threshold(reward_agent: Agent, eval_envs, args: Args):
     return threshold
 
 
-def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step: int, reward_agent: Optional[Agent] = None, success_threshold: Optional[float] = None):
+def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step: int, reward_agent: Optional[Agent] = None, success_threshold: Optional[float] = None, train_episode_metrics=None):
+    if use_train_success_only():
+        mean_metrics = summarize_episode_metric_tensors(train_episode_metrics or {})
+        if "success_at_end" in mean_metrics:
+            print(
+                "[eval] "
+                f"global_step={global_step} "
+                f"success_at_end={mean_metrics['success_at_end']:.4f}"
+            )
+        return mean_metrics
     set_sparsity(agent, args.max_sparsity)
     agent.eval()
     metrics = defaultdict(list)
@@ -785,6 +795,12 @@ def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step
         mean_metrics[key] = mean_value
         if logger is not None:
             logger.add_scalar(f"eval/{key}", mean_value, global_step)
+    if "success_at_end" in mean_metrics:
+        print(
+            "[eval] "
+            f"global_step={global_step} "
+            f"success_at_end={mean_metrics['success_at_end']:.4f}"
+        )
     return mean_metrics
 
 
@@ -1000,6 +1016,7 @@ def main():
                 group["lr"] = lr_now
 
         rollout_start = time.perf_counter()
+        train_episode_metrics = defaultdict(list)
         mean_progress_reward = 0.0
         predicted_success_hits = 0.0
         predicted_success_total = 0.0
@@ -1026,6 +1043,7 @@ def main():
             mean_progress_reward += progress_reward.mean().item()
 
             if done_mask is not None:
+                append_episode_metric_batch(train_episode_metrics, final_episode, done_mask)
                 final_scores = next_scores[done_mask]
                 predicted_success = (final_scores >= success_threshold).float()
                 predicted_success_hits += predicted_success.sum().item()
@@ -1087,9 +1105,15 @@ def main():
         update_time = time.perf_counter() - update_start
         runtime_tracker.add_active_seconds(update_time)
 
-        metrics = evaluate(agent, eval_envs, args, logger, global_step, reward_agent, success_threshold)
-        success_once = metrics.get("success_once", 0.0)
-        success_end = metrics.get("success_at_end", 0.0)
+        should_run_eval = iteration % args.eval_freq == 0 or iteration == args.num_iterations
+        if not should_run_eval:
+            continue
+
+        metrics = evaluate(agent, eval_envs, args, logger, global_step, reward_agent, success_threshold, train_episode_metrics=train_episode_metrics)
+        success_once = metrics.get("success_once")
+        success_end = metrics.get("success_at_end")
+        success_once_display = float(success_once) if success_once is not None else float("nan")
+        success_end_display = float(success_end) if success_end is not None else float("nan")
         last_eval_metrics = dict(metrics)
         json_metrics.append(
             build_metric_entry(
@@ -1125,7 +1149,7 @@ def main():
             break
 
         print(
-            f"iter={iteration} success_once={success_once:.4f} success_end={success_end:.4f} "
+            f"iter={iteration} success_once={success_once_display:.4f} success_end={success_end_display:.4f} "
             f"progress_reward={mean_progress_reward:.6f} "
             f"pred_success={predicted_success_hits / max(1.0, predicted_success_total):.4f}"
         )
@@ -1145,7 +1169,7 @@ def main():
             logger.add_scalar("time/update_time", update_time, global_step)
             logger.add_scalar("reward_model/success_threshold", success_threshold, global_step)
 
-        if success_once >= best_success_once:
+        if success_once is not None and success_once >= best_success_once:
             best_success_once = success_once
             save_checkpoint(
                 run_name,
@@ -1154,9 +1178,9 @@ def main():
                 optimizer,
                 iteration,
                 success_threshold,
-                {"success_once": best_success_once, "success_at_end": success_end},
+                {k: v for k, v in {"success_once": best_success_once, "success_at_end": success_end}.items() if v is not None},
             )
-        if success_end >= best_success_end:
+        if success_end is not None and success_end >= best_success_end:
             best_success_end = success_end
             save_checkpoint(
                 run_name,
@@ -1165,7 +1189,7 @@ def main():
                 optimizer,
                 iteration,
                 success_threshold,
-                {"success_once": success_once, "success_at_end": best_success_end},
+                {k: v for k, v in {"success_once": success_once, "success_at_end": best_success_end}.items() if v is not None},
             )
 
         if args.save_model and iteration % args.eval_freq == 0:
@@ -1176,7 +1200,7 @@ def main():
                 optimizer,
                 iteration,
                 success_threshold,
-                {"success_once": success_once, "success_at_end": success_end},
+                {k: v for k, v in {"success_once": success_once, "success_at_end": success_end}.items() if v is not None},
             )
 
     if args.save_model:

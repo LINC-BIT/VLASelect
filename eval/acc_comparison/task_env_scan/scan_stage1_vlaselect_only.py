@@ -273,7 +273,7 @@ def collect_accuracy_series(run_dir: Path) -> list[tuple[float, float]]:
                     value = float(raw_value)
                 except Exception:
                     continue
-                if not math.isfinite(value):
+                if not math.isfinite(value) or value <= 0.0:
                     continue
                 elapsed_hours = metric.get("elapsed_hours")
                 try:
@@ -299,7 +299,7 @@ def collect_accuracy_series(run_dir: Path) -> list[tuple[float, float]]:
             value = float(raw_value)
         except Exception:
             continue
-        if not math.isfinite(value):
+        if not math.isfinite(value) or value <= 0.0:
             continue
         return [(0.0, value)]
     return []

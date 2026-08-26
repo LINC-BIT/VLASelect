@@ -387,6 +387,7 @@ def main(args):
     continual_env_schedule = build_continual_env_schedule(args, ENV_KWARGS_LIST)
     current_env_index = 0
     training_start_time = time.monotonic()
+    training_compute_seconds = 0.0
     envs, eval_envs, current_env_name = make_envs_for_env_kwargs(args, ckpt, current_env_index, base_env_kwargs)
     next_obs, _ = envs.reset(seed=args.seed)
     next_done = torch.zeros(args.num_envs, device=device)
@@ -401,6 +402,8 @@ def main(args):
             elapsed_minutes,
         )
         if scheduled_env_index >= len(continual_env_schedule.env_kwarg_list):
+            if args.max_time is not None:
+                return False, False, elapsed_minutes
             return False, True, elapsed_minutes
         if scheduled_env_index == current_env_index:
             return False, False, elapsed_minutes
@@ -474,9 +477,12 @@ def main(args):
             print(f"[OnlineRL] continual schedule finished at elapsed={elapsed_minutes:.2f} minutes")
             break
         if args.max_time is not None:
-            elapsed_minutes = (time.monotonic() - training_start_time) / 60.0
+            elapsed_minutes = training_compute_seconds / 60.0
             if elapsed_minutes >= args.max_time:
-                print(f"[OnlineRL] reached max_time={args.max_time} minutes")
+                print(
+                    f"[OnlineRL] reached max_time={args.max_time} minutes "
+                    "of rollout/update time"
+                )
                 break
         if switched_env:
             print(f"[OnlineRL] active env={current_env_name}")
@@ -500,11 +506,7 @@ def main(args):
                 client.eval()
 
         if not last_save_skip and global_steps % step_infos["save_interval_steps"] == 0 and accelerator.is_main_process:
-            save_checkpoint(ckpt["latest_agent"], unwrapped_agent.checkpoint_state_dict())
-            save_checkpoint(ckpt["latest_opt"], {"opt": optimizer.state_dict(), "step": global_steps})
             if clients is not None:
-                for name in agent_names:
-                    clients[name].save_feature_aggregators(os.path.join(ckpt["root_dir"], f"latest_ag_{name}.pt"))
                 set_client_feature_aggregator_requires_grad(clients, False)
                 for client in clients.values():
                     client.use_eval_feature_selector_strategy()
@@ -524,21 +526,25 @@ def main(args):
 
             score = eval_metrics.get("success_rate", eval_metrics[list(eval_metrics.keys())[0]]).mean()
             pbar.set_postfix(eval_score=score, env=current_env_name)
-            metrics_log.append({"step": global_steps, "score": float(score), "env": current_env_name})
+            metrics_log.append(
+                {
+                    "step": global_steps,
+                    "score": float(score),
+                    "env": current_env_name,
+                    "elapsed_minutes": training_compute_seconds / 60.0,
+                }
+            )
             dump_json(ckpt["metrics"], metrics_log)
             if score >= best_score:
                 best_score = score
-                save_checkpoint(ckpt["best_agent"], unwrapped_agent.checkpoint_state_dict())
-                if clients is not None:
-                    for name in agent_names:
-                        clients[name].save_feature_aggregators(os.path.join(ckpt["root_dir"], f"best_ag_{name}.pt"))
-                print(f"[Eval] New best model saved (score={score:.3f}, env={current_env_name})")
+                print(f"[Eval] New best score={score:.3f}, env={current_env_name}")
 
         last_save_skip = False
 
         if clients is not None:
             for client in clients.values():
                 client.train()
+        compute_start_time = time.monotonic()
         rollout = ROLLOUT_FN(
             args=args,
             agent=agent,
@@ -720,6 +726,8 @@ def main(args):
                 set_requires_grad(head_trainable_parameters, not critic_only)
                 set_requires_grad(encoder_trainable_parameters, not critic_only)
 
+        training_compute_seconds += time.monotonic() - compute_start_time
+
         if clients is not None:
             ag_data_infos = {}
             for client_name, client in clients.items():
@@ -790,12 +798,6 @@ def main(args):
     eval_envs = None
     clear_torch_cuda_cache()
     if accelerator.is_main_process:
-        unwrapped_agent = accelerator.unwrap_model(agent)
-        save_checkpoint(ckpt["latest_agent"], unwrapped_agent.checkpoint_state_dict())
-        save_checkpoint(ckpt["latest_opt"], {"opt": optimizer.state_dict(), "step": global_steps})
-        if clients is not None:
-            for name in agent_names:
-                clients[name].save_feature_aggregators(os.path.join(ckpt["root_dir"], f"latest_ag_{name}.pt"))
         writer.close()
 
 

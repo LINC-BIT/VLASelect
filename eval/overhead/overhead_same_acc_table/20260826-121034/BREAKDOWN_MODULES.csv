@@ -1,0 +1,5 @@
+family,panel_label,workload_name,display_name,workload_initialization_seconds,optimal_network_searcher_seconds,selective_model_enhancer_seconds,optimal_network_search_and_selective_model_enhancement_seconds,selective_knowledge_accumulation_seconds,online_rl_completion_seconds,total_seconds,has_module_data,source,runtime_source,same_acc_runtime_seconds
+octo,a,Single-arm robot,VLASelect,3.8545424879994243,0.014640639012213796,0.8383110709837638,0.8529517099959776,0.0,1.0651538790552877,0.8529517099959776,1,ckpt/cl_suite/20260826-121034/ours_single_agent/[agent]/metrics_history.json,ckpt/cl_suite/20260826-121034/ours_single_agent/[agent]/metrics_history.json,1.0651538790552877
+vla_adapter_new,b,Dexterous hand,VLASelect,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,,,0.0
+tinyvla,c,Mobile manipulator,VLASelect,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,,,0.0
+edgevla,d,Humanoid robot,VLASelect,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,,,0.0

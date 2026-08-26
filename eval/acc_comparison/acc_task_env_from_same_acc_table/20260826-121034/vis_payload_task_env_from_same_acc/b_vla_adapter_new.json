@@ -1,0 +1,58 @@
+{
+  "source": {
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
+    "suite_manifest": "ckpt/vla_adapter_new/cl_suite/20260826-121034/manifest.json"
+  },
+  "render_config": {
+    "smoothing": 0.7,
+    "matplotlib": {
+      "font_family": "sans-serif",
+      "font_sans_serif": [
+        "Arial",
+        "DejaVu Sans",
+        "Liberation Sans"
+      ],
+      "font_size": 36,
+      "axes_labelsize": 36,
+      "xtick_labelsize": 36,
+      "ytick_labelsize": 36,
+      "legend_fontsize": 36
+    },
+    "figure": {
+      "width": 9.6,
+      "height": 8.0,
+      "dpi": 200
+    },
+    "legend_figure": {
+      "width": 8.0,
+      "min_height": 2.2,
+      "height_per_item": 0.78,
+      "handlelength": 2.8,
+      "pad_inches": 0.15
+    }
+  },
+  "plots": {
+    "success_once": {
+      "tag": "eval_success_once",
+      "output_stem": "b_vla_adapter_new",
+      "xlabel": "Time (minutes)",
+      "ylabel": "Success Rate",
+      "xlim": [
+        0.0,
+        300.0
+      ],
+      "ylim": [
+        0.0,
+        1.0
+      ],
+      "grid_alpha": 0.3,
+      "summary": {
+        "others_average": null,
+        "ours_average": null,
+        "absolute_improvement_percent": null
+      },
+      "series": [],
+      "legend_entries": []
+    }
+  }
+}

@@ -28,7 +28,7 @@ USE_HF_MIRROR=${USE_HF_MIRROR:-1}
 HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
 MODEL_BACKBONE=${MULTI_AGENT_MODEL_BACKBONE:-mixed_tiny_vla_smolvla}
 MODEL_DIR=${MULTI_AGENT_MODEL_DIR:-}
-MAPPO_INIT_AGENT_PATH=${MULTI_AGENT_MAPPO_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_agent.pt}
+MAPPO_INIT_AGENT_PATH=${MULTI_AGENT_MAPPO_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt.base}
 OURS_INIT_AGENT_PATH=${MULTI_AGENT_OURS_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt}
 NUM_ENVS=${MULTI_AGENT_NUM_ENVS:-128}
 NUM_EVAL_ENVS=${MULTI_AGENT_NUM_EVAL_ENVS:-50}
@@ -60,15 +60,8 @@ ATTN_IMPLEMENTATION=${MULTI_AGENT_ATTN_IMPLEMENTATION:-sdpa}
 POLICY_MODE=${MULTI_AGENT_POLICY_MODE:-native}
 FEATURE_SELECTOR_TOPK_TRAJECTORIES=${MULTI_AGENT_FEATURE_SELECTOR_TOPK_TRAJECTORIES:-4}
 
-: "${MWE_RUNTIME_LIMIT_SECONDS:=300}"
+: "${MWE_RUNTIME_LIMIT_SECONDS:=900}"
 export MWE_RUNTIME_LIMIT_SECONDS
-if [[ "$MWE" == "1" && "${MWE_TIMEOUT_APPLIED:-0}" != "1" ]]; then
-    if command -v timeout >/dev/null 2>&1; then
-        export MWE_TIMEOUT_APPLIED=1
-        exec timeout --preserve-status -k 10s "${MWE_RUNTIME_LIMIT_SECONDS}s" bash "$SCRIPT_PATH" "$@"
-    fi
-    echo "[warn] timeout command not found; MWE runtime is not hard-capped" >&2
-fi
 if [[ "$MWE" == "1" ]]; then
     EFFECTIVE_ENV_CHANGE_TIME_POINTS="$(vlaselect_convert_mwe_schedule_seconds_to_minutes "$ENV_CHANGE_TIME_POINTS")"
     NUM_ENVS=${MULTI_AGENT_NUM_ENVS:-8}
@@ -76,7 +69,7 @@ if [[ "$MWE" == "1" ]]; then
     UPDATE_EPOCHS=${MULTI_AGENT_UPDATE_EPOCHS:-1}
     NUM_MINIBATCH=${MULTI_AGENT_NUM_MINIBATCH:-4}
     SAVE_INTERVAL_PER_ROLLOUT=${MULTI_AGENT_SAVE_INTERVAL_PER_ROLLOUT:-1}
-    MAX_TIME=${MULTI_AGENT_MAX_TIME_MINUTES:-4.5}
+    MAX_TIME=${MULTI_AGENT_MAX_TIME_MINUTES:-2}
 fi
 
 vlaselect_resource_summary_start "run_multi_agent.sh"
@@ -197,9 +190,18 @@ run_online_method() {
         env_args+=("FEATURE_SELECTOR_TOPK_TRAJECTORIES=${FEATURE_SELECTOR_TOPK_TRAJECTORIES}")
     fi
 
+    local -a run_cmd=(env "${env_args[@]}" bash "$wrapper_script")
+    if [[ "$MWE" == "1" ]]; then
+        if command -v timeout >/dev/null 2>&1; then
+            run_cmd=(timeout --preserve-status -k 10s "${MWE_RUNTIME_LIMIT_SECONDS}s" "${run_cmd[@]}")
+        else
+            echo "[warn] timeout command not found; MWE runtime for method=${method} is not hard-capped" >&2
+        fi
+    fi
+
     echo "[run] method=${method} output=${run_dir}"
     if [[ "$TAIL_LOG" == "1" ]]; then
-        if env "${env_args[@]}" bash "$wrapper_script" 2>&1 | tee "$log_file"; then
+        if "${run_cmd[@]}" 2>&1 | tee "$log_file"; then
             append_run "$method" "$MODEL_BACKBONE" "$run_dir" "$log_file" "completed" "$result_json"
         else
             local status=$?
@@ -207,7 +209,7 @@ run_online_method() {
             append_run "$method" "$MODEL_BACKBONE" "$run_dir" "$log_file" "failed" "$result_json"
         fi
     else
-        if env "${env_args[@]}" bash "$wrapper_script" >"$log_file" 2>&1; then
+        if "${run_cmd[@]}" >"$log_file" 2>&1; then
             append_run "$method" "$MODEL_BACKBONE" "$run_dir" "$log_file" "completed" "$result_json"
         else
             local status=$?
@@ -240,3 +242,6 @@ done
 write_manifest
 printf '[summary] manifest=%s\n' "${MANIFEST_PATH}"
 "${PYTHON_BIN}" "${SCRIPT_DIR}/summarize_multi_agent.py" --manifest "${MANIFEST_PATH}"
+"${PYTHON_BIN}" "${SCRIPT_DIR}/plot_multi_agent_accuracy.py" \
+    --manifest "${MANIFEST_PATH}" \
+    --output "${OUTPUT_BASE}/accuracy_vs_time.png"

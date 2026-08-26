@@ -272,6 +272,7 @@ eval/ckpt/vla_adapter_new/LIBERO-Object/model.safetensors
 eval/ckpt/vla_adapter_new/LIBERO-Object/action_head--checkpoint.pt
 eval/ckpt/vla_adapter_new/LIBERO-Object/proprio_projector--checkpoint.pt
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt
+eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt.base
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_agent.pt
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_opt.pt
 eval/ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt

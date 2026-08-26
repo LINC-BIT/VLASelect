@@ -439,6 +439,177 @@ def _metric_active_runtime_seconds(metric: dict[str, Any]) -> float | None:
     return None
 
 
+def _same_acc_summary_path(top_manifest: dict[str, Any]) -> Path | None:
+    manifest_path = _resolve_same_acc_manifest_path(top_manifest)
+    if manifest_path is None:
+        return None
+    candidate = manifest_path.parent / "overhead_same_acc_summary.json"
+    return candidate if candidate.exists() else None
+
+
+def _load_same_acc_cutoff_hours(top_manifest: dict[str, Any]) -> tuple[dict[tuple[str, str], float], str]:
+    summary_path = _same_acc_summary_path(top_manifest)
+    if summary_path is None:
+        return {}, ""
+    payload = _read_json(summary_path)
+    if not isinstance(payload, list):
+        return {}, _display_path(summary_path)
+    cutoff_hours_by_method: dict[tuple[str, str], float] = {}
+    for row in payload:
+        if not isinstance(row, dict):
+            continue
+        family = str(row.get("family", "")).strip()
+        method = str(row.get("method", "")).strip()
+        cutoff_hours = _finite_float_or_none(row.get("reach_hours"))
+        if not family or not method or cutoff_hours is None or cutoff_hours <= 0.0:
+            continue
+        cutoff_hours_by_method[(family, method)] = float(cutoff_hours)
+    return cutoff_hours_by_method, _display_path(summary_path)
+
+
+def _metric_sampling_training_cumulative(metric: dict[str, Any]) -> tuple[float | None, float | None]:
+    sampling = _finite_float_or_none(metric.get("cumulative_rollout_seconds"))
+    training = _finite_float_or_none(metric.get("cumulative_training_seconds"))
+    if sampling is not None or training is not None:
+        return sampling, training
+    time_breakdown = metric.get("time_breakdown")
+    if isinstance(time_breakdown, dict):
+        sampling = _finite_float_or_none(time_breakdown.get("sampling_seconds"))
+        training = _finite_float_or_none(time_breakdown.get("training_seconds"))
+        if sampling is not None or training is not None:
+            return sampling, training
+    return None, None
+
+
+def _interpolate_breakdown_at_cutoff(points: list[tuple[float, float, float]], cutoff_hours: float) -> tuple[float, float]:
+    if not points or cutoff_hours <= 0.0:
+        return 0.0, 0.0
+    points = sorted(points, key=lambda item: item[0])
+    if cutoff_hours <= points[0][0]:
+        first_hours, first_sampling, first_training = points[0]
+        if first_hours <= 0.0:
+            return max(0.0, first_sampling), max(0.0, first_training)
+        ratio = max(0.0, min(1.0, cutoff_hours / first_hours))
+        return max(0.0, first_sampling * ratio), max(0.0, first_training * ratio)
+    previous_hours = 0.0
+    previous_sampling = 0.0
+    previous_training = 0.0
+    for current_hours, current_sampling, current_training in points:
+        if cutoff_hours <= current_hours:
+            span = current_hours - previous_hours
+            if span <= 0.0:
+                return max(0.0, current_sampling), max(0.0, current_training)
+            ratio = max(0.0, min(1.0, (cutoff_hours - previous_hours) / span))
+            sampling = previous_sampling + ratio * (current_sampling - previous_sampling)
+            training = previous_training + ratio * (current_training - previous_training)
+            return max(0.0, sampling), max(0.0, training)
+        previous_hours = current_hours
+        previous_sampling = current_sampling
+        previous_training = current_training
+    return max(0.0, points[-1][1]), max(0.0, points[-1][2])
+
+
+def _load_history_time_breakdown_until_cutoff(run_dir: Path, cutoff_hours: float) -> MethodBreakdown | None:
+    history = _load_history(run_dir)
+    if not history:
+        return None
+    points: list[tuple[float, float, float]] = []
+    for metric in history:
+        if not isinstance(metric, dict):
+            continue
+        elapsed_hours = _finite_float_or_none(metric.get("elapsed_hours"))
+        if elapsed_hours is None:
+            continue
+        sampling, training = _metric_sampling_training_cumulative(metric)
+        if sampling is None and training is None:
+            continue
+        points.append((elapsed_hours, float(sampling or 0.0), float(training or 0.0)))
+    if not points:
+        return None
+    sampling_seconds, training_seconds = _interpolate_breakdown_at_cutoff(points, cutoff_hours)
+    history_path = run_dir / "metrics_history.json"
+    return MethodBreakdown(
+        sampling_seconds=sampling_seconds,
+        training_seconds=training_seconds,
+        has_data=(sampling_seconds > 0.0 or training_seconds > 0.0),
+        source=_display_path(history_path),
+        module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS},
+    )
+
+
+def _load_tensorboard_time_breakdown_until_cutoff(run_dir: Path, cutoff_hours: float) -> MethodBreakdown | None:
+    tb_dir = _find_tb_dir(run_dir)
+    if tb_dir is None:
+        return None
+    try:
+        accumulator = event_accumulator.EventAccumulator(
+            str(tb_dir),
+            size_guidance={event_accumulator.SCALARS: 0},
+        )
+        accumulator.Reload()
+    except Exception:
+        return None
+    tags = set(accumulator.Tags().get("scalars", []))
+    if "time/elapsed_minutes" not in tags:
+        return None
+    try:
+        elapsed_events = accumulator.Scalars("time/elapsed_minutes")
+    except Exception:
+        return None
+    if not elapsed_events:
+        return None
+    elapsed_hours_by_step: dict[int, float] = {}
+    for event in elapsed_events:
+        try:
+            elapsed_hours_by_step[int(event.step)] = float(event.value) / 60.0
+        except Exception:
+            continue
+    if not elapsed_hours_by_step:
+        return None
+    sampling_seconds = 0.0
+    training_seconds = 0.0
+
+    def accumulate(tag: str) -> float:
+        if tag not in tags:
+            return 0.0
+        try:
+            events = accumulator.Scalars(tag)
+        except Exception:
+            return 0.0
+        total = 0.0
+        for event in events:
+            elapsed_hours = elapsed_hours_by_step.get(int(event.step))
+            if elapsed_hours is None or elapsed_hours > cutoff_hours:
+                continue
+            total += float(event.value)
+        return total
+
+    sampling_seconds += accumulate("time/rollout_time")
+    training_seconds += accumulate("time/update_time")
+    training_seconds += accumulate("time/rl_update_time")
+    training_seconds += accumulate("time/sl_time")
+    has_data = sampling_seconds > 0.0 or training_seconds > 0.0
+    if not has_data:
+        return None
+    return MethodBreakdown(
+        sampling_seconds=sampling_seconds,
+        training_seconds=training_seconds,
+        has_data=True,
+        source=_display_path(tb_dir),
+        module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS},
+    )
+
+
+def load_method_breakdown_until_cutoff(run_dir: Path, cutoff_hours: float) -> MethodBreakdown:
+    history_breakdown = _load_history_time_breakdown_until_cutoff(run_dir, cutoff_hours)
+    if history_breakdown is not None:
+        return history_breakdown
+    tensorboard_breakdown = _load_tensorboard_time_breakdown_until_cutoff(run_dir, cutoff_hours)
+    if tensorboard_breakdown is not None:
+        return tensorboard_breakdown
+    return MethodBreakdown(module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS})
+
+
 def _load_same_acc_reach_metric(family: str, run_dir: Path) -> dict[str, Any] | None:
     history = _load_history(run_dir)
     if not history:
@@ -655,6 +826,7 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
     module_rows: list[dict[str, Any]] = []
     same_acc_times_seconds, same_acc_source = _load_same_acc_vlaselect_times_seconds(manifest)
     same_acc_module_breakdowns, same_acc_module_source = _load_same_acc_vlaselect_module_breakdowns(manifest)
+    same_acc_cutoff_hours_by_method, same_acc_cutoff_source = _load_same_acc_cutoff_hours(manifest)
 
     for family, panel in _family_panels(manifest).items():
         suite_manifest = _load_suite_manifest(panel)
@@ -675,7 +847,13 @@ def prepare_breakdown_tables(manifest: dict[str, Any], output_root: Path) -> tup
         for method in ordered_methods:
             run_dir_ref = method.get("run_dir") or ""
             run_dir = _resolve_eval_path(str(run_dir_ref)) if run_dir_ref else Path("")
-            breakdown = load_method_breakdown(run_dir) if run_dir_ref else MethodBreakdown(module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS})
+            cutoff_hours = same_acc_cutoff_hours_by_method.get((family, str(method.get("name", ""))))
+            if run_dir_ref and cutoff_hours is not None and cutoff_hours > 0.0:
+                breakdown = load_method_breakdown_until_cutoff(run_dir, cutoff_hours)
+                if not breakdown.has_data:
+                    breakdown = load_method_breakdown(run_dir)
+            else:
+                breakdown = load_method_breakdown(run_dir) if run_dir_ref else MethodBreakdown(module_breakdown={key: 0.0 for key, _, _ in MODULE_SPECS})
             display_name = _normalize_display_name(method["name"], method.get("display_name", ""))
             all_rows.append(
                 {

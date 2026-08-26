@@ -446,13 +446,15 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         x_axis_right = float(xlim[1])
         for series in series_payload:
             xs = [float(x) for x in series.get('x', [])]
-            if not xs:
+            if not xs or x_axis_right <= 0.0:
                 continue
+            first_x = xs[0]
             last_x = xs[-1]
-            if last_x <= 0.0 or x_axis_right <= 0.0:
+            if len(xs) == 1 or last_x <= first_x:
+                series['x'] = [0.0 for _ in xs]
                 continue
-            scale = x_axis_right / last_x
-            series['x'] = [x * scale for x in xs]
+            span = last_x - first_x
+            series['x'] = [((x - first_x) / span) * x_axis_right for x in xs]
 
     payload = {
         'source': {

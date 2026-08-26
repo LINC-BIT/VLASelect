@@ -98,10 +98,10 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
 python3 plot_acc_res_change.py
 ```
 
-Generated artifacts:
-
-- `acc_comparison/FIG_ACC_TASK_ENV.pdf` (Figure 7)
-- `acc_comparison/FIG_ACC_RESOURCE.pdf` (Figure 8)
+| Figure No. & Experiment | Path | Experiment Results |
+| --- | --- | --- |
+| Figure 7: Accuracy under task change and new environment | `acc_comparison/FIG_ACC_TASK_ENV.pdf` | [Task & Env Accuracy](https://www.google.com/search?q=) |
+| Figure 8: Accuracy under resource change | `acc_comparison/FIG_ACC_RESOURCE.pdf` | [Resource Accuracy](https://www.google.com/search?q=) |
 
 ### Overhead and Time Breakdown
 
@@ -121,11 +121,12 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
 python3 plot_breakdown_modules.py
 ```
 
-Generated artifacts:
-
-- `overhead/FIG_MEMORY_FOOTPOINT.pdf` (Figure 9) `overhead/overhead_breakdown_table/TAB_OVERHEAD.csv`, `overhead/overhead_breakdown_table/TAB_ENERGY.csv` (Tables 2-3)
-- `overhead/FIG_BREAKDOWN_ALL_METHODS.pdf` (Figure 10)
-- `overhead/FIG_BREAKDOWN_MODULES.pdf` (Figure 11)
+| Figure No. & Experiment | Path | Experiment Results |
+| --- | --- | --- |
+| Figure 9: Memory footprint | `overhead/FIG_MEMORY_FOOTPOINT.pdf` | [Memory Footprint](https://www.google.com/search?q=) |
+| Tables 2-3: Overhead and energy breakdown | `overhead/overhead_breakdown_table/TAB_OVERHEAD.csv`, `overhead/overhead_breakdown_table/TAB_ENERGY.csv` | [Overhead & Energy](https://www.google.com/search?q=) |
+| Figure 10: Overhead breakdown across all methods | `overhead/FIG_BREAKDOWN_ALL_METHODS.pdf` | [Methods Overhead](https://www.google.com/search?q=) |
+| Figure 11: Overhead breakdown across VLASelect | `overhead/FIG_BREAKDOWN_MODULES.pdf` | [VLASelect Breakdown](https://www.google.com/search?q=) |
 
 ### Ablation
 
@@ -135,9 +136,9 @@ MWE=1 bash run_ablation.sh
 python3 plot_ablation.py
 ```
 
-Generated artifacts:
-
-- `ablation/FIG_ABLATION.pdf` (Figure 12). [Experimental results](./ablation_results.md)
+| Figure No. & Experiment | Path | Experiment Results |
+| --- | --- | --- |
+| Figure 12: Ablation study | `ablation/FIG_ABLATION.pdf` | [Ablation Results](./ablation_results.md) |
 
 ### Discussion
 > This part are not included in one click run
@@ -157,14 +158,19 @@ MWE=1 MODEL_SIZE_LIMIT_FAMILY=tinyvla bash sweep_model_size.sh
 MWE=1 bash run_multi_agent.sh
 ```
 
-- VLA applicability check `discussion/FIG_VLA_APPLICABILITY.pdf`
--  Other discussion results are reported by terminal outputs.
+Generated artifacts:
+
+| Figure No. & Experiment | Path | Experiment Results |
+| --- | --- | --- |
+| Figure: VLA applicability check | `discussion/FIG_VLA_APPLICABILITY.pdf` | [VLA Applicability](https://www.google.com/search?q=) |
+| Discussion: Other discussion results | Terminal outputs | [Discussion Results](https://www.google.com/search?q=) |
 
 > Run  sim-to-real MWE only if the required robot hardware is connected
 ```bash
 cd discussion
 MWE=1 bash run_sim_to_real.sh
 ```
+
 
 ## Expected Cost
 
@@ -190,6 +196,29 @@ MWE is only a short pipeline check. If full-run data is already available, evalu
 | Ablation (Figure 12) | `eval/ablation/ablation_table/<run-id>/` | `cd eval/ablation && python3 plot_ablation.py` |
 
 The manifest points to the underlying JSON/CSV logs, such as `metrics_history.json`, `gpu_metrics.csv`, and `memory_accounting.json`. Copy the manifest directory together with its referenced run directories when sharing full-run data.
+
+### Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
+
+```bash
+## run in the root path of VLASelect
+MWE=1 bash <script_path>
+```
+> example of VLA-Adapter Model Support Verification:  \
+> MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
+
+| Model & Evaluation Metric | Script Path | Experiment Results |
+| --- | --- | --- |
+| **VLA-Adapter**: Model Support Verification | `api/vla_model_interface_examples/vla_adapter_impl_verify.sh` | [VLA-Adapter Support](./model_support.md) |
+| **VLA-Adapter**: Scaling Strategies | `api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh` | [VLA-Adapter Scaling](./model_support.md) |
+| **VLA-Adapter**: Knowledge Exchange Granularities | `api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh` | [VLA-Adapter Granularity](./model_support.md) |
+| **TinyVLA**: Model Support Verification | `api/vla_model_interface_examples/tinyvla_impl_verify.sh` | [TinyVLA Support](./model_support.md) |
+| **TinyVLA**: Scaling Strategies | `api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods-only4.sh` | [TinyVLA Scaling](./model_support.md) |
+| **TinyVLA**: Knowledge Exchange Granularities | `api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh` | [TinyVLA Granularity](./model_support.md) |
+| **EdgeVLA**: Model Support Verification | `api/vla_model_interface_examples/edgevla_impl_verify.sh` | [EdgeVLA Support](./model_support.md) |
+| **EdgeVLA**: Scaling Strategies | `api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods-only4.sh` | [EdgeVLA Scaling](./model_support.md) |
+| **EdgeVLA**: Knowledge Exchange Granularities | `api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh` | [EdgeVLA Granularity](./model_support.md) |
+
+
 
 ## Expected Results and Variance
 

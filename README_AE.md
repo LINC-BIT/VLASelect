@@ -108,25 +108,26 @@ python3 plot_acc_res_change.py
 ```bash
 cd ../overhead
 
+# Figure 9: Memory footprint and Tables 2-3: Overhead and energy breakdown 
 MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
   bash overhead_same_acc.sh
 python3 plot_overhead.py
 
+# Figure 10: Overhead breakdown across all methods 
 MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
   bash overhead_breakdown_all_methods.sh
 python3 plot_breakdown_all_methods.py
 
-MWE=1 \
-  bash overhead_breakdown_modules.sh
-python3 plot_breakdown_modules.py
+# Figure 11: Overhead breakdown across VLASelect 
+MWE=1 bash overhead_breakdown/run.sh
 ```
 
 | Figure No. & Experiment | Path | Experiment Results |
 | --- | --- | --- |
-| Figure 9: Memory footprint | `overhead/FIG_MEMORY_FOOTPOINT.pdf` | [Memory Footprint](https://www.google.com/search?q=) |
-| Tables 2-3: Overhead and energy breakdown | `overhead/overhead_breakdown_table/TAB_OVERHEAD.csv`, `overhead/overhead_breakdown_table/TAB_ENERGY.csv` | [Overhead & Energy](https://www.google.com/search?q=) |
-| Figure 10: Overhead breakdown across all methods | `overhead/FIG_BREAKDOWN_ALL_METHODS.pdf` | [Methods Overhead](https://www.google.com/search?q=) |
-| Figure 11: Overhead breakdown across VLASelect | `overhead/FIG_BREAKDOWN_MODULES.pdf` | [VLASelect Breakdown](https://www.google.com/search?q=) |
+| Figure 9: Memory footprint | `overhead/FIG_MEMORY_FOOTPOINT.pdf` | [Memory Footprint](./results_overhead.md) |
+| Tables 2-3: Overhead and energy breakdown | `overhead/overhead_breakdown_table/TAB_OVERHEAD.csv`, `overhead/overhead_breakdown_table/TAB_ENERGY.csv` | [Overhead & Energy](./results_overhead.md) |
+| Figure 10: Overhead breakdown across all methods | `overhead/FIG_BREAKDOWN_ALL_METHODS.pdf` | [Methods Overhead](./results_overhead.md) |
+| Figure 11: Overhead breakdown across VLASelect | `overhead_breakdown/overhead_breakdown.png` | [VLASelect Breakdown](./results_overhead.md) |
 
 ### Ablation
 
@@ -162,10 +163,10 @@ Generated artifacts:
 
 | Experiment | Path / Output | Experiment Results |
 | --- | --- | --- |
-| In-Context Learning (ICL) comparison | Terminal outputs | [ICL Comparison](./results_disscussion.md) |
-| VLA applicability check (Octo) | `discussion/FIG_VLA_APPLICABILITY.pdf` | [VLA Applicability](./results_disscussion.md) |
-|  Maximum supported model size (TinyVLA) | Terminal outputs | [Model Size Limit](./results_disscussion.md) |
-| Multi-agent scenario evaluation | Terminal outputs | [Multi-Agent Scenario](./results_disscussion.md) |
+| In-Context Learning (ICL) comparison | Terminal outputs | [ICL Comparison](./results_discussion.md) |
+| VLA applicability check (Octo) | `discussion/FIG_VLA_APPLICABILITY.pdf` | [VLA Applicability](./results_discussion.md) |
+|  Maximum supported model size (TinyVLA) | Terminal outputs | [Model Size Limit](./results_discussion.md) |
+| Multi-agent scenario evaluation | Terminal outputs | [Multi-Agent Scenario](./results_discussion.md) |
 
 > Run  sim-to-real MWE only if the required robot hardware is connected
 ```bash
@@ -174,17 +175,6 @@ MWE=1 bash run_sim_to_real.sh
 ```
 
 
-## Expected Cost
-
-Approximate upper bounds reported for an individual MWE group are:
-
-| Experiment | Time | GPU memory |
-| --- | ---: | ---: |
-| Accuracy, overhead, or time breakdown | 20 minutes | 8-20 GB |
-| Ablation | 25 minutes | 8-20 GB |
-| Discussion experiment | 5 minutes | 8-20 GB |
-
-Runtime depends on the selected methods, model, GPU, cached assets, and container startup time. Successful completion should produce the files listed above without an uncaught error.
 
 ## Full-Run Data and Expected Variance
 
@@ -234,3 +224,18 @@ Exact values may vary with GPU/CPU hardware, CUDA and driver versions, PyTorch v
 | Energy | +/-25% |
 
 The main checks are successful completion, valid output files, populated plots, and the same qualitative trend or method ordering as the paper. If results differ more, first check the selected manifest, model/checkpoint, method list, and seed.
+
+## Expected Cost for MWE Evaluation and results variation
+
+Approximate upper bounds reported for an individual MWE group are:
+
+| Experiment | Time of each experiment | GPU memory |
+| --- | ---: | ---: |
+| Accuracy, overhead, and time breakdown | 20 minutes (each one) | 20 GB |
+| Ablation | 25 minutes | 20 GB |
+| Discussion experiments | 20 minutes (each one) | 20 GB |
+| Supporting new methods | 3 minutes | 20 GB |
+| Supporting different scaling strategies | 20 minutes | 20 GB |
+| Supporting different knowledge exchange granularities | 20 minutes | 20 GB |
+
+>Exact values may vary slightly across different testbeds and hardware environments due to performance fluctuations. However, these minor variations do not affect the overall trends or conclusions.

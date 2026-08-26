@@ -23,3 +23,4 @@ N/A: The original paper only provides qualitative justification without empirica
 
 ## Applicability to multi-agent scenarios
 
+![alt text](./imgs/2.2.4.5.png)

@@ -66,11 +66,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "ours",
       "display_name": "VLASelect",
-      "sampling_seconds": 72.62798220594414,
-      "training_seconds": 48.88592523627449,
-      "total_seconds": 121.51390744221862,
+      "sampling_seconds": 18.2178621434713,
+      "training_seconds": 8.032446156546415,
+      "total_seconds": 26.250308300017714,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/ours/time_breakdown.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/ours/metrics_history.json"
     },
     {
       "family": "vla_adapter_new",
@@ -90,11 +90,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "self_improv",
       "display_name": "Self-Improv",
-      "sampling_seconds": 21.849862377974205,
-      "training_seconds": 285.22484783502296,
-      "total_seconds": 307.07471021299716,
+      "sampling_seconds": 20.403674697598163,
+      "training_seconds": 250.8760541984865,
+      "total_seconds": 271.27972889608463,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/self_improv/time_breakdown.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/self_improv/metrics_history.json"
     },
     {
       "family": "vla_adapter_new",
@@ -102,11 +102,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "vla_rft",
       "display_name": "VLA-RFT",
-      "sampling_seconds": 117.57202125294134,
-      "training_seconds": 3.7300718788756058,
-      "total_seconds": 121.30209313181695,
+      "sampling_seconds": 106.09011367314011,
+      "training_seconds": 3.328870298449403,
+      "total_seconds": 109.41898397158951,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/vla_rft/time_breakdown.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/vla_rft/metrics_history.json"
     },
     {
       "family": "vla_adapter_new",
@@ -114,11 +114,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "world_env",
       "display_name": "WorldEnv",
-      "sampling_seconds": 119.25291065010242,
-      "training_seconds": 2.986357675981708,
-      "total_seconds": 122.23926832608413,
+      "sampling_seconds": 99.6649885562816,
+      "training_seconds": 2.8499896091441,
+      "total_seconds": 102.5149781654257,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/world_env/time_breakdown.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/world_env/metrics_history.json"
     },
     {
       "family": "octo",

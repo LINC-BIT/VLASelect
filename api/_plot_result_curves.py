@@ -204,7 +204,6 @@ def plot_category(
     axis.set_xlabel("Time (minutes)", fontsize=15)
     axis.set_ylabel("Accuracy", fontsize=15)
     axis.tick_params(axis="both", labelsize=12)
-    axis.set_ylim(-0.02, 1.02)
     axis.grid(True, alpha=0.3)
     axis.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0), borderaxespad=0.0, fontsize=13)
     figure.subplots_adjust(right=0.76)

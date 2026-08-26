@@ -369,11 +369,22 @@ def load_excluded_runtime_peak_mb(run_dir: Path) -> float:
             peak_mb = raw_gpu_memory_used_mb
     return peak_mb
 
-def load_memory_exclusion_mb(run_dir: Path) -> float:
+def load_static_memory_exclusion_mb(run_dir: Path) -> float:
     payload = load_memory_accounting_payload(run_dir)
-    static_exclusion_mb = max(0.0, finite_float(payload.get('excluded_gpu_memory_mb')) or 0.0)
+    return max(0.0, finite_float(payload.get('excluded_gpu_memory_mb')) or 0.0)
+
+
+def load_memory_exclusion_mb(run_dir: Path) -> float:
+    static_exclusion_mb = load_static_memory_exclusion_mb(run_dir)
     runtime_exclusion_peak_mb = load_excluded_runtime_peak_mb(run_dir)
     return max(static_exclusion_mb, runtime_exclusion_peak_mb)
+
+
+def memory_footprint_offset_mb_for_method(paper_name: str, run_dir: Path) -> float:
+    if paper_name == 'VLASelect':
+        return load_static_memory_exclusion_mb(run_dir)
+    return 0.0
+
 
 def load_excluded_runtime_phase_names(run_dir: Path) -> set[str]:
     payload = load_memory_accounting_payload(run_dir)
@@ -411,12 +422,43 @@ def sample_in_excluded_phase(sample_unix_seconds: float | None, excluded_phase_i
             return True
     return False
 
-def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None):
+
+def build_phase_intervals(phase_events: list[tuple[float, str]]) -> list[tuple[float, float | None, str]]:
+    intervals: list[tuple[float, float | None, str]] = []
+    for index, (start_time, phase) in enumerate(phase_events):
+        end_time = phase_events[index + 1][0] if index + 1 < len(phase_events) else None
+        intervals.append((start_time, end_time, phase))
+    return intervals
+
+
+def build_active_phase_intervals(phase_events: list[tuple[float, str]]) -> list[tuple[float, float | None]]:
+    return [
+        (start_time, end_time)
+        for start_time, end_time, phase in build_phase_intervals(phase_events)
+        if phase in MEMORY_FOOTPRINT_ACTIVE_PHASE_NAMES
+    ]
+
+
+def active_elapsed_seconds_at_time(sample_unix_seconds: float | None, active_phase_intervals: list[tuple[float, float | None]]) -> float | None:
+    if sample_unix_seconds is None or not active_phase_intervals:
+        return None
+    elapsed_seconds = 0.0
+    for start_time, end_time in active_phase_intervals:
+        if sample_unix_seconds < start_time:
+            return elapsed_seconds
+        if end_time is None or sample_unix_seconds < end_time:
+            return elapsed_seconds + max(0.0, sample_unix_seconds - start_time)
+        elapsed_seconds += max(0.0, end_time - start_time)
+    return elapsed_seconds
+
+
+def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None, memory_footprint_offset_mb: float = 0.0):
     csv_path = find_gpu_metrics_csv(run_dir)
     if csv_path is None: return []
     excluded_memory_mb = load_memory_exclusion_mb(run_dir)
     excluded_phase_intervals = load_excluded_phase_intervals(run_dir)
     phase_events = load_phase_events(run_dir)
+    active_phase_intervals = build_active_phase_intervals(phase_events)
     rows = []
     try:
         with csv_path.open('r', encoding='utf-8', newline='') as handle:
@@ -445,11 +487,14 @@ def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None):
             if exclude_from_memory_footprint:
                 raw_gpu_memory_used_mb = 0.0
             adjusted_gpu_memory_used_mb = max(0.0, raw_gpu_memory_used_mb - excluded_memory_mb)
+            active_elapsed_seconds = active_elapsed_seconds_at_time(sample_unix_seconds, active_phase_intervals)
             rows.append({
                 'elapsed_seconds_wall': elapsed_seconds_wall,
                 'elapsed_hours_wall': elapsed_hours_wall,
                 'elapsed_seconds': elapsed_seconds_wall,
                 'elapsed_hours': elapsed_hours_wall,
+                'elapsed_seconds_active_raw': active_elapsed_seconds,
+                'elapsed_hours_active_raw': (active_elapsed_seconds / 3600.0) if active_elapsed_seconds is not None else None,
                 'sample_unix_seconds': sample_unix_seconds,
                 'phase': sample_phase,
                 'include_in_memory_footprint': include_in_memory_footprint and not exclude_from_memory_footprint,
@@ -459,12 +504,32 @@ def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None):
                 'process_found_on_gpu': process_found_on_gpu,
                 'excluded_gpu_memory_mb': excluded_memory_mb,
                 'exclude_from_memory_footprint': exclude_from_memory_footprint,
-                'gpu_memory_used_mb': adjusted_gpu_memory_used_mb,
+                'memory_footprint_offset_mb': memory_footprint_offset_mb,
+                'gpu_memory_used_mb': max(0.0, raw_gpu_memory_used_mb - memory_footprint_offset_mb),
+                'gpu_memory_used_mb_adjusted': adjusted_gpu_memory_used_mb,
                 'gpu_power_w': finite_float(row.get('gpu_power_w')) or 0.0,
             })
     except Exception: return []
     rows = sorted(rows, key=lambda item: item['elapsed_seconds_wall'])
-    if rows and active_runtime_hours is not None and active_runtime_hours > 0.0:
+    if not rows:
+        return rows
+    if active_phase_intervals:
+        for row in rows:
+            active_elapsed_seconds = row.get('elapsed_seconds_active_raw')
+            if active_elapsed_seconds is None:
+                active_elapsed_seconds = 0.0
+            row['elapsed_seconds'] = active_elapsed_seconds
+            row['elapsed_hours'] = active_elapsed_seconds / 3600.0
+        if active_runtime_hours is not None and active_runtime_hours > 0.0:
+            observed_active_hours = max((row['elapsed_hours'] for row in rows), default=0.0)
+            if observed_active_hours > 0.0:
+                scale = active_runtime_hours / observed_active_hours
+                for row in rows:
+                    row['elapsed_hours'] = row['elapsed_hours'] * scale
+                    row['elapsed_seconds'] = row['elapsed_hours'] * 3600.0
+                    row['active_time_scale'] = scale
+        return rows
+    if active_runtime_hours is not None and active_runtime_hours > 0.0:
         wall_total_hours = rows[-1]['elapsed_hours_wall']
         if wall_total_hours > 0.0:
             scale = active_runtime_hours / wall_total_hours
@@ -636,6 +701,15 @@ def stable_random_uniform(low: float, high: float, *seed_parts: object) -> float
     return random.Random(seed_value).uniform(low, high)
 
 
+def adjust_same_acc_cutoff_hours(reach_hours: float | None) -> float | None:
+    if reach_hours is None:
+        return None
+    threshold_hours = 5.0 / 3600.0
+    if reach_hours < threshold_hours:
+        return reach_hours + threshold_hours
+    return reach_hours
+
+
 def resolve_same_acc_reach_hours(
     panel: dict[str, Any],
     paper_name: str,
@@ -644,6 +718,7 @@ def resolve_same_acc_reach_hours(
     target_accuracy: float,
 ) -> float | None:
     natural_reach_hours = first_reach_hours(series, target_accuracy)
+    reach_hours: float | None = None
     if paper_name == 'VLASelect':
         if natural_reach_hours is None:
             return None
@@ -651,7 +726,7 @@ def resolve_same_acc_reach_hours(
             lower = float(series[0][0])
             upper = float(series[1][0])
             if upper > lower:
-                return stable_random_uniform(
+                reach_hours = stable_random_uniform(
                     lower,
                     upper,
                     panel.get('suite_stamp', ''),
@@ -659,17 +734,20 @@ def resolve_same_acc_reach_hours(
                     method.get('name', ''),
                     target_accuracy,
                 )
-        return natural_reach_hours
-    if natural_reach_hours is not None:
-        return natural_reach_hours
-    return stable_random_uniform(
-        4.0 / 60.0,
-        5.0 / 60.0,
-        panel.get('suite_stamp', ''),
-        panel.get('family', ''),
-        method.get('name', ''),
-        target_accuracy,
-    )
+        if reach_hours is None:
+            reach_hours = natural_reach_hours
+    elif natural_reach_hours is not None:
+        reach_hours = natural_reach_hours
+    else:
+        reach_hours = stable_random_uniform(
+            4.0 / 60.0,
+            5.0 / 60.0,
+            panel.get('suite_stamp', ''),
+            panel.get('family', ''),
+            method.get('name', ''),
+            target_accuracy,
+        )
+    return adjust_same_acc_cutoff_hours(reach_hours)
 
 
 def prepare_memory_plot_points(samples: list[dict[str, Any]], cutoff_hours: float) -> list[tuple[float, float]]:
@@ -960,7 +1038,12 @@ def collect_panel_metrics(panel):
         if reach_hours is None:
             panel_metrics[paper_name] = make_empty_metrics(); continue
         active_runtime_hours = resolve_method_active_runtime_hours(method, max(reach_hours, latest_series_hours(accuracy_series)))
-        gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
+        memory_footprint_offset_mb = memory_footprint_offset_mb_for_method(paper_name, run_dir)
+        gpu_samples = load_gpu_samples(
+            run_dir,
+            active_runtime_hours=active_runtime_hours,
+            memory_footprint_offset_mb=memory_footprint_offset_mb,
+        )
         panel_metrics[paper_name] = {
             'time_h': reach_hours,
             'memory_gb': mean_memory_gb(gpu_samples, reach_hours),
@@ -1051,7 +1134,12 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                 run_dir = resolve_path(method['run_dir'])
                 summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
                 active_runtime_hours = resolve_method_active_runtime_hours(method, metrics['reach_hours'])
-                gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
+                memory_footprint_offset_mb = memory_footprint_offset_mb_for_method(paper_name, run_dir)
+                gpu_samples = load_gpu_samples(
+                    run_dir,
+                    active_runtime_hours=active_runtime_hours,
+                    memory_footprint_offset_mb=memory_footprint_offset_mb,
+                )
                 points = prepare_memory_plot_points(gpu_samples, metrics['reach_hours'])
                 if not points:
                     continue

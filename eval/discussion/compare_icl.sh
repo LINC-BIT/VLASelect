@@ -18,6 +18,7 @@ STAMP=${ICL_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}
 : "${ICL_MAX_EPISODE_STEPS:=50}"
 : "${PROMPT_FEATURE_SCALE:=0.12}"
 : "${ICL_PLOT_METRIC:=success_once}"
+: "${ICL_PLOT_SMOOTHING:=0.6}"
 ICL_ENV_CHANGE_TIME_POINTS="${ICL_ENV_CHANGE_TIME_POINTS:-[1000000]}"
 
 : "${MWE_TOTAL_RUNTIME_LIMIT_SECONDS:=240}"
@@ -133,5 +134,6 @@ python "${SCRIPT_DIR}/plot_icl.py" \
     --vlaselect-run-dir "$VLASELECT_RUN_DIR" \
     --ricl-run-dir "$RICL_RUN_DIR" \
     --output "$PLOT_PATH" \
-    --metric "$ICL_PLOT_METRIC"
+    --metric "$ICL_PLOT_METRIC" \
+    --smoothing "$ICL_PLOT_SMOOTHING"
 echo "[ICL] Comparison plot: ${PLOT_PATH}"

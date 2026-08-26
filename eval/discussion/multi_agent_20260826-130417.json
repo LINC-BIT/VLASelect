@@ -1,0 +1,22 @@
+{
+  "stamp": "20260826-130417",
+  "output_base": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-130417",
+  "runs": [
+    {
+      "method": "mappo",
+      "model_backbone": "mixed_tiny_vla_smolvla",
+      "run_dir": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-130417/mappo",
+      "log_file": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-130417/mappo/train.log",
+      "status": "completed",
+      "result_json": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-130417/mappo/metrics.json"
+    },
+    {
+      "method": "ours",
+      "model_backbone": "mixed_tiny_vla_smolvla",
+      "run_dir": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-130417/ours",
+      "log_file": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-130417/ours/train.log",
+      "status": "completed",
+      "result_json": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-130417/ours/metrics.json"
+    }
+  ]
+}

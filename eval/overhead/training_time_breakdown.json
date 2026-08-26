@@ -29,7 +29,7 @@
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.012186414051393512,
+          "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "edgevla": {
@@ -49,7 +49,7 @@
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.031280152303887816,
+          "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "edgevla": {
@@ -69,7 +69,7 @@
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.025367147622503885,
+          "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "edgevla": {
@@ -81,16 +81,16 @@
     "self_improv": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.002743086616198222,
+          "model_update_hours": 6.396762302352323e-05
         },
         "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.006389315018621144,
-          "model_update_hours": 0.08478184306416854
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -109,7 +109,7 @@
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.025369006044169914,
+          "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "edgevla": {
@@ -121,16 +121,16 @@
     "vla_rft": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.014668484528859457,
+          "model_update_hours": 0.00030990284350183275
         },
         "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.026446338236112043,
-          "model_update_hours": 0.0013968436191498768
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -141,16 +141,16 @@
     "world_env": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.01436564048131307,
+          "model_update_hours": 0.0003056987043884065
         },
         "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.02654575838582888,
-          "model_update_hours": 0.0013405044832971826
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -169,8 +169,8 @@
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.005298566763328078,
-          "model_update_hours": 0.005476456494992211
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -189,8 +189,8 @@
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.005783049721115579,
-          "model_update_hours": 0.005362071980279224
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -201,16 +201,16 @@
     "ours": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.0014770599627308193,
+          "model_update_hours": 0.0002169649055197192
         },
         "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
         },
         "tinyvla": {
-          "rollout_hours": 0.005117415925002812,
-          "model_update_hours": 0.004916953113052942
+          "rollout_hours": 0.0,
+          "model_update_hours": 0.0
         },
         "edgevla": {
           "rollout_hours": 0.0,

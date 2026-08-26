@@ -11,7 +11,7 @@ export USE_HF_MIRROR="${USE_HF_MIRROR:-1}"
 export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-INIT_AGENT_PATH="${INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_agent.pt}"
+INIT_AGENT_PATH="${INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt.base}"
 MODEL_BACKBONE="${MODEL_BACKBONE:-mixed_tiny_vla_smolvla}"
 MODEL_DIR="${MODEL_DIR:-}"
 NUM_ENVS="${NUM_ENVS:-128}"
@@ -44,7 +44,7 @@ ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-sdpa}"
 POLICY_MODE="${POLICY_MODE:-native}"
 
 if [[ -z "${INIT_AGENT_PATH}" ]]; then
-  echo "INIT_AGENT_PATH is empty. Set it to a mixed PPO checkpoint such as latest_agent.pt." >&2
+  echo "INIT_AGENT_PATH is empty. Set it to a mixed PPO checkpoint such as best_agent.pt.base." >&2
   exit 1
 fi
 

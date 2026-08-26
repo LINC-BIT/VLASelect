@@ -27,6 +27,15 @@ METRIC_KEYS = {
 }
 
 
+def smooth_values(values: list[float], smoothing: float) -> list[float]:
+    if not values or smoothing <= 0.0:
+        return values
+    smoothed = [values[0]]
+    for value in values[1:]:
+        smoothed.append(smoothed[-1] * smoothing + value * (1.0 - smoothing))
+    return smoothed
+
+
 def load_history(run_dir: Path) -> list[dict[str, Any]]:
     history_path = run_dir / "metrics_history.json"
     if not history_path.is_file():
@@ -67,7 +76,13 @@ def collect_series(run_dir: Path, metric: str) -> list[tuple[float, float]]:
     return series
 
 
-def draw_plot(vlaselect_dir: Path, ricl_dir: Path, output_path: Path, metric: str) -> None:
+def draw_plot(
+    vlaselect_dir: Path,
+    ricl_dir: Path,
+    output_path: Path,
+    metric: str,
+    smoothing: float = 0.6,
+) -> None:
     curves = [
         ("VLASelect", vlaselect_dir, "#2563eb"),
         ("RICL", ricl_dir, "#ea580c"),
@@ -83,7 +98,15 @@ def draw_plot(vlaselect_dir: Path, ricl_dir: Path, output_path: Path, metric: st
             missing.append(label)
             continue
         xs, ys = zip(*series)
-        ax.plot(xs, ys, label=label, color=color, linewidth=2.4, marker="o", markersize=3.5)
+        ax.plot(
+            xs,
+            smooth_values(list(ys), smoothing),
+            label=label,
+            color=color,
+            linewidth=2.4,
+            marker="o",
+            markersize=3.5,
+        )
         all_x.extend(xs)
         plotted += 1
 
@@ -111,9 +134,18 @@ def main() -> int:
     parser.add_argument("--ricl-run-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--metric", choices=tuple(METRIC_KEYS), default="success_once")
+    parser.add_argument("--smoothing", type=float, default=0.6)
     args = parser.parse_args()
+    if not 0.0 <= args.smoothing <= 1.0:
+        parser.error("--smoothing must be in [0, 1]")
 
-    draw_plot(args.vlaselect_run_dir, args.ricl_run_dir, args.output, args.metric)
+    draw_plot(
+        args.vlaselect_run_dir,
+        args.ricl_run_dir,
+        args.output,
+        args.metric,
+        args.smoothing,
+    )
     print(f"[ICL] Plot saved to {args.output}")
     return 0
 

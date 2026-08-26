@@ -1,0 +1,58 @@
+[
+  {
+    "panel_label": "a",
+    "workload_name": "Single-arm robot",
+    "family": "octo",
+    "method": "self_improv",
+    "display_name": "Self-Improvement",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/self_improv",
+    "num_points": 3,
+    "avg_accuracy": 0.5285319834947586,
+    "final_accuracy": 0.5365853905677795,
+    "max_minutes": 1.00517210343484
+  },
+  {
+    "panel_label": "a",
+    "workload_name": "Single-arm robot",
+    "family": "octo",
+    "method": "vla_rft",
+    "display_name": "VLA-RFT",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/vla_rft",
+    "num_points": 3,
+    "avg_accuracy": 0.4704496605055673,
+    "final_accuracy": 0.6481481194496155,
+    "max_minutes": 0.8987032519992985
+  },
+  {
+    "panel_label": "a",
+    "workload_name": "Single-arm robot",
+    "family": "octo",
+    "method": "world_env",
+    "display_name": "WorldEnv",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/world_env",
+    "num_points": 3,
+    "avg_accuracy": 0.46813217656952993,
+    "final_accuracy": 0.7130434513092041,
+    "max_minutes": 0.880280350218527
+  },
+  {
+    "panel_label": "a",
+    "workload_name": "Single-arm robot",
+    "family": "octo",
+    "method": "ours_single_agent",
+    "display_name": "VLASelect",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/ours_single_agent/[agent]",
+    "num_points": 3,
+    "avg_accuracy": 0.9234234239604022,
+    "final_accuracy": 0.5,
+    "max_minutes": 0.9834447611239739
+  }
+]

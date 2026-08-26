@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-FINAL_METHOD_STATES = {"completed", "failed", "cancelled", "timed_out", "inherited"}
+FINAL_METHOD_STATES = {"completed", "failed", "cancelled", "timed_out", "inherited", "skipped"}
 FAILURE_MARKERS = (
     "Traceback (most recent call last):",
     "FileNotFoundError:",
@@ -190,7 +190,7 @@ def update_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
     for method in methods:
         refresh_runtime_metadata(method)
         status = method.get("status") or "launching"
-        if status == "inherited":
+        if status in {"inherited", "skipped"}:
             continue
 
         pid = method.get("pid")

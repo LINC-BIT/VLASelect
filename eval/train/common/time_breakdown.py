@@ -5,40 +5,28 @@ import math
 from pathlib import Path
 from typing import Any
 
-MODULE_KEYS = (
+CANONICAL_MODULE_KEYS = (
     "workload_initialization_seconds",
-    "optimal_network_searcher_seconds",
-    "selective_model_enhancer_seconds",
-    "optimal_network_search_and_selective_model_enhancement_seconds",
-    "selective_knowledge_accumulation_seconds",
+    "large_model_forward_seconds",
+    "small_model_generation_seconds",
+    "large_model_forward_and_small_model_generation_seconds",
+    "small_model_feedback_seconds",
     "online_rl_completion_seconds",
 )
+LEGACY_MODULE_KEY_TO_CANONICAL = {
+    "optimal_network_searcher_seconds": "large_model_forward_seconds",
+    "selective_model_enhancer_seconds": "small_model_generation_seconds",
+    "optimal_network_search_and_selective_model_enhancement_seconds": "large_model_forward_and_small_model_generation_seconds",
+    "selective_knowledge_accumulation_seconds": "small_model_feedback_seconds",
+}
+CANONICAL_TO_LEGACY_MODULE_KEY = {
+    canonical: legacy for legacy, canonical in LEGACY_MODULE_KEY_TO_CANONICAL.items()
+}
+MODULE_KEYS = CANONICAL_MODULE_KEYS + tuple(LEGACY_MODULE_KEY_TO_CANONICAL.keys())
 
 
 def empty_module_breakdown() -> dict[str, float]:
     return {key: 0.0 for key in MODULE_KEYS}
-
-
-def update_combined_search_enhancement_seconds(module_breakdown: dict[str, Any]) -> dict[str, Any]:
-    module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] = (
-        float(module_breakdown.get("optimal_network_searcher_seconds", 0.0))
-        + float(module_breakdown.get("selective_model_enhancer_seconds", 0.0))
-    )
-    return module_breakdown
-
-
-def _normalized_module_breakdown(module_breakdown: dict[str, Any] | None) -> dict[str, float]:
-    payload = {}
-    raw = module_breakdown or {}
-    for key in MODULE_KEYS:
-        try:
-            payload[key] = float(raw.get(key, 0.0))
-        except (TypeError, ValueError):
-            payload[key] = 0.0
-    split_total = payload["optimal_network_searcher_seconds"] + payload["selective_model_enhancer_seconds"]
-    if split_total > 0.0:
-        payload["optimal_network_search_and_selective_model_enhancement_seconds"] = split_total
-    return payload
 
 
 def _safe_float(value: Any) -> float | None:
@@ -51,6 +39,52 @@ def _safe_float(value: Any) -> float | None:
     if not math.isfinite(result):
         return None
     return result
+
+
+def _module_value(module_breakdown: dict[str, Any], key: str) -> float:
+    value = _safe_float(module_breakdown.get(key))
+    if value is not None:
+        return value
+    legacy_key = CANONICAL_TO_LEGACY_MODULE_KEY.get(key)
+    if legacy_key is not None:
+        value = _safe_float(module_breakdown.get(legacy_key))
+        if value is not None:
+            return value
+    canonical_key = LEGACY_MODULE_KEY_TO_CANONICAL.get(key)
+    if canonical_key is not None:
+        value = _safe_float(module_breakdown.get(canonical_key))
+        if value is not None:
+            return value
+    return 0.0
+
+
+def normalize_module_breakdown(module_breakdown: dict[str, Any] | None) -> dict[str, float]:
+    raw = module_breakdown or {}
+    payload = empty_module_breakdown()
+    payload["workload_initialization_seconds"] = _module_value(raw, "workload_initialization_seconds")
+    payload["large_model_forward_seconds"] = _module_value(raw, "large_model_forward_seconds")
+    payload["small_model_generation_seconds"] = _module_value(raw, "small_model_generation_seconds")
+    payload["large_model_forward_and_small_model_generation_seconds"] = (
+        payload["large_model_forward_seconds"] + payload["small_model_generation_seconds"]
+    )
+    payload["small_model_feedback_seconds"] = _module_value(raw, "small_model_feedback_seconds")
+    payload["online_rl_completion_seconds"] = _module_value(raw, "online_rl_completion_seconds")
+    for legacy_key, canonical_key in LEGACY_MODULE_KEY_TO_CANONICAL.items():
+        payload[legacy_key] = payload[canonical_key]
+    return payload
+
+
+def update_combined_search_enhancement_seconds(module_breakdown: dict[str, Any]) -> dict[str, Any]:
+    combined_value = _module_value(module_breakdown, "large_model_forward_seconds") + _module_value(
+        module_breakdown, "small_model_generation_seconds"
+    )
+    module_breakdown["large_model_forward_and_small_model_generation_seconds"] = combined_value
+    module_breakdown["optimal_network_search_and_selective_model_enhancement_seconds"] = combined_value
+    return module_breakdown
+
+
+def _normalized_module_breakdown(module_breakdown: dict[str, Any] | None) -> dict[str, float]:
+    return normalize_module_breakdown(module_breakdown)
 
 
 def _metric_module_breakdown(metric: dict[str, Any] | None) -> dict[str, float] | None:

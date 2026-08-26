@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -26,6 +27,7 @@ SUMMARY_CSV_PATH = SCRIPT_DIR / 'acc_res_change_summary.csv'
 SUMMARY_JSON_PATH = SCRIPT_DIR / 'acc_res_change_summary.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_ACC_RESOURCE_panels'
 VIS_PAYLOAD_DIR = SCRIPT_DIR / 'vis_payload_res_change'
+PLOT_METHODS_RAW = os.environ.get('PLOT_ACC_RES_METHODS', '')
 
 PAPER_PANELS = [
     {'panel_label': 'a', 'family': 'octo', 'display_name': 'Octo', 'workload_name': 'Single-arm robot'},
@@ -57,8 +59,22 @@ LEGEND_ORDER = [
 FAMILY_CONFIGS = {
     'edgevla': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
     'octo': {'metric_key': 'eval/success_once', 'loader': 'tensorboard', 'default_xlim': [0.0, 300.0]},
-    'tinyvla': {'metric_key': 'train_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
-    'vla_adapter_new': {'metric_key': 'train_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
+    'tinyvla': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
+    'vla_adapter_new': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
+}
+
+HISTORY_METRIC_ALIASES_BY_FAMILY = {
+    'octo': ('eval_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
+}
+
+MWE_HISTORY_METRIC_ALIASES_BY_FAMILY = {
+    'octo': ('eval_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
 }
 
 RENDER_CONFIG = {
@@ -81,6 +97,25 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def resolve_selected_methods(family: str) -> set[str] | None:
+    if not PLOT_METHODS_RAW.strip():
+        return None
+    selected: set[str] = set()
+    for item in PLOT_METHODS_RAW.split(','):
+        name = item.strip()
+        if not name:
+            continue
+        if name == 'vlaselect':
+            selected.add('ours_single_agent' if family == 'octo' else 'ours')
+        elif name == 'ours' and family == 'octo':
+            selected.add('ours_single_agent')
+        elif name == 'ours_single_agent' and family != 'octo':
+            selected.add('ours')
+        else:
+            selected.add(name)
+    return selected or None
+
+
 def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
     path = Path(raw_path)
     return path if path.is_absolute() else (base_dir / path).resolve()
@@ -92,6 +127,14 @@ def finite_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return result if math.isfinite(result) else None
+
+
+def parse_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'y', 'on'}
 
 
 def load_history(run_dir: Path) -> list[dict[str, Any]]:
@@ -106,16 +149,55 @@ def load_history(run_dir: Path) -> list[dict[str, Any]]:
     return [item for item in history if isinstance(item, dict)] if isinstance(history, list) else []
 
 
-def collect_history_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+def rescale_series_minutes(series: list[tuple[float, float]], active_runtime_hours: float | None) -> list[tuple[float, float]]:
+    if active_runtime_hours is None or active_runtime_hours <= 0.0 or not series:
+        return series
+    raw_total_minutes = max((x_value for x_value, _ in series), default=0.0)
+    if raw_total_minutes <= 0.0:
+        return series
+    scale = (active_runtime_hours * 60.0) / raw_total_minutes
+    return [(x_value * scale, y_value) for x_value, y_value in series]
+
+
+def resolve_method_active_runtime_hours(method: dict[str, Any]) -> float | None:
+    actual_runtime_hours = finite_float(method.get('actual_runtime_hours'))
+    smoke_runtime_hours = finite_float(method.get('smoke_max_runtime_hours'))
+    if smoke_runtime_hours is not None and smoke_runtime_hours > 0.0:
+        if actual_runtime_hours is not None and actual_runtime_hours > 0.0:
+            return min(actual_runtime_hours, smoke_runtime_hours)
+        return smoke_runtime_hours
+    if actual_runtime_hours is not None and actual_runtime_hours > 0.0:
+        return actual_runtime_hours
+    return None
+
+
+def panel_is_mwe(panel: dict[str, Any]) -> bool:
+    return parse_bool(panel.get('mwe', False))
+
+
+def history_metric_keys_for_family(family: str, *, mwe: bool = False) -> tuple[str, ...]:
+    alias_map = MWE_HISTORY_METRIC_ALIASES_BY_FAMILY if mwe else HISTORY_METRIC_ALIASES_BY_FAMILY
+    return alias_map.get(family, (FAMILY_CONFIGS[family]['metric_key'],))
+
+
+def collect_history_series(
+    run_dir: Path,
+    metric_keys: tuple[str, ...],
+    active_runtime_hours: float | None = None,
+) -> list[tuple[float, float]]:
     series = []
     for index, metric in enumerate(load_history(run_dir)):
-        y_value = finite_float(metric.get(metric_key))
+        y_value = None
+        for key in metric_keys:
+            y_value = finite_float(metric.get(key))
+            if y_value is not None:
+                break
         if y_value is None:
             continue
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         x_value = elapsed_hours * 60.0 if elapsed_hours is not None else float(index)
         series.append((x_value, y_value))
-    return series
+    return rescale_series_minutes(series, active_runtime_hours)
 
 
 def find_tb_dir(run_dir: Path) -> Path | None:
@@ -134,7 +216,11 @@ def find_tb_dir(run_dir: Path) -> Path | None:
     return None
 
 
-def collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[float, float]]:
+def collect_tensorboard_series(
+    run_dir: Path,
+    metric_key: str,
+    active_runtime_hours: float | None = None,
+) -> list[tuple[float, float]]:
     tb_dir = find_tb_dir(run_dir)
     if tb_dir is None:
         return []
@@ -150,14 +236,23 @@ def collect_tensorboard_series(run_dir: Path, metric_key: str) -> list[tuple[flo
     if not events:
         return []
     base_time = events[0].wall_time
-    return [((event.wall_time - base_time) / 60.0, float(event.value)) for event in events]
+    series = [((event.wall_time - base_time) / 60.0, float(event.value)) for event in events]
+    return rescale_series_minutes(series, active_runtime_hours)
 
 
-def collect_series(family: str, run_dir: Path) -> list[tuple[float, float]]:
+def collect_series(
+    family: str,
+    run_dir: Path,
+    active_runtime_hours: float | None = None,
+    *,
+    force_history: bool = False,
+    metric_keys: tuple[str, ...] | None = None,
+) -> list[tuple[float, float]]:
     config = FAMILY_CONFIGS[family]
-    if config['loader'] == 'tensorboard':
-        return collect_tensorboard_series(run_dir, config['metric_key'])
-    return collect_history_series(run_dir, config['metric_key'])
+    resolved_metric_keys = metric_keys or history_metric_keys_for_family(family)
+    if config['loader'] == 'tensorboard' and not force_history:
+        return collect_tensorboard_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
+    return collect_history_series(run_dir, resolved_metric_keys, active_runtime_hours=active_runtime_hours)
 
 
 def smooth_values(values: list[float], smoothing: float) -> list[float]:
@@ -226,6 +321,9 @@ def resolve_panel_entry(panel_defaults: dict[str, Any]) -> dict[str, Any]:
 
 def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, float | None]]:
     config = FAMILY_CONFIGS[panel['family']]
+    use_train_history_only = panel_is_mwe(panel)
+    metric_keys = history_metric_keys_for_family(panel['family'], mwe=use_train_history_only)
+    selected_methods = resolve_selected_methods(panel['family'])
     summary_rows: list[dict[str, Any]] = []
     series_payload = []
     others_avg: list[float] = []
@@ -239,11 +337,22 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         methods = [method for method in suite_manifest.get('methods', []) if isinstance(method, dict)]
         methods.sort(key=lambda method: LEGEND_ORDER.index(method.get('name')) if method.get('name') in LEGEND_ORDER else len(LEGEND_ORDER))
         for method in methods:
+            if selected_methods is not None and method.get('name') not in selected_methods:
+                continue
             run_dir_raw = method.get('run_dir', '')
             if not run_dir_raw:
                 continue
             run_dir = resolve_path(run_dir_raw)
-            series = collect_series(panel['family'], run_dir)
+            active_runtime_hours = resolve_method_active_runtime_hours(method)
+            series = collect_series(
+                panel['family'],
+                run_dir,
+                active_runtime_hours=active_runtime_hours,
+                force_history=use_train_history_only,
+                metric_keys=metric_keys,
+            )
+            if method['name'] in {'ours', 'ours_single_agent'}:
+                series = [(x, y) for x, y in series if y > 0.0]
             if not series:
                 continue
             xs = [point[0] for point in series]
@@ -299,7 +408,7 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         'render_config': RENDER_CONFIG,
         'plots': {
             'success_once': {
-                'tag': config['metric_key'],
+                'tag': metric_keys[0] if use_train_history_only else config['metric_key'],
                 'output_stem': f"{panel['panel_label']}_{panel['family']}",
                 'xlabel': 'Time (minutes)',
                 'ylabel': 'Success Rate',

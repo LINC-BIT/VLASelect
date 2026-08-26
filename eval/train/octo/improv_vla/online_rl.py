@@ -41,6 +41,7 @@ from ours.pretrain_fbs_model.main import add_FBS_into_cnn, generate_small_cnn_wi
 from ours.libs.train_with_fbs.lib import set_sparsity
 from train.octo.model import Actor
 from train.octo.metrics_json import JsonMetricsLogger, build_metric_entry
+from train.common.mwe_eval import append_episode_metric_batch, summarize_episode_metric_tensors, use_train_success_only
 from train.octo.ours.evolving_envs import PickCubeEnvMutable
 
 
@@ -73,7 +74,7 @@ class Args:
     max_time: Optional[float] = None
     learning_rate: float = 3e-5
     supervised_learning_rate: float = 1e-5
-    num_envs: int = 64
+    num_envs: int = 128
     num_eval_envs: int = 32
     partial_reset: bool = True
     eval_partial_reset: bool = False
@@ -837,7 +838,9 @@ def make_envs(args: Args, run_name: str, evaluate_only: bool, env_kwargs: dict, 
     return make_envs_for_env_id(args, target_env_id, env_kwargs, run_name, env_index, evaluate_only)
 
 
-def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step: int):
+def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step: int, train_episode_metrics=None):
+    if use_train_success_only():
+        return summarize_episode_metric_tensors(train_episode_metrics or {})
     agent.eval()
     metrics = defaultdict(list)
     eval_obs, _ = eval_envs.reset()
@@ -1117,6 +1120,7 @@ def main():
 
         final_values = torch.zeros((args.num_steps, args.num_envs), device=device)
         rollout_start = time.perf_counter()
+        train_episode_metrics = defaultdict(list)
         for step in range(args.num_steps):
             global_step += args.num_envs
             obs[step] = next_obs
@@ -1139,6 +1143,7 @@ def main():
 
             if "final_info" in infos:
                 done_mask = infos["_final_info"]
+                append_episode_metric_batch(train_episode_metrics, infos["final_info"]["episode"], done_mask)
                 done_indices = torch.arange(args.num_envs, device=device)[done_mask]
 
                 for key, value in infos["final_info"]["episode"].items():
@@ -1243,7 +1248,11 @@ def main():
         sl_time = time.perf_counter() - sl_start
         runtime_tracker.add_active_seconds(sl_time)
 
-        metrics = evaluate(agent, eval_envs, args, logger, global_step)
+        should_run_eval = iteration % args.eval_freq == 0 or iteration == args.num_iterations
+        if not should_run_eval:
+            continue
+
+        metrics = evaluate(agent, eval_envs, args, logger, global_step, train_episode_metrics=train_episode_metrics)
         success_once = metrics.get("success_once", 0.0)
         success_end = metrics.get("success_at_end", 0.0)
         last_eval_metrics = dict(metrics)

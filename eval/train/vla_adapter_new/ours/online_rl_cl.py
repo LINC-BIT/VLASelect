@@ -16,7 +16,11 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
-from train.common.memory_accounting import write_module_memory_exclusion_metadata
+from train.common.memory_accounting import (
+    DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
+    MemoryPhaseTracker,
+    write_module_memory_exclusion_metadata,
+)
 from train.common.time_breakdown import (
     empty_module_breakdown,
     snapshot_time_breakdown_to_metric,
@@ -204,7 +208,31 @@ def parse_args() -> Args:
             parser.add_argument(arg_name, type=arg_type, default=None)
         else:
             parser.add_argument(arg_name, type=type(default), default=default)
-    return Args(**vars(parser.parse_args()))
+    args = Args(**vars(parser.parse_args()))
+    if os.environ.get("MWE", "0") == "1":
+        # Keep the same training path while using a deliberately tiny footprint for
+        # verification runs. VLA language-model activations dominate memory during
+        # PPO, so MWE prioritizes proving the path is runnable over throughput.
+        args.num_envs = 4
+        args.num_eval_envs = 1
+        args.num_steps = 4
+        args.update_epochs = 1
+        args.num_minibatches = 2
+        args.rollout_micro_batch_size = 4
+        args.eval_micro_batch_size = 4
+        args.update_micro_batch_size = 2
+        # Initialization still exercises the selected scaling method, while the
+        # repeated regeneration path is outside this minimal run and can require
+        # architecture-specific checkpoint shapes.
+        args.small_model_feedback_schedule = "once"
+        args.small_model_regeneration_schedule = "once"
+        args.total_timesteps = max(args.total_timesteps, 10**12)
+        mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
+        if mwe_runtime_minutes <= 0:
+            raise ValueError("MWE_MAX_RUNTIME_MINUTES must be positive")
+        args.max_runtime_hours = mwe_runtime_minutes / 60.0
+        args.early_stop_zero_success_minutes = max(args.early_stop_zero_success_minutes, 5.0)
+    return args
 
 
 def get_maniskill_backend_kwargs(device: torch.device) -> Dict[str, str]:
@@ -444,11 +472,13 @@ def collect_best_return_trajectory_sample(
     running_trajectories = [[] for _ in range(num_envs)]
     running_returns = [0.0 for _ in range(num_envs)]
     finished_trajectories = []
+    forward_seconds = 0.0
 
     with torch.no_grad():
         for _ in range(num_steps):
             rgbs = reference.extract_rgb_batch_from_obs(obs)
             states = reference.extract_hand_state_batch_from_obs(obs)
+            forward_start_time = time.perf_counter()
             _, _, _, _, action_bins = reference.batched_get_action_and_value_no_grad(
                 policy,
                 rgbs,
@@ -459,6 +489,7 @@ def collect_best_return_trajectory_sample(
             actions = policy.bin_indices_to_env_actions(action_bins)
             for env_idx in range(num_envs):
                 running_trajectories[env_idx].append(_extract_single_env_step(obs, action_bins, env_idx))
+            forward_seconds += time.perf_counter() - forward_start_time
             obs, rewards, terminations, truncations, _ = eval_envs.step(actions)
             reward_values = torch.as_tensor(rewards).detach().cpu().view(-1)
             done_mask = torch.logical_or(torch.as_tensor(terminations), torch.as_tensor(truncations)).cpu().view(-1).bool()
@@ -481,7 +512,7 @@ def collect_best_return_trajectory_sample(
         raise RuntimeError("Failed to collect any trajectory for small model generation")
 
     best = max(finished_trajectories, key=lambda item: item["return"])
-    return _stack_trajectory_steps(best["steps"], device), float(best["return"])
+    return _stack_trajectory_steps(best["steps"], device), float(best["return"]), forward_seconds
 
 
 def resolve_generation_policy_agent(args: Args, large_agent, small_agent=None):
@@ -503,11 +534,13 @@ def collect_sample_for_small_model_generation(
     eval_envs: ManiSkillVectorEnv,
     device: torch.device,
 ) -> Dict[str, Any]:
+    forward_seconds = 0.0
     if args.small_model_generation_strategy in {"target-batch", "target-single"}:
         obs, _ = eval_envs.reset()
         rgbs = reference.extract_rgb_batch_from_obs(obs)
         states = reference.extract_hand_state_batch_from_obs(obs)
         generation_agent, _ = resolve_generation_policy_agent(args, large_agent=large_agent, small_agent=small_agent)
+        forward_start_time = time.perf_counter()
         _, _, _, _, action_bins = reference.batched_get_action_and_value_no_grad(
             generation_agent,
             rgbs,
@@ -515,23 +548,24 @@ def collect_sample_for_small_model_generation(
             micro_batch_size=args.eval_micro_batch_size,
             deterministic=True,
         )
+        forward_seconds += time.perf_counter() - forward_start_time
         if args.small_model_generation_strategy == "target-single":
             return {
                 "rgbs": rgbs[:1].clone(),
                 "states": states[:1].copy(),
                 "action_bins": action_bins[:1].to(device=device, dtype=torch.long),
-            }
+            }, forward_seconds
         return {
             "rgbs": rgbs.clone(),
             "states": states.copy(),
             "action_bins": action_bins.to(device=device, dtype=torch.long),
-        }
+        }, forward_seconds
 
     if args.small_model_generation_strategy == "target-single-traj":
         generation_agent, generation_policy = resolve_generation_policy_agent(args, large_agent=large_agent, small_agent=small_agent)
         if generation_policy == "better":
             comparison_seed = np.random.randint(0, 2**31 - 1)
-            large_sample, large_return = collect_best_return_trajectory_sample(
+            large_sample, large_return, large_forward_seconds = collect_best_return_trajectory_sample(
                 large_agent,
                 eval_envs,
                 args.num_steps,
@@ -539,7 +573,7 @@ def collect_sample_for_small_model_generation(
                 device,
                 reset_seed=int(comparison_seed),
             )
-            small_sample, small_return = collect_best_return_trajectory_sample(
+            small_sample, small_return, small_forward_seconds = collect_best_return_trajectory_sample(
                 small_agent,
                 eval_envs,
                 args.num_steps,
@@ -547,15 +581,16 @@ def collect_sample_for_small_model_generation(
                 device,
                 reset_seed=int(comparison_seed),
             )
-            return small_sample if small_return >= large_return else large_sample
-        sample, _ = collect_best_return_trajectory_sample(
+            forward_seconds += large_forward_seconds + small_forward_seconds
+            return (small_sample if small_return >= large_return else large_sample), forward_seconds
+        sample, _, forward_seconds = collect_best_return_trajectory_sample(
             generation_agent,
             eval_envs,
             args.num_steps,
             args.eval_micro_batch_size,
             device,
         )
-        return sample
+        return sample, forward_seconds
 
     raise NotImplementedError(f"Unknown small_model_generation_strategy: {args.small_model_generation_strategy}")
 
@@ -647,9 +682,13 @@ def regenerate_small_model_in_place(
     eval_envs,
     device: torch.device,
 ):
-    search_start_time = time.perf_counter()
-    sample = collect_sample_for_small_model_generation(args, large_agent=large_agent, small_agent=small_agent, eval_envs=eval_envs, device=device)
-    search_seconds = time.perf_counter() - search_start_time
+    sample, forward_seconds = collect_sample_for_small_model_generation(
+        args,
+        large_agent=large_agent,
+        small_agent=small_agent,
+        eval_envs=eval_envs,
+        device=device,
+    )
 
     enhancer_start_time = time.perf_counter()
     regenerated_small_agent, new_pruning_info = generate_static_small_model_with_returning_pruning_info(
@@ -689,7 +728,7 @@ def regenerate_small_model_in_place(
                 f"min={min(replaced_ratios):.4f} max={max(replaced_ratios):.4f}"
             )
     enhancer_seconds = time.perf_counter() - enhancer_start_time
-    return new_pruning_info, search_seconds, enhancer_seconds
+    return new_pruning_info, forward_seconds, enhancer_seconds
 
 
 def maybe_load_training_checkpoint(
@@ -750,6 +789,8 @@ def train(args: Args) -> None:
     run_name = args.run_name or time.strftime("%Y%m%d-%H%M%S")
     output_dir = mkdir(Path(args.output_dir) / run_name)
     save_json(output_dir / "args.json", asdict(args))
+    memory_phase_tracker = MemoryPhaseTracker(output_dir)
+    memory_phase_tracker.mark("setup", force=True)
 
     print(f"[setup] output_dir={output_dir}")
     print(f"[setup] current_env={current_env_id}")
@@ -772,22 +813,25 @@ def train(args: Args) -> None:
         module=large_agent,
         label="large_agent",
         reason="VLASelect large model can be offloaded during small-model online training; exclude its resident parameter/buffer memory from memory-footprint plots.",
+        excluded_runtime_phase_names=DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
     )
     print(f"[setup] memory exclusion metadata saved to {memory_exclusion_path}")
 
+    memory_phase_tracker.mark("workload_initialization")
     workload_init_start_time = time.perf_counter()
     envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_envs, record_metrics=True)
     eval_envs = make_vector_env_for_env_id(args, device, current_env_id, args.num_eval_envs, record_metrics=True)
     module_breakdown["workload_initialization_seconds"] += time.perf_counter() - workload_init_start_time
+    memory_phase_tracker.mark("large_model_runtime_excluded")
     search_start_time = time.perf_counter()
-    initial_sample = collect_sample_for_small_model_generation(
+    initial_sample, forward_seconds = collect_sample_for_small_model_generation(
         args,
         large_agent=large_agent,
         small_agent=None,
         eval_envs=eval_envs,
         device=device,
     )
-    module_breakdown["optimal_network_searcher_seconds"] += time.perf_counter() - search_start_time
+    module_breakdown["large_model_forward_seconds"] += forward_seconds
 
     enhancer_start_time = time.perf_counter()
     small_agent, current_pruning_info = generate_static_small_model_with_returning_pruning_info(
@@ -800,9 +844,10 @@ def train(args: Args) -> None:
     restore_small_policy_dtypes(small_agent, device)
     small_agent.configure_trainable_modules(train_backbone=not args.freeze_vla_backbone and args.backbone_warmup_updates <= 0)
     small_agent.eval_micro_batch_size = args.eval_micro_batch_size
-    module_breakdown["selective_model_enhancer_seconds"] += time.perf_counter() - enhancer_start_time
+    module_breakdown["small_model_generation_seconds"] += time.perf_counter() - enhancer_start_time
     update_combined_search_enhancement_seconds(module_breakdown)
     optimizer = reference.build_optimizer(args, small_agent)
+    memory_phase_tracker.mark("evaluation")
 
     start_update, global_step, best_success_once, resumed_pruning_info = maybe_load_training_checkpoint(
         args.continue_train_from,
@@ -840,6 +885,7 @@ def train(args: Args) -> None:
     current_success_end = None
 
     if start_update <= 1 and global_step == 0:
+        memory_phase_tracker.mark("evaluation")
         initial_eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
         initial_metric = {
             "update": 0,
@@ -896,6 +942,7 @@ def train(args: Args) -> None:
         print(
             f"[env] switching from {previous_env_id} to {current_env_id} at elapsed={elapsed_minutes:.2f} minutes"
         )
+        memory_phase_tracker.mark("workload_initialization")
         workload_init_start_time = time.perf_counter()
         close_envs(envs, eval_envs)
         envs = None
@@ -924,6 +971,7 @@ def train(args: Args) -> None:
             reference.set_optimizer_group_lr(optimizer, "vla", args.backbone_learning_rate)
 
         if update % args.eval_every_updates == 0 or (update == start_update and not metrics_history):
+            memory_phase_tracker.mark("evaluation")
             eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
             current_success_end = float(eval_metrics.get("success_at_end", eval_metrics.get("success_once", 0.0)))
             if success_end_at_last_small_model_feedback is None:
@@ -961,6 +1009,7 @@ def train(args: Args) -> None:
             current_success_end=current_success_end,
             success_end_at_last_feedback=success_end_at_last_small_model_feedback,
         ):
+            memory_phase_tracker.mark("large_model_runtime_excluded")
             print("[ours] feedback small model before rollout")
             feedback_start_time = time.perf_counter()
             feedback_static_small_model_to_large_model(
@@ -969,7 +1018,7 @@ def train(args: Args) -> None:
                 current_pruning_info,
                 alpha=args.small_model_feedback_alpha,
             )
-            module_breakdown["selective_knowledge_accumulation_seconds"] += time.perf_counter() - feedback_start_time
+            module_breakdown["small_model_feedback_seconds"] += time.perf_counter() - feedback_start_time
             success_end_at_last_small_model_feedback = current_success_end
 
         if should_regenerate_small_model_before_rollout(
@@ -980,8 +1029,9 @@ def train(args: Args) -> None:
             success_end_at_last_regeneration=success_end_at_last_small_model_regeneration,
             update_at_last_regeneration=update_at_last_small_model_regeneration,
         ):
+            memory_phase_tracker.mark("large_model_runtime_excluded")
             print("[ours] regenerate small model before rollout")
-            current_pruning_info, search_seconds, enhancer_seconds = regenerate_small_model_in_place(
+            current_pruning_info, forward_seconds, enhancer_seconds = regenerate_small_model_in_place(
                 large_agent,
                 small_agent,
                 current_pruning_info,
@@ -990,12 +1040,13 @@ def train(args: Args) -> None:
                 eval_envs,
                 device,
             )
-            module_breakdown["optimal_network_searcher_seconds"] += search_seconds
-            module_breakdown["selective_model_enhancer_seconds"] += enhancer_seconds
+            module_breakdown["large_model_forward_seconds"] += forward_seconds
+            module_breakdown["small_model_generation_seconds"] += enhancer_seconds
             update_combined_search_enhancement_seconds(module_breakdown)
             success_end_at_last_small_model_regeneration = current_success_end
             update_at_last_small_model_regeneration = update
 
+        memory_phase_tracker.mark("online_rl_rollout")
         small_agent.eval()
         final_values.zero_()
         rollout_rgbs: List[torch.Tensor] = []
@@ -1108,6 +1159,7 @@ def train(args: Args) -> None:
         stopped_on_minibatch_kl = False
         skipped_updates_on_kl = 0
         small_agent.eval()
+        memory_phase_tracker.mark("online_rl_training")
         update_start_time = time.perf_counter()
 
         for _ in range(args.update_epochs):

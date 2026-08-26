@@ -308,8 +308,12 @@ vlaselect_cleanup() {
     vlaselect_run_exit_callbacks "$rc"
 
     local -A seen_pids=()
+    local -A seen_process_groups=()
+    local -A confirmed_process_groups=()
     local pid
     local manifest_path
+    local process_group_id
+    local session_id
 
     for pid in "${VLASELECT_CLEANUP_PIDS[@]}"; do
         [[ "$pid" =~ ^[0-9]+$ ]] || continue
@@ -320,14 +324,42 @@ vlaselect_cleanup() {
         [[ -f "$manifest_path" ]] || continue
         while IFS= read -r pid; do
             [[ "$pid" =~ ^[0-9]+$ ]] || continue
-            seen_pids["$pid"]=1
+            seen_process_groups["$pid"]=1
         done < <(vlaselect_collect_manifest_pids "$manifest_path")
     done
 
+    # spawn_detached.py starts each tracked workload in a new session, with
+    # the recorded PID as the process-group ID. Kill the whole group so Ctrl+C
+    # also stops queue shells, training children, monitors, and schedulers.
+    local process_group
+
+    vlaselect_kill_process_group() {
+        local candidate_pid="$1"
+        local process_group_id=""
+        local session_id=""
+        [[ "$candidate_pid" =~ ^[0-9]+$ ]] || return 1
+        [[ -r "/proc/${candidate_pid}/stat" ]] || return 1
+        process_group_id="$(ps -o pgid= -p "$candidate_pid" 2>/dev/null | tr -d ' ')"
+        session_id="$(ps -o sid= -p "$candidate_pid" 2>/dev/null | tr -d ' ')"
+        # Only signal sessions created by spawn_detached.py. This prevents a
+        # stale/reused manifest PID from targeting an unrelated process group.
+        [[ "$process_group_id" == "$candidate_pid" && "$session_id" == "$candidate_pid" ]] || return 1
+        kill -TERM -- "-$candidate_pid" 2>/dev/null || true
+        return 0
+    }
+
+    for process_group in "${!seen_process_groups[@]}"; do
+        if vlaselect_kill_process_group "$process_group"; then
+            confirmed_process_groups["$process_group"]=1
+        fi
+    done
     for pid in "${!seen_pids[@]}"; do
         kill -TERM "$pid" 2>/dev/null || true
     done
     sleep 2
+    for process_group in "${!confirmed_process_groups[@]}"; do
+        kill -KILL -- "-$process_group" 2>/dev/null || true
+    done
     for pid in "${!seen_pids[@]}"; do
         kill -KILL "$pid" 2>/dev/null || true
     done

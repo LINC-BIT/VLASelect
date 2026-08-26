@@ -1432,6 +1432,8 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                             for k, v in eval_infos["final_info"]["episode"].items():
                                 eval_metrics[k].append(v)
                 # print(f"Evaluated {args.num_eval_steps * args.num_eval_envs} steps resulting in {num_episodes} episodes")
+                success_once_values = []
+                success_end_values = []
                 for k, v in eval_metrics.items():
                     mean = torch.stack(v).float().mean()
                     if logger is not None:
@@ -1439,33 +1441,31 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                     # print(f"eval_{k}_mean (sparsity={test_sparsity_str}) = {mean}")
 
                     if k == 'success_once':
-                        avg_success_once += mean
+                        success_once_values.append(float(mean))
                     if k == 'success_at_end':
-                        avg_success_end += mean
+                        success_end_values.append(float(mean))
 
                 if logger is not None and test_sparsity < 0.001:
                     eval_time = time.perf_counter() - stime
                     cumulative_times["eval_time"] += eval_time
                     logger.add_scalar("time/eval_time", eval_time, global_step)
 
-            avg_success_once /= len(sparsity_list)
-            logger.add_scalar(f"eval/success_once", avg_success_once, global_step)
-            avg_success_end /= len(sparsity_list)
-            logger.add_scalar(f"eval/success_end", avg_success_end, global_step)
-            current_success_end = float(avg_success_end)
-            if success_end_at_last_small_model_feedback is None:
-                success_end_at_last_small_model_feedback = current_success_end
-            if success_end_at_last_small_model_regeneration is None:
-                success_end_at_last_small_model_regeneration = current_success_end
-                iteration_at_last_small_model_regeneration = iteration
-            # 多agent逻辑，暂不需要
-            # client.report_metrics(time.time() - start_time, {
-            #     'success_once': float(avg_success_once),
-            #     'success_at_end': float(avg_success_end)
-            # })
-            print(f"Client {agent_name} eval success_once={avg_success_once:.4f}, success_at_end={avg_success_end:.4f}")
+            avg_success_once = float(sum(success_once_values) / len(success_once_values)) if success_once_values else None
+            if avg_success_once is not None:
+                logger.add_scalar(f"eval/success_once", avg_success_once, global_step)
+                print(f"Client {agent_name} eval success_once={avg_success_once:.4f}")
+            avg_success_end = float(sum(success_end_values) / len(success_end_values)) if success_end_values else None
+            if avg_success_end is not None:
+                logger.add_scalar(f"eval/success_end", avg_success_end, global_step)
+                current_success_end = float(avg_success_end)
+                if success_end_at_last_small_model_feedback is None:
+                    success_end_at_last_small_model_feedback = current_success_end
+                if success_end_at_last_small_model_regeneration is None:
+                    success_end_at_last_small_model_regeneration = current_success_end
+                    iteration_at_last_small_model_regeneration = iteration
+                print(f"Client {agent_name} eval success_at_end={avg_success_end:.4f}")
 
-            if avg_success_once >= best_success_once:
+            if avg_success_once is not None and avg_success_once >= best_success_once:
                 best_success_once = avg_success_once
                 os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
                 torch.save(
@@ -1479,7 +1479,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                     f"ckpt/{run_name}/checkpoints/best_success_once.pt",
                 )
                 # client.save_feature_aggregators(f"ckpt/{run_name}/checkpoints/best_success_once.pt.feature_aggregators")
-            if avg_success_end >= best_success_end:
+            if avg_success_end is not None and avg_success_end >= best_success_end:
                 best_success_end = avg_success_end
                 os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
                 torch.save(

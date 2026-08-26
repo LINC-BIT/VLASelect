@@ -14,8 +14,18 @@ ROLLOUT_RE = re.compile(r"\[rollout\]\s+update=(?P<update>\d+)\/(?P<total_update
 TRAIN_UPDATE_RE = re.compile(r"\[train\]\s+update=(?P<update>\d+)\/(?P<total_updates>\d+)")
 TRAIN_STEP_RE = re.compile(r"(?:^|\s)step=(?P<global_step>\d+)(?:\s|$)")
 ITER_RE = re.compile(r"\biter=(?P<iter>\d+)\b")
-EVAL_ONCE_RE = re.compile(r"(?:\beval_success_once|\bsuccess_once)=(?P<value>[-+]?\d*\.?\d+|nan)")
-EVAL_END_RE = re.compile(r"(?:\beval_success_(?:at_)?end|\bsuccess_(?:at_)?end)=(?P<value>[-+]?\d*\.?\d+|nan)")
+CLIENT_ITER_RE = re.compile(r"Client\s+.+?,\s+Iteration:\s*(?P<iter>\d+),\s*global_step=(?P<global_step>\d+)")
+CLIENT_EVAL_RE = re.compile(r"Client\s+.+?\s+Evaluating\b")
+CLIENT_EVAL_METRIC_RE = re.compile(r"Client\s+.+?\s+eval\s+success_(?:once|at_end)=")
+METRIC_VALUE_RE = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?|nan"
+EVAL_ONCE_PATTERNS = [
+    re.compile(rf"(?:\beval_success_once|\bsuccess_once)=(?P<value>{METRIC_VALUE_RE})"),
+    re.compile(rf"['\"]success_once['\"]:\s*(?P<value>{METRIC_VALUE_RE})"),
+]
+EVAL_END_PATTERNS = [
+    re.compile(rf"(?:\beval_success_(?:at_)?end|\bsuccess_(?:at_)?end)=(?P<value>{METRIC_VALUE_RE})"),
+    re.compile(rf"['\"]success_(?:at_)?end['\"]:\s*(?P<value>{METRIC_VALUE_RE})"),
+]
 ENV_PATTERNS = [
     re.compile(r"initial_env_id=(?P<env>\S+)"),
     re.compile(r"current_env_id=(?P<env>\S+)"),
@@ -49,6 +59,7 @@ class MethodState:
     global_step: int | None = None
     eval_success_once: float | None = None
     eval_success_end: float | None = None
+    pending_eval_success_once: bool = False
     last_emit: str = ""
     last_emit_at: float = 0.0
 
@@ -92,13 +103,29 @@ class MethodState:
             self.phase = self.phase or "train"
             self.update = int(iter_match.group("iter"))
 
-        eval_once_match = EVAL_ONCE_RE.search(line)
-        if eval_once_match:
-            self.eval_success_once = parse_metric(eval_once_match.group("value"))
+        client_iter_match = CLIENT_ITER_RE.search(line)
+        if client_iter_match:
+            self.phase = "train"
+            self.update = int(client_iter_match.group("iter"))
+            self.global_step = int(client_iter_match.group("global_step"))
 
-        eval_end_match = EVAL_END_RE.search(line)
-        if eval_end_match:
-            self.eval_success_end = parse_metric(eval_end_match.group("value"))
+        if CLIENT_EVAL_RE.search(line) or CLIENT_EVAL_METRIC_RE.search(line):
+            self.phase = "eval"
+
+        for eval_once_re in EVAL_ONCE_PATTERNS:
+            eval_once_match = eval_once_re.search(line)
+            if eval_once_match:
+                eval_success_once = parse_metric(eval_once_match.group("value"))
+                if eval_success_once is not None and self.phase != "setup":
+                    self.eval_success_once = eval_success_once
+                    self.pending_eval_success_once = True
+                break
+
+        for eval_end_re in EVAL_END_PATTERNS:
+            eval_end_match = eval_end_re.search(line)
+            if eval_end_match:
+                self.eval_success_end = parse_metric(eval_end_match.group("value"))
+                break
 
         lowered = line.lower()
         if "reached time limit" in lowered:
@@ -121,7 +148,7 @@ class MethodState:
             return "finished"
         return self.manifest_status
 
-    def snapshot(self, label: str) -> str | None:
+    def snapshot(self, label: str, include_transient: bool = True) -> str | None:
         status = self.effective_status()
         parts = [f"[{label}]", f"method={self.display_name}", f"status={status}"]
         if self.phase and status in {"running", "finished", "completed", "failed"}:
@@ -138,7 +165,7 @@ class MethodState:
             parts.append(f"remaining_step={remaining}")
         elif self.global_step is not None:
             parts.append(f"global_step={self.global_step}")
-        if self.eval_success_once is not None:
+        if include_transient and self.pending_eval_success_once and self.eval_success_once is not None:
             parts.append(f"eval_once={format_metric(self.eval_success_once)}")
         if self.eval_success_end is not None:
             parts.append(f"eval_end={format_metric(self.eval_success_end)}")
@@ -273,16 +300,22 @@ def main() -> None:
                     except OSError:
                         pass
 
-            snapshot = state.snapshot(args.label)
-            if snapshot:
+            snapshot = state.snapshot(args.label, include_transient=True)
+            stable_snapshot = state.snapshot(args.label, include_transient=False)
+            if snapshot and stable_snapshot:
                 now = time.time()
-                should_emit = snapshot != state.last_emit
+                should_emit = stable_snapshot != state.last_emit
+                if not should_emit and state.pending_eval_success_once:
+                    should_emit = True
                 if not should_emit and state.effective_status() == "running":
                     should_emit = (now - state.last_emit_at) >= args.heartbeat_seconds
+                    if should_emit:
+                        snapshot = stable_snapshot
                 if should_emit:
                     print(snapshot, flush=True)
-                    state.last_emit = snapshot
+                    state.last_emit = stable_snapshot
                     state.last_emit_at = now
+                    state.pending_eval_success_once = False
 
             if state.effective_status() == "running":
                 all_done = False

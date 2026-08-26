@@ -29,7 +29,7 @@ EDGEVLA_SMOKE="${EDGEVLA_SMOKE:-0}"
 ENABLE_SELF_CURVE_WATCHER="${ENABLE_SELF_CURVE_WATCHER:-0}"
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
-METHODS="${METHODS:-${RUN_METHODS:-}}"
+METHODS="${METHODS:-${RUN_METHODS:-vlaselect}}"
 MWE="${MWE:-0}"
 BREAKDOWN_MODULES_ACTIVE_RUNTIME_SECONDS="${BREAKDOWN_MODULES_ACTIVE_RUNTIME_SECONDS:-60}"
 
@@ -155,7 +155,7 @@ PY
 count_selected_methods() {
     local raw_selection="$1"
     if [[ -z "$raw_selection" ]]; then
-        echo 10
+        echo 1
         return
     fi
     printf '%s' "$raw_selection" | tr ',' '\n' | awk 'NF {c++} END { if (c < 1) c = 1; print c }'
@@ -361,7 +361,7 @@ launch_family_suite() {
     local reuse_manifest=""
     local family_methods=""
     local family_mwe_workload_runtime_limit_seconds="$MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS"
-    local selected_method_count=10
+    local selected_method_count=1
 
     family_methods="$(resolve_methods_for_family "$family" "$METHODS")"
     if [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then

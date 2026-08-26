@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "",
-    "suite_manifest": ""
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260826-095439/manifest.json",
+    "suite_manifest": "ckpt/vla_adapter_new/cl_suite/20260826-095439/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -33,13 +33,13 @@
   },
   "plots": {
     "success_once": {
-      "tag": "train_success_once",
+      "tag": "eval_success_once",
       "output_stem": "b_vla_adapter_new",
       "xlabel": "Time (minutes)",
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        300.0
+        5.506982317566726
       ],
       "ylim": [
         0.0,
@@ -47,12 +47,98 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": null,
-        "ours_average": null,
-        "absolute_improvement_percent": null
+        "others_average": 0.0,
+        "ours_average": 0.8125,
+        "absolute_improvement_percent": 81.25
       },
-      "series": [],
-      "legend_entries": []
+      "series": [
+        {
+          "name": "self_improv",
+          "display_name": "Self-Improv",
+          "label": "Self-Improv",
+          "raw_average": 0.0,
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            5.179879317450104
+          ],
+          "y": [
+            0.0
+          ]
+        },
+        {
+          "name": "vla_rft",
+          "display_name": "VLA-RFT",
+          "label": "VLA-RFT",
+          "raw_average": 0.0,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            5.244745064349263
+          ],
+          "y": [
+            0.0
+          ]
+        },
+        {
+          "name": "ours",
+          "display_name": "VLASelect",
+          "label": "VLASelect",
+          "raw_average": 0.8125,
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.22895200579621544,
+            0.47621087125889494,
+            0.6420964414531076,
+            1.0143846767983633
+          ],
+          "y": [
+            0.5,
+            0.65,
+            0.755,
+            0.7535000000000001
+          ]
+        }
+      ],
+      "legend_entries": [
+        {
+          "name": "self_improv",
+          "label": "Self-Improv",
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "vla_rft",
+          "label": "VLA-RFT",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ours",
+          "label": "VLASelect",
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        }
+      ]
     }
   }
 }

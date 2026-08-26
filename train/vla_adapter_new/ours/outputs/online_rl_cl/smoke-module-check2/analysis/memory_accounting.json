@@ -1,0 +1,8 @@
+{
+  "label": "large_agent",
+  "reason": "VLASelect large model can be offloaded during small-model online training; exclude its resident parameter/buffer memory from memory-footprint plots.",
+  "excluded_gpu_memory_mb": 12.921001,
+  "excluded_runtime_phase_names": [
+    "large_model_runtime_excluded"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "sampling_seconds": 16.857010271050967,
+  "training_seconds": 0.3022136960644275,
+  "time_breakdown": {
+    "sampling_seconds": 16.857010271050967,
+    "training_seconds": 0.3022136960644275,
+    "module_breakdown": {
+      "workload_initialization_seconds": 4.027681940002367,
+      "large_model_forward_seconds": 0.6196189419715665,
+      "small_model_generation_seconds": 0.3098152989987284,
+      "large_model_forward_and_small_model_generation_seconds": 0.9294342409702949,
+      "small_model_feedback_seconds": 0.003766717971302569,
+      "online_rl_completion_seconds": 17.159223967115395,
+      "optimal_network_searcher_seconds": 0.6196189419715665,
+      "selective_model_enhancer_seconds": 0.3098152989987284,
+      "optimal_network_search_and_selective_model_enhancement_seconds": 0.9294342409702949,
+      "selective_knowledge_accumulation_seconds": 0.003766717971302569
+    }
+  },
+  "module_breakdown": {
+    "workload_initialization_seconds": 4.027681940002367,
+    "large_model_forward_seconds": 0.6196189419715665,
+    "small_model_generation_seconds": 0.3098152989987284,
+    "large_model_forward_and_small_model_generation_seconds": 0.9294342409702949,
+    "small_model_feedback_seconds": 0.003766717971302569,
+    "online_rl_completion_seconds": 17.159223967115395,
+    "optimal_network_searcher_seconds": 0.6196189419715665,
+    "selective_model_enhancer_seconds": 0.3098152989987284,
+    "optimal_network_search_and_selective_model_enhancement_seconds": 0.9294342409702949,
+    "selective_knowledge_accumulation_seconds": 0.003766717971302569
+  },
+  "vlaselect_module_breakdown": {
+    "workload_initialization_seconds": 4.027681940002367,
+    "large_model_forward_seconds": 0.6196189419715665,
+    "small_model_generation_seconds": 0.3098152989987284,
+    "large_model_forward_and_small_model_generation_seconds": 0.9294342409702949,
+    "small_model_feedback_seconds": 0.003766717971302569,
+    "online_rl_completion_seconds": 17.159223967115395,
+    "optimal_network_searcher_seconds": 0.6196189419715665,
+    "selective_model_enhancer_seconds": 0.3098152989987284,
+    "optimal_network_search_and_selective_model_enhancement_seconds": 0.9294342409702949,
+    "selective_knowledge_accumulation_seconds": 0.003766717971302569
+  }
+}

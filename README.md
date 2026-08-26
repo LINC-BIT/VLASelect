@@ -234,7 +234,7 @@ bash run_acc_task_env_change.sh
 python3 plot_acc_task_env.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd acc_comparison
@@ -263,7 +263,7 @@ MWE=1 bash run_acc_task_env_change.sh
 python3 plot_acc_task_env.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd acc_comparison
@@ -281,7 +281,7 @@ bash run_acc_task_env_change.sh
 python3 plot_acc_task_env.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd acc_comparison
@@ -308,7 +308,7 @@ bash run_acc_res_change.sh
 python3 plot_acc_res_change.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd acc_comparison
@@ -337,7 +337,7 @@ MWE=1 bash run_acc_res_change.sh
 python3 plot_acc_res_change.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd acc_comparison
@@ -355,7 +355,7 @@ bash run_acc_res_change.sh
 python3 plot_acc_res_change.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd acc_comparison
@@ -384,7 +384,7 @@ bash overhead_same_acc.sh
 python3 plot_overhead.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd overhead
@@ -413,7 +413,7 @@ MWE=1 bash overhead_same_acc.sh
 python3 plot_overhead.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd overhead
@@ -431,7 +431,7 @@ bash overhead_same_acc.sh
 python3 plot_overhead.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd overhead
@@ -448,76 +448,14 @@ The result files will be stored as `overhead/FIG_MEMORY_FOOTPOINT.pdf`, `overhea
 
 **Time Breakdown of VLASelect's Modules**
 
-1. **Minimum working example on three representative baselines plus VLASelect (completed within 10 minutes and 20GB memory)**: you can use the following code to run a lightweight check on `Self-Improv`, `VLA-RFT`, `WorldEnv`, and `VLASelect`. [[Example running results]]()
+1. **Full run (completed within 20 minutes and 20GB memory)**: you can use the following code to run the full experiment. [[Example running results]]()
 
 ```bash
 cd overhead
-MWE=1 \
-METHODS=self_improv,vla_rft,world_env,vlaselect \
-bash overhead_breakdown_modules.sh
-python3 plot_breakdown_modules.py
+MWE=1 bash overhead_breakdown/run.sh
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
 
-```bash
-cd overhead
-MWE=1 \
-METHODS=self_improv,vla_rft,world_env,vlaselect \
-bash overhead_breakdown_modules_single_arm_robot.sh
-
-MWE=1 \
-METHODS=self_improv,vla_rft,world_env,vlaselect \
-bash overhead_breakdown_modules_mobile_manipulator.sh
-
-MWE=1 \
-METHODS=self_improv,vla_rft,world_env,vlaselect \
-bash overhead_breakdown_modules_dexterous_hand.sh
-
-MWE=1 \
-METHODS=self_improv,vla_rft,world_env,vlaselect \
-bash overhead_breakdown_modules_humanoid_robot.sh
-```
-
-2. **Minimum working example on all baselines (completed within 20 minutes and 20GB memory)**: you can use the following code to run the minimum working example on all baselines and VLASelect. [[Example running results]]()
-
-```bash
-cd overhead
-MWE=1 bash overhead_breakdown_modules.sh
-python3 plot_breakdown_modules.py
-```
-
-  You can also run a single workload in this mode with one of the commands below.
-
-```bash
-cd overhead
-MWE=1 bash overhead_breakdown_modules_single_arm_robot.sh
-MWE=1 bash overhead_breakdown_modules_mobile_manipulator.sh
-MWE=1 bash overhead_breakdown_modules_dexterous_hand.sh
-MWE=1 bash overhead_breakdown_modules_humanoid_robot.sh
-```
-
-3. **Full run (completed within 140 hours and 60GB memory)**: you can use the following code to reproduce the full experiment. [[Example running results]]()
-
-```bash
-cd overhead
-bash overhead_breakdown_modules.sh
-python3 plot_breakdown_modules.py
-```
-
-  You can also run a single workload in this mode with one of the commands below.
-
-```bash
-cd overhead
-bash overhead_breakdown_modules_single_arm_robot.sh
-bash overhead_breakdown_modules_mobile_manipulator.sh
-bash overhead_breakdown_modules_dexterous_hand.sh
-bash overhead_breakdown_modules_humanoid_robot.sh
-```
-
-4. **Switch models**: for example, if the four workloads use `octo`, `vla_adapter_new`, `tinyvla`, and `edgevla`, respectively, run `MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash overhead_breakdown_modules.sh`.
-
-The result file will be stored as `overhead/FIG_BREAKDOWN_MODULES.pdf`, which corresponds to Fig. 10 in the paper.
 
 **Time Breakdown of Sampling and Training for All Methods**
 
@@ -531,7 +469,7 @@ bash overhead_breakdown_all_methods.sh
 python3 plot_breakdown_all_methods.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd overhead
@@ -560,7 +498,7 @@ MWE=1 bash overhead_breakdown_all_methods.sh
 python3 plot_breakdown_all_methods.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd overhead
@@ -578,7 +516,7 @@ bash overhead_breakdown_all_methods.sh
 python3 plot_breakdown_all_methods.py
 ```
 
-  You can also run a single workload in this mode with one of the commands below.
+  - You can also run a single workload in this mode with one of the commands below.
 
 ```bash
 cd overhead

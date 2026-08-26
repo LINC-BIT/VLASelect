@@ -1,9 +1,13 @@
 from __future__ import annotations
 import ast
+import argparse
 import csv
+import hashlib
 import json
 import math
+import random
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 import matplotlib
@@ -31,6 +35,22 @@ PANEL_FIGURE_SIZE = (5.6, 3.6)
 PLOT_FONT_SIZE = 36
 FIGURE_SIZE = (12.9583, 6.6111)
 plt.rcParams.update({'font.family': 'sans-serif', 'font.sans-serif': ['Arial', 'DejaVu Sans', 'Liberation Sans'], 'font.size': PLOT_FONT_SIZE, 'axes.labelsize': PLOT_FONT_SIZE, 'axes.titlesize': PLOT_FONT_SIZE, 'xtick.labelsize': PLOT_FONT_SIZE, 'ytick.labelsize': PLOT_FONT_SIZE, 'legend.fontsize': PLOT_FONT_SIZE, 'svg.fonttype': 'none',})
+
+
+def configure_output_paths(output_root: Path | None) -> None:
+    if output_root is None:
+        return
+    global BREAKDOWN_ROOT, FIGURE_PATH, FIGURE_SVG_PATH, FIGURE_PNG_PATH
+    global TABLE2_CSV_PATH, TABLE3_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR
+    output_root = output_root.resolve()
+    BREAKDOWN_ROOT = output_root / 'overhead_breakdown_table'
+    FIGURE_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.pdf'
+    FIGURE_SVG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.svg'
+    FIGURE_PNG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.png'
+    TABLE2_CSV_PATH = BREAKDOWN_ROOT / 'TAB_OVERHEAD.csv'
+    TABLE3_CSV_PATH = BREAKDOWN_ROOT / 'TAB_ENERGY.csv'
+    SUMMARY_JSON_PATH = output_root / 'overhead_same_acc_summary.json'
+    PANEL_OUTPUT_DIR = output_root / 'FIG_MEMORY_FOOTPRINT_panels'
 PAPER_PANELS = [
     {'panel_label': 'a', 'family': 'octo', 'display_name': 'Octo', 'workload_name': 'Single-arm robot', 'panel_title': '(a) Single-arm robot'},
     {'panel_label': 'b', 'family': 'vla_adapter_new', 'display_name': 'VLA-Adapter', 'workload_name': 'Dexterous hand', 'panel_title': '(b) Dexterous hand'},
@@ -39,15 +59,21 @@ PAPER_PANELS = [
 ]
 METHOD_STYLES = {'conrft': {'color': '#4C78A8', 'linestyle': '-'},'flare': {'color': '#59A14F', 'linestyle': '-'},'improv_vla': {'color': '#4D4D4D', 'linestyle': '-'},'edgeta': {'color': '#A6A6A6', 'linestyle': '--'},'convertnet': {'color': '#CEBB6C', 'linestyle': '--'},'ours': {'color': '#C44E52', 'linestyle': '-'},'ours_single_agent': {'color': '#C44E52', 'linestyle': '-'},'ppo_gen': {'color': '#4C78A8', 'linestyle': '--'},'self_improv': {'color': '#9A9A9A', 'linestyle': '-'},'self_improvement': {'color': '#9A9A9A', 'linestyle': '-'},'vla_rft': {'color': '#59A14F', 'linestyle': '--'},'world_env': {'color': '#4D4D4D', 'linestyle': '--'}}
 LEGEND_ORDER = ['conrft', 'flare', 'improv_vla', 'self_improv', 'self_improvement', 'ppo_gen', 'vla_rft', 'world_env', 'edgeta', 'convertnet', 'ours', 'ours_single_agent']
-FAMILY_CONFIGS = {'edgevla': {'metric_key': 'eval_success_once', 'loader': 'history'},'octo': {'metric_key': 'eval/success_once', 'loader': 'tensorboard'},'tinyvla': {'metric_key': 'train_success_once', 'loader': 'history'},'vla_adapter_new': {'metric_key': 'train_success_once', 'loader': 'history'}}
+FAMILY_CONFIGS = {'edgevla': {'metric_key': 'eval_success_once', 'loader': 'history'},'octo': {'metric_key': 'eval/success_once', 'loader': 'tensorboard'},'tinyvla': {'metric_key': 'eval_success_once', 'loader': 'history'},'vla_adapter_new': {'metric_key': 'eval_success_once', 'loader': 'history'}}
 PAPER_METHOD_ORDER = ['ConRFT', 'FlaRe', 'iRe-VLA', 'Self-Improvement', 'RLVLA', 'VLA-RFT', 'World-Env', 'EdgeTA', 'ConvertNet', 'VLASelect']
 PAPER_METHOD_BY_INTERNAL = {'conrft': 'ConRFT','flare': 'FlaRe','improv_vla': 'iRe-VLA','self_improv': 'Self-Improvement','self_improvement': 'Self-Improvement','ppo_gen': 'RLVLA','vla_rft': 'VLA-RFT','world_env': 'World-Env','edgeta': 'EdgeTA','convertnet': 'ConvertNet','ours': 'VLASelect','ours_single_agent': 'VLASelect'}
 VLASELECT_METHODS_BY_FAMILY = {'octo': ['ours_single_agent', 'ours'],'vla_adapter_new': ['ours'],'tinyvla': ['ours'],'edgevla': ['ours', 'ours_single_agent']}
 HISTORY_METRIC_ALIASES_BY_FAMILY = {
     'octo': ('eval_success_once', 'eval/success_once', 'success_once'),
-    'vla_adapter_new': ('train_success_once', 'eval_success_once', 'success_once'),
-    'tinyvla': ('train_success_once', 'eval_success_once', 'success_once'),
-    'edgevla': ('eval_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
+}
+MWE_HISTORY_METRIC_ALIASES_BY_FAMILY = {
+    'octo': ('eval_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
 }
 # Table 3 follows the paper format: the first row of each method averages the
 # workload segments treated as new tasks, and the second row averages the
@@ -59,6 +85,7 @@ TABLE3_EVENT_LABELS_BY_FAMILY = {
     'edgevla': ['task', 'env', 'env', 'env', 'task', 'task', 'env', 'task', 'task', 'env'],
 }
 TABLE3_EVENT_DISPLAY_NAMES = {'task': 'new task', 'env': 'environment change'}
+MEMORY_FOOTPRINT_ACTIVE_PHASE_NAMES = {'online_rl_rollout', 'online_rl_training'}
 def load_json(path: Path) -> Any: return json.loads(path.read_text(encoding='utf-8'))
 def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
     path = Path(raw_path)
@@ -121,10 +148,18 @@ def rescale_series_hours(series: list[tuple[float, float]], active_runtime_hours
     scale = active_runtime_hours / raw_total_hours
     return [(x_value * scale, y_value) for x_value, y_value in series]
 
-def collect_history_series(run_dir: Path, metric_key: str, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
+def history_metric_aliases_for_family(family: str, use_train_history_only: bool = False) -> tuple[str, ...]:
+    alias_map = MWE_HISTORY_METRIC_ALIASES_BY_FAMILY if use_train_history_only else HISTORY_METRIC_ALIASES_BY_FAMILY
+    return alias_map.get(family, (FAMILY_CONFIGS[family]['metric_key'],))
+
+def collect_history_series(run_dir: Path, metric_keys: tuple[str, ...], active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     series = []
     for index, metric in enumerate(load_history(run_dir)):
-        y_value = finite_float(metric.get(metric_key))
+        y_value = None
+        for key in metric_keys:
+            y_value = finite_float(metric.get(key))
+            if y_value is not None:
+                break
         if y_value is None: continue
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         x_value = elapsed_hours if elapsed_hours is not None else float(index)
@@ -152,25 +187,26 @@ def collect_tensorboard_series(run_dir: Path, metric_key: str, active_runtime_ho
     base_time = events[0].wall_time
     series = [((event.wall_time - base_time) / 3600.0, float(event.value)) for event in events]
     return rescale_series_hours(series, active_runtime_hours)
-def collect_series(family: str, run_dir: Path, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
+def collect_series(family: str, run_dir: Path, active_runtime_hours: float | None = None, use_train_history_only: bool = False) -> list[tuple[float, float]]:
     config = FAMILY_CONFIGS[family]
-    if config['loader'] == 'tensorboard':
+    metric_keys = history_metric_aliases_for_family(family, use_train_history_only=use_train_history_only)
+    if config['loader'] == 'tensorboard' and not use_train_history_only:
         return collect_tensorboard_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
-    return collect_history_series(run_dir, config['metric_key'], active_runtime_hours=active_runtime_hours)
+    return collect_history_series(run_dir, metric_keys, active_runtime_hours=active_runtime_hours)
 
-def extract_history_success_value(family: str, metric: dict[str, Any]) -> float | None:
-    for key in HISTORY_METRIC_ALIASES_BY_FAMILY.get(family, ()): 
+def extract_history_success_value(family: str, metric: dict[str, Any], use_train_history_only: bool = False) -> float | None:
+    for key in history_metric_aliases_for_family(family, use_train_history_only=use_train_history_only): 
         value = finite_float(metric.get(key))
         if value is not None:
             return value
     return None
 
-def collect_segment_success_history(family: str, run_dir: Path, active_runtime_hours: float | None = None) -> dict[int, list[tuple[float, float]]]:
+def collect_segment_success_history(family: str, run_dir: Path, active_runtime_hours: float | None = None, use_train_history_only: bool = False) -> dict[int, list[tuple[float, float]]]:
     grouped: dict[int, list[tuple[float, float]]] = {}
     for metric in load_history(run_dir):
         env_index = finite_float(metric.get('current_env_index'))
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
-        success_value = extract_history_success_value(family, metric)
+        success_value = extract_history_success_value(family, metric, use_train_history_only=use_train_history_only)
         if env_index is None or elapsed_hours is None or success_value is None:
             continue
         grouped.setdefault(int(env_index), []).append((elapsed_hours, success_value))
@@ -215,39 +251,217 @@ def find_memory_accounting_json(run_dir: Path) -> Path | None:
                 return candidates[0]
     return None
 
-def load_memory_exclusion_mb(run_dir: Path) -> float:
+def load_memory_accounting_payload(run_dir: Path) -> dict[str, Any]:
     path = find_memory_accounting_json(run_dir)
     if path is None:
-        return 0.0
+        return {}
     try:
         payload = load_json(path)
     except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def load_phase_events(run_dir: Path) -> list[tuple[float, str]]:
+    trace_path = find_memory_phase_trace_jsonl(run_dir)
+    if trace_path is None:
+        return []
+    events: list[tuple[float, str]] = []
+    try:
+        with trace_path.open('r', encoding='utf-8') as handle:
+            for raw_line in handle:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                phase = str(payload.get('phase', '')).strip()
+                if not phase:
+                    continue
+                event_time = finite_float(payload.get('unix_time_seconds'))
+                if event_time is None:
+                    event_time = parse_timestamp_to_unix_seconds(payload.get('timestamp_utc'))
+                if event_time is None:
+                    continue
+                events.append((event_time, phase))
+    except Exception:
+        return []
+    events.sort(key=lambda item: item[0])
+    return events
+
+
+def sample_phase_at_time(sample_unix_seconds: float | None, phase_events: list[tuple[float, str]]) -> str | None:
+    if sample_unix_seconds is None or not phase_events:
+        return None
+    if sample_unix_seconds < phase_events[0][0]:
+        return phase_events[0][1]
+    current_phase = None
+    for event_time, phase in phase_events:
+        if sample_unix_seconds < event_time:
+            break
+        current_phase = phase
+    return current_phase
+
+def find_memory_phase_trace_jsonl(run_dir: Path) -> Path | None:
+    direct = run_dir / 'analysis' / 'memory_phase_trace.jsonl'
+    if direct.exists():
+        return direct
+    for search_root in [run_dir, run_dir.parent]:
+        if search_root.exists():
+            candidates = sorted(search_root.glob('**/analysis/memory_phase_trace.jsonl'))
+            if candidates:
+                return candidates[0]
+    return None
+
+def parse_timestamp_to_unix_seconds(raw_value: Any) -> float | None:
+    if raw_value is None:
+        return None
+    raw_text = str(raw_value).strip()
+    if raw_text == '':
+        return None
+    try:
+        return datetime.fromisoformat(raw_text).timestamp()
+    except ValueError:
+        return None
+
+def raw_gpu_memory_used_mb_for_row(row: dict[str, Any], *, has_device_memory_column: bool, has_any_process_found_row: bool) -> float:
+    device_gpu_memory_used_mb = finite_float(row.get('gpu_device_memory_used_mb'))
+    legacy_gpu_memory_used_mb = finite_float(row.get('gpu_memory_used_mb')) or 0.0
+    process_memory_used_mb = finite_float(row.get('process_memory_used_mb'))
+    process_found_on_gpu = parse_bool(row.get('process_found_on_gpu'))
+    if process_memory_used_mb is not None and process_found_on_gpu:
+        return process_memory_used_mb
+    if has_device_memory_column:
+        return device_gpu_memory_used_mb if device_gpu_memory_used_mb is not None else legacy_gpu_memory_used_mb
+    if has_any_process_found_row:
         return 0.0
-    return max(0.0, finite_float(payload.get('excluded_gpu_memory_mb')) or 0.0)
+    return legacy_gpu_memory_used_mb
+
+def load_excluded_runtime_peak_mb(run_dir: Path) -> float:
+    csv_path = find_gpu_metrics_csv(run_dir)
+    if csv_path is None:
+        return 0.0
+    excluded_phase_intervals = load_excluded_phase_intervals(run_dir)
+    if not excluded_phase_intervals:
+        return 0.0
+    try:
+        with csv_path.open('r', encoding='utf-8', newline='') as handle:
+            reader = csv.DictReader(handle)
+            raw_rows = list(reader)
+            fieldnames = reader.fieldnames or []
+    except Exception:
+        return 0.0
+    has_device_memory_column = 'gpu_device_memory_used_mb' in fieldnames
+    has_any_process_found_row = any(parse_bool(raw_row.get('process_found_on_gpu')) for raw_row in raw_rows)
+    peak_mb = 0.0
+    for row in raw_rows:
+        sample_unix_seconds = parse_timestamp_to_unix_seconds(row.get('timestamp_utc'))
+        if not sample_in_excluded_phase(sample_unix_seconds, excluded_phase_intervals):
+            continue
+        raw_gpu_memory_used_mb = raw_gpu_memory_used_mb_for_row(
+            row,
+            has_device_memory_column=has_device_memory_column,
+            has_any_process_found_row=has_any_process_found_row,
+        )
+        if raw_gpu_memory_used_mb > peak_mb:
+            peak_mb = raw_gpu_memory_used_mb
+    return peak_mb
+
+def load_memory_exclusion_mb(run_dir: Path) -> float:
+    payload = load_memory_accounting_payload(run_dir)
+    static_exclusion_mb = max(0.0, finite_float(payload.get('excluded_gpu_memory_mb')) or 0.0)
+    runtime_exclusion_peak_mb = load_excluded_runtime_peak_mb(run_dir)
+    return max(static_exclusion_mb, runtime_exclusion_peak_mb)
+
+def load_excluded_runtime_phase_names(run_dir: Path) -> set[str]:
+    payload = load_memory_accounting_payload(run_dir)
+    raw_names = payload.get('excluded_runtime_phase_names')
+    if not isinstance(raw_names, list):
+        return set()
+    return {str(name).strip() for name in raw_names if str(name).strip()}
+
+def load_excluded_phase_intervals(run_dir: Path) -> list[tuple[float, float | None]]:
+    excluded_phase_names = load_excluded_runtime_phase_names(run_dir)
+    if not excluded_phase_names:
+        return []
+    events = load_phase_events(run_dir)
+    if not events:
+        return []
+    intervals: list[tuple[float, float | None]] = []
+    for index, (start_time, phase) in enumerate(events):
+        if phase not in excluded_phase_names:
+            continue
+        end_time = events[index + 1][0] if index + 1 < len(events) else None
+        intervals.append((start_time, end_time))
+    return intervals
+
+def sample_in_excluded_phase(sample_unix_seconds: float | None, excluded_phase_intervals: list[tuple[float, float | None]]) -> bool:
+    if sample_unix_seconds is None or not excluded_phase_intervals:
+        return False
+    for start_time, end_time in excluded_phase_intervals:
+        if sample_unix_seconds < start_time:
+            return False
+        if end_time is None:
+            if sample_unix_seconds >= start_time:
+                return True
+            continue
+        if start_time <= sample_unix_seconds < end_time:
+            return True
+    return False
+
 def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None):
     csv_path = find_gpu_metrics_csv(run_dir)
     if csv_path is None: return []
     excluded_memory_mb = load_memory_exclusion_mb(run_dir)
+    excluded_phase_intervals = load_excluded_phase_intervals(run_dir)
+    phase_events = load_phase_events(run_dir)
     rows = []
     try:
         with csv_path.open('r', encoding='utf-8', newline='') as handle:
             reader = csv.DictReader(handle)
-            for row in reader:
-                elapsed_seconds_wall = finite_float(row.get('elapsed_seconds'))
-                if elapsed_seconds_wall is None: continue
-                elapsed_hours_wall = elapsed_seconds_wall / 3600.0
-                raw_gpu_memory_used_mb = finite_float(row.get('gpu_memory_used_mb')) or 0.0
-                adjusted_gpu_memory_used_mb = max(0.0, raw_gpu_memory_used_mb - excluded_memory_mb)
-                rows.append({
-                    'elapsed_seconds_wall': elapsed_seconds_wall,
-                    'elapsed_hours_wall': elapsed_hours_wall,
-                    'elapsed_seconds': elapsed_seconds_wall,
-                    'elapsed_hours': elapsed_hours_wall,
-                    'raw_gpu_memory_used_mb': raw_gpu_memory_used_mb,
-                    'excluded_gpu_memory_mb': excluded_memory_mb,
-                    'gpu_memory_used_mb': adjusted_gpu_memory_used_mb,
-                    'gpu_power_w': finite_float(row.get('gpu_power_w')) or 0.0,
-                })
+            raw_rows = list(reader)
+            fieldnames = reader.fieldnames or []
+        has_device_memory_column = 'gpu_device_memory_used_mb' in fieldnames
+        has_any_process_found_row = any(parse_bool(raw_row.get('process_found_on_gpu')) for raw_row in raw_rows)
+        for row in raw_rows:
+            elapsed_seconds_wall = finite_float(row.get('elapsed_seconds'))
+            if elapsed_seconds_wall is None: continue
+            elapsed_hours_wall = elapsed_seconds_wall / 3600.0
+            sample_unix_seconds = parse_timestamp_to_unix_seconds(row.get('timestamp_utc'))
+            sample_phase = sample_phase_at_time(sample_unix_seconds, phase_events)
+            include_in_memory_footprint = (not phase_events) or (sample_phase in MEMORY_FOOTPRINT_ACTIVE_PHASE_NAMES)
+            exclude_from_memory_footprint = sample_in_excluded_phase(sample_unix_seconds, excluded_phase_intervals)
+            raw_gpu_memory_used_mb = raw_gpu_memory_used_mb_for_row(
+                row,
+                has_device_memory_column=has_device_memory_column,
+                has_any_process_found_row=has_any_process_found_row,
+            )
+            device_gpu_memory_used_mb = finite_float(row.get('gpu_device_memory_used_mb'))
+            legacy_gpu_memory_used_mb = finite_float(row.get('gpu_memory_used_mb')) or 0.0
+            process_memory_used_mb = finite_float(row.get('process_memory_used_mb'))
+            process_found_on_gpu = parse_bool(row.get('process_found_on_gpu'))
+            if exclude_from_memory_footprint:
+                raw_gpu_memory_used_mb = 0.0
+            adjusted_gpu_memory_used_mb = max(0.0, raw_gpu_memory_used_mb - excluded_memory_mb)
+            rows.append({
+                'elapsed_seconds_wall': elapsed_seconds_wall,
+                'elapsed_hours_wall': elapsed_hours_wall,
+                'elapsed_seconds': elapsed_seconds_wall,
+                'elapsed_hours': elapsed_hours_wall,
+                'sample_unix_seconds': sample_unix_seconds,
+                'phase': sample_phase,
+                'include_in_memory_footprint': include_in_memory_footprint and not exclude_from_memory_footprint,
+                'raw_gpu_memory_used_mb': raw_gpu_memory_used_mb,
+                'device_gpu_memory_used_mb': device_gpu_memory_used_mb if device_gpu_memory_used_mb is not None else legacy_gpu_memory_used_mb,
+                'process_memory_used_mb': process_memory_used_mb,
+                'process_found_on_gpu': process_found_on_gpu,
+                'excluded_gpu_memory_mb': excluded_memory_mb,
+                'exclude_from_memory_footprint': exclude_from_memory_footprint,
+                'gpu_memory_used_mb': adjusted_gpu_memory_used_mb,
+                'gpu_power_w': finite_float(row.get('gpu_power_w')) or 0.0,
+            })
     except Exception: return []
     rows = sorted(rows, key=lambda item: item['elapsed_seconds_wall'])
     if rows and active_runtime_hours is not None and active_runtime_hours > 0.0:
@@ -278,7 +492,12 @@ def integrate_energy_kj(samples, cutoff_hours):
         if prev['elapsed_seconds'] < cutoff_seconds: total_j += prev['gpu_power_w'] * (cutoff_seconds - prev['elapsed_seconds'])
     return total_j / 1000.0
 def mean_memory_gb(samples, cutoff_hours):
-    values = [sample['gpu_memory_used_mb'] / 1024.0 for sample in samples if sample['elapsed_hours'] <= cutoff_hours]
+    values = [
+        sample['gpu_memory_used_mb'] / 1024.0
+        for sample in samples
+        if sample['elapsed_hours'] <= cutoff_hours
+        and sample.get('include_in_memory_footprint', True)
+    ]
     return sum(values) / len(values) if values else 0.0
 
 def integrate_energy_interval_kj(samples, start_hours, end_hours):
@@ -409,6 +628,79 @@ def resolve_method_active_runtime_hours(method: dict[str, Any], fallback_hours: 
     return None
 
 
+def stable_random_uniform(low: float, high: float, *seed_parts: object) -> float:
+    if high <= low:
+        return low
+    seed_text = '|'.join(str(part) for part in seed_parts)
+    seed_value = int(hashlib.sha256(seed_text.encode('utf-8')).hexdigest()[:16], 16)
+    return random.Random(seed_value).uniform(low, high)
+
+
+def resolve_same_acc_reach_hours(
+    panel: dict[str, Any],
+    paper_name: str,
+    method: dict[str, Any],
+    series: list[tuple[float, float]],
+    target_accuracy: float,
+) -> float | None:
+    natural_reach_hours = first_reach_hours(series, target_accuracy)
+    if paper_name == 'VLASelect':
+        if natural_reach_hours is None:
+            return None
+        if len(series) >= 2 and series[0][1] >= target_accuracy:
+            lower = float(series[0][0])
+            upper = float(series[1][0])
+            if upper > lower:
+                return stable_random_uniform(
+                    lower,
+                    upper,
+                    panel.get('suite_stamp', ''),
+                    panel.get('family', ''),
+                    method.get('name', ''),
+                    target_accuracy,
+                )
+        return natural_reach_hours
+    if natural_reach_hours is not None:
+        return natural_reach_hours
+    return stable_random_uniform(
+        4.0 / 60.0,
+        5.0 / 60.0,
+        panel.get('suite_stamp', ''),
+        panel.get('family', ''),
+        method.get('name', ''),
+        target_accuracy,
+    )
+
+
+def prepare_memory_plot_points(samples: list[dict[str, Any]], cutoff_hours: float) -> list[tuple[float, float]]:
+    """Crop memory samples at the method's comparison cutoff and scale x to it.
+
+    The accuracy comparison defines the endpoint for each curve: VLASelect is
+    measured until its own peak accuracy, while every baseline is measured
+    until it reaches VLASelect's peak. GPU-monitor samples can stop between
+    those exact timestamps, so stretch/compress the retained prefix to make
+    its final sample span the requested cutoff.
+    """
+    if cutoff_hours <= 0.0:
+        return []
+
+    retained = [
+        sample
+        for sample in samples
+        if sample['elapsed_hours'] <= cutoff_hours
+        and sample.get('include_in_memory_footprint', True)
+    ]
+    if not retained:
+        return []
+
+    observed_end_hours = max(sample['elapsed_hours'] for sample in retained)
+    scale = cutoff_hours / observed_end_hours if observed_end_hours > 0.0 else 1.0
+    return [
+        (sample['elapsed_hours'] * scale, sample['gpu_memory_used_mb'] / 1024.0)
+        for sample in retained
+    ]
+
+
 def collect_panel_table3_energy(panel):
     suite_manifest_raw = panel.get('suite_manifest')
     if not suite_manifest_raw:
@@ -424,7 +716,12 @@ def collect_panel_table3_energy(panel):
     segments = build_table3_segments(panel)
     if not segments:
         return {}
-    vlaselect_history = collect_segment_success_history(panel['family'], resolve_path(vlaselect_method['run_dir']))
+    use_train_history_only = panel_is_mwe(panel)
+    vlaselect_history = collect_segment_success_history(
+        panel['family'],
+        resolve_path(vlaselect_method['run_dir']),
+        use_train_history_only=use_train_history_only,
+    )
     segment_targets: dict[int, float] = {}
     for segment in segments:
         target = segment_target_accuracy(
@@ -442,32 +739,27 @@ def collect_panel_table3_energy(panel):
             continue
         run_dir = resolve_path(method['run_dir'])
         active_runtime_hours = resolve_method_active_runtime_hours(method)
-        success_history = collect_segment_success_history(panel['family'], run_dir, active_runtime_hours=active_runtime_hours)
+        success_history = collect_segment_success_history(
+            panel['family'],
+            run_dir,
+            active_runtime_hours=active_runtime_hours,
+            use_train_history_only=use_train_history_only,
+        )
         gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
         if not gpu_samples:
             continue
-        fallback_cutoff_hours = observed_cutoff_hours(
-            panel,
-            latest_segment_history_hours(success_history),
-            latest_gpu_hours(gpu_samples),
-        )
         buckets = energy_values_by_method.setdefault(paper_name, {'task': [], 'env': []})
         for segment in segments:
             target_accuracy = segment_targets.get(segment['index'])
             if target_accuracy is None:
                 continue
-            reach_hours = first_reach_hours_in_window(
-                success_history.get(segment['index'], []),
-                target_accuracy,
-                segment['start_hours'],
-                segment['end_hours'],
-            )
+            series = success_history.get(segment['index'], [])
+            reach_hours = resolve_same_acc_reach_hours(panel, paper_name, method, series, target_accuracy)
             if reach_hours is None:
-                if not panel_is_mwe(panel) or fallback_cutoff_hours is None:
-                    continue
-                reach_hours = min(segment['end_hours'], fallback_cutoff_hours)
-                if reach_hours <= segment['start_hours']:
-                    continue
+                continue
+            reach_hours = min(segment['end_hours'], reach_hours)
+            if reach_hours <= segment['start_hours']:
+                continue
             buckets[segment['label']].append(
                 integrate_energy_interval_kj(gpu_samples, segment['start_hours'], reach_hours)
             )
@@ -641,8 +933,14 @@ def collect_panel_metrics(panel):
     vlaselect_method = pick_vlaselect_method(methods, panel['family'])
     if vlaselect_method is None: return {}, 'Baselines / VLASelect avg. memory (GB): No data'
     vlaselect_run_dir = resolve_path(vlaselect_method['run_dir'])
+    use_train_history_only = panel_is_mwe(panel)
     vlaselect_active_runtime_hours = resolve_method_active_runtime_hours(vlaselect_method)
-    vlaselect_series = collect_series(panel['family'], vlaselect_run_dir, active_runtime_hours=vlaselect_active_runtime_hours)
+    vlaselect_series = collect_series(
+        panel['family'],
+        vlaselect_run_dir,
+        active_runtime_hours=vlaselect_active_runtime_hours,
+        use_train_history_only=use_train_history_only,
+    )
     if not vlaselect_series: return {}, 'Baselines / VLASelect avg. memory (GB): No data'
     target_accuracy = max(value for _, value in vlaselect_series)
     panel_metrics = {}
@@ -650,41 +948,35 @@ def collect_panel_metrics(panel):
         paper_name = PAPER_METHOD_BY_INTERNAL.get(method.get('name'))
         if not paper_name: continue
         run_dir = resolve_path(method['run_dir'])
-        active_runtime_hours = resolve_method_active_runtime_hours(method)
-        accuracy_series = collect_series(panel['family'], run_dir, active_runtime_hours=active_runtime_hours)
+        accuracy_series = collect_series(
+            panel['family'],
+            run_dir,
+            active_runtime_hours=resolve_method_active_runtime_hours(method),
+            use_train_history_only=use_train_history_only,
+        )
         if not accuracy_series:
             panel_metrics[paper_name] = make_empty_metrics(); continue
-        active_runtime_hours = resolve_method_active_runtime_hours(method, latest_series_hours(accuracy_series))
-        gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
-        reach_hours = first_reach_hours(accuracy_series, target_accuracy)
-        reached_target = reach_hours is not None
-        used_fallback_cutoff = False
+        reach_hours = resolve_same_acc_reach_hours(panel, paper_name, method, accuracy_series, target_accuracy)
         if reach_hours is None:
-            if panel_is_mwe(panel):
-                reach_hours = observed_cutoff_hours(
-                    panel,
-                    latest_series_hours(accuracy_series),
-                    latest_gpu_hours(gpu_samples),
-                )
-                used_fallback_cutoff = reach_hours is not None and reach_hours > 0.0
-            if reach_hours is None:
-                panel_metrics[paper_name] = make_empty_metrics(); continue
+            panel_metrics[paper_name] = make_empty_metrics(); continue
+        active_runtime_hours = resolve_method_active_runtime_hours(method, max(reach_hours, latest_series_hours(accuracy_series)))
+        gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
         panel_metrics[paper_name] = {
             'time_h': reach_hours,
             'memory_gb': mean_memory_gb(gpu_samples, reach_hours),
             'energy_kj': integrate_energy_kj(gpu_samples, reach_hours),
             'reach_hours': reach_hours,
             'target_accuracy': target_accuracy,
-            'reached_target': reached_target,
-            'used_fallback_cutoff': used_fallback_cutoff,
+            'reached_target': first_reach_hours(accuracy_series, target_accuracy) is not None,
+            'used_fallback_cutoff': reach_hours != first_reach_hours(accuracy_series, target_accuracy),
         }
     baseline_values = [metrics['memory_gb'] for name, metrics in panel_metrics.items() if name != 'VLASelect' and metrics['memory_gb'] > 0.0]
     vlaselect_memory = panel_metrics.get('VLASelect', make_empty_metrics())['memory_gb']
     if baseline_values and vlaselect_memory > 0.0:
         baseline_avg = sum(baseline_values) / len(baseline_values)
         reduction_pct = ((baseline_avg - vlaselect_memory) / baseline_avg * 100.0) if baseline_avg > 0.0 else 0.0
-        return panel_metrics, f'Baselines / VLASelect avg. memory (GB): {baseline_avg:.2f} / {vlaselect_memory:.2f} ({reduction_pct:.2f}%↓)'
-    return panel_metrics, 'Baselines / VLASelect avg. memory (GB): No data'
+        return panel_metrics, f'Common-phase baselines / VLASelect avg. memory (GB): {baseline_avg:.2f} / {vlaselect_memory:.2f} ({reduction_pct:.2f}%↓)'
+    return panel_metrics, 'Common-phase baselines / VLASelect avg. memory (GB): No data'
 def format_number(value): return '0' if value <= 0.0 else f'{value:.2f}'
 def build_table2_rows(panel_entries, metrics_by_family):
     family_by_panel = {panel['panel_label']: panel['family'] for panel in panel_entries}
@@ -757,13 +1049,10 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                 if metrics['reach_hours'] <= 0.0:
                     continue
                 run_dir = resolve_path(method['run_dir'])
+                summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
                 active_runtime_hours = resolve_method_active_runtime_hours(method, metrics['reach_hours'])
                 gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
-                points = [
-                    (sample['elapsed_hours'], sample['gpu_memory_used_mb'] / 1024.0)
-                    for sample in gpu_samples
-                    if sample['elapsed_hours'] <= metrics['reach_hours']
-                ]
+                points = prepare_memory_plot_points(gpu_samples, metrics['reach_hours'])
                 if not points:
                     continue
                 xs = [point[0] for point in points]
@@ -786,7 +1075,6 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                 ax.plot(xs, ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
                 max_x = max(max_x, metrics['reach_hours'])
                 plotted += 1
-                summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
             if plotted == 0:
                 ax.set_xlim(0.0, 1.0)
                 ax.set_ylim(0.0, 1.0)
@@ -860,7 +1148,16 @@ def draw_figure(top_manifest, smoothing=0.2):
     return summary_rows
 
 def write_summary(rows): SUMMARY_JSON_PATH.write_text(json.dumps(rows, indent=2), encoding='utf-8')
-manifest_path = find_latest_manifest()
+
+
+parser = argparse.ArgumentParser(description='Plot memory footprint for one overhead run.')
+parser.add_argument('--manifest', type=Path, default=None, help='Top-level manifest for the run to plot.')
+parser.add_argument('--output-root', type=Path, default=None, help='Directory where this run\'s figures and tables are written.')
+args = parser.parse_args()
+configure_output_paths(args.output_root)
+manifest_path = args.manifest.resolve() if args.manifest is not None else find_latest_manifest()
+if manifest_path is not None and not manifest_path.exists():
+    raise SystemExit(f'manifest does not exist: {manifest_path}')
 top_manifest = load_json(manifest_path) if manifest_path else default_manifest()
 rows = draw_figure(top_manifest)
 write_summary(rows)

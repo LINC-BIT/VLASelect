@@ -124,8 +124,8 @@ NO_DATA_TEXT = "No data"
 SAME_ACC_FAMILY_CONFIGS = {
     "edgevla": {"metric_key": "eval_success_once", "loader": "history"},
     "octo": {"metric_key": "eval/success_once", "loader": "tensorboard"},
-    "tinyvla": {"metric_key": "train_success_once", "loader": "history"},
-    "vla_adapter_new": {"metric_key": "train_success_once", "loader": "history"},
+    "tinyvla": {"metric_key": "eval_success_once", "loader": "history"},
+    "vla_adapter_new": {"metric_key": "eval_success_once", "loader": "history"},
 }
 SAME_ACC_VLASELECT_METHODS_BY_FAMILY = {
     "octo": ["ours_single_agent", "ours"],
@@ -135,8 +135,8 @@ SAME_ACC_VLASELECT_METHODS_BY_FAMILY = {
 }
 SAME_ACC_HISTORY_METRIC_ALIASES_BY_FAMILY = {
     "octo": ("eval_success_once", "eval/success_once", "success_once"),
-    "vla_adapter_new": ("train_success_once", "eval_success_once", "success_once"),
-    "tinyvla": ("train_success_once", "eval_success_once", "success_once"),
+    "vla_adapter_new": ("eval_success_once", "train_success_once", "success_once"),
+    "tinyvla": ("eval_success_once", "train_success_once", "success_once"),
     "edgevla": ("eval_success_once", "success_once"),
 }
 MODULE_FIGURE_KEYS = tuple(key for key, _, _, _ in MODULE_FIGURE_SPECS)

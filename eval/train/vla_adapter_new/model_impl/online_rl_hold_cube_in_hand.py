@@ -56,6 +56,7 @@ from online_rl import (
 )
 from prismatic.vla.action_tokenizer import ActionTokenizer
 from train.common.random_init_vla import maybe_build_random_init_vla_bundle
+from train.common.mwe_eval import use_train_success_only
 
 
 TASK_PROMPT = "hold the cube in the hand without dropping it."
@@ -1003,6 +1004,8 @@ def batched_get_value_no_grad(
 
 
 def evaluate_policy(policy: nn.Module, envs: ManiSkillVectorEnv, target_episodes: int) -> Dict[str, float]:
+    if use_train_success_only():
+        return {}
     if target_episodes <= 0:
         return {}
     metrics = defaultdict(list)

@@ -60,7 +60,7 @@ fi
 
 # Shorter rollouts emit training accuracy/success metrics more frequently.
 LARGE_AGENT_CHECKPOINT="$ROOT_DIR/eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt"
-if [[ "$MWE" == "1" && -n "$SCALING_METHOD" ]]; then
+if [[ "$MWE" == "1" && ( -n "$SCALING_METHOD" || -n "$KNOWLEDGE_EXCHANGE_GRANULARITY" ) ]]; then
   LARGE_AGENT_CHECKPOINT="${LARGE_AGENT_CHECKPOINT}.base"
   [[ -f "$LARGE_AGENT_CHECKPOINT" ]] || {
     echo "missing MWE base checkpoint: $LARGE_AGENT_CHECKPOINT" >&2

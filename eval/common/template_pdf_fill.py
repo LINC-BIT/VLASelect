@@ -323,24 +323,36 @@ def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[di
         for op_index in panel_ops['a'][1:]:
             set_tj(op_index, '')
 
+    stats_by_panel = {}
+    for key, stats in zip(['a', 'b', 'c', 'd'], summary_stats):
+        baseline_text, ours_text, improvement_text = value_text(stats if isinstance(stats, dict) else {})
+        stats_by_panel[key] = (baseline_text, ours_text, improvement_text)
+
     if len(panel_ops['b']) >= 6:
         op_indices = panel_ops['b']
-        set_tj(op_indices[0], 'nan /')
-        set_tj(op_indices[1], 'nan')
-        set_tj(op_indices[2], '')
-        set_tj(op_indices[3], '(nan%')
+        baseline_text, ours_text, improvement_text = stats_by_panel.get('b', ('nan', 'nan', 'nan'))
+        ours_head = ours_text[:-1] if len(ours_text) > 1 else ours_text
+        ours_tail = ours_text[-1] if ours_text else ''
+        set_tj(op_indices[0], f'{baseline_text} /')
+        set_tj(op_indices[1], ours_head)
+        set_tj(op_indices[2], ours_tail)
+        set_tj(op_indices[3], f'({improvement_text}%')
         set_tj(op_indices[4], ';')
         set_tj(op_indices[5], ')')
     if len(panel_ops['c']) >= 3:
         op_indices = panel_ops['c']
-        set_tj(op_indices[0], 'nan / nan (nan%')
+        baseline_text, ours_text, improvement_text = stats_by_panel.get('c', ('nan', 'nan', 'nan'))
+        set_tj(op_indices[0], f'{baseline_text} / {ours_text} ({improvement_text}%')
         set_tj(op_indices[1], ';')
         set_tj(op_indices[2], ')')
     if len(panel_ops['d']) >= 4:
         op_indices = panel_ops['d']
-        set_tj(op_indices[0], 'nan')
-        set_tj(op_indices[1], '')
-        set_tj(op_indices[2], '/ nan (nan%')
+        baseline_text, ours_text, improvement_text = stats_by_panel.get('d', ('nan', 'nan', 'nan'))
+        baseline_head = baseline_text[:-1] if len(baseline_text) > 1 else baseline_text
+        baseline_tail = baseline_text[-1] if baseline_text else ''
+        set_tj(op_indices[0], baseline_head)
+        set_tj(op_indices[1], baseline_tail)
+        set_tj(op_indices[2], f'/ {ours_text} ({improvement_text}%')
         set_tj(op_indices[3], ';')
         if len(op_indices) >= 5:
             set_tj(op_indices[4], ')')

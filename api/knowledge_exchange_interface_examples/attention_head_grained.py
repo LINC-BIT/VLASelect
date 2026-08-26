@@ -189,6 +189,20 @@ class AttentionHeadGrainedSmallModelScalingInterface(GranularitySmallModelScalin
                 scores[key] = float(torch.cat(score_parts).mean().item())
         return groups, indices, scores
 
+    @staticmethod
+    def _halve_retained_head_groups(
+        retained: Sequence[str],
+        head_groups: Mapping[str, Sequence[str]],
+        scores: Mapping[str, float],
+    ) -> List[str]:
+        """Keep the higher-scoring half of the heads selected by the base plan."""
+        retained_heads = [key for key in retained if key in head_groups]
+        keep_count = int(math.ceil(len(retained_heads) / 2))
+        kept_heads = set(
+            sorted(retained_heads, key=lambda key: (-float(scores[key]), key))[:keep_count]
+        )
+        return [key for key in retained if key not in head_groups or key in kept_heads]
+
     def build_retention_plan(
         self,
         actor: torch.nn.Module,
@@ -211,12 +225,13 @@ class AttentionHeadGrainedSmallModelScalingInterface(GranularitySmallModelScalin
         scores.update(self.score_groups(actor, layer_groups))
 
         previous_groups = (previous_pruning_info or {}).get("retained_groups")
+        reused_previous_groups = False
         if previous_groups:
             retained = [key for key in self._ordered_groups(groups) if key in set(previous_groups)]
-            if not retained:
-                retained = self.select_high_score_groups(scores, max_sparsity)
-        else:
+            reused_previous_groups = bool(retained)
+        if not reused_previous_groups:
             retained = self.select_high_score_groups(scores, max_sparsity)
+            retained = self._halve_retained_head_groups(retained, head_groups, scores)
         retained_set = set(retained)
 
         # At least one complete head per QKV module keeps the generated linear

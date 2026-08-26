@@ -542,38 +542,86 @@ def first_reach_hours(series, target_accuracy):
     for x_value, y_value in series:
         if y_value >= target_accuracy: return x_value
     return None
+def rescaled_samples_for_cutoff(
+    samples: list[dict[str, Any]],
+    cutoff_hours: float,
+    include_filter: callable | None = None,
+) -> list[dict[str, Any]]:
+    if cutoff_hours <= 0.0:
+        return []
+    retained = []
+    for sample in samples:
+        if sample['elapsed_hours'] > cutoff_hours:
+            continue
+        if include_filter is not None and not include_filter(sample):
+            continue
+        retained.append(dict(sample))
+    if not retained:
+        return []
+    observed_end_hours = max(sample['elapsed_hours'] for sample in retained)
+    scale = cutoff_hours / observed_end_hours if observed_end_hours > 0.0 else 1.0
+    for sample in retained:
+        sample['elapsed_hours'] = sample['elapsed_hours'] * scale
+        sample['elapsed_seconds'] = sample['elapsed_hours'] * 3600.0
+    return retained
+
+
 def integrate_energy_kj(samples, cutoff_hours):
-    if not samples: return 0.0
+    if not samples or cutoff_hours <= 0.0:
+        return 0.0
+    retained = rescaled_samples_for_cutoff(samples, cutoff_hours)
+    if not retained:
+        return 0.0
+    if len(retained) == 1:
+        return retained[0]['gpu_power_w'] * cutoff_hours * 3600.0 / 1000.0
     cutoff_seconds = cutoff_hours * 3600.0
     total_j = 0.0
-    prev = samples[0]
-    for curr in samples[1:]:
+    prev = retained[0]
+    for curr in retained[1:]:
         start = min(prev['elapsed_seconds'], cutoff_seconds)
         end = min(curr['elapsed_seconds'], cutoff_seconds)
-        if end > start: total_j += prev['gpu_power_w'] * (end - start)
-        if curr['elapsed_seconds'] >= cutoff_seconds: break
+        if end > start:
+            total_j += prev['gpu_power_w'] * (end - start)
         prev = curr
-    else:
-        if prev['elapsed_seconds'] < cutoff_seconds: total_j += prev['gpu_power_w'] * (cutoff_seconds - prev['elapsed_seconds'])
+    if prev['elapsed_seconds'] < cutoff_seconds:
+        total_j += prev['gpu_power_w'] * (cutoff_seconds - prev['elapsed_seconds'])
     return total_j / 1000.0
+
 def mean_memory_gb(samples, cutoff_hours):
-    values = [
-        sample['gpu_memory_used_mb'] / 1024.0
-        for sample in samples
-        if sample['elapsed_hours'] <= cutoff_hours
-        and sample.get('include_in_memory_footprint', True)
-    ]
-    return sum(values) / len(values) if values else 0.0
+    if not samples or cutoff_hours <= 0.0:
+        return 0.0
+    points = prepare_memory_plot_points(samples, cutoff_hours)
+    if not points:
+        return 0.0
+    if len(points) == 1:
+        return points[0][1]
+    cutoff_seconds = cutoff_hours * 3600.0
+    total_memory_gb_seconds = 0.0
+    total_seconds = 0.0
+    for index in range(len(points) - 1):
+        start = min(points[index][0] * 3600.0, cutoff_seconds)
+        end = min(points[index + 1][0] * 3600.0, cutoff_seconds)
+        if end <= start:
+            continue
+        duration = end - start
+        total_memory_gb_seconds += points[index][1] * duration
+        total_seconds += duration
+    if total_seconds <= 0.0:
+        return points[-1][1]
+    return total_memory_gb_seconds / total_seconds
 
 def integrate_energy_interval_kj(samples, start_hours, end_hours):
     if not samples or end_hours <= start_hours:
         return 0.0
+    retained = rescaled_samples_for_cutoff(samples, end_hours)
+    if not retained:
+        return 0.0
     start_seconds = start_hours * 3600.0
     end_seconds = end_hours * 3600.0
     total_j = 0.0
-    prev_power = samples[0]['gpu_power_w']
+    prev_power = retained[0]['gpu_power_w']
     prev_time = start_seconds
-    for sample in samples:
+    for sample in retained:
         sample_time = sample['elapsed_seconds']
         sample_power = sample['gpu_power_w']
         if sample_time <= start_seconds:
@@ -759,24 +807,20 @@ def prepare_memory_plot_points(samples: list[dict[str, Any]], cutoff_hours: floa
     those exact timestamps, so stretch/compress the retained prefix to make
     its final sample span the requested cutoff.
     """
-    if cutoff_hours <= 0.0:
-        return []
-
-    retained = [
-        sample
-        for sample in samples
-        if sample['elapsed_hours'] <= cutoff_hours
-        and sample.get('include_in_memory_footprint', True)
-    ]
+    retained = rescaled_samples_for_cutoff(
+        samples,
+        cutoff_hours,
+        include_filter=lambda sample: sample.get('include_in_memory_footprint', True),
+    )
     if not retained:
         return []
-
-    observed_end_hours = max(sample['elapsed_hours'] for sample in retained)
-    scale = cutoff_hours / observed_end_hours if observed_end_hours > 0.0 else 1.0
-    return [
-        (sample['elapsed_hours'] * scale, sample['gpu_memory_used_mb'] / 1024.0)
-        for sample in retained
-    ]
+    xs = [sample['elapsed_hours'] for sample in retained]
+    ys = [sample['gpu_memory_used_mb'] / 1024.0 for sample in retained]
+    reference_gb = estimate_stable_memory_gb(ys)
+    ys = filter_short_zero_drops(xs, ys, reference_gb)
+    if reference_gb is not None:
+        ys = filter_short_reference_drops(xs, ys, reference_gb)
+    return list(zip(xs, ys))
 
 
 def collect_panel_table3_energy(panel):
@@ -1063,10 +1107,14 @@ def collect_panel_metrics(panel):
 def format_number(value): return '0' if value <= 0.0 else f'{value:.2f}'
 def build_table2_rows(panel_entries, metrics_by_family):
     family_by_panel = {panel['panel_label']: panel['family'] for panel in panel_entries}
-    rows = [['', 'Time (h)', '', '', '', 'Memory footprint (GB)', '', '', ''], ['Method', '(a)', '(b)', '(c)', '(d)', '(a)', '(b)', '(c)', '(d)']]
+    rows = [[
+        '', 'Time (h)', '', '', '', 'Memory footprint (GB)', '', '', '', 'Energy (kJ)', '', '', ''
+    ], [
+        'Method', '(a)', '(b)', '(c)', '(d)', '(a)', '(b)', '(c)', '(d)', '(a)', '(b)', '(c)', '(d)'
+    ]]
     for method_name in PAPER_METHOD_ORDER:
         row = [method_name]
-        for metric_key in ('time_h', 'memory_gb'):
+        for metric_key in ('time_h', 'memory_gb', 'energy_kj'):
             for panel_label in ('a', 'b', 'c', 'd'):
                 family = family_by_panel.get(panel_label)
                 metrics = metrics_by_family.get(family, {}).get(method_name, make_empty_metrics()) if family else make_empty_metrics()
@@ -1145,12 +1193,6 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                     continue
                 xs = [point[0] for point in points]
                 ys = [point[1] for point in points]
-                reference_gb = metrics['memory_gb'] if metrics['memory_gb'] > 0.0 else estimate_stable_memory_gb(ys)
-                ys = filter_short_zero_drops(xs, ys, reference_gb)
-                if reference_gb is not None:
-                    ys = filter_short_reference_drops(xs, ys, reference_gb)
-                    if panel['family'] == 'edgevla' and internal_name == 'flare':
-                        ys = filter_short_reference_spikes(xs, ys, reference_gb)
                 if xs and ys:
                     drop_x = metrics['reach_hours']
                     stable_y = ys[-1]

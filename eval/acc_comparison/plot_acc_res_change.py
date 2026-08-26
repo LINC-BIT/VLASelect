@@ -65,16 +65,16 @@ FAMILY_CONFIGS = {
 
 HISTORY_METRIC_ALIASES_BY_FAMILY = {
     'octo': ('eval_success_once', 'success_once'),
-    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
-    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
-    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'success_once'),
 }
 
 MWE_HISTORY_METRIC_ALIASES_BY_FAMILY = {
     'octo': ('eval_success_once', 'success_once'),
-    'vla_adapter_new': ('eval_success_once', 'train_success_once', 'success_once'),
-    'tinyvla': ('eval_success_once', 'train_success_once', 'success_once'),
-    'edgevla': ('eval_success_once', 'train_success_once', 'success_once'),
+    'vla_adapter_new': ('eval_success_once', 'success_once'),
+    'tinyvla': ('eval_success_once', 'success_once'),
+    'edgevla': ('eval_success_once', 'success_once'),
 }
 
 RENDER_CONFIG = {

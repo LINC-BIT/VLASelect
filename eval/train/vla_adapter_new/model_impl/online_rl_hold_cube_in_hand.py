@@ -1517,6 +1517,15 @@ def train(args: Args) -> None:
                 cat = torch.cat(values)
                 local_train_summary[f"train_{key}"] = (float(cat.sum().item()), int(cat.numel()))
         metric.update(gather_metric_summary(local_train_summary))
+        if use_train_success_only():
+            for source_key, target_key in (
+                ("train_success_once", "eval_success_once"),
+                ("train_success_at_end", "eval_success_at_end"),
+                ("train_success", "eval_success"),
+            ):
+                value = metric.get(source_key)
+                if value is not None:
+                    metric[target_key] = value
 
         if (
             is_main_process()
@@ -1529,6 +1538,15 @@ def train(args: Args) -> None:
         if update % args.eval_every_updates == 0 or update == num_updates:
             if is_main_process() and eval_envs is not None:
                 eval_metrics = evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+                if not eval_metrics and use_train_success_only():
+                    for source_key, target_key in (
+                        ("train_success_once", "success_once"),
+                        ("train_success_at_end", "success_at_end"),
+                        ("train_success", "success"),
+                    ):
+                        value = metric.get(source_key)
+                        if value is not None:
+                            eval_metrics[target_key] = value
                 metric.update({f"eval_{k}": v for k, v in eval_metrics.items()})
                 if test_video_envs is not None:
                     evaluate_policy(

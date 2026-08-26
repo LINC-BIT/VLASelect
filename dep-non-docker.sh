@@ -17,10 +17,10 @@ PIP_INDEX_URL_DEFAULT=${PIP_INDEX_URL_DEFAULT:-https://pypi.org/simple}
 PIP_INDEX_URL_FALLBACKS=${PIP_INDEX_URL_FALLBACKS:-https://pypi.tuna.tsinghua.edu.cn/simple}
 PIP_EXTRA_INDEX_URL_DEFAULT=${PIP_EXTRA_INDEX_URL_DEFAULT:-}
 MANISKILL_VERSION=${MANISKILL_VERSION:-3.0.0b22}
+DEEPSPEED_VERSION=0.15.0
 
 INSTALL_SYSTEM_DEPS=${INSTALL_SYSTEM_DEPS:-0}
 INSTALL_FLASH_ATTN=${INSTALL_FLASH_ATTN:-0}
-INSTALL_DEEPSPEED=${INSTALL_DEEPSPEED:-0}
 DOWNLOAD_CKPTS=${DOWNLOAD_CKPTS:-1}
 ARM=${ARM:-0}
 
@@ -138,7 +138,6 @@ configure_arch_mode() {
             log "ARM mode switched the default PyTorch index to CPU wheels. Override TORCH_INDEX_URL manually if your ARM device needs a different official wheel index."
         fi
         INSTALL_FLASH_ATTN=0
-        INSTALL_DEEPSPEED=0
         return
     fi
 
@@ -187,6 +186,12 @@ install_maniskill() {
     run_pip_install_with_fallbacks "ManiSkill ${MANISKILL_VERSION}" "mani_skill==${MANISKILL_VERSION}"         || die "failed to install ManiSkill from all configured package indexes."
 }
 
+install_deepspeed() {
+    log "installing DeepSpeed ${DEEPSPEED_VERSION}"
+    run_pip_install_with_fallbacks "DeepSpeed ${DEEPSPEED_VERSION}" "deepspeed==${DEEPSPEED_VERSION}" \
+        || die "failed to install DeepSpeed from all configured package indexes."
+}
+
 build_filtered_requirements() {
     [[ -f "$REQ_IN" ]] || die "requirements file not found: $REQ_IN"
     log "building filtered requirements: $REQ_FILTERED"
@@ -194,7 +199,6 @@ build_filtered_requirements() {
     REQ_IN="$REQ_IN" \
     REQ_FILTERED="$REQ_FILTERED" \
     INSTALL_FLASH_ATTN="$INSTALL_FLASH_ATTN" \
-    INSTALL_DEEPSPEED="$INSTALL_DEEPSPEED" \
     python - <<'PY'
 from pathlib import Path
 import os
@@ -203,7 +207,6 @@ import re
 req_in = Path(os.environ["REQ_IN"])
 req_out = Path(os.environ["REQ_FILTERED"])
 install_flash_attn = os.environ["INSTALL_FLASH_ATTN"] == "1"
-install_deepspeed = os.environ["INSTALL_DEEPSPEED"] == "1"
 
 skip_exact = {
     "torch",
@@ -228,8 +231,6 @@ skip_exact = {
 
 if install_flash_attn:
     skip_exact.discard("flash_attn")
-if install_deepspeed:
-    skip_exact.discard("deepspeed")
 
 lines_out = []
 for raw in req_in.read_text().splitlines():
@@ -350,6 +351,7 @@ print_summary() {
 [dep-non-docker.sh] default pip index    : $PIP_INDEX_URL_DEFAULT
 [dep-non-docker.sh] pip fallbacks        : ${PIP_INDEX_URL_FALLBACKS:-<none>}
 [dep-non-docker.sh] ManiSkill version    : $MANISKILL_VERSION
+[dep-non-docker.sh] DeepSpeed version    : $DEEPSPEED_VERSION
 [dep-non-docker.sh] filtered requirements: $REQ_FILTERED
 
 Next commands:
@@ -362,10 +364,10 @@ Notes:
   - PyTorch is installed separately using the configured PyTorch wheel index list.
   - General Python packages are installed from PyPI first, then retried against the configured fallback mirrors.
   - ManiSkill is installed separately before the filtered project requirements.
-  - The filtered requirements file skips conda-local entries and optional heavy packages such as flash_attn/deepspeed by default.
+  - The filtered requirements file skips conda-local entries and DeepSpeed; DeepSpeed is installed separately at version 0.15.0.
   - Set INSTALL_SYSTEM_DEPS=1 to auto-install Ubuntu packages such as git and libvulkan1.
-  - Set INSTALL_FLASH_ATTN=1 or INSTALL_DEEPSPEED=1 if you explicitly want those optional packages.
-  - For ARM-based hosts, run the script with ARM=1 to switch the default PyTorch source to the official CPU wheels and keep optional heavy packages disabled.
+  - Set INSTALL_FLASH_ATTN=1 if you explicitly want the optional flash_attn package.
+  - For ARM-based hosts, run the script with ARM=1 to switch the default PyTorch source to the official CPU wheels while keeping optional flash_attn disabled.
 EOF
 }
 
@@ -377,6 +379,7 @@ main() {
     create_venv
     install_torch
     install_maniskill
+    install_deepspeed
     build_filtered_requirements
     install_filtered_requirements
     download_hf_checkpoints

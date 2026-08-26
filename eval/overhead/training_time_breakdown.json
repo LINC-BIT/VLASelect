@@ -81,12 +81,12 @@
     "self_improv": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.002743086616198222,
-          "model_update_hours": 6.396762302352323e-05
-        },
-        "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.0056676874159994894,
+          "model_update_hours": 0.06968779283291292
         },
         "tinyvla": {
           "rollout_hours": 0.0,
@@ -121,12 +121,12 @@
     "vla_rft": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.014668484528859457,
-          "model_update_hours": 0.00030990284350183275
-        },
-        "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.029469476020316698,
+          "model_update_hours": 0.0009246861940137231
         },
         "tinyvla": {
           "rollout_hours": 0.0,
@@ -141,12 +141,12 @@
     "world_env": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.01436564048131307,
-          "model_update_hours": 0.0003056987043884065
-        },
-        "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.027684719043411556,
+          "model_update_hours": 0.0007916637803178056
         },
         "tinyvla": {
           "rollout_hours": 0.0,
@@ -201,12 +201,12 @@
     "ours": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0014770599627308193,
-          "model_update_hours": 0.0002169649055197192
-        },
-        "vla_adapter_new": {
           "rollout_hours": 0.0,
           "model_update_hours": 0.0
+        },
+        "vla_adapter_new": {
+          "rollout_hours": 0.005060517262075361,
+          "model_update_hours": 0.0022312350434851155
         },
         "tinyvla": {
           "rollout_hours": 0.0,

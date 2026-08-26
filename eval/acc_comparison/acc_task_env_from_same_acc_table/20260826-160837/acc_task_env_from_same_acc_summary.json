@@ -1,0 +1,58 @@
+[
+  {
+    "panel_label": "b",
+    "workload_name": "Dexterous hand",
+    "family": "vla_adapter_new",
+    "method": "self_improv",
+    "display_name": "Self-Improv",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-160837/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/self_improv",
+    "num_points": 2,
+    "avg_accuracy": 0.25,
+    "final_accuracy": 0.5,
+    "max_minutes": 5.1179118368832865
+  },
+  {
+    "panel_label": "b",
+    "workload_name": "Dexterous hand",
+    "family": "vla_adapter_new",
+    "method": "vla_rft",
+    "display_name": "VLA-RFT",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-160837/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/vla_rft",
+    "num_points": 3,
+    "avg_accuracy": 0.4,
+    "final_accuracy": 0.0,
+    "max_minutes": 2.021707054695192
+  },
+  {
+    "panel_label": "b",
+    "workload_name": "Dexterous hand",
+    "family": "vla_adapter_new",
+    "method": "world_env",
+    "display_name": "WorldEnv",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-160837/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/world_env",
+    "num_points": 3,
+    "avg_accuracy": 0.5,
+    "final_accuracy": 0.5,
+    "max_minutes": 2.0373258964177996
+  },
+  {
+    "panel_label": "b",
+    "workload_name": "Dexterous hand",
+    "family": "vla_adapter_new",
+    "method": "ours",
+    "display_name": "VLASelect",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-160837/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/ours",
+    "num_points": 3,
+    "avg_accuracy": 0.7638888888888888,
+    "final_accuracy": 1.0,
+    "max_minutes": 2.025231790703644
+  }
+]

@@ -16,6 +16,7 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
+from train.common.mwe_eval import use_train_success_only
 from train.common.memory_accounting import (
     DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
     MemoryPhaseTracker,
@@ -1218,9 +1219,27 @@ def train(args: Args) -> None:
             "env_index": current_env_index,
         }
         metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+        if use_train_success_only():
+            for source_key, target_key in (
+                ("train_success_once", "eval_success_once"),
+                ("train_success_at_end", "eval_success_at_end"),
+                ("train_success", "eval_success"),
+            ):
+                value = metric.get(source_key)
+                if value is not None:
+                    metric[target_key] = value
 
         if update % args.eval_every_updates == 0 or update == num_updates:
             eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
+            if not eval_metrics and use_train_success_only():
+                for source_key, target_key in (
+                    ("train_success_once", "success_once"),
+                    ("train_success_at_end", "success_at_end"),
+                    ("train_success", "success"),
+                ):
+                    value = metric.get(source_key)
+                    if value is not None:
+                        eval_metrics[target_key] = value
             metric.update({f"eval_{k}": v for k, v in eval_metrics.items()})
             current_success_end = float(metric.get("eval_success_at_end", metric.get("eval_success_once", 0.0)))
             if metric.get("eval_success_once", 0.0) >= best_success_once:
@@ -1285,11 +1304,23 @@ def train(args: Args) -> None:
             break
 
     final_eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
+    last_metric = metrics_history[-1] if metrics_history else {}
+    if not final_eval_metrics and use_train_success_only():
+        for source_key, target_key in (
+            ("train_success_once", "success_once"),
+            ("train_success_at_end", "success_at_end"),
+            ("train_success", "success"),
+            ("eval_success_once", "success_once"),
+            ("eval_success_at_end", "success_at_end"),
+            ("eval_success", "success"),
+        ):
+            value = last_metric.get(source_key)
+            if value is not None:
+                final_eval_metrics[target_key] = value
     save_json(output_dir / "final_eval_metrics.json", final_eval_metrics)
     save_metrics_history(output_dir, metrics_history)
     plot_metrics_history(output_dir, metrics_history)
     plot_success_time_curve(output_dir, metrics_history)
-    last_metric = metrics_history[-1] if metrics_history else {}
     module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
     write_time_breakdown(
         output_dir,

@@ -137,7 +137,7 @@ SAME_ACC_HISTORY_METRIC_ALIASES_BY_FAMILY = {
     "octo": ("eval_success_once", "eval/success_once", "success_once"),
     "vla_adapter_new": ("eval_success_once", "train_success_once", "success_once"),
     "tinyvla": ("eval_success_once", "train_success_once", "success_once"),
-    "edgevla": ("eval_success_once", "success_once"),
+    "edgevla": ("eval_success_once", "train_success_once", "success_once"),
 }
 MODULE_FIGURE_KEYS = tuple(key for key, _, _, _ in MODULE_FIGURE_SPECS)
 
@@ -509,6 +509,22 @@ def _interpolate_breakdown_at_cutoff(points: list[tuple[float, float, float]], c
     return max(0.0, points[-1][1]), max(0.0, points[-1][2])
 
 
+def _rescale_breakdown_points_hours(
+    points: list[tuple[float, float, float]],
+    active_runtime_hours: float | None,
+) -> list[tuple[float, float, float]]:
+    if active_runtime_hours is None or active_runtime_hours <= 0.0 or not points:
+        return points
+    raw_total_hours = max((elapsed_hours for elapsed_hours, _, _ in points), default=0.0)
+    if raw_total_hours <= 0.0:
+        return points
+    scale = active_runtime_hours / raw_total_hours
+    return [
+        (elapsed_hours * scale, sampling_seconds, training_seconds)
+        for elapsed_hours, sampling_seconds, training_seconds in points
+    ]
+
+
 def _load_history_time_breakdown_until_cutoff(run_dir: Path, cutoff_hours: float) -> MethodBreakdown | None:
     history = _load_history(run_dir)
     if not history:
@@ -526,6 +542,13 @@ def _load_history_time_breakdown_until_cutoff(run_dir: Path, cutoff_hours: float
         points.append((elapsed_hours, float(sampling or 0.0), float(training or 0.0)))
     if not points:
         return None
+    latest_metric = next((metric for metric in reversed(history) if isinstance(metric, dict)), None)
+    active_runtime_hours = None
+    if latest_metric is not None:
+        active_runtime_seconds = _metric_active_runtime_seconds(latest_metric)
+        if active_runtime_seconds is not None and active_runtime_seconds > 0.0:
+            active_runtime_hours = active_runtime_seconds / 3600.0
+    points = _rescale_breakdown_points_hours(points, active_runtime_hours)
     sampling_seconds, training_seconds = _interpolate_breakdown_at_cutoff(points, cutoff_hours)
     history_path = run_dir / "metrics_history.json"
     return MethodBreakdown(
@@ -566,28 +589,55 @@ def _load_tensorboard_time_breakdown_until_cutoff(run_dir: Path, cutoff_hours: f
             continue
     if not elapsed_hours_by_step:
         return None
-    sampling_seconds = 0.0
-    training_seconds = 0.0
 
-    def accumulate(tag: str) -> float:
+    def scalar_events(tag: str) -> list[Any]:
         if tag not in tags:
-            return 0.0
+            return []
         try:
-            events = accumulator.Scalars(tag)
+            return list(accumulator.Scalars(tag))
         except Exception:
-            return 0.0
-        total = 0.0
-        for event in events:
-            elapsed_hours = elapsed_hours_by_step.get(int(event.step))
-            if elapsed_hours is None or elapsed_hours > cutoff_hours:
-                continue
-            total += float(event.value)
-        return total
+            return []
 
-    sampling_seconds += accumulate("time/rollout_time")
-    training_seconds += accumulate("time/update_time")
-    training_seconds += accumulate("time/rl_update_time")
-    training_seconds += accumulate("time/sl_time")
+    rollout_events = scalar_events("time/rollout_time")
+    update_events = scalar_events("time/update_time")
+    rl_update_events = scalar_events("time/rl_update_time")
+    sl_events = scalar_events("time/sl_time")
+    all_active_events = rollout_events + update_events + rl_update_events + sl_events
+    active_runtime_hours = None
+    active_runtime_seconds = sum(float(event.value) for event in all_active_events)
+    if active_runtime_seconds > 0.0:
+        active_runtime_hours = active_runtime_seconds / 3600.0
+
+    points_by_step: dict[int, list[float]] = {}
+    for step, elapsed_hours in elapsed_hours_by_step.items():
+        points_by_step[int(step)] = [elapsed_hours, 0.0, 0.0]
+
+    def accumulate_into_points(events: list[Any], target_index: int) -> None:
+        running_total = 0.0
+        for event in events:
+            step = int(event.step)
+            elapsed_hours = elapsed_hours_by_step.get(step)
+            if elapsed_hours is None:
+                continue
+            running_total += float(event.value)
+            point = points_by_step.setdefault(step, [elapsed_hours, 0.0, 0.0])
+            point[0] = elapsed_hours
+            point[target_index] += running_total
+
+    accumulate_into_points(rollout_events, 1)
+    accumulate_into_points(update_events, 2)
+    accumulate_into_points(rl_update_events, 2)
+    accumulate_into_points(sl_events, 2)
+
+    points = [
+        (elapsed_hours, sampling_seconds, training_seconds)
+        for elapsed_hours, sampling_seconds, training_seconds in points_by_step.values()
+        if sampling_seconds > 0.0 or training_seconds > 0.0
+    ]
+    if not points:
+        return None
+    points = _rescale_breakdown_points_hours(points, active_runtime_hours)
+    sampling_seconds, training_seconds = _interpolate_breakdown_at_cutoff(points, cutoff_hours)
     has_data = sampling_seconds > 0.0 or training_seconds > 0.0
     if not has_data:
         return None

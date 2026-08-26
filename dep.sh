@@ -32,6 +32,7 @@ CONTAINER_MS_ASSET_DIR=${CONTAINER_MS_ASSET_DIR:-}
 CONTAINER_MANISKILL_DATA_DIR=${CONTAINER_MANISKILL_DATA_DIR:-}
 CONTAINER_PARTNET_DATA_DIR=${CONTAINER_PARTNET_DATA_DIR:-}
 HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-120}
+DEEPSPEED_VERSION=0.15.0
 
 log() {
     echo "[dep.sh] $*"
@@ -121,6 +122,7 @@ bootstrap_small_image_environment() {
             -e VENV_DIR="$CONTAINER_VENV_DIR" \
             -e DOWNLOAD_CKPTS=0 \
             -e INSTALL_SYSTEM_DEPS=0 \
+            -e DEEPSPEED_VERSION="$DEEPSPEED_VERSION" \
             -e HF_CKPT_REPO= \
             "$CONTAINER_NAME" \
             bash -lc "cd '$CONTAINER_REPO_DIR' && bash dep-non-docker.sh" || status=$?
@@ -500,6 +502,11 @@ ensure_container_python_package() {
     docker exec "$CONTAINER_NAME" bash -lc "python -m pip install -U '$package_spec'"
 }
 
+install_container_deepspeed() {
+    log "installing container DeepSpeed ${DEEPSPEED_VERSION}"
+    docker exec "$CONTAINER_NAME" bash -lc "python -m pip install -U 'deepspeed==${DEEPSPEED_VERSION}'"
+}
+
 install_container_runtime_dependencies() {
     if is_small_image_type; then
         bootstrap_small_image_environment
@@ -517,6 +524,7 @@ install_container_runtime_dependencies() {
     ensure_container_python_package pypdf pypdf
     ensure_container_python_package pinocchio pin
     ensure_container_python_package noise noise
+    install_container_deepspeed
 
     if [[ "$started_here" == "1" ]]; then
         log "stopping container after dependency installation"
@@ -588,6 +596,7 @@ print_summary() {
 [dep.sh] container name : $CONTAINER_NAME
 [dep.sh] image type     : $TYPE
 [dep.sh] recreate mode  : $RECREATE
+[dep.sh] DeepSpeed version: $DEEPSPEED_VERSION
 [dep.sh] docker image   : $DOCKER_IMAGE
 [dep.sh] container venv : $CONTAINER_VENV_DIR
 [dep.sh] gpu access     : all GPUs

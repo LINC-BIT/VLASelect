@@ -1,6 +1,6 @@
 # Install PyTorch separately via the official wheel index.
 # Install ManiSkill separately after the required system packages such as libvulkan1.
-# Optional heavy packages such as flash_attn and deepspeed are intentionally excluded here.
+# DeepSpeed is installed separately by the dependency scripts at version 0.15.0.
 
 absl-py==2.3.1
 accelerate==1.10.0

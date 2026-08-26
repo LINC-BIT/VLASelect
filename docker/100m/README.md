@@ -15,7 +15,7 @@ It intentionally excludes heavyweight runtime components such as:
 - `torch`, `torchvision`, `torchaudio`
 - `mani_skill`, `sapien`
 - checkpoints and datasets
-- optional heavy packages such as `flash_attn` and `deepspeed`
+- optional heavy package `flash_attn`; DeepSpeed is installed during runtime bootstrap
 
 When `TYPE=100M` is used, `dep.sh` starts the container from this image and then
 runs `dep-non-docker.sh` inside the container to install the remaining Python runtime.

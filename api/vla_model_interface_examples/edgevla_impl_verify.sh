@@ -48,7 +48,7 @@ for value in "$SCALING_METHOD" "$KNOWLEDGE_EXCHANGE_GRANULARITY"; do
 done
 
 LARGE_AGENT_CHECKPOINT="$ROOT_DIR/eval/ckpt/edgevla/ours/outputs/bc_unitree_g1_lift_apple_fbs/20260511-171959/best_policy.pt"
-if [[ "$MWE" == "1" && -n "$SCALING_METHOD" ]]; then
+if [[ "$MWE" == "1" && ( -n "$SCALING_METHOD" || -n "$KNOWLEDGE_EXCHANGE_GRANULARITY" ) ]]; then
   LARGE_AGENT_CHECKPOINT="${LARGE_AGENT_CHECKPOINT}.base"
   [[ -f "$LARGE_AGENT_CHECKPOINT" ]] || {
     echo "missing MWE base checkpoint: $LARGE_AGENT_CHECKPOINT" >&2

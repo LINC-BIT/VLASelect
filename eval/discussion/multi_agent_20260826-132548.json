@@ -1,0 +1,14 @@
+{
+  "stamp": "20260826-132548",
+  "output_base": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-132548",
+  "runs": [
+    {
+      "method": "mappo",
+      "model_backbone": "mixed_tiny_vla_smolvla",
+      "run_dir": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-132548/mappo",
+      "log_file": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-132548/mappo/train.log",
+      "status": "completed",
+      "result_json": "/home/zcr/vlaselect/eval/discussion/results/multi_agent/20260826-132548/mappo/metrics.json"
+    }
+  ]
+}

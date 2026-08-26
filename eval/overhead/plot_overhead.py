@@ -21,6 +21,7 @@ if str(EVAL_ROOT) not in sys.path:
     sys.path.insert(0, str(EVAL_ROOT))
 from common.figure_compose import compose_grid_figure, render_legend_image
 from common.template_pdf_fill import fill_memory_template
+from plot_breakdown_impl import load_summary_aligned_manifest
 TABLE_ROOT = SCRIPT_DIR / 'overhead_same_acc_table'
 BREAKDOWN_ROOT = SCRIPT_DIR / 'overhead_breakdown_table'
 LATEST_POINTER = TABLE_ROOT / 'latest.txt'
@@ -122,6 +123,14 @@ def find_latest_manifest() -> Path | None:
             if candidate.exists(): return candidate
     manifest_paths = sorted(TABLE_ROOT.glob('*/manifest.json'))
     return manifest_paths[-1] if manifest_paths else None
+
+
+def load_default_manifest() -> dict[str, Any]:
+    manifest = load_summary_aligned_manifest([TABLE_ROOT], TABLE_ROOT)
+    manifest.setdefault('figure_output', 'overhead/FIG_MEMORY_FOOTPOINT.pdf')
+    manifest.setdefault('table2_output', 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv')
+    manifest.setdefault('table3_output', 'overhead/overhead_breakdown_table/TAB_ENERGY.csv')
+    return manifest
 def default_manifest() -> dict[str, Any]:
     return {
         'suite_stamp': 'no-data',
@@ -1285,13 +1294,18 @@ parser.add_argument('--manifest', type=Path, default=None, help='Top-level manif
 parser.add_argument('--output-root', type=Path, default=None, help='Directory where this run\'s figures and tables are written.')
 args = parser.parse_args()
 configure_output_paths(args.output_root)
-manifest_path = args.manifest.resolve() if args.manifest is not None else find_latest_manifest()
+manifest_path = args.manifest.resolve() if args.manifest is not None else None
 if manifest_path is not None and not manifest_path.exists():
     raise SystemExit(f'manifest does not exist: {manifest_path}')
-top_manifest = load_json(manifest_path) if manifest_path else default_manifest()
+top_manifest = load_json(manifest_path) if manifest_path else load_default_manifest()
+selected = {row.get('family'): row.get('_top_manifest', '') for row in top_manifest.get('panels', []) if isinstance(row, dict)}
+for family in ('octo', 'vla_adapter_new', 'tinyvla', 'edgevla'):
+    source = selected.get(family, '')
+    if source:
+        print(f'[selected] {family}: {source}')
 rows = draw_figure(top_manifest)
 write_summary(rows)
-print(f'manifest: {manifest_path or "no-data"}')
+print(f'manifest: {manifest_path or "merged-summary-aligned"}')
 print(f'figure: {FIGURE_PATH}')
 print(f'table2: {TABLE2_CSV_PATH}')
 print(f'table3: {TABLE3_CSV_PATH}')

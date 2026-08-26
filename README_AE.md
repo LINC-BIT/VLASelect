@@ -116,7 +116,7 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
   bash overhead_breakdown_all_methods.sh
 python3 plot_breakdown_all_methods.py
 
-MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
+MWE=1 \
   bash overhead_breakdown_modules.sh
 python3 plot_breakdown_modules.py
 ```
@@ -160,10 +160,12 @@ MWE=1 bash run_multi_agent.sh
 
 Generated artifacts:
 
-| Figure No. & Experiment | Path | Experiment Results |
+| Experiment | Path / Output | Experiment Results |
 | --- | --- | --- |
-| Figure: VLA applicability check | `discussion/FIG_VLA_APPLICABILITY.pdf` | [VLA Applicability](https://www.google.com/search?q=) |
-| Discussion: Other discussion results | Terminal outputs | [Discussion Results](https://www.google.com/search?q=) |
+| In-Context Learning (ICL) comparison | Terminal outputs | [ICL Comparison](./results_disscussion.md) |
+| VLA applicability check (Octo) | `discussion/FIG_VLA_APPLICABILITY.pdf` | [VLA Applicability](./results_disscussion.md) |
+|  Maximum supported model size (TinyVLA) | Terminal outputs | [Model Size Limit](./results_disscussion.md) |
+| Multi-agent scenario evaluation | Terminal outputs | [Multi-Agent Scenario](./results_disscussion.md) |
 
 > Run  sim-to-real MWE only if the required robot hardware is connected
 ```bash

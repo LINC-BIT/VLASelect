@@ -10,6 +10,19 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
+SMOOTHING_ALPHA = 0.6
+
+
+def smooth_scores(scores, alpha: float = SMOOTHING_ALPHA):
+    """Apply exponential smoothing while preserving the original time points."""
+    if not scores:
+        return []
+    smoothed = [scores[0]]
+    for score in scores[1:]:
+        smoothed.append(alpha * score + (1.0 - alpha) * smoothed[-1])
+    return smoothed
+
+
 def load_json(path: Path):
     if not path.is_file():
         return None
@@ -52,9 +65,11 @@ def main() -> None:
         if not points:
             continue
         points.sort(key=lambda item: item[0])
+        times = [item[0] for item in points]
+        scores = smooth_scores([item[1] for item in points])
         ax.plot(
-            [item[0] for item in points],
-            [item[1] for item in points],
+            times,
+            scores,
             marker="o",
             linewidth=1.8,
             markersize=3.5,

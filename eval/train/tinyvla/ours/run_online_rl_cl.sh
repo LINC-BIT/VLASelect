@@ -27,7 +27,7 @@ ENVS_ID=${ENVS_ID_OVERRIDE:-"['OpenCabinetDrawerCabinet1021Default-v1','OpenCabi
 ENV_CHANGE_TIME_POINTS=${ENV_CHANGE_TIME_POINTS_OVERRIDE:-"[31,62,96,131,151,163,207,247,271,300]"}
 NUM_ENVS=${NUM_ENVS_OVERRIDE:-256}
 NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
-NUM_STEPS=${NUM_STEPS_OVERRIDE:-100}
+NUM_STEPS=${NUM_STEPS_OVERRIDE:-50}
 TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
 NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
 UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-2}
@@ -76,19 +76,19 @@ PYTHON_CMD=(
     --num-steps "$NUM_STEPS"
     --num-minibatches "$NUM_MINIBATCHES"
     --update-epochs "$UPDATE_EPOCHS"
-    --learning-rate 6e-5
-    --head-learning-rate 6e-5
-    --state-learning-rate 6e-5
-    --value-head-learning-rate 6e-5
-    --backbone-learning-rate 6e-5
+    --learning-rate 3e-5
+    --head-learning-rate 3e-5
+    --state-learning-rate 3e-5
+    --value-head-learning-rate 3e-5
+    --backbone-learning-rate 3e-5
     --weight-decay 1e-6
-    --gamma 0.99
-    --gae-lambda 0.95
+    --gamma 0.8
+    --gae-lambda 0.9
     --clip-coef 0.2
-    --ent-coef 1e-3
+    --ent-coef 0.0
     --vf-coef 0.5
     --max-grad-norm 0.5
-    --target-kl 0.02
+    --target-kl 0.2
     --minibatch-target-kl-factor 1.0
     --eval-episodes "$EVAL_EPISODES"
     --eval-every-updates "$EVAL_EVERY_UPDATES"
@@ -108,6 +108,7 @@ PYTHON_CMD=(
     --action-dim 8
     --env-action-dim 13
     --state-dim 44
+    --controlled-action-indices "(0,1,2,3,4,5,6,7)"
     --large-agent-checkpoint "$LARGE_AGENT_CHECKPOINT"
     --small-model-generation-strategy target-single-traj
     --small-model-generation-policy small

@@ -218,7 +218,7 @@ def parse_args() -> Args:
         # PPO, so MWE prioritizes proving the path is runnable over throughput.
         args.num_envs = 4
         args.num_eval_envs = 1
-        args.num_steps = 16
+        args.num_steps = 4
         args.update_epochs = 1
         args.num_minibatches = 2
         args.rollout_micro_batch_size = 4

@@ -22,6 +22,7 @@ from common.vis_line_draw import apply_matplotlib_style, draw_plot
 
 DEFAULT_TABLE_ROOT = SCRIPT_DIR / 'acc_comparison_task_env_table'
 FALLBACK_TABLE_ROOT = DEFAULT_TABLE_ROOT
+OVERHEAD_SAME_ACC_TABLE_ROOT = EVAL_ROOT / 'overhead' / 'overhead_same_acc_table'
 PANEL_LOOKUP_TABLE_ROOTS = [DEFAULT_TABLE_ROOT]
 DEFAULT_MANIFEST_OVERRIDE = os.environ.get('PLOT_ACC_MANIFEST', '').strip()
 DEFAULT_FIGURE_STEM = 'FIG_ACC_TASK_ENV'
@@ -33,7 +34,7 @@ SAME_ACC_SUMMARY_STEM = DEFAULT_SUMMARY_STEM
 SAME_ACC_VIS_PAYLOAD_SUBDIR = DEFAULT_VIS_PAYLOAD_SUBDIR
 
 DEFAULT_RUNTIME_TABLE_ROOT = SAME_ACC_TABLE_ROOT
-DEFAULT_PANEL_LOOKUP_TABLE_ROOTS = [SAME_ACC_TABLE_ROOT, DEFAULT_TABLE_ROOT]
+DEFAULT_PANEL_LOOKUP_TABLE_ROOTS = [SAME_ACC_TABLE_ROOT, OVERHEAD_SAME_ACC_TABLE_ROOT, DEFAULT_TABLE_ROOT]
 
 TABLE_ROOT = DEFAULT_TABLE_ROOT
 MANIFEST_OVERRIDE = DEFAULT_MANIFEST_OVERRIDE
@@ -164,7 +165,12 @@ def configure_runtime(args: argparse.Namespace) -> None:
     vis_payload_dir = args.vis_payload_dir or (SAME_ACC_VIS_PAYLOAD_SUBDIR if inferred_same_acc else DEFAULT_VIS_PAYLOAD_SUBDIR)
 
     lookup_roots: list[Path] = []
-    for candidate in [table_root, SAME_ACC_TABLE_ROOT if inferred_same_acc else None, FALLBACK_TABLE_ROOT if inferred_same_acc else None]:
+    for candidate in [
+        table_root,
+        SAME_ACC_TABLE_ROOT if inferred_same_acc else None,
+        OVERHEAD_SAME_ACC_TABLE_ROOT if inferred_same_acc else None,
+        FALLBACK_TABLE_ROOT if inferred_same_acc else None,
+    ]:
         if candidate is None:
             continue
         resolved = Path(candidate).expanduser().resolve()

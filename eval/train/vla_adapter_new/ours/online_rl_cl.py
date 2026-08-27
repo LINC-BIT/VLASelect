@@ -15,6 +15,7 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
         sys.path.insert(0, str(candidate))
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.mwe_eval import use_train_success_only
 from train.common.memory_accounting import (
@@ -762,7 +763,7 @@ def save_training_checkpoint(
     global_step: int,
     best_success_once: float,
 ) -> None:
-    torch.save(
+    maybe_save_model_checkpoint(
         {
             "large_agent": large_agent.state_dict(),
             "small_agent": small_agent.state_dict(),

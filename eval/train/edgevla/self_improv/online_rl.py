@@ -75,7 +75,7 @@ def configure_human_defaults() -> None:
         'model_dir': DEFAULT_MODEL_DIR,
         'output_dir': DEFAULT_OUTPUT_DIR,
         'static_model_checkpoint': DEFAULT_STATIC_MODEL_CHECKPOINT,
-        'num_envs': 128,
+        'num_envs': 64,
         'num_eval_envs': 8,
         'num_steps': 64,
         'num_minibatches': 16,

@@ -89,8 +89,8 @@
           "model_update_hours": 0.06968779283291292
         },
         "tinyvla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.013413623124716752,
+          "model_update_hours": 0.08122715262304862
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -129,8 +129,8 @@
           "model_update_hours": 0.0009246861940137231
         },
         "tinyvla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.017790454171356693,
+          "model_update_hours": 5.0570806237911263e-05
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -149,8 +149,8 @@
           "model_update_hours": 0.0007916637803178056
         },
         "tinyvla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.018800798730352886,
+          "model_update_hours": 5.044164451006573e-05
         },
         "edgevla": {
           "rollout_hours": 0.0,
@@ -209,8 +209,8 @@
           "model_update_hours": 0.0022312350434851155
         },
         "tinyvla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.01369029942288762,
+          "model_update_hours": 0.020231232820531457
         },
         "edgevla": {
           "rollout_hours": 0.0,

@@ -16,6 +16,7 @@ import shutil
 import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
 
@@ -679,7 +680,7 @@ def save_checkpoint(run_name, filename, agent, optimizer, iteration, extra_metri
     }
     if extra_metrics:
         payload.update(extra_metrics)
-    torch.save(payload, f"ckpt/{run_name}/checkpoints/{filename}")
+    maybe_save_model_checkpoint(payload, f"ckpt/{run_name}/checkpoints/{filename}")
 
 
 def copy_run_metadata(run_name: str, args: Args):

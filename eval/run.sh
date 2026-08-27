@@ -54,9 +54,9 @@ if [[ "$RUN_OVERHEAD_SAME_ACC" == "1" ]]; then
 fi
 
 if [[ "$RUN_BREAKDOWN_ALL" == "1" ]]; then
-    run_step "Figure 10: breakdown for all methods" env MWE="$MWE" bash overhead/overhead_breakdown_all_methods.sh
+    run_step "Figure 10: breakdown for all methods" env MWE="$MWE" bash overhead_breakdown.sh
     if [[ "$AUTO_POSTPROCESS" == "1" ]]; then
-        run_step "Figure 10 postprocess" python overhead/plot_breakdown_all_methods.py
+        run_step "Figure 10 postprocess" python overhead_breakdown/benchmark.py
     fi
 fi
 

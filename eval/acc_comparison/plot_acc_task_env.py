@@ -238,9 +238,11 @@ def rescale_series_minutes(series: list[tuple[float, float]], active_runtime_hou
     return [(x_value * scale, y_value) for x_value, y_value in series]
 
 
-def resolve_method_active_runtime_hours(method: dict[str, Any]) -> float | None:
+def resolve_method_active_runtime_hours(method: dict[str, Any], suite_smoke_runtime_hours: float | None = None) -> float | None:
     actual_runtime_hours = finite_float(method.get('actual_runtime_hours'))
     smoke_runtime_hours = finite_float(method.get('smoke_max_runtime_hours'))
+    if (smoke_runtime_hours is None or smoke_runtime_hours <= 0.0) and suite_smoke_runtime_hours is not None and suite_smoke_runtime_hours > 0.0:
+        smoke_runtime_hours = suite_smoke_runtime_hours
     if smoke_runtime_hours is not None and smoke_runtime_hours > 0.0:
         if actual_runtime_hours is not None and actual_runtime_hours > 0.0:
             return min(actual_runtime_hours, smoke_runtime_hours)
@@ -466,6 +468,7 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
     suite_manifest_path = resolve_path(suite_manifest_raw) if suite_manifest_raw else None
     if suite_manifest_path is not None and suite_manifest_path.exists():
         suite_manifest = load_json(suite_manifest_path)
+        suite_smoke_runtime_hours = finite_float(suite_manifest.get('smoke_max_runtime_hours'))
         methods = [method for method in suite_manifest.get('methods', []) if isinstance(method, dict)]
         methods.sort(key=lambda method: LEGEND_ORDER.index(method.get('name')) if method.get('name') in LEGEND_ORDER else len(LEGEND_ORDER))
         for method in methods:
@@ -473,7 +476,7 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
             if not run_dir_raw:
                 continue
             run_dir = resolve_path(run_dir_raw)
-            active_runtime_hours = resolve_method_active_runtime_hours(method)
+            active_runtime_hours = resolve_method_active_runtime_hours(method, suite_smoke_runtime_hours)
             series = collect_series(
                 panel['family'],
                 run_dir,

@@ -67,7 +67,7 @@
     "num_points": 2,
     "avg_accuracy": 0.25,
     "final_accuracy": 0.5,
-    "max_minutes": 5.1179118368832865
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "b",
@@ -81,7 +81,7 @@
     "num_points": 3,
     "avg_accuracy": 0.4,
     "final_accuracy": 0.0,
-    "max_minutes": 2.021707054695192
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "b",
@@ -95,7 +95,7 @@
     "num_points": 3,
     "avg_accuracy": 0.5,
     "final_accuracy": 0.5,
-    "max_minutes": 2.0373258964177996
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "b",
@@ -109,49 +109,7 @@
     "num_points": 3,
     "avg_accuracy": 0.7638888888888888,
     "final_accuracy": 1.0,
-    "max_minutes": 2.025231790703644
-  },
-  {
-    "panel_label": "c",
-    "workload_name": "Mobile manipulator",
-    "family": "tinyvla",
-    "method": "conrft",
-    "display_name": "ConRFT",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/conrft",
-    "num_points": 2,
-    "avg_accuracy": 0.5700000002980232,
-    "final_accuracy": 1.0,
-    "max_minutes": 0.7311882269335911
-  },
-  {
-    "panel_label": "c",
-    "workload_name": "Mobile manipulator",
-    "family": "tinyvla",
-    "method": "flare",
-    "display_name": "FLaRe",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/flare",
-    "num_points": 2,
-    "avg_accuracy": 0.5784313753247261,
-    "final_accuracy": 1.0,
-    "max_minutes": 1.876812351466894
-  },
-  {
-    "panel_label": "c",
-    "workload_name": "Mobile manipulator",
-    "family": "tinyvla",
-    "method": "improv_vla",
-    "display_name": "Improv-VLA",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/improv_vla",
-    "num_points": 2,
-    "avg_accuracy": 0.5784313753247261,
-    "final_accuracy": 1.0,
-    "max_minutes": 1.5220329223501419
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "c",
@@ -159,27 +117,13 @@
     "family": "tinyvla",
     "method": "self_improv",
     "display_name": "Self-Improv",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/self_improv",
-    "num_points": 3,
-    "avg_accuracy": 0.3680555555555556,
-    "final_accuracy": 0.3333333333333333,
-    "max_minutes": 5.275743199249458
-  },
-  {
-    "panel_label": "c",
-    "workload_name": "Mobile manipulator",
-    "family": "tinyvla",
-    "method": "ppo_gen",
-    "display_name": "PPO-Gen",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/ppo_gen",
-    "num_points": 2,
-    "avg_accuracy": 0.5784313753247261,
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/self_improv",
+    "num_points": 1,
+    "avg_accuracy": 1.0,
     "final_accuracy": 1.0,
-    "max_minutes": 1.522143255516615
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "c",
@@ -187,13 +131,13 @@
     "family": "tinyvla",
     "method": "vla_rft",
     "display_name": "VLA-RFT",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/vla_rft",
-    "num_points": 3,
-    "avg_accuracy": 0.23214285714285715,
-    "final_accuracy": 0.0,
-    "max_minutes": 1.6840897031671678
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/vla_rft",
+    "num_points": 2,
+    "avg_accuracy": 1.0,
+    "final_accuracy": 1.0,
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "c",
@@ -201,41 +145,13 @@
     "family": "tinyvla",
     "method": "world_env",
     "display_name": "WorldEnv",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/world_env",
-    "num_points": 3,
-    "avg_accuracy": 0.21428571428571427,
-    "final_accuracy": 0.0,
-    "max_minutes": 1.6718808145630948
-  },
-  {
-    "panel_label": "c",
-    "workload_name": "Mobile manipulator",
-    "family": "tinyvla",
-    "method": "edgeta",
-    "display_name": "EdgeTA",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/edgeta",
-    "num_points": 3,
-    "avg_accuracy": 0.45,
-    "final_accuracy": 0.25,
-    "max_minutes": 0.6465013954992174
-  },
-  {
-    "panel_label": "c",
-    "workload_name": "Mobile manipulator",
-    "family": "tinyvla",
-    "method": "convertnet",
-    "display_name": "ConvertNet",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/convertnet",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/world_env",
     "num_points": 2,
-    "avg_accuracy": 0.625,
+    "avg_accuracy": 1.0,
     "final_accuracy": 1.0,
-    "max_minutes": 0.6687073020836881
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "c",
@@ -243,41 +159,27 @@
     "family": "tinyvla",
     "method": "ours",
     "display_name": "Ours",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260825-092837/ours",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/ours",
     "num_points": 2,
-    "avg_accuracy": 0.625,
+    "avg_accuracy": 1.0,
     "final_accuracy": 1.0,
-    "max_minutes": 0.6020621422833452
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "d",
     "workload_name": "Humanoid robot",
     "family": "edgevla",
-    "method": "improv_vla",
-    "display_name": "Improv-VLA",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_comparison_task_env_table/vrtest-acc-task-110825/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/vrtest-acc-task-110825/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/vrtest-acc-task-110825/improv_vla/run",
+    "method": "self_improv",
+    "display_name": "Self-Improv",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215300/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/self_improv/run",
     "num_points": 1,
-    "avg_accuracy": 0.25,
-    "final_accuracy": 0.25,
-    "max_minutes": 0.0
-  },
-  {
-    "panel_label": "d",
-    "workload_name": "Humanoid robot",
-    "family": "edgevla",
-    "method": "ppo_gen",
-    "display_name": "PPO-Gen",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_comparison_task_env_table/vrtest-acc-task-110825/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/vrtest-acc-task-110825/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/vrtest-acc-task-110825/ppo_gen/run",
-    "num_points": 2,
-    "avg_accuracy": 0.125,
-    "final_accuracy": 0.0,
-    "max_minutes": 0.11716140556673053
+    "avg_accuracy": 1.0,
+    "final_accuracy": 1.0,
+    "max_minutes": 1.99998
   },
   {
     "panel_label": "d",
@@ -285,12 +187,40 @@
     "family": "edgevla",
     "method": "vla_rft",
     "display_name": "VLA-RFT",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_comparison_task_env_table/vrtest-acc-task-110825/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/vrtest-acc-task-110825/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/vrtest-acc-task-110825/vla_rft/run",
-    "num_points": 1,
-    "avg_accuracy": 0.25,
-    "final_accuracy": 0.25,
-    "max_minutes": 0.0
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215300/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/vla_rft/run",
+    "num_points": 3,
+    "avg_accuracy": 1.0,
+    "final_accuracy": 1.0,
+    "max_minutes": 1.99998
+  },
+  {
+    "panel_label": "d",
+    "workload_name": "Humanoid robot",
+    "family": "edgevla",
+    "method": "world_env",
+    "display_name": "WorldEnv",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215300/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/world_env/run",
+    "num_points": 3,
+    "avg_accuracy": 1.0,
+    "final_accuracy": 1.0,
+    "max_minutes": 1.99998
+  },
+  {
+    "panel_label": "d",
+    "workload_name": "Humanoid robot",
+    "family": "edgevla",
+    "method": "ours",
+    "display_name": "Ours",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215300/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/ours/run",
+    "num_points": 3,
+    "avg_accuracy": 1.0,
+    "final_accuracy": 1.0,
+    "max_minutes": 1.9999800000000003
   }
 ]

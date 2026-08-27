@@ -13,6 +13,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict, deque
@@ -469,7 +470,7 @@ def save_training_checkpoint(
     global_step: int,
     best_success_once: float,
 ) -> None:
-    torch.save(
+    maybe_save_model_checkpoint(
         {
             "policy": policy.state_dict(),
             "rl_optimizer": rl_optimizer.state_dict(),

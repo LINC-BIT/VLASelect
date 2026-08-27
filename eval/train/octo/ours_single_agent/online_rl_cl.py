@@ -11,6 +11,7 @@ import re
 import time
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import (
     DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
@@ -2195,7 +2196,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 if avg_success_once is not None and avg_success_once >= best_success_once:
                     best_success_once = avg_success_once
                     os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
-                    torch.save(
+                    maybe_save_model_checkpoint(
                         build_agent_checkpoint_payload(
                             agent,
                             optimizer,
@@ -2207,7 +2208,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 if avg_success_end is not None and avg_success_end >= best_success_end:
                     best_success_end = avg_success_end
                     os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
-                    torch.save(
+                    maybe_save_model_checkpoint(
                         build_agent_checkpoint_payload(
                             agent,
                             optimizer,
@@ -2223,7 +2224,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             # model_path = f"ckpt/{run_name}/ckpt_{iteration}.pt"
             # torch.save(agent.state_dict(), model_path)
             os.makedirs(f'ckpt/{run_name}/checkpoints', exist_ok=True)
-            torch.save(
+            maybe_save_model_checkpoint(
                 build_agent_checkpoint_payload(
                     agent,
                     optimizer,
@@ -2657,7 +2658,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     if args.save_model and not args.evaluate:
         model_path = f"ckpt/{run_name}/final_ckpt.pt"
         # torch.save(agent.state_dict(), model_path)
-        torch.save(
+        maybe_save_model_checkpoint(
             build_agent_checkpoint_payload(
                 agent,
                 optimizer,

@@ -24,10 +24,10 @@ RESUME_FROM=${RESUME_FROM_OVERRIDE:-}
 SAVE_VIDEO=${SAVE_VIDEO_OVERRIDE:-true}
 MAX_RUNTIME_HOURS=${MAX_RUNTIME_HOURS_OVERRIDE:-400}
 EARLY_STOP_ZERO_SUCCESS_MINUTES=${EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE:-45000}
-NUM_ENVS=${NUM_ENVS:-128}
+NUM_ENVS=${NUM_ENVS:-}
 NUM_EVAL_ENVS=${NUM_EVAL_ENVS_OVERRIDE:-8}
 NUM_STEPS=${NUM_STEPS_OVERRIDE:-100}
-TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-100000000}
+TOTAL_TIMESTEPS=${TOTAL_TIMESTEPS_OVERRIDE:-}
 NUM_MINIBATCHES=${NUM_MINIBATCHES_OVERRIDE:-16}
 UPDATE_EPOCHS=${UPDATE_EPOCHS_OVERRIDE:-2}
 EVAL_EVERY_UPDATES=${EVAL_EVERY_UPDATES_OVERRIDE:-50}
@@ -69,8 +69,6 @@ PYTHON_CMD=(
     --output-dir "$OUTPUT_DIR_BASE"
     --world-model-checkpoint "$WORLD_MODEL_CKPT"
     --static-model-checkpoint ckpt/tinyvla/ours/outputs/bc_open_cabinet_drawer_fbs/20260508-032529/best_policy.pt
-    --total-timesteps "$TOTAL_TIMESTEPS"
-    --num-envs "$NUM_ENVS"
     --num-eval-envs "$NUM_EVAL_ENVS"
     --num-steps "$NUM_STEPS"
     --num-minibatches "$NUM_MINIBATCHES"
@@ -120,6 +118,13 @@ PYTHON_CMD=(
     --early-stop-zero-success-minutes "$EARLY_STOP_ZERO_SUCCESS_MINUTES"
     --cuda-device "$CUDA_DEVICES"
 )
+if [ -n "$TOTAL_TIMESTEPS" ]; then
+    PYTHON_CMD+=(--total-timesteps "$TOTAL_TIMESTEPS")
+fi
+if [ -n "$NUM_ENVS" ]; then
+    PYTHON_CMD+=(--num-envs "$NUM_ENVS")
+fi
+
 
 if [ -n "$RUN_NAME" ]; then
     PYTHON_CMD+=(--run-name "$RUN_NAME")

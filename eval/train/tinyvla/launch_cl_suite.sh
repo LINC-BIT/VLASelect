@@ -269,9 +269,9 @@ filter_method_smoke_overrides() {
     local entry key
     for entry in "${raw_overrides[@]}"; do
         key="${entry%%=*}"
-        if [[ "$method" == "ours" ]]; then
+        if [[ "$method" != "ours" ]]; then
             case "$key" in
-                TOTAL_TIMESTEPS_OVERRIDE|NUM_ENVS_OVERRIDE|NUM_EVAL_ENVS_OVERRIDE|NUM_STEPS_OVERRIDE|NUM_MINIBATCHES_OVERRIDE|UPDATE_EPOCHS_OVERRIDE|ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE|EVAL_MICRO_BATCH_SIZE_OVERRIDE|UPDATE_MICRO_BATCH_SIZE_OVERRIDE|MAX_RUNTIME_HOURS_OVERRIDE)
+                TOTAL_TIMESTEPS_OVERRIDE|NUM_ENVS_OVERRIDE)
                     continue
                     ;;
             esac

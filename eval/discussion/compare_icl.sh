@@ -12,16 +12,27 @@ source "${EVAL_ROOT}/common/resource_summary.sh"
 CUDA_DEVICES=${CUDA_DEVICES:-0}
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 MWE=${MWE:-0}
+export MWE
 TAIL_LOG=${TAIL_LOG:-1}
 STAMP=${ICL_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}
 : "${ICL_NUM_EVAL_STEPS:=50}"
 : "${ICL_MAX_EPISODE_STEPS:=50}"
-: "${PROMPT_FEATURE_SCALE:=0.12}"
+: "${PROMPT_FEATURE_SCALE:=10.0}"
+: "${RICL_LEARNING_RATE:=1e-2}"
+: "${RICL_MAX_SPARSITY:=0.95}"
+: "${RICL_ACTOR_LOGSTD:=1.5}"
 : "${ICL_PLOT_METRIC:=success_once}"
-: "${ICL_PLOT_SMOOTHING:=0.6}"
+: "${ICL_PLOT_SMOOTHING:=0.8}"
 ICL_ENV_CHANGE_TIME_POINTS="${ICL_ENV_CHANGE_TIME_POINTS:-[1000000]}"
 
 : "${MWE_TOTAL_RUNTIME_LIMIT_SECONDS:=240}"
+if [[ -z "${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY+x}" ]]; then
+    if [[ "$MWE" == "1" ]]; then
+        export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=1
+    else
+        export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=0
+    fi
+fi
 vlaselect_resource_summary_start "compare_icl.sh"
 vlaselect_install_cleanup_trap
 
@@ -111,6 +122,9 @@ run_ricl() {
             RICL_SMOKE=1 \
             ENABLE_RICL_INJECTION=1 \
             PROMPT_FEATURE_SCALE="$PROMPT_FEATURE_SCALE" \
+            LEARNING_RATE_OVERRIDE="$RICL_LEARNING_RATE" \
+            MAX_SPARSITY_OVERRIDE="$RICL_MAX_SPARSITY" \
+            ACTOR_LOGSTD_OVERRIDE="$RICL_ACTOR_LOGSTD" \
             MAX_EPISODE_STEPS_OVERRIDE="$ICL_MAX_EPISODE_STEPS" \
             TOTAL_STEPS_OVERRIDE=5000000 \
             WANDB_MODE=disabled \
@@ -119,7 +133,7 @@ run_ricl() {
             MAX_RUNTIME_MINUTES_OVERRIDE="$MWE_PER_METHOD_RUNTIME_MINUTES" \
             bash "${EVAL_ROOT}/train/octo/ricl/online_rl_ricl.sh"
     else
-        env             CUDA_DEVICES="$CUDA_DEVICES"             EXP_NAME="$exp_name"             LAUNCH_DIRECT=1             TAIL_LOG="$TAIL_LOG"             ENABLE_RICL_INJECTION=1             PROMPT_FEATURE_SCALE="$PROMPT_FEATURE_SCALE"             MAX_EPISODE_STEPS_OVERRIDE="$ICL_MAX_EPISODE_STEPS"             bash "${EVAL_ROOT}/train/octo/ricl/online_rl_ricl.sh"
+        env             CUDA_DEVICES="$CUDA_DEVICES"             EXP_NAME="$exp_name"             LAUNCH_DIRECT=1             TAIL_LOG="$TAIL_LOG"             ENABLE_RICL_INJECTION=1             PROMPT_FEATURE_SCALE="$PROMPT_FEATURE_SCALE"             LEARNING_RATE_OVERRIDE="$RICL_LEARNING_RATE"             MAX_SPARSITY_OVERRIDE="$RICL_MAX_SPARSITY"             ACTOR_LOGSTD_OVERRIDE="$RICL_ACTOR_LOGSTD"             MAX_EPISODE_STEPS_OVERRIDE="$ICL_MAX_EPISODE_STEPS"             bash "${EVAL_ROOT}/train/octo/ricl/online_rl_ricl.sh"
     fi
 }
 
@@ -129,6 +143,26 @@ run_ricl
 VLASELECT_RUN_DIR="${EVAL_ROOT}/ckpt/${VLASELECT_EXP_NAME}/[agent]"
 RICL_RUN_DIR="${EVAL_ROOT}/ckpt/${RICL_EXP_NAME}/[agent]"
 PLOT_PATH="${EVAL_ROOT}/ckpt/discussion/icl/${STAMP}/icl_accuracy.png"
+
+require_metrics_history() {
+    local method_name="$1"
+    local run_dir="$2"
+    local history_path="${run_dir}/metrics_history.json"
+
+    if [[ -s "$history_path" ]]; then
+        return 0
+    fi
+
+    echo "[ICL] error: ${method_name} produced no metrics history: ${history_path}" >&2
+    if [[ "$MWE" == "1" ]]; then
+        echo "[ICL] The method reached its wall-clock limit before a success metric was saved." >&2
+        echo "[ICL] Retry with a larger MWE_TOTAL_RUNTIME_LIMIT_SECONDS (current: ${MWE_TOTAL_RUNTIME_LIMIT_SECONDS})." >&2
+    fi
+    return 1
+}
+
+require_metrics_history "VLASelect" "$VLASELECT_RUN_DIR"
+require_metrics_history "RICL" "$RICL_RUN_DIR"
 
 python "${SCRIPT_DIR}/plot_icl.py" \
     --vlaselect-run-dir "$VLASELECT_RUN_DIR" \

@@ -957,7 +957,12 @@ def train(args: Args) -> None:
         rollout_time = time.perf_counter() - rollout_start_time
         runtime_tracker.add_active_seconds(rollout_time)
         cumulative_rollout_seconds += rollout_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=gae start "
+            f"rollout_s={rollout_time:.2f}"
+        )
 
+        gae_start_time = time.perf_counter()
         with torch.no_grad():
             next_value = reference.batched_get_value_no_grad(
                 raw_policy,
@@ -978,6 +983,11 @@ def train(args: Args) -> None:
                 delta = rewards_buf[t] + args.gamma * real_next_values - values_buf[t]
                 advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * next_nonterminal * lastgaelam
             returns = advantages + values_buf
+        gae_time = time.perf_counter() - gae_start_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=gae done "
+            f"elapsed_s={gae_time:.2f}"
+        )
 
         b_rgbs = torch.cat(rollout_rgbs, dim=0)
         b_states = np.concatenate(rollout_states, axis=0)
@@ -999,6 +1009,12 @@ def train(args: Args) -> None:
 
         update_start_time = time.perf_counter()
         raw_policy.eval()
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=ppo start "
+            f"epochs={args.update_epochs} global_batch_size={global_batch_size} "
+            f"minibatch_size={local_minibatch_size}"
+        )
+        ppo_start_time = time.perf_counter()
         for _ in range(args.update_epochs):
             np.random.shuffle(inds)
             epoch_stats = defaultdict(list)
@@ -1033,12 +1049,29 @@ def train(args: Args) -> None:
             entropy_value = float(np.mean(epoch_stats["entropy"])) if epoch_stats["entropy"] else 0.0
             if stopped_on_minibatch_kl or approx_kl > args.target_kl:
                 break
+        ppo_time = time.perf_counter() - ppo_start_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=ppo done "
+            f"elapsed_s={ppo_time:.2f} approx_kl={approx_kl:.5f} "
+            f"stopped_on_minibatch_kl={stopped_on_minibatch_kl}"
+        )
 
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=supervised start "
+            f"online_buffer_steps={len(online_buffer)}"
+        )
+        supervised_start_time = time.perf_counter()
         bc_stats = run_supervised_stage(
             args=args,
             policy=raw_policy,
             optimizer=sl_optimizer,
             online_buffer=online_buffer,
+        )
+        supervised_time = time.perf_counter() - supervised_start_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=supervised done "
+            f"elapsed_s={supervised_time:.2f} bc_loss={float(bc_stats.get('bc_loss', 0.0)):.6f} "
+            f"bc_updates={int(bc_stats.get('bc_updates', 0.0))}"
         )
 
         update_time = time.perf_counter() - update_start_time
@@ -1075,6 +1108,11 @@ def train(args: Args) -> None:
         trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
 
         if update % args.eval_every_updates == 0 or update == num_updates:
+            print(
+                f"[post-rollout] update={update}/{num_updates} phase=eval start "
+                f"episodes={args.eval_episodes}"
+            )
+            eval_start_time = time.perf_counter()
             eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
             metric.update({f"eval_{key}": value for key, value in eval_metrics.items()})
             if test_video_envs is not None:
@@ -1095,6 +1133,11 @@ def train(args: Args) -> None:
                     global_step,
                     best_success_once,
                 )
+            eval_time = time.perf_counter() - eval_start_time
+            print(
+                f"[post-rollout] update={update}/{num_updates} phase=eval done "
+                f"elapsed_s={eval_time:.2f} eval_success_once={success_once:.4f}"
+            )
 
         snapshot_time_breakdown_to_metric(
             metric,

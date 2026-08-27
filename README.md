@@ -224,7 +224,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change.sh
   python3 plot_acc_task_env.py
 
-  # And you can run each workloads step by step:
+  # Or you can run each workloads step by step:
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_single_arm_robot.sh
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_mobile_manipulator.sh
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_dexterous_hand.sh
@@ -239,7 +239,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   MWE=1 bash run_acc_task_env_change.sh
   python3 plot_acc_task_env.py
 
-  # And you can run each workloads step by step:
+  # Or you can run each workloads step by step:
   MWE=1 bash run_acc_task_env_change_single_arm_robot.sh
   MWE=1 bash run_acc_task_env_change_mobile_manipulator.sh
   MWE=1 bash run_acc_task_env_change_dexterous_hand.sh
@@ -254,7 +254,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   bash run_acc_task_env_change.sh
   python3 plot_acc_task_env.py
 
-  # And you can run each workloads step by step:
+  # Or you can run each workloads step by step:
   bash run_acc_task_env_change_single_arm_robot.sh
   bash run_acc_task_env_change_mobile_manipulator.sh
   bash run_acc_task_env_change_dexterous_hand.sh
@@ -271,149 +271,280 @@ And you can run the following commands to reproduce each figure/table in our eva
   | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run) |
 
 
-- **Accuracy Under Available Resource Changes**
+#### 2.2.2 (Figure 8) Accuracy Under Available Resource Changes
 
+- **Option 1:** Commands for minimum working examples on three representative methods:
 
   ```bash
   cd acc_comparison
 
-  # option 1: Run by one command:
+  # You can run four workloads by one command:
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_res_change.sh
+  python3 plot_acc_res_change.py
+
+  # Or you can run each workloads step by step:
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_res_change_single_arm_robot.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_res_change_mobile_manipulator.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_res_change_dexterous_hand.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_res_change_humanoid_robot.
+  python3 plot_acc_res_change.py
+  ```
+
+- **Option 2:** Commands for minimum working examples on all methods:
+
+  ```bash
+  cd acc_comparison
+
+  # You can run four workloads by one command:
+  MWE=1 bash run_acc_res_change.sh
+  python3 plot_acc_res_change.py
+
+  # Or you can run each workloads step by step:
+  MWE=1 bash run_acc_res_change_single_arm_robot.sh
+  MWE=1 bash run_acc_res_change_mobile_manipulator.sh
+  MWE=1 bash run_acc_res_change_dexterous_hand.sh
+  MWE=1 bash run_acc_res_change_humanoid_robot.sh
+  python3 plot_acc_res_change.py
+  ```
+
+- **Option 3:** Commands for full run:
+
+  ```bash
+  cd acc_comparison
+
+  # You can run four workloads by one command:
   bash run_acc_res_change.sh
   python3 plot_acc_res_change.py
 
-  # option 2: Run each workloads step by step:
+  # Or you can run each workloads step by step:
   bash run_acc_res_change_single_arm_robot.sh
   bash run_acc_res_change_mobile_manipulator.sh
   bash run_acc_res_change_dexterous_hand.sh
   bash run_acc_res_change_humanoid_robot.sh
+  python3 plot_acc_res_change.py
   ```
 
-  It will output the following file and results:
+- The three options' resource requirements and outputs are listed below:
 
-  | Figure No. & Experiment | Resource Requirements | Path | Experiment Results |
-  | --- | --- | --- | --- |
-  | Figure 8: Accuracy under resource change | 140 hours, 60GB memory | acc_comparison/ FIG_ACC_RESOURCE.pdf | [Resource Accuracy](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run-1) |
+  | | Resource Requirements | Example Running Results |
+  | --- | --- | --- |
+  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run-1) |
+  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run-1) |
+  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run-1) |
 
 
 
-#### 2.2.2 Overhead Experiments
+#### 2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy
 
-- **Overheads Under The Same Accuracy**
-
+- **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
   cd overhead
 
-  # option 1: run by one command
+  # You can run four workloads by one command:
   bash overhead_same_acc.sh
   python3 plot_overhead.py
 
-  # option 2: Run each workloads step by step:
+  # Or you can run each workloads step by step:
   bash overhead_same_acc_single_arm_robot.sh
   bash overhead_same_acc_mobile_manipulator.sh
   bash overhead_same_acc_dexterous_hand.sh
   bash overhead_same_acc_humanoid_robot.sh
+  python3 plot_overhead.py
+  ```
+- **Option 2:** Commands for minimum working examples on all methods:
+  ```bash
+  cd overhead
+
+  # You can run four workloads by one command:
+  bash overhead_same_acc.sh
+  python3 plot_overhead.py
+
+  # Or you can run each workloads step by step:
+  bash overhead_same_acc_single_arm_robot.sh
+  bash overhead_same_acc_mobile_manipulator.sh
+  bash overhead_same_acc_dexterous_hand.sh
+  bash overhead_same_acc_humanoid_robot.sh
+  python3 plot_overhead.py
+  ```
+- **Option 3:** Commands for full run:
+  ```bash
+  cd overhead
+
+  # You can run four workloads by one command:
+  bash overhead_same_acc.sh
+  python3 plot_overhead.py
+
+  # Or you can run each workloads step by step:
+  bash overhead_same_acc_single_arm_robot.sh
+  bash overhead_same_acc_mobile_manipulator.sh
+  bash overhead_same_acc_dexterous_hand.sh
+  bash overhead_same_acc_humanoid_robot.sh
+  python3 plot_overhead.py
   ```
 
-  | Figure No. & Experiment | Resource Requirements | Path | Experiment Results |
-  | --- | --- | --- | --- |
-  | Figure 9: Memory footprint | 140 hours, 60GB memory |overhead/ FIG_MEMORY_FOOTPOINT.pdf | [Memory Footprint](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run) |
-  | Tables 2-3: Overhead and energy breakdown | 140 hours, 60GB memory |overhead/<br>overhead_breakdown_table/ TAB_OVERHEAD.csv,<br>overhead/<br>overhead_breakdown_table/ TAB_ENERGY.csv | [Overhead & Energy]() |
+- The three options' resource requirements and outputs are listed below:
+
+  | | Resource Requirements | Example Running Results |
+  | --- | --- | --- |
+  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run) |
+  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run) |
+  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run) |
 
 
 
-- **Time Breakdown of VLASelect's Modules**
+#### 2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules
 
+- Commands for full run:
   ```bash
   cd overhead
   bash overhead_breakdown/run.sh
   ```
+- The resource requirements and outputs are listed below:
+  | Resource Requirements | Example Running Results |
+  | --- | --- |
+  | 20 minutes, 60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run-1) |
 
-  | Figure No. & Experiment | Resource Requirements | Path | Experiment Results |
-  | --- | --- | --- | --- |
-  | Figure 11: Overhead breakdown across VLASelect | 20 minutes, 60GB memory | overhead_breakdown/<br>overhead_breakdown.png | [VLASelect Breakdown](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run-1) |
 
+#### 2.2.5 (Figure 11) Training Time Breakdown in Each Workload
 
-
-- **Time Breakdown of Sampling and Training for All Methods**
-
+- **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
   cd overhead
 
-  # option 1: run by one commabd:
+  # You can run four workloads by one command:
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods.sh
+  python3 plot_breakdown_all_methods.py
+
+  # Or you can run each workloads step by step:
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods_single_arm_robot.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods_mobile_manipulator.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods_dexterous_hand.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods_humanoid_robot.sh
+  python3 plot_breakdown_all_methods.py
+  ```
+- **Option 2:** Commands for minimum working examples on all methods:
+  ```bash
+  cd overhead
+
+  # You can run four workloads by one command:
+  MWE=1 bash overhead_breakdown_all_methods.sh
+  python3 plot_breakdown_all_methods.py
+
+  # Or you can run each workloads step by step:
+  MWE=1 bash overhead_breakdown_all_methods_single_arm_robot.sh
+  MWE=1 bash overhead_breakdown_all_methods_mobile_manipulator.sh
+  MWE=1 bash overhead_breakdown_all_methods_dexterous_hand.sh
+  MWE=1 bash overhead_breakdown_all_methods_humanoid_robot.sh
+  python3 plot_breakdown_all_methods.py
+  ```
+- **Option 3:** Commands for full run:
+  ```bash
+  cd overhead
+
+  # You can run four workloads by one command:
   bash overhead_breakdown_all_methods.sh
   python3 plot_breakdown_all_methods.py
 
-  # option 2: run each workload step by step:
+  # Or you can run each workloads step by step:
   bash overhead_breakdown_all_methods_single_arm_robot.sh
   bash overhead_breakdown_all_methods_mobile_manipulator.sh
   bash overhead_breakdown_all_methods_dexterous_hand.sh
   bash overhead_breakdown_all_methods_humanoid_robot.sh
+  python3 plot_breakdown_all_methods.py
   ```
 
-  | Figure No. & Experiment | Resource Requirements | Path | Experiment Results |
-  | --- | --- | --- | --- |
-  | Figure 10: Overhead breakdown across all methods | 140 hours, 60GB memory |overhead/ FIG_BREAKDOWN_ALL_METHODS.pdf | [Methods Overhead](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run-2) |
+- The three options' resource requirements and outputs are listed below:
+
+  | | Resource Requirements | Example Running Results |
+  | --- | --- | --- |
+  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run-2) |
+  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run-2) |
+  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run-2) |
 
 
-#### 2.2.3 Ablation Experiments
+#### 2.2.6 (Figure 12) Design Choice Validation by Ablation
 
-```bash
-cd ablation
-bash run_ablation.sh
-python3 plot_ablation.py
-```
+- **Option 1:** Commands for minimum working examples:
+  ```bash
+  cd ablation
+  MWE=1 bash run_ablation.sh
+  python3 plot_ablation.py
+  ```
+- **Option 2:** Commands for full run:
+  ```bash
+  cd ablation
+  bash run_ablation.sh
+  python3 plot_ablation.py
+  ```
 
-| Figure No. & Experiment | Resource Requirements | Path | Experiment Results |
-| --- | --- | --- | --- |
-| Figure 12: Ablation study | 20 hours, 60GB memory | ablation/<br>FIG_ABLATION.pdf | [Ablation Results](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#1-full-scale-run) |
+- The two options' resource requirements and outputs are listed below:
+
+  | | Resource Requirements | Example Running Results |
+  | --- | --- | --- |
+  | Minimum working example | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#2-mwe-run) |
+  | Full run | 40 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#1-full-scale-run) |
 
 
 
-#### 2.2.4 Discussion Experiments
+#### 2.2.7 Discussion 1: Sim-to-real transfer
 
-
-- **Sim-to-real transfer**
-
+- Commands for full run:
   ```bash
   cd discussion
   bash run_sim_to_real.sh
   ```
+- The resource requirements and outputs are listed below:
+  | Resource Requirements | Experiment Results |
+  | --- | --- |
+  | a DOFBOT-SE single-arm robot<br>an AmazingHand dexterous hand | [Video]() |
 
-- **ICL**
-
+#### 2.2.8 Discussion 2: ICL (In-Context Learning)
+- **Option 1:** Commands for minimum working examples:
+  ```bash
+  cd discussion
+  MWE=1 bash compare_icl.sh
+  ```
+- **Option 2:** Commands for full run:
   ```bash
   cd discussion
   bash compare_icl.sh
   ```
+- The two options' resource requirements and outputs are listed below:
 
-- **Applicability to VLA models**
+  | | Resource Requirements | Example Running Results |
+  | --- | --- | --- |
+  | Minimum working example | 10 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
+  | Full run | 7 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
 
-  ```bash
-  cd discussion
-  MODEL_SELECTION=octo,vla_adapter_new,tinyvla,edgevla bash run_vla_models.sh
-  ```
-
-- **Maximum supported model size**
-
+#### 2.2.9 Discussion 3: Maximum Supported Model Size
+- Commands for full run:
   ```bash
   cd discussion
   MODEL_SIZE_LIMIT_FAMILY=tinyvla bash sweep_model_size.sh
   ```
+- The resource requirements and outputs are listed below:
+  | Resource Requirements | Experiment Results |
+  | --- | --- |
+  | 1 hours<br>32GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
 
-- **Applicability to multi-agent scenarios**
-
+#### 2.2.10 Discussion 4: Applicability to multi-agent scenarios**
+- **Option 1:** Commands for minimum working examples:
+  ```bash
+  cd discussion
+  MWE=1 bash run_multi_agent.sh
+  ```
+- **Option 2:** Commands for full run:
   ```bash
   cd discussion
   bash run_multi_agent.sh
   ```
 
-| Experiment | Resource requirements | Output | Experiment Results |
-| --- | --- | --- | --- |
-| Sim-to-real transfer | a DOFBOT-SE single-arm robot, an AmazingHand dexterous hand | Recorded video | [Sim-to-real transfer](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#sim-to-real-transfer) |
-| In-Context Learning (ICL) comparison | 7 hours, 60GB memory | Figure | [ICL Comparison](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
-| VLA applicability | 7 hours, 60GB memory | Figure | [VLA Applicability](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-vla-models) |
-| Maximum supported model size | 1 hours, 60GB memory | Figure | [Model Size Limit](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#maximum-supported-model-size) |
-| Multi-agent scenario evaluation | 7 hours, 60GB memory | Figure | [Multi-Agent Scenario](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-multi-agent-scenarios) |
+- The two options' resource requirements and outputs are listed below:
+
+  | | Resource Requirements | Example Running Results |
+  | --- | --- | --- |
+  | Minimum working example | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-multi-agent-scenarios) |
+  | Full run | 7 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-multi-agent-scenarios) |
 
 
 ## 3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
@@ -477,12 +608,22 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     run_training(model_impl, parse_args())
     ```
 
+- You can verify these steps as below:
 
-You can also run the script below for fully verification. 
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/<br>vla_adapter_impl_verify.sh | 3 hours, 60GB memory | [VLA-Adapter Support](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#311-supporting-the-vla-adapter) |
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#311-supporting-the-vla-adapter) |
+    | Full run | 3 hours<br>60GB memory | - |
 
 
 #### 3.1.2 Supporting different scaling strategies
@@ -534,12 +675,27 @@ PowerInfer: Fast Large Language Model Serving with a Consumer-grade GPU". You ca
     run_training(model_impl, parse_args(), EdgeTAScaling())
     ```
 
-You can also run the script below for fully verification. 
+You can verify these methods as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh | 35 hours, 60GB memory | [VLA-Adapter Scaling](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies) |
+  - **Option 1:** Commands for minimum working examples on three representative methods:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
+    ```
+  - **Option 2:** Commands for minimum working examples on all methods:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
+    ```
+  - **Option 3:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
+    ```
+  - The three options' resource requirements and outputs are listed below:
 
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example on three representative methods | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies) |
+    | Minimum working example on all methods | 60 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies) |
+    | Full run | 40 hours<br>60GB memory | - |
 
 
 #### 3.1.3 Supporting different knowledge exchange granularities
@@ -563,11 +719,22 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
     run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
     ```
 
-You can also run the script below for fully verification. 
+You can verify these granularities as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh | 13 hours, 60GB memory | [VLA-Adapter Granularities](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#313-supporting-different-knowledge-exchange-granularities) |
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example | 30 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#313-supporting-different-knowledge-exchange-granularities) |
+    | Full run | 15 hours<br>60GB memory | - |
 
 
 ### 3.2 Example 2: TinyVLA
@@ -623,11 +790,22 @@ You can also run the script below for fully verification.
     run_training(model_impl, parse_args())
     ```
 
-You can also run the script below for fully verification. 
+- You can verify these steps as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/<br>tinyvla_impl_verify.sh | 3 hours, 60GB memory | [TinyVLA Support](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla) |
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla) |
+    | Full run | 3 hours<br>60GB memory | - |
 
 #### 3.2.2 Supporting different scaling strategies
 
@@ -667,11 +845,27 @@ run_training(model_impl, parse_args(), LLMPrunerScaling())
 run_training(model_impl, parse_args(), EdgeTAScaling())
 ```
 
-You can also run the script below for fully verification. 
+You can verify these methods as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh | 35 hours, 60GB memory | [TinyVLA Scaling](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies) |
+  - **Option 1:** Commands for minimum working examples on three representative methods:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods-only4.sh
+    ```
+  - **Option 2:** Commands for minimum working examples on all methods:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
+    ```
+  - **Option 3:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
+    ```
+  - The three options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example on three representative methods | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies) |
+    | Minimum working example on all methods | 60 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies) |
+    | Full run | 40 hours<br>60GB memory | - |
 
 
 #### 3.2.3 Supporting different knowledge exchange granularities
@@ -694,11 +888,23 @@ run_training(model_impl, parse_args(), AttentionHeadKnowledgeExchange())
 run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 ```
 
-You can also run the script below for fully verification. 
+You can verify these granularities as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh | 13 hours, 60GB memory | [TinyVLA Granularities](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#323-supporting-different-knowledge-exchange-granularities) |
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example | 30 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#323-supporting-different-knowledge-exchange-granularities) |
+    | Full run | 15 hours<br>60GB memory | - |
+
 
 
 
@@ -755,11 +961,22 @@ You can also run the script below for fully verification.
     run_training(model_impl, parse_args())
     ```
 
-You can also run the script below for fully verification. 
+- You can verify these steps as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/<br>edgevla_impl_verify.sh | 3 hours, 60GB memory | [EdgeVLA Support](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla) |
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/edgevla_impl_verify.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla) |
+    | Full run | 3 hours<br>60GB memory | - |
 
 #### 3.3.2 Supporting different scaling strategies
 
@@ -799,11 +1016,27 @@ run_training(model_impl, parse_args(), LLMPrunerScaling())
 run_training(model_impl, parse_args(), EdgeTAScaling())
 ```
 
-You can also run the script below for fully verification. 
+You can verify these methods as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh | 35 hours, 60GB memory | [EdgeVLA Scaling](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla) |
+  - **Option 1:** Commands for minimum working examples on three representative methods:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods-only4.sh
+    ```
+  - **Option 2:** Commands for minimum working examples on all methods:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
+    ```
+  - **Option 3:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
+    ```
+  - The three options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example on three representative methods | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla) |
+    | Minimum working example on all methods | 60 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla) |
+    | Full run | 40 hours<br>60GB memory | - |
 
 
 #### 3.3.3 Supporting different knowledge exchange granularities
@@ -826,8 +1059,19 @@ run_training(model_impl, parse_args(), AttentionHeadKnowledgeExchange())
 run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 ```
 
-You can also run the script below for fully verification. 
+You can verify these granularities as below:
 
-| Script Path | Resource Requirements | Experiment Results |
-| --- | --- | --- |
-| api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh | 13 hours, 60GB memory | [EdgeVLA Granularities](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#333-swapping-granularity-ablation-on-edgevla) |
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Results |
+    | --- | --- | --- |
+    | Minimum working example | 30 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#333-swapping-granularity-ablation-on-edgevla) |
+    | Full run | 15 hours<br>60GB memory | - |

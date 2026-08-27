@@ -81,7 +81,7 @@ def draw_plot(
     ricl_dir: Path,
     output_path: Path,
     metric: str,
-    smoothing: float = 0.6,
+    smoothing: float = 0.8,
 ) -> None:
     curves = [
         ("VLASelect", vlaselect_dir, "#2563eb"),
@@ -134,18 +134,21 @@ def main() -> int:
     parser.add_argument("--ricl-run-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--metric", choices=tuple(METRIC_KEYS), default="success_once")
-    parser.add_argument("--smoothing", type=float, default=0.6)
+    parser.add_argument("--smoothing", type=float, default=0.8)
     args = parser.parse_args()
     if not 0.0 <= args.smoothing <= 1.0:
         parser.error("--smoothing must be in [0, 1]")
 
-    draw_plot(
-        args.vlaselect_run_dir,
-        args.ricl_run_dir,
-        args.output,
-        args.metric,
-        args.smoothing,
-    )
+    try:
+        draw_plot(
+            args.vlaselect_run_dir,
+            args.ricl_run_dir,
+            args.output,
+            args.metric,
+            args.smoothing,
+        )
+    except (FileNotFoundError, json.JSONDecodeError, ValueError) as exc:
+        parser.exit(1, f"[ICL] error: {exc}\n")
     print(f"[ICL] Plot saved to {args.output}")
     return 0
 

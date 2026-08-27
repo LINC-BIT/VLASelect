@@ -23,5 +23,7 @@
 ## Time Breakdown of Sampling and Training for All Methods
 
 ### Full-scale Run
+![Overhead Comparison](imgs/2.2.2.3.png)
 
 ### MWE Run
+![Overhead Comparison](imgs/2.2.2.3-mwe.jpg)

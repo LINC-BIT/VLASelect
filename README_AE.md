@@ -100,8 +100,8 @@ python3 plot_acc_res_change.py
 
 | Figure No. & Experiment | Path | Experiment Results |
 | --- | --- | --- |
-| Figure 7: Accuracy under task change and new environment | `acc_comparison/FIG_ACC_TASK_ENV.pdf` | [Task & Env Accuracy](https://www.google.com/search?q=) |
-| Figure 8: Accuracy under resource change | `acc_comparison/FIG_ACC_RESOURCE.pdf` | [Resource Accuracy](https://www.google.com/search?q=) |
+| Figure 7: Accuracy under task change and new environment | `acc_comparison/FIG_ACC_TASK_ENV.pdf` | [Task & Env Accuracy](./results_acc.md) |
+| Figure 8: Accuracy under resource change | `acc_comparison/FIG_ACC_RESOURCE.pdf` | [Resource Accuracy](./results_acc.md) |
 
 ### Overhead and Time Breakdown
 

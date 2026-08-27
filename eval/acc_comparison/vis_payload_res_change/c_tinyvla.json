@@ -33,7 +33,7 @@
   },
   "plots": {
     "success_once": {
-      "tag": "train_success_once",
+      "tag": "eval_success_once",
       "output_stem": "c_tinyvla",
       "xlabel": "Time (minutes)",
       "ylabel": "Success Rate",

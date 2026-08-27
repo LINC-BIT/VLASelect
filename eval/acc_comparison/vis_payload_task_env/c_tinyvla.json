@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260825-092837/manifest.json",
-    "suite_manifest": "ckpt/tinyvla/cl_suite/20260825-092837/manifest.json"
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260827-043445/manifest.json",
+    "suite_manifest": "ckpt/tinyvla/cl_suite/20260827-043445/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        5.539530359211931
+        2.0999790000000003
       ],
       "ylim": [
         0.0,
@@ -47,142 +47,37 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 0.46608647258403657,
-        "ours_average": 0.625,
-        "absolute_improvement_percent": 15.891352741596343
+        "others_average": 0.37548785646561716,
+        "ours_average": 0.7749999999999999,
+        "absolute_improvement_percent": 39.951214353438274
       },
       "series": [
-        {
-          "name": "conrft",
-          "display_name": "ConRFT",
-          "label": "ConRFT",
-          "raw_average": 0.57,
-          "style": {
-            "color": "#4C78A8",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            5.539530359211931
-          ],
-          "y": [
-            0.14000000059604645,
-            0.39800000041723255
-          ],
-          "x_full": [
-            0.0,
-            0.7311882269335911
-          ],
-          "point_count": 2
-        },
-        {
-          "name": "flare",
-          "display_name": "FLaRe",
-          "label": "FLaRe",
-          "raw_average": 0.578431,
-          "style": {
-            "color": "#59A14F",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            5.539530359211931
-          ],
-          "y": [
-            0.1568627506494522,
-            0.4098039254546166
-          ],
-          "x_full": [
-            0.0,
-            1.876812351466894
-          ],
-          "point_count": 2
-        },
-        {
-          "name": "improv_vla",
-          "display_name": "Improv-VLA",
-          "label": "Improv-VLA",
-          "raw_average": 0.578431,
-          "style": {
-            "color": "#4D4D4D",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            5.539530359211931
-          ],
-          "y": [
-            0.1568627506494522,
-            0.4098039254546166
-          ],
-          "x_full": [
-            0.0,
-            1.5220329223501419
-          ],
-          "point_count": 2
-        },
         {
           "name": "self_improv",
           "display_name": "Self-Improv",
           "label": "Self-Improv",
-          "raw_average": 0.368056,
+          "raw_average": 0.330767,
           "style": {
             "color": "#9A9A9A",
             "linestyle": "-",
             "linewidth": 3.6
           },
           "x": [
-            0.0,
-            0.11536670188696008,
-            5.539530359211931
+            0.0
           ],
           "y": [
-            0.125,
-            0.38375000000000004,
-            0.29462625
+            0.3307669048495099
           ],
           "x_full": [
-            0.0,
-            0.06014322858245577,
-            0.10987304941615245,
-            0.21176361259907328,
-            0.33860529214919854,
-            5.275743199249458
+            1.99998
           ],
-          "point_count": 3
-        },
-        {
-          "name": "ppo_gen",
-          "display_name": "PPO-Gen",
-          "label": "PPO-Gen",
-          "raw_average": 0.578431,
-          "style": {
-            "color": "#4C78A8",
-            "linestyle": "--",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            5.539530359211931
-          ],
-          "y": [
-            0.1568627506494522,
-            0.4098039254546166
-          ],
-          "x_full": [
-            0.0,
-            1.522143255516615
-          ],
-          "point_count": 2
+          "point_count": 1
         },
         {
           "name": "vla_rft",
           "display_name": "VLA-RFT",
           "label": "VLA-RFT",
-          "raw_average": 0.232143,
+          "raw_average": 0.428048,
           "style": {
             "color": "#59A14F",
             "linestyle": "--",
@@ -190,44 +85,23 @@
           },
           "x": [
             0.0,
-            2.981569581312087,
-            5.539530359211931
+            2.0999790000000003
           ],
           "y": [
-            0.125,
-            0.2855207588375,
-            0.04375702011972916
+            0.39477988702846795,
+            0.4147407357471836
           ],
           "x_full": [
-            0.0,
-            0.05684264998033959,
-            0.11299786003059409,
-            0.2218189041795937,
-            0.34425398821119746,
-            0.4068016717825419,
-            0.46055969879213315,
-            0.5677009773435815,
-            0.6825339773463054,
-            0.7916419593611577,
-            0.9064361607503605,
-            0.9711246683652252,
-            1.0266771439736377,
-            1.081284515033125,
-            1.1329116530087213,
-            1.2432828128969435,
-            1.3460847180359283,
-            1.4554056995710971,
-            1.5152541518663054,
-            1.574116120603987,
-            1.6840897031671678
+            1.002093077942214,
+            1.99998
           ],
-          "point_count": 3
+          "point_count": 2
         },
         {
           "name": "world_env",
           "display_name": "WorldEnv",
           "label": "WorldEnv",
-          "raw_average": 0.214286,
+          "raw_average": 0.367649,
           "style": {
             "color": "#4D4D4D",
             "linestyle": "--",
@@ -235,89 +109,15 @@
           },
           "x": [
             0.0,
-            2.821068366716489,
-            5.539530359211931
+            2.0999790000000003
           ],
           "y": [
-            0.125,
-            0.2960207588375,
-            0.027200399881179158
+            0.2983634217436158,
+            0.3399345864900548
           ],
           "x_full": [
-            0.0,
-            0.05798941195049944,
-            0.10956954436648327,
-            0.21330738101581423,
-            0.325245248998787,
-            0.3804893850319786,
-            0.4314430307480507,
-            0.5307602874294389,
-            0.6352178660628851,
-            0.7450063939953301,
-            0.8514241773295604,
-            0.9028801974627034,
-            0.9559626270793766,
-            1.051667535396215,
-            1.1555165928788484,
-            1.2543056407623228,
-            1.3646763869124698,
-            1.418918525862197,
-            1.4699890727633222,
-            1.5706075483797273,
-            1.6718808145630948
-          ],
-          "point_count": 3
-        },
-        {
-          "name": "edgeta",
-          "display_name": "EdgeTA",
-          "label": "EdgeTA",
-          "raw_average": 0.45,
-          "style": {
-            "color": "#A6A6A6",
-            "linestyle": "--",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            2.356677894819243,
-            5.539530359211931
-          ],
-          "y": [
-            0.25,
-            0.40750000000000003,
-            0.379675
-          ],
-          "x_full": [
-            0.0,
-            0.1325574723838751,
-            0.27504056281759404,
-            0.398623337399719,
-            0.6465013954992174
-          ],
-          "point_count": 3
-        },
-        {
-          "name": "convertnet",
-          "display_name": "ConvertNet",
-          "label": "ConvertNet",
-          "raw_average": 0.625,
-          "style": {
-            "color": "#CEBB6C",
-            "linestyle": "--",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            5.539530359211931
-          ],
-          "y": [
-            0.25,
-            0.47500000000000003
-          ],
-          "x_full": [
-            0.0,
-            0.6687073020836881
+            1.001621327413369,
+            1.99998
           ],
           "point_count": 2
         },
@@ -325,7 +125,7 @@
           "name": "ours",
           "display_name": "Ours",
           "label": "Ours",
-          "raw_average": 0.625,
+          "raw_average": 0.775,
           "style": {
             "color": "#C44E52",
             "linestyle": "-",
@@ -333,62 +133,30 @@
           },
           "x": [
             0.0,
-            5.539530359211931
+            1.9603770820339579,
+            2.0999790000000003
           ],
           "y": [
             0.25,
-            0.47500000000000003
+            0.607,
+            0.7099
           ],
           "x_full": [
             0.0,
-            0.6020621422833452
+            0.6571076859088859,
+            1.8670257924132927,
+            1.9999799999999999
           ],
-          "point_count": 2
+          "point_count": 3
         }
       ],
       "legend_entries": [
-        {
-          "name": "conrft",
-          "label": "ConRFT",
-          "style": {
-            "color": "#4C78A8",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "flare",
-          "label": "FLaRe",
-          "style": {
-            "color": "#59A14F",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "improv_vla",
-          "label": "Improv-VLA",
-          "style": {
-            "color": "#4D4D4D",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        },
         {
           "name": "self_improv",
           "label": "Self-Improv",
           "style": {
             "color": "#9A9A9A",
             "linestyle": "-",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "ppo_gen",
-          "label": "PPO-Gen",
-          "style": {
-            "color": "#4C78A8",
-            "linestyle": "--",
             "linewidth": 3.6
           }
         },
@@ -406,24 +174,6 @@
           "label": "WorldEnv",
           "style": {
             "color": "#4D4D4D",
-            "linestyle": "--",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "edgeta",
-          "label": "EdgeTA",
-          "style": {
-            "color": "#A6A6A6",
-            "linestyle": "--",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "convertnet",
-          "label": "ConvertNet",
-          "style": {
-            "color": "#CEBB6C",
             "linestyle": "--",
             "linewidth": 3.6
           }

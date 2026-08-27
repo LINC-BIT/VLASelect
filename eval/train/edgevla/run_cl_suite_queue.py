@@ -182,7 +182,7 @@ class SuiteScheduler:
         ]
         if self.args.smoke:
             smoke_env_items = [
-                "TOTAL_TIMESTEPS_OVERRIDE=1024",
+                "TOTAL_TIMESTEPS_OVERRIDE=200000",
                 "NUM_ENVS_OVERRIDE=2",
                 "NUM_EVAL_ENVS_OVERRIDE=8",
                 "NUM_STEPS_OVERRIDE=16",
@@ -207,7 +207,6 @@ class SuiteScheduler:
             ]
             if method == "ours":
                 excluded_keys = {
-                    "TOTAL_TIMESTEPS_OVERRIDE",
                     "NUM_ENVS_OVERRIDE",
                     "NUM_EVAL_ENVS_OVERRIDE",
                     "NUM_STEPS_OVERRIDE",

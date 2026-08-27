@@ -13,6 +13,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict
@@ -64,10 +65,10 @@ class Args:
     world_model_checkpoint: str = DEFAULT_WORLD_MODEL_CHECKPOINT
     static_model_checkpoint: str = DEFAULT_STATIC_MODEL_CHECKPOINT
     resume_from: Optional[str] = None
-    num_envs: int = 128
+    num_envs: int = 64
     num_eval_envs: int = 8
     num_steps: int = 100
-    total_timesteps: int = 100_000_000
+    total_timesteps: int = 200_000
     num_minibatches: int = 16
     update_epochs: int = 2
     learning_rate: float = 6e-5
@@ -453,7 +454,7 @@ def save_training_checkpoint(
     global_step: int,
     best_success_once: float,
 ) -> None:
-    torch.save(
+    maybe_save_model_checkpoint(
         {
             "policy": policy.state_dict(),
             "optimizer": optimizer.state_dict(),
@@ -623,7 +624,13 @@ def train(args: Args) -> None:
         next_done = torch.zeros(args.num_envs, device=device)
         return True, False, elapsed_minutes
 
-    initial_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+    use_train_success_only = parse_bool(os.environ.get("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "0"))
+    if use_train_success_only:
+        initial_train_metrics = reference.evaluate_policy(raw_policy, envs, max(1, args.num_envs))
+        next_obs, _ = envs.reset(seed=args.seed + current_env_index)
+        next_done = torch.zeros(args.num_envs, device=device)
+    else:
+        initial_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     initial_metric = {
         "update": 0,
         "global_step": global_step,
@@ -649,13 +656,23 @@ def train(args: Args) -> None:
         "wm_termination_bonus": 0.0,
         "wm_virtual_done_rate": 0.0,
     }
-    initial_metric.update({f"eval_{key}": value for key, value in initial_eval_metrics.items()})
+    if use_train_success_only:
+        initial_metric.update({f"train_{key}": value for key, value in initial_train_metrics.items()})
+        for source_key, target_key in (("train_success_once", "eval_success_once"), ("train_success_at_end", "eval_success_at_end"), ("train_success", "eval_success")):
+            value = initial_metric.get(source_key)
+            if value is not None:
+                initial_metric[target_key] = value
+    else:
+        initial_metric.update({f"eval_{key}": value for key, value in initial_eval_metrics.items()})
     metrics_history.append(initial_metric)
     save_json(output_dir / "latest_metrics.json", initial_metric)
     save_metrics_history(output_dir, metrics_history)
     plot_metrics_history(output_dir, metrics_history)
     plot_success_time_curve(output_dir, metrics_history)
-    initial_success_once = float(initial_eval_metrics.get("success_once", initial_eval_metrics.get("success", 0.0)))
+    if use_train_success_only:
+        initial_success_once = float(initial_metric.get("train_success_once", initial_metric.get("train_success", 0.0)))
+    else:
+        initial_success_once = float(initial_eval_metrics.get("success_once", initial_eval_metrics.get("success", 0.0)))
     best_success_once = max(best_success_once, initial_success_once)
     save_training_checkpoint(
         output_dir / "best_policy.pt",
@@ -665,7 +682,14 @@ def train(args: Args) -> None:
         global_step,
         best_success_once,
     )
-    print(f"[eval] initial_eval={initial_eval_metrics}")
+    if use_train_success_only:
+        print(
+            f"[train-init] env={current_env_id} train_success_once="
+            f"{initial_metric.get('train_success_once', float('nan')):.4f} "
+            f"train_success_at_end={initial_metric.get('train_success_at_end', float('nan')):.4f}"
+        )
+    else:
+        print(f"[eval] initial_eval={initial_eval_metrics}")
 
     for update in range(start_update, num_updates + 1):
         switched_env, should_stop_for_schedule, elapsed_minutes = maybe_switch_envs()

@@ -15,6 +15,7 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
         sys.path.insert(0, str(candidate))
 
 from train.common.mwe_runtime import ActiveRuntimeTracker
+from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import (
     DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
@@ -766,7 +767,7 @@ def save_training_checkpoint(
     global_step: int,
     best_success_once: float,
 ) -> None:
-    torch.save(
+    maybe_save_model_checkpoint(
         {
             "large_agent": large_agent.state_dict(),
             "small_agent": small_agent.state_dict(),
@@ -891,44 +892,92 @@ def train(args: Args) -> None:
     success_end_at_last_small_model_regeneration = None
     update_at_last_small_model_regeneration = None
     current_success_end = None
+    use_train_success_only = parse_bool(os.environ.get("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "0"))
 
-    if start_update <= 1 and global_step == 0:
-        memory_phase_tracker.mark("evaluation")
-        initial_eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
-        initial_metric = {
+    def collect_initial_training_metric() -> Dict[str, Any]:
+        """Measure the initial policy on training environments before PPO updates."""
+        initial_obs, _ = envs.reset(seed=args.seed)
+        initial_episode_metrics = defaultdict(list)
+        baseline_steps = max(1, int(args.max_episode_steps or 100))
+        small_agent.eval()
+        with torch.no_grad():
+            for _ in range(baseline_steps):
+                rgbs = reference.extract_rgb_batch_from_obs(initial_obs)
+                states = reference.extract_cabinet_state_batch_from_obs(initial_obs)
+                action, _, _, _, _ = reference.batched_get_action_and_value_no_grad(
+                    small_agent,
+                    rgbs,
+                    states,
+                    micro_batch_size=args.rollout_micro_batch_size,
+                    deterministic=False,
+                )
+                initial_obs, _, _, _, infos = envs.step(action)
+                done_mask, episode_metrics = reference.get_completed_episode_metrics(infos)
+                if done_mask is not None and done_mask.any():
+                    for key, value_tensor in episode_metrics.items():
+                        initial_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+
+        metric: Dict[str, Any] = {
             "update": 0,
             "global_step": 0,
-            "elapsed_hours": runtime_tracker.current_hours(),
+            "elapsed_hours": 0.0,
             "env_id": current_env_id,
             "env_index": current_env_index,
         }
-        initial_metric.update({f"eval_{k}": v for k, v in initial_eval_metrics.items()})
-        module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
-        snapshot_time_breakdown_to_metric(
-            initial_metric,
-            rollout_seconds=0.0,
-            training_seconds=0.0,
-            cumulative_rollout_seconds=cumulative_rollout_seconds,
-            cumulative_training_seconds=cumulative_training_seconds,
-            module_breakdown=module_breakdown,
-        )
-        metrics_history.append(initial_metric)
-        current_success_end = float(initial_metric.get("eval_success_at_end", initial_metric.get("eval_success_once", 0.0)))
+        metric.update(reference.gather_metric_summary(summarize_episode_metrics(initial_episode_metrics)))
+        return metric
+
+    if start_update <= 1 and global_step == 0:
+        if use_train_success_only:
+            initial_metric = collect_initial_training_metric()
+            metrics_history.append(initial_metric)
+            best_success_once = max(best_success_once, float(initial_metric.get("train_success_once", -1.0)))
+            current_success_end = float(initial_metric.get("train_success_at_end", initial_metric.get("train_success_once", 0.0)))
+            next_obs, _ = envs.reset(seed=args.seed)
+            next_done = torch.zeros(args.num_envs, device=device)
+            print(
+                f"[train-init] env={current_env_id} train_success_once="
+                f"{initial_metric.get('train_success_once', float('nan')):.4f} "
+                f"train_success_at_end={initial_metric.get('train_success_at_end', float('nan')):.4f}"
+            )
+        else:
+            memory_phase_tracker.mark("evaluation")
+            initial_eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
+            initial_metric = {
+                "update": 0,
+                "global_step": 0,
+                "elapsed_hours": runtime_tracker.current_hours(),
+                "env_id": current_env_id,
+                "env_index": current_env_index,
+            }
+            initial_metric.update({f"eval_{k}": v for k, v in initial_eval_metrics.items()})
+            module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
+            snapshot_time_breakdown_to_metric(
+                initial_metric,
+                rollout_seconds=0.0,
+                training_seconds=0.0,
+                cumulative_rollout_seconds=cumulative_rollout_seconds,
+                cumulative_training_seconds=cumulative_training_seconds,
+                module_breakdown=module_breakdown,
+            )
+            metrics_history.append(initial_metric)
+            current_success_end = float(initial_metric.get("eval_success_at_end", initial_metric.get("eval_success_once", 0.0)))
+            if initial_metric.get("eval_success_once", initial_metric.get("eval_success", 0.0)) >= best_success_once:
+                best_success_once = float(initial_metric.get("eval_success_once", initial_metric.get("eval_success", 0.0)))
+                save_training_checkpoint(
+                    output_dir / "best_policy.pt",
+                    large_agent,
+                    small_agent,
+                    optimizer,
+                    current_pruning_info,
+                    0,
+                    0,
+                    best_success_once,
+                )
+
         success_end_at_last_small_model_feedback = current_success_end
         success_end_at_last_small_model_regeneration = current_success_end
         update_at_last_small_model_regeneration = 0
-        if initial_metric.get("eval_success_once", initial_metric.get("eval_success", 0.0)) >= best_success_once:
-            best_success_once = float(initial_metric.get("eval_success_once", initial_metric.get("eval_success", 0.0)))
-            save_training_checkpoint(
-                output_dir / "best_policy.pt",
-                large_agent,
-                small_agent,
-                optimizer,
-                current_pruning_info,
-                0,
-                0,
-                best_success_once,
-            )
         save_json(output_dir / "latest_metrics.json", initial_metric)
         save_metrics_history(output_dir, metrics_history)
         plot_metrics_history(output_dir, metrics_history)
@@ -978,7 +1027,7 @@ def train(args: Args) -> None:
             small_agent.configure_trainable_modules(train_backbone=True)
             reference.set_optimizer_group_lr(optimizer, "vla", args.backbone_learning_rate)
 
-        if update % args.eval_every_updates == 0 or (update == start_update and not metrics_history):
+        if (not use_train_success_only) and (update % args.eval_every_updates == 0 or (update == start_update and not metrics_history)):
             memory_phase_tracker.mark("evaluation")
             eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
             current_success_end = float(eval_metrics.get("success_at_end", eval_metrics.get("success_once", 0.0)))

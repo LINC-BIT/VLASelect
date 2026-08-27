@@ -306,11 +306,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "ours",
       "display_name": "VLASelect",
-      "sampling_seconds": 0.0,
-      "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "sampling_seconds": 49.28507792239543,
+      "training_seconds": 72.83243815391324,
+      "total_seconds": 122.11751607630868,
+      "has_breakdown_data": 1,
+      "source": "ckpt/tinyvla/cl_suite/20260826-210332/ours/metrics_history.json"
     },
     {
       "family": "tinyvla",
@@ -330,11 +330,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "self_improv",
       "display_name": "Self-Improv",
-      "sampling_seconds": 0.0,
-      "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "sampling_seconds": 48.289043248980306,
+      "training_seconds": 292.41774944297504,
+      "total_seconds": 340.70679269195534,
+      "has_breakdown_data": 1,
+      "source": "ckpt/tinyvla/cl_suite/20260826-210332/self_improv/metrics_history.json"
     },
     {
       "family": "tinyvla",
@@ -342,11 +342,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "vla_rft",
       "display_name": "VLA-RFT",
-      "sampling_seconds": 0.0,
-      "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "sampling_seconds": 64.04563501688409,
+      "training_seconds": 0.18205490245648054,
+      "total_seconds": 64.22768991934058,
+      "has_breakdown_data": 1,
+      "source": "ckpt/tinyvla/cl_suite/20260826-210332/vla_rft/metrics_history.json"
     },
     {
       "family": "tinyvla",
@@ -354,11 +354,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "world_env",
       "display_name": "WorldEnv",
-      "sampling_seconds": 0.0,
-      "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "sampling_seconds": 67.6828754292704,
+      "training_seconds": 0.18158992023623663,
+      "total_seconds": 67.86446534950663,
+      "has_breakdown_data": 1,
+      "source": "ckpt/tinyvla/cl_suite/20260826-210332/world_env/metrics_history.json"
     },
     {
       "family": "edgevla",
@@ -521,17 +521,17 @@
       "panel_label": "c",
       "workload_name": "Mobile manipulator",
       "display_name": "VLASelect",
-      "workload_initialization_seconds": 0.0,
-      "optimal_network_searcher_seconds": 0.0,
-      "selective_model_enhancer_seconds": 0.0,
-      "optimal_network_search_and_selective_model_enhancement_seconds": 0.0,
+      "workload_initialization_seconds": 3.5221181609667838,
+      "optimal_network_searcher_seconds": 0.5230858599534258,
+      "selective_model_enhancer_seconds": 11.331316187046468,
+      "optimal_network_search_and_selective_model_enhancement_seconds": 11.854402046999894,
       "selective_knowledge_accumulation_seconds": 0.0,
-      "online_rl_completion_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_module_data": 0,
-      "source": "",
-      "runtime_source": "",
-      "same_acc_runtime_seconds": 0.0
+      "online_rl_completion_seconds": 9.608496586093679,
+      "total_seconds": 11.854402046999894,
+      "has_module_data": 1,
+      "source": "ckpt/tinyvla/cl_suite/20260826-210332/ours/metrics_history.json",
+      "runtime_source": "ckpt/tinyvla/cl_suite/20260826-210332/ours/metrics_history.json",
+      "same_acc_runtime_seconds": 9.608496586093679
     },
     {
       "family": "edgevla",

@@ -82,7 +82,7 @@ def configure_human_defaults() -> None:
         'output_dir': DEFAULT_OUTPUT_DIR,
         'world_model_checkpoint': DEFAULT_WORLD_MODEL_CHECKPOINT,
         'fbs_policy_checkpoint': DEFAULT_FBS_POLICY_CHECKPOINT,
-        'num_envs': 128,
+        'num_envs': 64,
         'num_eval_envs': 8,
         'num_steps': 64,
         'num_minibatches': 16,

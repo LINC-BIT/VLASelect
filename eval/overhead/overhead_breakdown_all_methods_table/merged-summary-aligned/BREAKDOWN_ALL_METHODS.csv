@@ -24,11 +24,11 @@ tinyvla,c,Mobile manipulator,flare,FLaRe,0.0,0.0,0.0,0,
 tinyvla,c,Mobile manipulator,improv_vla,Improv-VLA,0.0,0.0,0.0,0,
 tinyvla,c,Mobile manipulator,edgeta,EdgeTA,0.0,0.0,0.0,0,
 tinyvla,c,Mobile manipulator,convertnet,ConvertNet,0.0,0.0,0.0,0,
-tinyvla,c,Mobile manipulator,ours,VLASelect,0.0,0.0,0.0,0,
+tinyvla,c,Mobile manipulator,ours,VLASelect,49.28507792239543,72.83243815391324,122.11751607630868,1,ckpt/tinyvla/cl_suite/20260826-210332/ours/metrics_history.json
 tinyvla,c,Mobile manipulator,ppo_gen,PPO-Gen,0.0,0.0,0.0,0,
-tinyvla,c,Mobile manipulator,self_improv,Self-Improv,0.0,0.0,0.0,0,
-tinyvla,c,Mobile manipulator,vla_rft,VLA-RFT,0.0,0.0,0.0,0,
-tinyvla,c,Mobile manipulator,world_env,WorldEnv,0.0,0.0,0.0,0,
+tinyvla,c,Mobile manipulator,self_improv,Self-Improv,48.289043248980306,292.41774944297504,340.70679269195534,1,ckpt/tinyvla/cl_suite/20260826-210332/self_improv/metrics_history.json
+tinyvla,c,Mobile manipulator,vla_rft,VLA-RFT,64.04563501688409,0.18205490245648054,64.22768991934058,1,ckpt/tinyvla/cl_suite/20260826-210332/vla_rft/metrics_history.json
+tinyvla,c,Mobile manipulator,world_env,WorldEnv,67.6828754292704,0.18158992023623663,67.86446534950663,1,ckpt/tinyvla/cl_suite/20260826-210332/world_env/metrics_history.json
 edgevla,d,Humanoid robot,conrft,ConRFT,0.0,0.0,0.0,0,
 edgevla,d,Humanoid robot,flare,FLaRe,0.0,0.0,0.0,0,
 edgevla,d,Humanoid robot,improv_vla,Improv-VLA,0.0,0.0,0.0,0,

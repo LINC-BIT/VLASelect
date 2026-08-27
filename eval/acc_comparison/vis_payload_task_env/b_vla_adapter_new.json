@@ -47,16 +47,16 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 0.16233116128271707,
+        "others_average": 0.14949301756785074,
         "ours_average": 0.7305555555555556,
-        "absolute_improvement_percent": 56.822439427283854
+        "absolute_improvement_percent": 58.10625379877049
       },
       "series": [
         {
           "name": "self_improv",
           "display_name": "Self-Improv",
           "label": "Self-Improv",
-          "raw_average": 0.121162,
+          "raw_average": 0.113275,
           "style": {
             "color": "#9A9A9A",
             "linestyle": "-",
@@ -68,7 +68,7 @@
           ],
           "y": [
             0.0,
-            0.07269715942397151
+            0.06796509474396338
           ],
           "x_full": [
             0.06511902391435453,
@@ -80,7 +80,7 @@
           "name": "vla_rft",
           "display_name": "VLA-RFT",
           "label": "VLA-RFT",
-          "raw_average": 0.170222,
+          "raw_average": 0.160619,
           "style": {
             "color": "#59A14F",
             "linestyle": "--",
@@ -93,8 +93,8 @@
           ],
           "y": [
             0.0,
-            0.11141475328348983,
-            0.14342838739236496
+            0.09816361143466953,
+            0.13299087395063813
           ],
           "x_full": [
             0.20655418410789436,
@@ -109,7 +109,7 @@
           "name": "world_env",
           "display_name": "WorldEnv",
           "label": "WorldEnv",
-          "raw_average": 0.19561,
+          "raw_average": 0.174585,
           "style": {
             "color": "#4D4D4D",
             "linestyle": "--",
@@ -122,8 +122,8 @@
           ],
           "y": [
             0.0,
-            0.15242103840240742,
-            0.17118543047356582
+            0.1304486384578512,
+            0.1539688022455402
           ],
           "x_full": [
             0.16823166827334568,

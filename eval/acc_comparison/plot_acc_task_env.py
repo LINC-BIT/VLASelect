@@ -399,6 +399,25 @@ def resolve_dynamic_xlim(
     return [0.0, right]
 
 
+def expand_single_point_series_to_horizontal_lines(
+    series_payload: list[dict[str, Any]],
+    xlim: list[float],
+) -> None:
+    x_axis_right = float(xlim[1]) if len(xlim) >= 2 else 0.0
+    if x_axis_right <= 0.0:
+        return
+    for series in series_payload:
+        xs = [float(x) for x in series.get('x', [])]
+        ys = [float(y) for y in series.get('y', [])]
+        if len(xs) == 1 and len(ys) == 1:
+            series['x'] = [0.0, x_axis_right]
+            series['y'] = [ys[0], ys[0]]
+            continue
+        if len(xs) >= 2 and xs[-1] <= xs[0] and ys:
+            series['x'] = [0.0, x_axis_right]
+            series['y'] = [ys[-1], ys[-1]]
+
+
 def select_evenly_spaced_point_indices(num_points: int, target_points: int) -> list[int]:
     if num_points <= 0 or target_points <= 0:
         return []
@@ -584,11 +603,11 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 continue
             first_x = xs[0]
             last_x = xs[-1]
-            if len(xs) == 1 or last_x <= first_x:
-                series['x'] = [0.0 for _ in xs]
+            if len(xs) <= 1 or last_x <= first_x:
                 continue
             span = last_x - first_x
             series['x'] = [((x - first_x) / span) * x_axis_right for x in xs]
+    expand_single_point_series_to_horizontal_lines(series_payload, xlim)
 
     payload = {
         'source': {

@@ -81,8 +81,8 @@
     "self_improv": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.004227934744622973,
+          "model_update_hours": 9.65792147649659e-05
         },
         "vla_adapter_new": {
           "rollout_hours": 0.0056676874159994894,
@@ -121,8 +121,8 @@
     "vla_rft": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.014668484528859457,
+          "model_update_hours": 0.00030990284350183275
         },
         "vla_adapter_new": {
           "rollout_hours": 0.029469476020316698,
@@ -141,8 +141,8 @@
     "world_env": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.01436564048131307,
+          "model_update_hours": 0.0003056987043884065
         },
         "vla_adapter_new": {
           "rollout_hours": 0.027684719043411556,
@@ -201,8 +201,8 @@
     "ours": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.0014770599627308193,
+          "model_update_hours": 0.0002169649055197192
         },
         "vla_adapter_new": {
           "rollout_hours": 0.005060517262075361,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import math
@@ -19,12 +20,27 @@ from common.figure_compose import compose_grid_figure
 from common.template_pdf_fill import fill_accuracy_template
 from common.vis_line_draw import apply_matplotlib_style, draw_plot
 
-TABLE_ROOT = Path(os.environ.get('PLOT_ACC_TABLE_ROOT', SCRIPT_DIR / 'acc_comparison_task_env_table'))
-MANIFEST_OVERRIDE = os.environ.get('PLOT_ACC_MANIFEST', '').strip()
-FIGURE_STEM = os.environ.get('PLOT_ACC_FIGURE_STEM', 'FIG_ACC_TASK_ENV')
-SUMMARY_STEM = os.environ.get('PLOT_ACC_SUMMARY_STEM', 'acc_task_env_summary')
-PANEL_OUTPUT_SUBDIR = os.environ.get('PLOT_ACC_PANEL_DIR', f'{FIGURE_STEM}_panels')
-VIS_PAYLOAD_SUBDIR = os.environ.get('PLOT_ACC_VIS_PAYLOAD_DIR', 'vis_payload_task_env')
+DEFAULT_TABLE_ROOT = SCRIPT_DIR / 'acc_comparison_task_env_table'
+FALLBACK_TABLE_ROOT = DEFAULT_TABLE_ROOT
+PANEL_LOOKUP_TABLE_ROOTS = [DEFAULT_TABLE_ROOT]
+DEFAULT_MANIFEST_OVERRIDE = os.environ.get('PLOT_ACC_MANIFEST', '').strip()
+DEFAULT_FIGURE_STEM = 'FIG_ACC_TASK_ENV'
+DEFAULT_SUMMARY_STEM = 'acc_task_env_summary'
+DEFAULT_VIS_PAYLOAD_SUBDIR = 'vis_payload_task_env'
+SAME_ACC_TABLE_ROOT = SCRIPT_DIR / 'acc_task_env_from_same_acc_table'
+SAME_ACC_FIGURE_STEM = DEFAULT_FIGURE_STEM
+SAME_ACC_SUMMARY_STEM = DEFAULT_SUMMARY_STEM
+SAME_ACC_VIS_PAYLOAD_SUBDIR = DEFAULT_VIS_PAYLOAD_SUBDIR
+
+DEFAULT_RUNTIME_TABLE_ROOT = SAME_ACC_TABLE_ROOT
+DEFAULT_PANEL_LOOKUP_TABLE_ROOTS = [SAME_ACC_TABLE_ROOT, DEFAULT_TABLE_ROOT]
+
+TABLE_ROOT = DEFAULT_TABLE_ROOT
+MANIFEST_OVERRIDE = DEFAULT_MANIFEST_OVERRIDE
+FIGURE_STEM = DEFAULT_FIGURE_STEM
+SUMMARY_STEM = DEFAULT_SUMMARY_STEM
+PANEL_OUTPUT_SUBDIR = f'{FIGURE_STEM}_panels'
+VIS_PAYLOAD_SUBDIR = DEFAULT_VIS_PAYLOAD_SUBDIR
 FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.pdf'
 FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.svg'
 FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.png'
@@ -32,14 +48,7 @@ SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
 SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
 VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
-FROM_SAME_ACC_HINTS = (
-    str(FIGURE_STEM),
-    str(SUMMARY_STEM),
-    str(PANEL_OUTPUT_SUBDIR),
-    str(VIS_PAYLOAD_SUBDIR),
-    str(TABLE_ROOT),
-)
-LIMIT_SERIES_TO_THREE_POINTS = any('from_same_acc' in hint.lower() for hint in FROM_SAME_ACC_HINTS)
+LIMIT_SERIES_TO_THREE_POINTS = False
 MAX_SERIES_POINTS = 3
 
 PAPER_PANELS = [
@@ -104,6 +113,82 @@ RENDER_CONFIG = {
     'figure': {'width': 9.6, 'height': 8.0, 'dpi': 200},
     'legend_figure': {'width': 8.0, 'min_height': 2.2, 'height_per_item': 0.78, 'handlelength': 2.8, 'pad_inches': 0.15},
 }
+
+
+def hint_is_same_acc(value: Any) -> bool:
+    return 'from_same_acc' in str(value).strip().lower()
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Plot task-environment accuracy curves.')
+    parser.add_argument('--table-root', default=os.environ.get('PLOT_ACC_TABLE_ROOT', '').strip())
+    parser.add_argument('--manifest', default=DEFAULT_MANIFEST_OVERRIDE)
+    parser.add_argument('--figure-stem', default=os.environ.get('PLOT_ACC_FIGURE_STEM', '').strip())
+    parser.add_argument('--summary-stem', default=os.environ.get('PLOT_ACC_SUMMARY_STEM', '').strip())
+    parser.add_argument('--panel-dir', default=os.environ.get('PLOT_ACC_PANEL_DIR', '').strip())
+    parser.add_argument('--vis-payload-dir', default=os.environ.get('PLOT_ACC_VIS_PAYLOAD_DIR', '').strip())
+    parser.add_argument('--from-same-acc', action='store_true', default=parse_bool(os.environ.get('PLOT_ACC_FROM_SAME_ACC', '0')))
+    parser.add_argument('--from-task-env-table', action='store_true', default=parse_bool(os.environ.get('PLOT_ACC_FROM_TASK_ENV_TABLE', '0')))
+    return parser.parse_args()
+
+
+def configure_runtime(args: argparse.Namespace) -> None:
+    global TABLE_ROOT, MANIFEST_OVERRIDE, FIGURE_STEM, SUMMARY_STEM
+    global PANEL_OUTPUT_SUBDIR, VIS_PAYLOAD_SUBDIR, FIGURE_PATH, FIGURE_SVG_PATH, FIGURE_PNG_PATH
+    global SUMMARY_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR, VIS_PAYLOAD_DIR
+    global LIMIT_SERIES_TO_THREE_POINTS, PANEL_LOOKUP_TABLE_ROOTS
+
+    hinted_same_acc = any(
+        hint_is_same_acc(candidate)
+        for candidate in (
+            args.table_root,
+            args.manifest,
+            args.figure_stem,
+            args.summary_stem,
+            args.panel_dir,
+            args.vis_payload_dir,
+        )
+    )
+    if args.from_task_env_table:
+        inferred_same_acc = False
+    elif args.from_same_acc or hinted_same_acc:
+        inferred_same_acc = True
+    else:
+        inferred_same_acc = True
+
+    table_root_raw = args.table_root or (DEFAULT_RUNTIME_TABLE_ROOT if inferred_same_acc else DEFAULT_TABLE_ROOT)
+    table_root = Path(table_root_raw).expanduser().resolve() if str(table_root_raw).strip() else (SAME_ACC_TABLE_ROOT if inferred_same_acc else DEFAULT_TABLE_ROOT)
+    figure_stem = args.figure_stem or (SAME_ACC_FIGURE_STEM if inferred_same_acc else DEFAULT_FIGURE_STEM)
+    summary_stem = args.summary_stem or (SAME_ACC_SUMMARY_STEM if inferred_same_acc else DEFAULT_SUMMARY_STEM)
+    panel_dir = args.panel_dir or f'{figure_stem}_panels'
+    vis_payload_dir = args.vis_payload_dir or (SAME_ACC_VIS_PAYLOAD_SUBDIR if inferred_same_acc else DEFAULT_VIS_PAYLOAD_SUBDIR)
+
+    lookup_roots: list[Path] = []
+    for candidate in [table_root, SAME_ACC_TABLE_ROOT if inferred_same_acc else None, FALLBACK_TABLE_ROOT if inferred_same_acc else None]:
+        if candidate is None:
+            continue
+        resolved = Path(candidate).expanduser().resolve()
+        if resolved not in lookup_roots:
+            lookup_roots.append(resolved)
+
+    TABLE_ROOT = table_root
+    PANEL_LOOKUP_TABLE_ROOTS = lookup_roots or [path.resolve() for path in DEFAULT_PANEL_LOOKUP_TABLE_ROOTS]
+    MANIFEST_OVERRIDE = str(args.manifest).strip()
+    FIGURE_STEM = figure_stem
+    SUMMARY_STEM = summary_stem
+    PANEL_OUTPUT_SUBDIR = panel_dir
+    VIS_PAYLOAD_SUBDIR = vis_payload_dir
+    FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.pdf'
+    FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.svg'
+    FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.png'
+    SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
+    SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
+    PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
+    VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
+    LIMIT_SERIES_TO_THREE_POINTS = inferred_same_acc or any(
+        hint_is_same_acc(candidate)
+        for candidate in (FIGURE_STEM, SUMMARY_STEM, PANEL_OUTPUT_SUBDIR, VIS_PAYLOAD_SUBDIR, TABLE_ROOT, MANIFEST_OVERRIDE)
+    )
 
 
 def load_json(path: Path) -> Any:
@@ -322,10 +407,15 @@ def iter_manifest_panel_entries() -> list[tuple[Path, dict[str, Any]]]:
     if MANIFEST_OVERRIDE:
         manifest_paths = [Path(MANIFEST_OVERRIDE).expanduser().resolve()]
     else:
-        manifest_paths = sorted(TABLE_ROOT.glob('*/manifest.json'))
+        manifest_paths = []
+        for root in PANEL_LOOKUP_TABLE_ROOTS:
+            manifest_paths.extend(sorted(root.glob('*/manifest.json')))
+    seen_paths: set[Path] = set()
     for manifest_path in manifest_paths:
-        if not manifest_path.exists():
+        manifest_path = manifest_path.resolve()
+        if manifest_path in seen_paths or not manifest_path.exists():
             continue
+        seen_paths.add(manifest_path)
         try:
             payload = load_json(manifest_path)
         except Exception:
@@ -525,8 +615,14 @@ def write_summary(rows: list[dict[str, Any]]) -> None:
 
 
 def main() -> None:
+    args = parse_args()
+    configure_runtime(args)
     rows = draw_figure(RENDER_CONFIG['smoothing'])
     write_summary(rows)
+    print(f'table_root: {TABLE_ROOT}')
+    print('lookup_table_roots:', ', '.join(str(path) for path in PANEL_LOOKUP_TABLE_ROOTS))
+    if MANIFEST_OVERRIDE:
+        print(f'manifest: {MANIFEST_OVERRIDE}')
     print(f'figure: {FIGURE_PATH}')
     print(f'summary: {SUMMARY_CSV_PATH}')
 

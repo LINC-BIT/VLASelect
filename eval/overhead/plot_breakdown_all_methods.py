@@ -19,8 +19,10 @@ from common.figure_compose import compose_grid_figure
 from common.template_pdf_fill import fill_sampling_training_template
 from plot_breakdown_impl import (
     ALL_METHODS_TABLE_ROOT,
+    SAME_ACC_TABLE_ROOT,
     apply_dynamic_time_axis,
     load_csv_rows,
+    load_summary_aligned_manifest,
     load_top_manifest_from_table_root,
     prepare_breakdown_tables,
 )
@@ -48,13 +50,19 @@ LABEL_MAP = {
 }
 
 
-def resolve_output_root(manifest_path: str | None) -> Path:
-    manifest, resolved_manifest_path = load_top_manifest_from_table_root(ALL_METHODS_TABLE_ROOT, manifest_path)
+def load_manifest(manifest_path: str | None) -> tuple[dict, Path | None]:
+    if manifest_path:
+        return load_top_manifest_from_table_root(ALL_METHODS_TABLE_ROOT, manifest_path)
+    return load_summary_aligned_manifest([SAME_ACC_TABLE_ROOT, ALL_METHODS_TABLE_ROOT], ALL_METHODS_TABLE_ROOT), None
+
+
+def resolve_output_root(manifest: dict, resolved_manifest_path: Path | None) -> Path:
     if resolved_manifest_path is not None:
         return resolved_manifest_path.parent
-    if manifest.get("suite_stamp") not in {None, "", "no-data"}:
-        return ALL_METHODS_TABLE_ROOT / str(manifest["suite_stamp"])
-    return ALL_METHODS_TABLE_ROOT
+    suite_stamp = str(manifest.get("suite_stamp") or "").strip()
+    if suite_stamp and suite_stamp not in {"no-data", "merged-latest"}:
+        return ALL_METHODS_TABLE_ROOT / suite_stamp
+    return ALL_METHODS_TABLE_ROOT / "merged-summary-aligned"
 
 
 def build_payload(rows: list[dict[str, str]]) -> dict:
@@ -155,8 +163,13 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument('--manifest', type=str, default=None)
     args = parser.parse_args(argv)
 
-    manifest, _ = load_top_manifest_from_table_root(ALL_METHODS_TABLE_ROOT, args.manifest)
-    output_root = resolve_output_root(args.manifest)
+    manifest, resolved_manifest_path = load_manifest(args.manifest)
+    output_root = resolve_output_root(manifest, resolved_manifest_path)
+    selected = {row.get('family'): row.get('_top_manifest', '') for row in manifest.get('panels', []) if isinstance(row, dict)}
+    for family in DATASET_ORDER:
+        source = selected.get(family, '')
+        if source:
+            print(f'[selected] {family}: {source}')
     all_rows, _ = prepare_breakdown_tables(manifest, output_root)
     if not all_rows:
         all_rows = load_csv_rows(output_root / 'BREAKDOWN_ALL_METHODS.csv')

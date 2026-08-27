@@ -235,6 +235,8 @@ def _extract_sampling_training(payload: dict[str, Any]) -> tuple[float, float, b
 
 
 def _candidate_breakdown_paths(run_dir: Path) -> list[Path]:
+    if not run_dir.exists():
+        return []
     candidates = [
         run_dir / "time_breakdown.json",
         run_dir / "timing_breakdown.json",
@@ -341,6 +343,8 @@ def load_method_breakdown(run_dir: Path) -> MethodBreakdown:
 
 
 def _load_history(run_dir: Path) -> list[dict[str, Any]]:
+    if not run_dir.exists():
+        return []
     payload = _read_json(run_dir / "metrics_history.json")
     if not isinstance(payload, dict):
         return []
@@ -361,15 +365,14 @@ def _collect_history_series(run_dir: Path, metric_key: str) -> list[tuple[float,
 
 
 def _find_tb_dir(run_dir: Path) -> Path | None:
+    if not run_dir.exists():
+        return None
     for candidate in (run_dir / "tb", run_dir / "[agent]" / "tb"):
         if candidate.is_dir():
             return candidate
-    for search_root in (run_dir, run_dir.parent):
-        if not search_root.exists():
-            continue
-        nested = sorted(path for path in search_root.glob("**/tb") if path.is_dir())
-        if nested:
-            return nested[0]
+    nested = sorted(path for path in run_dir.glob("**/tb") if path.is_dir())
+    if nested:
+        return nested[0]
     return None
 
 
@@ -439,32 +442,66 @@ def _metric_active_runtime_seconds(metric: dict[str, Any]) -> float | None:
     return None
 
 
-def _same_acc_summary_path(top_manifest: dict[str, Any]) -> Path | None:
-    manifest_path = _resolve_same_acc_manifest_path(top_manifest)
+def _same_acc_summary_path_from_manifest_path(manifest_path: Path | None) -> Path | None:
     if manifest_path is None:
         return None
     candidate = manifest_path.parent / "overhead_same_acc_summary.json"
     return candidate if candidate.exists() else None
 
 
+def _same_acc_summary_path_for_panel(panel: dict[str, Any], top_manifest: dict[str, Any]) -> Path | None:
+    explicit_summary = str(panel.get("_same_acc_summary_path", "")).strip()
+    if explicit_summary:
+        candidate = _resolve_eval_path(explicit_summary)
+        if candidate.exists():
+            return candidate
+
+    explicit_manifest = str(panel.get("_same_acc_manifest_path", "")).strip()
+    if explicit_manifest:
+        candidate = _same_acc_summary_path_from_manifest_path(_resolve_eval_path(explicit_manifest))
+        if candidate is not None:
+            return candidate
+
+    panel_top_manifest = str(panel.get("_top_manifest", "")).strip()
+    if panel_top_manifest:
+        candidate = _same_acc_summary_path_from_manifest_path(_resolve_eval_path(panel_top_manifest))
+        if candidate is not None:
+            return candidate
+
+    panel_same_acc_manifest = str(panel.get("same_acc_manifest", "")).strip()
+    if panel_same_acc_manifest:
+        candidate = _same_acc_summary_path_from_manifest_path(_resolve_eval_path(panel_same_acc_manifest))
+        if candidate is not None:
+            return candidate
+
+    manifest_path = _resolve_same_acc_manifest_path(top_manifest)
+    return _same_acc_summary_path_from_manifest_path(manifest_path)
+
+
 def _load_same_acc_cutoff_hours(top_manifest: dict[str, Any]) -> tuple[dict[tuple[str, str], float], str]:
-    summary_path = _same_acc_summary_path(top_manifest)
-    if summary_path is None:
-        return {}, ""
-    payload = _read_json(summary_path)
-    if not isinstance(payload, list):
-        return {}, _display_path(summary_path)
     cutoff_hours_by_method: dict[tuple[str, str], float] = {}
-    for row in payload:
-        if not isinstance(row, dict):
+    sources: list[str] = []
+    seen_summary_paths: set[Path] = set()
+    for family, panel in _family_panels(top_manifest).items():
+        summary_path = _same_acc_summary_path_for_panel(panel, top_manifest)
+        if summary_path is None or summary_path in seen_summary_paths:
             continue
-        family = str(row.get("family", "")).strip()
-        method = str(row.get("method", "")).strip()
-        cutoff_hours = _finite_float_or_none(row.get("reach_hours"))
-        if not family or not method or cutoff_hours is None or cutoff_hours <= 0.0:
+        seen_summary_paths.add(summary_path)
+        payload = _read_json(summary_path)
+        if not isinstance(payload, list):
+            sources.append(_display_path(summary_path))
             continue
-        cutoff_hours_by_method[(family, method)] = float(cutoff_hours)
-    return cutoff_hours_by_method, _display_path(summary_path)
+        sources.append(_display_path(summary_path))
+        for row in payload:
+            if not isinstance(row, dict):
+                continue
+            row_family = str(row.get("family", "")).strip()
+            method = str(row.get("method", "")).strip()
+            cutoff_hours = _finite_float_or_none(row.get("reach_hours"))
+            if row_family != family or not method or cutoff_hours is None or cutoff_hours <= 0.0:
+                continue
+            cutoff_hours_by_method[(row_family, method)] = float(cutoff_hours)
+    return cutoff_hours_by_method, ", ".join(sources)
 
 
 def _metric_sampling_training_cumulative(metric: dict[str, Any]) -> tuple[float | None, float | None]:
@@ -696,24 +733,10 @@ def _resolve_same_acc_manifest_path(top_manifest: dict[str, Any]) -> Path | None
 
 
 def _load_same_acc_vlaselect_times_seconds(top_manifest: dict[str, Any]) -> tuple[dict[str, float], str]:
-    manifest_path = _resolve_same_acc_manifest_path(top_manifest)
-    if manifest_path is None:
-        return {}, ""
-    payload = _read_json(manifest_path)
-    if not isinstance(payload, dict):
-        return {}, _display_path(manifest_path)
-    panels = payload.get("families", payload.get("panels", []))
     times_by_family: dict[str, float] = {}
-    for panel in panels:
-        if not isinstance(panel, dict):
-            continue
-        family = str(panel.get("family", ""))
-        if family not in FAMILY_ORDER:
-            continue
-        suite_manifest_ref = str(panel.get("suite_manifest", ""))
-        if not suite_manifest_ref:
-            continue
-        suite_manifest = _read_json(_resolve_eval_path(suite_manifest_ref))
+    sources: list[str] = []
+    for family, panel in _family_panels(top_manifest).items():
+        suite_manifest = _load_suite_manifest(panel)
         if not isinstance(suite_manifest, dict):
             continue
         methods = [method for method in suite_manifest.get("methods", []) if isinstance(method, dict)]
@@ -723,34 +746,22 @@ def _load_same_acc_vlaselect_times_seconds(top_manifest: dict[str, Any]) -> tupl
         run_dir_ref = str(vlaselect_method.get("run_dir", ""))
         if not run_dir_ref:
             continue
-        reach_metric = _load_same_acc_reach_metric(family, _resolve_eval_path(run_dir_ref))
+        run_dir = _resolve_eval_path(run_dir_ref)
+        reach_metric = _load_same_acc_reach_metric(family, run_dir)
         if not isinstance(reach_metric, dict):
             continue
         active_runtime_seconds = _metric_active_runtime_seconds(reach_metric)
         if active_runtime_seconds is not None:
             times_by_family[family] = active_runtime_seconds
-    return times_by_family, _display_path(manifest_path)
+            sources.append(_display_path(run_dir / "metrics_history.json"))
+    return times_by_family, ", ".join(sources)
 
 
 def _load_same_acc_vlaselect_module_breakdowns(top_manifest: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], str]:
-    manifest_path = _resolve_same_acc_manifest_path(top_manifest)
-    if manifest_path is None:
-        return {}, ""
-    payload = _read_json(manifest_path)
-    if not isinstance(payload, dict):
-        return {}, _display_path(manifest_path)
-    panels = payload.get("families", payload.get("panels", []))
     module_rows: dict[str, dict[str, Any]] = {}
-    for panel in panels:
-        if not isinstance(panel, dict):
-            continue
-        family = str(panel.get("family", ""))
-        if family not in FAMILY_ORDER:
-            continue
-        suite_manifest_ref = str(panel.get("suite_manifest", ""))
-        if not suite_manifest_ref:
-            continue
-        suite_manifest = _read_json(_resolve_eval_path(suite_manifest_ref))
+    sources: list[str] = []
+    for family, panel in _family_panels(top_manifest).items():
+        suite_manifest = _load_suite_manifest(panel)
         if not isinstance(suite_manifest, dict):
             continue
         methods = [method for method in suite_manifest.get("methods", []) if isinstance(method, dict)]
@@ -768,12 +779,46 @@ def _load_same_acc_vlaselect_module_breakdowns(top_manifest: dict[str, Any]) -> 
         active_runtime_seconds = _metric_active_runtime_seconds(reach_metric)
         if active_runtime_seconds is not None:
             module_breakdown["online_rl_completion_seconds"] = active_runtime_seconds
+        source = _display_path(run_dir / "metrics_history.json")
+        sources.append(source)
         module_rows[family] = {
             "module_breakdown": module_breakdown,
             "active_runtime_seconds": float(active_runtime_seconds or 0.0),
-            "source": _display_path(run_dir / "metrics_history.json"),
+            "source": source,
         }
-    return module_rows, _display_path(manifest_path)
+    return module_rows, ", ".join(sources)
+
+
+def _manifest_sort_key(manifest_path: Path) -> tuple[int, float, str]:
+    stamp = manifest_path.parent.name
+    compact = stamp.replace("-", "")
+    if len(stamp) == 15 and stamp[8] == "-" and compact.isdigit():
+        return (1, float(int(compact)), stamp)
+    try:
+        mtime = float(manifest_path.stat().st_mtime)
+    except OSError:
+        mtime = 0.0
+    return (0, mtime, stamp)
+
+
+def _entry_same_acc_summary_path(
+    manifest_path: Path,
+    top_payload: dict[str, Any],
+    panel: dict[str, Any],
+) -> Path | None:
+    adjacent = manifest_path.parent / "overhead_same_acc_summary.json"
+    if adjacent.exists():
+        return adjacent
+    for raw_path in (
+        str(panel.get("same_acc_manifest", "")).strip(),
+        str(top_payload.get("same_acc_manifest", "")).strip(),
+    ):
+        if not raw_path:
+            continue
+        candidate = _same_acc_summary_path_from_manifest_path(_resolve_eval_path(raw_path))
+        if candidate is not None:
+            return candidate
+    return None
 
 
 def _default_top_manifest() -> dict[str, Any]:
@@ -804,6 +849,116 @@ def _default_top_manifest() -> dict[str, Any]:
     }
 
 
+def _iter_manifest_panel_entries(table_root: Path) -> list[tuple[Path, dict[str, Any], dict[str, Any]]]:
+    entries: list[tuple[Path, dict[str, Any], dict[str, Any]]] = []
+    for manifest_path in sorted(table_root.glob('*/manifest.json')):
+        payload = _read_json(manifest_path)
+        if not isinstance(payload, dict):
+            continue
+        for panel in payload.get('panels', payload.get('families', [])):
+            if isinstance(panel, dict):
+                entries.append((manifest_path, payload, panel))
+    return entries
+
+
+def _merged_top_manifest_from_table_root(table_root: Path) -> dict[str, Any]:
+    merged = _default_top_manifest()
+    merged['table_root'] = f'overhead/{table_root.name}'
+    merged['all_methods_csv'] = f'overhead/{table_root.name}/BREAKDOWN_ALL_METHODS.csv'
+    merged['modules_csv'] = f'overhead/{table_root.name}/BREAKDOWN_MODULES.csv'
+    resolved_panels: list[dict[str, Any]] = []
+    found_any = False
+    for family in FAMILY_ORDER:
+        panel_defaults = {
+            'family': family,
+            'suite_manifest': '',
+            'suite_root': '',
+            'launch_log': '',
+            'suite_stamp': 'no-data',
+            'panel_label': PANEL_LABELS[family],
+            'workload_name': WORKLOAD_NAMES[family],
+            'display_name': FAMILY_DISPLAY_NAMES[family],
+        }
+        best_existing: tuple[float, dict[str, Any]] | None = None
+        best_missing: tuple[float, dict[str, Any]] | None = None
+        for manifest_path, payload, entry in _iter_manifest_panel_entries(table_root):
+            if entry.get('family') != family:
+                continue
+            candidate = dict(panel_defaults)
+            candidate.update(entry)
+            candidate['_top_manifest'] = _display_path(manifest_path)
+            summary_path = _entry_same_acc_summary_path(manifest_path, payload, entry)
+            if summary_path is not None:
+                candidate['_same_acc_summary_path'] = _display_path(summary_path)
+            same_acc_manifest = str(payload.get('same_acc_manifest', '')).strip()
+            if same_acc_manifest:
+                candidate['_same_acc_manifest_path'] = _display_path(_resolve_eval_path(same_acc_manifest))
+            suite_manifest = str(candidate.get('suite_manifest', '')).strip()
+            exists = bool(suite_manifest) and _resolve_eval_path(suite_manifest).exists()
+            score = manifest_path.stat().st_mtime
+            if exists:
+                if best_existing is None or score >= best_existing[0]:
+                    best_existing = (score, candidate)
+            else:
+                if best_missing is None or score >= best_missing[0]:
+                    best_missing = (score, candidate)
+        chosen = best_existing[1] if best_existing is not None else (best_missing[1] if best_missing is not None else panel_defaults)
+        found_any = found_any or best_existing is not None or best_missing is not None
+        resolved_panels.append(chosen)
+    if found_any:
+        merged['suite_stamp'] = 'merged-latest'
+    merged['panels'] = resolved_panels
+    merged['families'] = resolved_panels
+    return merged
+
+
+def load_summary_aligned_manifest(table_roots: list[Path], output_table_root: Path) -> dict[str, Any]:
+    merged = _default_top_manifest()
+    merged['suite_stamp'] = 'merged-summary-aligned'
+    merged['table_root'] = f'overhead/{output_table_root.name}'
+    merged['all_methods_csv'] = f'overhead/{output_table_root.name}/merged-summary-aligned/BREAKDOWN_ALL_METHODS.csv'
+    merged['modules_csv'] = f'overhead/{output_table_root.name}/merged-summary-aligned/BREAKDOWN_MODULES.csv'
+    resolved_panels: list[dict[str, Any]] = []
+    for family in FAMILY_ORDER:
+        panel_defaults = {
+            'family': family,
+            'suite_manifest': '',
+            'suite_root': '',
+            'launch_log': '',
+            'suite_stamp': 'no-data',
+            'panel_label': PANEL_LABELS[family],
+            'workload_name': WORKLOAD_NAMES[family],
+            'display_name': FAMILY_DISPLAY_NAMES[family],
+        }
+        best: tuple[tuple[int, float, str], dict[str, Any]] | None = None
+        for table_root in table_roots:
+            for manifest_path, payload, entry in _iter_manifest_panel_entries(table_root):
+                if entry.get('family') != family:
+                    continue
+                summary_path = _entry_same_acc_summary_path(manifest_path, payload, entry)
+                if summary_path is None:
+                    continue
+                candidate = dict(panel_defaults)
+                candidate.update(entry)
+                candidate['_top_manifest'] = _display_path(manifest_path)
+                candidate['_same_acc_summary_path'] = _display_path(summary_path)
+                same_acc_manifest = str(entry.get('same_acc_manifest') or payload.get('same_acc_manifest') or '').strip()
+                if same_acc_manifest:
+                    candidate['_same_acc_manifest_path'] = _display_path(_resolve_eval_path(same_acc_manifest))
+                else:
+                    candidate['_same_acc_manifest_path'] = _display_path(manifest_path)
+                suite_manifest = str(candidate.get('suite_manifest', '')).strip()
+                if not suite_manifest or not _resolve_eval_path(suite_manifest).exists():
+                    continue
+                score = _manifest_sort_key(manifest_path)
+                if best is None or score > best[0]:
+                    best = (score, candidate)
+        resolved_panels.append(best[1] if best is not None else panel_defaults)
+    merged['panels'] = resolved_panels
+    merged['families'] = resolved_panels
+    return merged
+
+
 def load_top_manifest_from_table_root(
     table_root: Path,
     manifest_path: str | None,
@@ -812,6 +967,10 @@ def load_top_manifest_from_table_root(
         path = Path(manifest_path)
         payload = _read_json(path)
         return (payload if isinstance(payload, dict) else _default_top_manifest(), path)
+    merged = _merged_top_manifest_from_table_root(table_root)
+    has_any_suite_manifest = any(str(panel.get('suite_manifest', '')).strip() for panel in merged.get('panels', []))
+    if has_any_suite_manifest:
+        return merged, None
     latest_path = table_root / "latest.txt"
     if latest_path.exists():
         stamp = latest_path.read_text(encoding="utf-8").strip()

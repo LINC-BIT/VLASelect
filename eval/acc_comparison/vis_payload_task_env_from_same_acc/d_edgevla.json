@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "",
-    "suite_manifest": ""
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_comparison_task_env_table/vrtest-acc-task-110825/manifest.json",
+    "suite_manifest": "train/edgevla/cl_suite/vrtest-acc-task-110825/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        301.0
+        0.13716140556673054
       ],
       "ylim": [
         0.0,
@@ -47,12 +47,107 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": null,
+        "others_average": 0.20833333333333334,
         "ours_average": null,
         "absolute_improvement_percent": null
       },
-      "series": [],
-      "legend_entries": []
+      "series": [
+        {
+          "name": "improv_vla",
+          "display_name": "Improv-VLA",
+          "label": "Improv-VLA",
+          "raw_average": 0.25,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0
+          ],
+          "y": [
+            0.25
+          ],
+          "x_full": [
+            0.0
+          ],
+          "point_count": 1
+        },
+        {
+          "name": "ppo_gen",
+          "display_name": "PPO-Gen",
+          "label": "PPO-Gen",
+          "raw_average": 0.125,
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.13716140556673054
+          ],
+          "y": [
+            0.25,
+            0.175
+          ],
+          "x_full": [
+            0.0,
+            0.11716140556673053
+          ],
+          "point_count": 2
+        },
+        {
+          "name": "vla_rft",
+          "display_name": "VLA-RFT",
+          "label": "VLA-RFT",
+          "raw_average": 0.25,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0
+          ],
+          "y": [
+            0.25
+          ],
+          "x_full": [
+            0.0
+          ],
+          "point_count": 1
+        }
+      ],
+      "legend_entries": [
+        {
+          "name": "improv_vla",
+          "label": "Improv-VLA",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ppo_gen",
+          "label": "PPO-Gen",
+          "style": {
+            "color": "#4C78A8",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "vla_rft",
+          "label": "VLA-RFT",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        }
+      ]
     }
   }
 }

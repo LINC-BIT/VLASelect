@@ -1,220 +1,210 @@
 # VLASelect Artifacts Evaluation
 
-This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"(VLASelect)**. 
+This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"**, which has been conditionally accepted by EuroSys'27.
 
-Note:
-
-- This is for fully running all experiments to reproduce results in the VLASelect paper, requiring more than 15 days to complete.
-- **We recommend to run the [minimun working example](https://github.com/LINC-BIT/VLASelect/blob/main/README_AE.md) to quickly verify the experimental results within 1 day.**
+This repository is organized as follows:
 
 
-**Table of contents:**
-  - [2. Primary Evaluation](#2-primary-evaluation)
-    - [2.1 Quick Start](#21-quick-start)
-      - [2.1.1 Get source code](#211-get-source-code)
-      - [2.1.2 Install dependencies](#212-install-dependencies)
-      - [2.1.3 One-click run](#213-one-click-run)
-    - [2.2 Step-by-Step Reproducing](#22-step-by-step-reproducing)
-      - [2.2.1 Accuracy Experiments](#221-accuracy-experiments)
-      - [2.2.2 Overhead Experiments](#222-overhead-experiments)
-      - [2.2.3 Ablation Experiments](#223-ablation-experiments)
-      - [2.2.4 Discussion Experiments](#224-discussion-experiments)
-  - [3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities](#3-supporting-various-vla-models-scaling-strategies-and-knowledge-exchange-granularities)
-    - [3.1 Example 1: VLA-Adapter](#31-example-1-vla-adapter)
-      - [3.1.1 Supporting the model](#311-supporting-the-model)
-      - [3.1.2 Supporting different scaling strategies](#312-supporting-different-scaling-strategies)
-      - [3.1.3 Supporting different knowledge exchange granularities](#313-supporting-different-knowledge-exchange-granularities)
-    - [3.2 Example 2: TinyVLA](#32-example-2-tinyvla)
-      - [3.2.1 Supporting the model](#321-supporting-the-model)
-      - [3.2.2 Supporting different scaling strategies](#322-supporting-different-scaling-strategies)
-      - [3.2.3 Supporting different knowledge exchange granularities](#323-supporting-different-knowledge-exchange-granularities)
-    - [3.3 Example 3: EdgeVLA](#33-example-3-edgevla)
-      - [3.3.1 Supporting the model](#331-supporting-the-model)
-      - [3.3.2 Supporting different scaling strategies](#332-supporting-different-scaling-strategies)
-      - [3.3.3 Supporting different knowledge exchange granularities](#333-supporting-different-knowledge-exchange-granularities)
+## 1. Artifact Overview
+
+### 1.1 Introduction
+
+- **Background**: 
+
+  - VLA (Vision-Language-Action) model-based agents such as
+  robot arms, dexterous hands and humanoid robots are revolutionizing our lives. 
+  - These agents usually run in **open ended,
+  interactive environments** where new tasks start, surroundings change, or available resources fluctuate. 
+  - In existing agentic AI systems, the resource-intensive training of deployed
+  VLA models has become a critical bottleneck. 
+
+- **Method**: 
+
+  - In this paper,
+  we present VLASelect, a framework that takes the dynamics
+  of agents’ interactive environment into account to enable
+  **large-small model collaborative learning**. 
+  - In online RL, VLASelect employs an agent’s small model to quickly explore the
+  environment, selectively transfers its positive knowledge to
+  the agent’s large model, and compensates its learning ability
+  by swapping in the large model’s most accuracy-related neurons. 
+  - In doing so, our approach combines the strengths of
+  large models’ high learning capacity and small models’ low
+  training costs via **neuron-grained knowledge exchange**. 
+
+    ![](Method.png)
+
+- **Evaluation**: 
+  - Our experiments show that compared to 9 state-of-the-art VLA
+  learning techniques across 4 embodied AI agents.
+  - VLASelect
+  achieves as much as 40.12% increase in task success rate,
+  25.6% decrease in memory footprint and 11.55x reduction on
+  energy consumption.
+
+
+### 1.2 Preparation Before Artifacts 
+
+#### 1.2.1 Hardware Requirements
+
+- **Option 1: Recommended hardware for fully running our artifacts**:
+
+  | RAM | CPU | Disk | GPU |
+  |---|---|---|---|
+   128 GB | One 64-core server CPU<br>(e.g., Intel(R) Xeon(R) Gold 6430) | At least<br>150 GB free | One NVIDIA GPU with<br>more than 60 GB VRAM<br>(e.g., A100) |
+
+- **Option 2: Minimum hardware requirements for running minimal working examples**:
+
+  |  | RAM | CPU | Disk | GPU |
+    |---|---|---|---|---|
+    | Single-CPU server | 16–32 GB | One 8-core server CPU (e.g., Intel Xeon E-2388G) | At least 80 GB free | — |
+    | GPU-equipped server | 32–64 GB | One 12-core server CPU (e.g., Intel Xeon Silver 4310) | At least 80 GB free | One NVIDIA GPU with 8–12 GB VRAM (e.g., NVIDIA RTX 3060) |
+    | CPU-only desktop | 16–32 GB | One 16-core desktop CPU (e.g., Intel Core i7-13700) | At least 80 GB free | Integrated graphics |
+    | GPU-equipped desktop | 16–32 GB | One 20-core desktop CPU (e.g., Intel Core i7-14700) | At least 80 GB free | One NVIDIA GPU with 8 GB VRAM (e.g., NVIDIA RTX 4060) |
+    | CPU-only laptop | 16–32 GB | One 12-core CPU (e.g., Intel Core Ultra 7 155U) | At least 80 GB free | Integrated graphics |
+    | GPU-equipped laptop | 16–32 GB | One 16-core CPU (e.g., Intel Core i7-14650HX) | At least 80 GB free | One NVIDIA GPU with 8 GB VRAM (e.g., RTX 4060) |
+
+#### 1.2.2 Software Requirements
+
+- **Option 1: Recommended software for fully running our artifacts**:
+
+  | Operating System | CUDA | Others |
+  |---|---|---|
+  | Ubuntu LTS 22.04.4 LTS | CUDA 13.0 | Kernel 6.8.0-124-generic<br>Docker 29.2.1 |
+      
+- **Option 2: Minimum software requirements for running minimal working examples**:
+
+  | Operating System | CUDA | Others |
+    |---|---|---|
+    | Ubuntu LTS 20.04+ | CUDA 12.x+<br>(when using a GPU) | Kernel 5.4+<br>Docker 29.0+ |
+    | Windows 10+ | CUDA 12.x+<br>(when using a GPU) | Docker 29.0+ |
+    | macOS 14+ | - | - |
+    | Debian 11+ | CUDA 12.x+<br>(when using a GPU) | Kernel 5.4+<br>Docker 29.0+ |
+    | RHEL 8+ | CUDA 12.x+<br>(when using a GPU) | Kernel 5.4+<br>Docker 29.0+ |
+
+
+#### 1.2.3 Get source code
+
+  You can obtain the source code for artifacts evaluation by the following command:
+
+  ```bash
+  git clone https://github.com/LINC-BIT/VLASelect.git
+  ```
+
+#### 1.2.4 Install dependencies (if Docker can be installed)
+
+- **Step 1: Install Docker**
+
+  ```bash
+  # Add Docker's official GPG key:
+  sudo apt update
+  sudo apt install ca-certificates curl
+  sudo install -m 0755 -d /etc/apt/keyrings
+  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+  # Add the repository to Apt sources:
+  sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+  Types: deb
+  URIs: https://download.docker.com/linux/ubuntu
+  Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+  Components: stable
+  Architectures: $(dpkg --print-architecture)
+  Signed-By: /etc/apt/keyrings/docker.asc
+  EOF
+
+  sudo apt update
+
+  sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  sudo systemctl status docker --no-pager
+  sudo docker run hello-world
+  ```
+
+- **Step 2: Install Docker plugin for using CUDA**
   
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg2
 
-## 2. Primary Evaluation
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+    | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
 
-### 2.1 Quick Start
+  curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+    | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+    | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
-#### 2.1.1 Get source code
+  sudo apt-get update
+  sudo apt-get install -y nvidia-container-toolkit
+  sudo nvidia-ctk runtime configure --runtime=docker
+  sudo systemctl restart docker
+  ```
 
-We provide the source code of VLASelect together with the scripts for primary evaluation. You can obtain the artifact package by the following command:
+- **Step 3: Install the required dependencies of this artifact:**
 
-```bash
-git clone https://github.com/LINC-BIT/VLASelect.git
-```
+  ```bash
+  cd <VLASelect directory>
 
-If the artifact is distributed as an archived package instead of a git repository, please unpack it and enter the root directory of VLASelect before running the following commands.
+  # Option 1: 
+  # pull the full Docker image (33GB)
+  # without installing other dependencies
+  bash dep.sh
 
-#### 2.1.2 Install dependencies
+  # Option 2: 
+  # pull the minimum Docker image (100MB)
+  # and install other dependencies in the Docker container
+  TYPE=100M bash dep.sh
+  ```
 
-- **Hardware**
-  - **Recommended environments**: A device with at least 128 GB of RAM, one NVIDIA GPU with more than 60 GB of device memory (e.g., NVIDIA A100), two CPUs with at least 64 cores each (e.g., Intel(R) Xeon(R) Gold 6430), and 150 GB of free disk space.
-  - **Minimum requirements**:
-    - Single-CPU server: 16-32 GB RAM, one 8-core server CPU (e.g., Intel Xeon E-2388G), and at least 80 GB of free disk space.
-    - GPU-equipped server: 32-64 GB RAM, one 12-core server CPU (e.g., Intel Xeon Silver 4310), one mid-range NVIDIA GPU with 8-12 GB VRAM (e.g., NVIDIA RTX 3060), and at least 80 GB of free disk space.
-    - CPU-only desktop: 16-32 GB RAM, one 16-core desktop CPU with integrated graphics (e.g., Dell OptiPlex 7010 Plus Tower with Intel Core i7-13700), and at least 80 GB of free disk space.
-    - GPU-equipped desktop: 16-32 GB RAM, one 20-core desktop CPU (e.g., Intel Core i7-14700), one consumer NVIDIA GPU with 8 GB VRAM (e.g., Dell XPS Desktop 8960 with RTX 4060), and at least 80 GB of free disk space.
-    - CPU-only laptop: 16-32 GB RAM, one 12-core mobile CPU with integrated graphics (e.g., Lenovo ThinkPad X1 Carbon Gen 12 with Intel Core Ultra 7 155U), and at least 80 GB of free disk space.
-    - GPU-equipped laptop: 16-32 GB RAM, one 16-core mobile CPU (e.g., Intel Core i7-14650HX), one NVIDIA laptop GPU with 8 GB VRAM (e.g., Lenovo Legion 5i Gen 9 with RTX 4060), and at least 80 GB of free disk space.
-  - Sim-to-real evaluation also requires a DOFBOT-SE single-arm robot and an AmazingHand dexterous hand.
+- **Step 4: Check the installation:**
 
-- **Software**
-  - **Recommended environments**: Ubuntu 22.04.4 LTS (other distributions would be fine) with kernel 6.8.0-124-generic. Its CUDA version should be above 13.0.
-  - **Minimum requirements**:
-    - Ubuntu: Ubuntu 20.04 LTS or above with Docker and kernel 5.4+. If GPU is used, install a compatible NVIDIA driver and CUDA 12.x or above.
-    - Windows: Windows 10 or above with Docker Desktop. If GPU is used, install a compatible NVIDIA driver and CUDA 12.x or above.
-    - macOS: macOS 14 or above with Docker Desktop.
-    - Debian: Debian 11 or above with Docker and kernel 5.10+. If GPU is used, install a compatible NVIDIA driver and CUDA 12.x or above.
-    - RHEL: RHEL 8 or above with Docker and kernel 4.18+. If GPU is used, install a compatible NVIDIA driver and CUDA 12.x or above.
+  ```bash
+  bash start_docker.sh
+  python -c "import torch; print(torch.__version__)"
+  python -c "import torch; print(torch.cuda.is_available())"
+  python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA not available')"
+  ```
 
-- **Dependency installation steps**
-  - Example desktop: a Lenovo Legion T5 26IAB7 desktop running Ubuntu 22.04 LTS with kernel 5.15.0-78-generic, 16 GB RAM, an Intel Core i7-12700 CPU, and one NVIDIA RTX 3080 Ti GPU with 12 GB VRAM and 13.0 CUDA version.
-    1. Install Docker Engine on the host machine by following the Ubuntu guide: https://docs.docker.com/engine/install/ubuntu/.
+#### 1.2.5 Install dependencies (if Docker cannot be installed)
 
-       1.1 Open a terminal and run the following commands to add the Docker official GPG key and Ubuntu `apt` repository.
-        ```bash
-        # Add Docker's official GPG key:
-        sudo apt update
-        sudo apt install ca-certificates curl
-        sudo install -m 0755 -d /etc/apt/keyrings
-        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-        sudo chmod a+r /etc/apt/keyrings/docker.asc
+- If you cannot install Docker (e.g. no root permission), skip Section 1.2.4 and run the following commands instead. 
 
-        # Add the repository to Apt sources:
-        sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
-        Types: deb
-        URIs: https://download.docker.com/linux/ubuntu
-        Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
-        Components: stable
-        Architectures: $(dpkg --print-architecture)
-        Signed-By: /etc/apt/keyrings/docker.asc
-        EOF
+  ```bash
+  # Option 1: install dependencies without Docker in a x86 machine
+  cd <VLASelect directory>
+  TORCH_VERSION=2.4.0 \
+  TORCHVISION_VERSION=0.19.0 \
+  TORCHAUDIO_VERSION=2.4.0 \
+  TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124 \
+  bash dep-non-docker.sh
 
-        sudo apt update
-        ```
-       ![1.1.1](/imgs/1.1.1.png)
+  # Option 2: install dependencies without Docker in a ARM machine
+  ARM=1 bash dep-non-docker.sh
+  ```
 
-       
-       1.2 Install `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin`, and `docker-compose-plugin`.
-        ```bash
-        sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-        ```
-       ![1.2.1](/imgs/1.2.1.png)
+## 2. Evaluation Reproduction
 
+### 2.1 One-click Reproduction
+We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces result figures and tables.
 
-       1.3 Verify that Docker is installed correctly. If the output matches the figure below without errors, it is correct.
-        ```bash
-        sudo systemctl status docker --no-pager
-        sudo docker run hello-world
-        ```
-       ![1.3](/imgs/1.3.png)
-
-    2. Install `nvidia-container-toolkit` by following the official guide: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html.
-
-       2.1 Add the NVIDIA Container Toolkit `apt` repository on Ubuntu.
-        ```bash
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg2
-
-        curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
-          | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-
-        curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
-          | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
-          | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-
-        sudo apt-get update
-        ```
-       ![2.1](/imgs/2.1.png)
-
-       2.2 Install `nvidia-container-toolkit`.
-        ```bash
-        sudo apt-get install -y nvidia-container-toolkit
-        ```
-        ![2.2](/imgs/2.2.png)
-       2.3 Run `sudo nvidia-ctk runtime configure --runtime=docker` to configure the Docker runtime.
-        ```bash
-        sudo nvidia-ctk runtime configure --runtime=docker
-        ```
-       ![2.3](/imgs/2.3.png)
-
-       2.4 Restart the Docker service to apply the NVIDIA runtime configuration and verify GPU access from Docker.
-        ```bash
-        sudo systemctl restart docker
-        ```
-       ![2.4](/imgs/2.4.png)
-
-    3. Run `bash dep.sh` in the repository root to pull the image and create the container.
-
-       ```bash
-       cd <VLASelect directory>
-       bash dep.sh
-
-       # Optional: use the lightweight ~100 MB image to start the container quickly,
-       # then let dep.sh install the remaining runtime inside the container automatically
-       TYPE=100M bash dep.sh
-       ```
-       ![3.1](/imgs/3.1.png)
-       If successful, this step generates `start_docker.sh`.
-       ![3.2](/imgs/3.2.png)
-       The default `bash dep.sh` path uses the full image with the required runtime preinstalled. The `TYPE=100M bash dep.sh` path uses a lightweight bootstrap image that keeps only a minimal Python and system layer in the image itself, and then installs the remaining runtime into the container on first setup.
-
-       If you want to build the lightweight image locally instead of pulling it from Docker Hub, run:
-
-       ```bash
-       cd <VLASelect directory>
-       bash docker/100m/build-image.sh
-       ```
-
-    4. Start the container and check whether PyTorch works correctly. If the machine supports a GPU, also check `torch.cuda.is_available()`.
-
-       ```bash
-       bash start_docker.sh
-       python -c "import torch; print(torch.__version__)"
-       python -c "import torch; print(torch.cuda.is_available())"
-       python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA not available')"
-       ```
-       If everything works correctly, the output should look like the following.
-       ![4.1](/imgs/4.1.png)
-    5. If PyTorch has issues, visit the official PyTorch installation page to get the proper download and installation commands: https://pytorch.org/get-started/locally/. For example, if I want to install the CUDA 12.4 build of PyTorch on this machine, which is lower than the host CUDA version, the command is shown below.
-       ![5.1](/imgs/5.1.png)
-
-    - If you do not want to use Docker, run `bash dep-non-docker.sh` instead. Before doing so, check the CUDA version that matches the current device from https://pytorch.org/get-started/locally/. For example, the current project uses `torch==2.4.0`, `torchvision==0.19.0`, and `torchaudio==2.4.0` with the CUDA 12.4 wheel index. For ARM-based hosts, use `ARM=1` to enable the ARM defaults in `dep-non-docker.sh`.
-
-       ```bash
-       cd <VLASelect directory>
-       TORCH_VERSION=2.4.0 \
-       TORCHVISION_VERSION=0.19.0 \
-       TORCHAUDIO_VERSION=2.4.0 \
-       TORCH_INDEX_URL=https://download.pytorch.org/whl/cu124 \
-       bash dep-non-docker.sh
-
-       # ARM example
-       ARM=1 bash dep-non-docker.sh
-       ```
-       ![5.1](/imgs/no-docker.png)
-
-
-#### 2.1.3 One-click run
-We provide a one-click script `run.sh` in the root directory of `eval`, which can automatically run the experiments involved in the main claims of the paper. The specific reproducing steps of each experiment are described in the following subsections.
+The reproducing steps of each experiment are described in Section 2.2.
 
 ```bash
 cd <VLASelect directory>
-# Run the command below to enter the Docker container
 bash start_docker.sh
-# Then you can start the experiment
+
 cd <VLASelect directory in the container>/eval
+
+# Option 1: Full run (requiring more than 15 days to complete)
 bash run.sh
-# You can use the command below to run all the minimum working examples
+
+# Option 2: Run minimum working examples (completed within 1 day)
 MWE=1 base run.sh
 ```
 
-### 2.2 Step-by-Step Reproducing
+### 2.2 Step-by-Step Reproduction
 
-Use the following common workflow before running a specific experiment.
+Run the following command at the beginning:
 
 ```bash
 cd <VLASelect directory>
@@ -222,32 +212,63 @@ bash start_docker.sh
 cd <VLASelect directory in the container>/eval
 ```
 
-You can then start the experiments by running the following commands.
+And you can run the following commands to reproduce each figure/table in our evaluation.
 
-#### 2.2.1 Accuracy Experiments
+#### 2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes
 
-- **Accuracy Under Tasks/Environment Changes**
-
-  
+- **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
   cd acc_comparison
 
-  # option 1: Run by one command:
+  # You can run four workloads by one command:
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change.sh
+  python3 plot_acc_task_env.py
+
+  # And you can run each workloads step by step:
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_single_arm_robot.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_mobile_manipulator.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_dexterous_hand.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_humanoid_robot.sh
+  python3 plot_acc_task_env.py
+  ```
+- **Option 2:** Commands for minimum working examples on all methods:
+  ```bash
+  cd acc_comparison
+
+  # You can run four workloads by one command:
+  MWE=1 bash run_acc_task_env_change.sh
+  python3 plot_acc_task_env.py
+
+  # And you can run each workloads step by step:
+  MWE=1 bash run_acc_task_env_change_single_arm_robot.sh
+  MWE=1 bash run_acc_task_env_change_mobile_manipulator.sh
+  MWE=1 bash run_acc_task_env_change_dexterous_hand.sh
+  MWE=1 bash run_acc_task_env_change_humanoid_robot.sh
+  python3 plot_acc_task_env.py
+  ```
+- **Option 3:** Commands for full run:
+  ```bash
+  cd acc_comparison
+
+  # You can run four workloads by one command:
   bash run_acc_task_env_change.sh
   python3 plot_acc_task_env.py
 
-  # option 2: Run each workloads step by step:
+  # And you can run each workloads step by step:
   bash run_acc_task_env_change_single_arm_robot.sh
   bash run_acc_task_env_change_mobile_manipulator.sh
   bash run_acc_task_env_change_dexterous_hand.sh
   bash run_acc_task_env_change_humanoid_robot.sh
+  python3 plot_acc_task_env.py
   ```
 
-  It will output the following file and results:
+- The three options' resource requirements and outputs are listed below:
 
-  | Figure No. & Experiment | Resource Requirements | Path | Experiment Results |
-  | --- | --- | --- | --- |
-  | Figure 7: Accuracy under task change and new environment | 140 hours, 60GB memory | acc_comparison/ FIG_ACC_TASK_ENV.pdf | [Task & Env Accuracy](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run) |
+  | | Resource Requirements | Example Running Results |
+  | --- | --- | --- |
+  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run) |
+  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run) |
+  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run) |
 
 
 - **Accuracy Under Available Resource Changes**

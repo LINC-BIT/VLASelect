@@ -41,6 +41,7 @@ from train.vla_adapter_new.model_impl.online_rl import (
     set_seed,
     strip_module_prefix,
 )
+from train.common.mwe_eval import SUCCESS_METRIC_WINDOW_EPISODES, append_episode_metric_batch, summarize_episode_metric_tensors, trim_episode_metric_tensors
 from train.vla_adapter_new.ours.generate_static_small_model import (
     feedback_static_small_model_to_large_model,
 )
@@ -632,8 +633,7 @@ def train(
                 initial_obs, _, _, _, infos = envs.step(action)
                 done_mask, episode_metrics = get_completed_episode_metrics(infos)
                 if done_mask is not None and done_mask.any():
-                    for key, value_tensor in episode_metrics.items():
-                        initial_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+                    append_episode_metric_batch(initial_episode_metrics, episode_metrics, done_mask)
 
         metric: Dict[str, Any] = {
             "update": 0,
@@ -642,9 +642,10 @@ def train(
             "env_id": current_env_id,
             "env_index": current_env_index,
         }
-        metric.update(reference.gather_metric_summary(summarize_episode_metrics(initial_episode_metrics)))
+        metric.update(summarize_episode_metric_tensors(initial_episode_metrics))
         return metric
 
+    success_metric_window_episodes = SUCCESS_METRIC_WINDOW_EPISODES
     initial_metric = collect_initial_training_metric()
     metrics_history.append(initial_metric)
     best_success_once = max(best_success_once, float(initial_metric.get("train_success_once", -1.0)))
@@ -794,7 +795,6 @@ def train(
         final_values.zero_()
         rollout_rgbs: List[torch.Tensor] = []
         rollout_states: List[np.ndarray] = []
-        train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
 
@@ -852,10 +852,8 @@ def train(
                 )
 
             done_mask, episode_metrics = get_completed_episode_metrics(infos)
-            if done_mask is not None:
-                if done_mask.any():
-                    for key, value_tensor in episode_metrics.items():
-                        train_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+            if done_mask is not None and done_mask.any():
+                append_episode_metric_batch(train_episode_metrics, episode_metrics, done_mask)
                 if "final_observation" in infos and truncation_mask.any():
                     final_obs = infos["final_observation"]
                     bootstrap_idx = truncation_mask.detach().cpu().numpy().astype(bool)
@@ -964,7 +962,12 @@ def train(
             "env_id": current_env_id,
             "env_index": current_env_index,
         }
-        metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+        metric.update(
+            reference.gather_metric_summary(
+                summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)
+            )
+        )
+        trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
 
         current_success_end = float(metric.get("train_success_at_end", metric.get("train_success_once", 0.0)))
         if success_end_at_last_small_model_feedback is None:

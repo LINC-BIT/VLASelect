@@ -147,7 +147,7 @@ class Args:
     eval_every_updates: int = 50
     max_episode_steps: Optional[int] = None
     cuda_device: str = "0"
-    save_video: bool = True
+    save_video: bool = False
     save_train_video_freq: int = 10
     train_video_num_envs: int = 4
     test_video_num_envs: int = 4

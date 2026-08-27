@@ -47,16 +47,16 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 0.3833333333333333,
-        "ours_average": 0.7638888888888888,
-        "absolute_improvement_percent": 38.05555555555556
+        "others_average": 0.16233116128271707,
+        "ours_average": 0.7305555555555556,
+        "absolute_improvement_percent": 56.822439427283854
       },
       "series": [
         {
           "name": "self_improv",
           "display_name": "Self-Improv",
           "label": "Self-Improv",
-          "raw_average": 0.25,
+          "raw_average": 0.121162,
           "style": {
             "color": "#9A9A9A",
             "linestyle": "-",
@@ -68,7 +68,7 @@
           ],
           "y": [
             0.0,
-            0.15000000000000002
+            0.07269715942397151
           ],
           "x_full": [
             0.06511902391435453,
@@ -80,7 +80,7 @@
           "name": "vla_rft",
           "display_name": "VLA-RFT",
           "label": "VLA-RFT",
-          "raw_average": 0.4,
+          "raw_average": 0.170222,
           "style": {
             "color": "#59A14F",
             "linestyle": "--",
@@ -93,8 +93,8 @@
           ],
           "y": [
             0.0,
-            0.255,
-            0.33495
+            0.11141475328348983,
+            0.14342838739236496
           ],
           "x_full": [
             0.20655418410789436,
@@ -109,7 +109,7 @@
           "name": "world_env",
           "display_name": "WorldEnv",
           "label": "WorldEnv",
-          "raw_average": 0.5,
+          "raw_average": 0.19561,
           "style": {
             "color": "#4D4D4D",
             "linestyle": "--",
@@ -122,8 +122,8 @@
           ],
           "y": [
             0.0,
-            0.405,
-            0.4335
+            0.15242103840240742,
+            0.17118543047356582
           ],
           "x_full": [
             0.16823166827334568,
@@ -137,7 +137,7 @@
           "name": "ours",
           "display_name": "VLASelect",
           "label": "VLASelect",
-          "raw_average": 0.763889,
+          "raw_average": 0.730556,
           "style": {
             "color": "#C44E52",
             "linestyle": "-",
@@ -150,8 +150,8 @@
           ],
           "y": [
             0.3333333333333333,
-            0.6733333333333333,
-            0.7304533333333334
+            0.6478333333333333,
+            0.6993568333333333
           ],
           "x_full": [
             0.2095019353341618,

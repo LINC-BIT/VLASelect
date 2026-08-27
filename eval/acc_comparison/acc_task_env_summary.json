@@ -5,13 +5,13 @@
     "family": "octo",
     "method": "self_improv",
     "display_name": "Self-Improvement",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/self_improv",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260826-145142/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/self_improv",
     "num_points": 3,
-    "avg_accuracy": 0.5285319834947586,
+    "avg_accuracy": 0.5201986501614253,
     "final_accuracy": 0.5365853905677795,
-    "max_minutes": 1.00517210343484
+    "max_minutes": 1.0032085954308665
   },
   {
     "panel_label": "a",
@@ -19,13 +19,13 @@
     "family": "octo",
     "method": "vla_rft",
     "display_name": "VLA-RFT",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/vla_rft",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260826-145142/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/vla_rft",
     "num_points": 3,
     "avg_accuracy": 0.4704496605055673,
     "final_accuracy": 0.6481481194496155,
-    "max_minutes": 0.8987032519992985
+    "max_minutes": 0.8941332331014564
   },
   {
     "panel_label": "a",
@@ -33,13 +33,13 @@
     "family": "octo",
     "method": "world_env",
     "display_name": "WorldEnv",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/world_env",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260826-145142/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/world_env",
     "num_points": 3,
     "avg_accuracy": 0.46813217656952993,
     "final_accuracy": 0.7130434513092041,
-    "max_minutes": 0.880280350218527
+    "max_minutes": 0.8795682136338049
   },
   {
     "panel_label": "a",
@@ -47,13 +47,13 @@
     "family": "octo",
     "method": "ours_single_agent",
     "display_name": "VLASelect",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-121034/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-121034/ours_single_agent/[agent]",
+    "top_manifest": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260826-145142/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/cl_suite/20260826-145142/ours_single_agent/[agent]",
     "num_points": 3,
-    "avg_accuracy": 0.9234234239604022,
-    "final_accuracy": 0.5,
-    "max_minutes": 0.9834447611239739
+    "avg_accuracy": 0.869321534274955,
+    "final_accuracy": 0.95,
+    "max_minutes": 1.9990230969376475
   },
   {
     "panel_label": "b",
@@ -65,8 +65,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/self_improv",
     "num_points": 2,
-    "avg_accuracy": 0.25,
-    "final_accuracy": 0.5,
+    "avg_accuracy": 0.12116193237328583,
+    "final_accuracy": 0.24232386474657167,
     "max_minutes": 1.99998
   },
   {
@@ -79,7 +79,7 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/vla_rft",
     "num_points": 3,
-    "avg_accuracy": 0.4,
+    "avg_accuracy": 0.1702217743399988,
     "final_accuracy": 0.0,
     "max_minutes": 1.99998
   },
@@ -93,8 +93,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/world_env",
     "num_points": 3,
-    "avg_accuracy": 0.5,
-    "final_accuracy": 0.5,
+    "avg_accuracy": 0.1956097771348666,
+    "final_accuracy": 0.21496901197293547,
     "max_minutes": 1.99998
   },
   {
@@ -107,8 +107,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/ours",
     "num_points": 3,
-    "avg_accuracy": 0.7638888888888888,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.7305555555555556,
+    "final_accuracy": 0.95,
     "max_minutes": 1.99998
   },
   {
@@ -117,12 +117,12 @@
     "family": "tinyvla",
     "method": "self_improv",
     "display_name": "Self-Improv",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/self_improv",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260827-043445/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/self_improv",
     "num_points": 1,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.3307669048495099,
+    "final_accuracy": 0.3307669048495099,
     "max_minutes": 1.99998
   },
   {
@@ -131,12 +131,12 @@
     "family": "tinyvla",
     "method": "vla_rft",
     "display_name": "VLA-RFT",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/vla_rft",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260827-043445/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/vla_rft",
     "num_points": 2,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.4280479682263274,
+    "final_accuracy": 0.4613160494241869,
     "max_minutes": 1.99998
   },
   {
@@ -145,12 +145,12 @@
     "family": "tinyvla",
     "method": "world_env",
     "display_name": "WorldEnv",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/world_env",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260827-043445/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/world_env",
     "num_points": 2,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.36764869632101416,
+    "final_accuracy": 0.43693397089841257,
     "max_minutes": 1.99998
   },
   {
@@ -159,13 +159,13 @@
     "family": "tinyvla",
     "method": "ours",
     "display_name": "Ours",
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-215236/manifest.json",
-    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/manifest.json",
-    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260826-215236/ours",
-    "num_points": 2,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
-    "max_minutes": 1.99998
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260827-043445/manifest.json",
+    "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
+    "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/ours",
+    "num_points": 3,
+    "avg_accuracy": 0.7749999999999999,
+    "final_accuracy": 0.95,
+    "max_minutes": 1.9999799999999999
   },
   {
     "panel_label": "d",
@@ -177,8 +177,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/self_improv/run",
     "num_points": 1,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.41358278631093937,
+    "final_accuracy": 0.41358278631093937,
     "max_minutes": 1.99998
   },
   {
@@ -191,8 +191,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/vla_rft/run",
     "num_points": 3,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.3669310384997666,
+    "final_accuracy": 0.3474782879688526,
     "max_minutes": 1.99998
   },
   {
@@ -205,8 +205,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/world_env/run",
     "num_points": 3,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.3789569971311106,
+    "final_accuracy": 0.382036162134182,
     "max_minutes": 1.99998
   },
   {
@@ -219,8 +219,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/ours/run",
     "num_points": 3,
-    "avg_accuracy": 1.0,
-    "final_accuracy": 1.0,
+    "avg_accuracy": 0.9500000000000001,
+    "final_accuracy": 0.95,
     "max_minutes": 1.9999800000000003
   }
 ]

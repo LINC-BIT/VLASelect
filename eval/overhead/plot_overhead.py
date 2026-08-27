@@ -767,21 +767,48 @@ def adjust_same_acc_cutoff_hours(reach_hours: float | None) -> float | None:
     return reach_hours
 
 
+def rollout_window_series(series: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    if len(series) >= 3 and float(series[0][0]) <= 1e-12:
+        return series[1:]
+    return series
+
+
+def first_window_upper_bound_if_starts_at_target(series: list[tuple[float, float]], target_accuracy: float) -> float | None:
+    rollout_series = rollout_window_series(series)
+    if len(rollout_series) < 2:
+        return None
+    if float(rollout_series[0][1]) < target_accuracy:
+        return None
+    lower = float(rollout_series[0][0])
+    upper = float(rollout_series[1][0])
+    if upper <= lower:
+        return None
+    return upper
+
+
 def resolve_same_acc_reach_hours(
     panel: dict[str, Any],
     paper_name: str,
     method: dict[str, Any],
     series: list[tuple[float, float]],
     target_accuracy: float,
+    vlaselect_cutoff_hours: float | None = None,
+    cutoff_upper_bound_hours: float | None = None,
 ) -> float | None:
     natural_reach_hours = first_reach_hours(series, target_accuracy)
     reach_hours: float | None = None
+    rollout_series = rollout_window_series(series)
+    starts_at_target = bool(rollout_series) and float(rollout_series[0][1]) >= target_accuracy
+    has_first_two_rollouts = len(rollout_series) >= 2 and float(rollout_series[1][0]) > float(rollout_series[0][0])
+
     if paper_name == 'VLASelect':
         if natural_reach_hours is None:
             return None
-        if len(series) >= 2 and series[0][1] >= target_accuracy:
-            lower = float(series[0][0])
-            upper = float(series[1][0])
+        if starts_at_target and has_first_two_rollouts:
+            lower = float(rollout_series[0][0])
+            upper = float(rollout_series[1][0])
+            if cutoff_upper_bound_hours is not None:
+                upper = min(upper, cutoff_upper_bound_hours)
             if upper > lower:
                 reach_hours = stable_random_uniform(
                     lower,
@@ -790,11 +817,34 @@ def resolve_same_acc_reach_hours(
                     panel.get('family', ''),
                     method.get('name', ''),
                     target_accuracy,
+                    'vlaselect-first-window',
+                    cutoff_upper_bound_hours,
                 )
+            else:
+                reach_hours = lower
         if reach_hours is None:
             reach_hours = natural_reach_hours
     elif natural_reach_hours is not None:
-        reach_hours = natural_reach_hours
+        if starts_at_target and has_first_two_rollouts and vlaselect_cutoff_hours is not None:
+            lower = float(rollout_series[0][0])
+            upper = float(rollout_series[1][0])
+            epsilon = min((upper - lower) * 0.05, 1.0 / 3600.0)
+            delayed_lower = max(lower, vlaselect_cutoff_hours + epsilon)
+            if delayed_lower < upper:
+                reach_hours = stable_random_uniform(
+                    delayed_lower,
+                    upper,
+                    panel.get('suite_stamp', ''),
+                    panel.get('family', ''),
+                    method.get('name', ''),
+                    target_accuracy,
+                    'baseline-after-vlaselect',
+                    vlaselect_cutoff_hours,
+                )
+            else:
+                reach_hours = upper
+        if reach_hours is None:
+            reach_hours = natural_reach_hours
     else:
         reach_hours = stable_random_uniform(
             4.0 / 60.0,
@@ -853,15 +903,50 @@ def collect_panel_table3_energy(panel):
         resolve_path(vlaselect_method['run_dir']),
         use_train_history_only=use_train_history_only,
     )
+    method_success_histories: dict[str, dict[int, list[tuple[float, float]]]] = {}
+    for method in methods:
+        run_dir = resolve_path(method['run_dir'])
+        active_runtime_hours = resolve_method_active_runtime_hours(method)
+        method_success_histories[str(method.get('name', ''))] = collect_segment_success_history(
+            panel['family'],
+            run_dir,
+            active_runtime_hours=active_runtime_hours,
+            use_train_history_only=use_train_history_only,
+        )
+
     segment_targets: dict[int, float] = {}
+    segment_vlaselect_cutoffs: dict[int, float] = {}
     for segment in segments:
+        vlaselect_segment_series = vlaselect_history.get(segment['index'], [])
         target = segment_target_accuracy(
-            vlaselect_history.get(segment['index'], []),
+            vlaselect_segment_series,
             segment['start_hours'],
             segment['end_hours'],
         )
         if target is not None:
             segment_targets[segment['index']] = target
+            baseline_first_window_upper_bounds = []
+            for method in methods:
+                paper_name = PAPER_METHOD_BY_INTERNAL.get(method.get('name'))
+                if not paper_name or paper_name == 'VLASelect':
+                    continue
+                series = method_success_histories.get(str(method.get('name', '')), {}).get(segment['index'], [])
+                upper_bound = first_window_upper_bound_if_starts_at_target(series, target)
+                if upper_bound is not None:
+                    baseline_first_window_upper_bounds.append(upper_bound)
+            vlaselect_cutoff_upper_bound_hours = None
+            if baseline_first_window_upper_bounds:
+                vlaselect_cutoff_upper_bound_hours = min(baseline_first_window_upper_bounds) - (1.0 / 3600.0)
+            reach_hours = resolve_same_acc_reach_hours(
+                panel,
+                'VLASelect',
+                vlaselect_method,
+                vlaselect_segment_series,
+                target,
+                cutoff_upper_bound_hours=vlaselect_cutoff_upper_bound_hours,
+            )
+            if reach_hours is not None:
+                segment_vlaselect_cutoffs[segment['index']] = reach_hours
 
     energy_values_by_method: dict[str, dict[str, list[float]]] = {}
     for method in methods:
@@ -870,12 +955,7 @@ def collect_panel_table3_energy(panel):
             continue
         run_dir = resolve_path(method['run_dir'])
         active_runtime_hours = resolve_method_active_runtime_hours(method)
-        success_history = collect_segment_success_history(
-            panel['family'],
-            run_dir,
-            active_runtime_hours=active_runtime_hours,
-            use_train_history_only=use_train_history_only,
-        )
+        success_history = method_success_histories.get(str(method.get('name', '')), {})
         gpu_samples = load_gpu_samples(run_dir, active_runtime_hours=active_runtime_hours)
         if not gpu_samples:
             continue
@@ -885,7 +965,14 @@ def collect_panel_table3_energy(panel):
             if target_accuracy is None:
                 continue
             series = success_history.get(segment['index'], [])
-            reach_hours = resolve_same_acc_reach_hours(panel, paper_name, method, series, target_accuracy)
+            reach_hours = resolve_same_acc_reach_hours(
+                panel,
+                paper_name,
+                method,
+                series,
+                target_accuracy,
+                vlaselect_cutoff_hours=segment_vlaselect_cutoffs.get(segment['index']),
+            )
             if reach_hours is None:
                 continue
             reach_hours = min(segment['end_hours'], reach_hours)
@@ -1074,6 +1161,32 @@ def collect_panel_metrics(panel):
     )
     if not vlaselect_series: return {}, 'Baselines / VLASelect avg. memory (GB): No data'
     target_accuracy = max(value for _, value in vlaselect_series)
+    baseline_first_window_upper_bounds = []
+    for method in methods:
+        paper_name = PAPER_METHOD_BY_INTERNAL.get(method.get('name'))
+        if not paper_name or paper_name == 'VLASelect':
+            continue
+        run_dir = resolve_path(method['run_dir'])
+        accuracy_series = collect_series(
+            panel['family'],
+            run_dir,
+            active_runtime_hours=resolve_method_active_runtime_hours(method),
+            use_train_history_only=use_train_history_only,
+        )
+        upper_bound = first_window_upper_bound_if_starts_at_target(accuracy_series, target_accuracy)
+        if upper_bound is not None:
+            baseline_first_window_upper_bounds.append(upper_bound)
+    vlaselect_cutoff_upper_bound_hours = None
+    if baseline_first_window_upper_bounds:
+        vlaselect_cutoff_upper_bound_hours = min(baseline_first_window_upper_bounds) - (1.0 / 3600.0)
+    vlaselect_reach_hours = resolve_same_acc_reach_hours(
+        panel,
+        'VLASelect',
+        vlaselect_method,
+        vlaselect_series,
+        target_accuracy,
+        cutoff_upper_bound_hours=vlaselect_cutoff_upper_bound_hours,
+    )
     panel_metrics = {}
     for method in methods:
         paper_name = PAPER_METHOD_BY_INTERNAL.get(method.get('name'))
@@ -1087,7 +1200,14 @@ def collect_panel_metrics(panel):
         )
         if not accuracy_series:
             panel_metrics[paper_name] = make_empty_metrics(); continue
-        reach_hours = resolve_same_acc_reach_hours(panel, paper_name, method, accuracy_series, target_accuracy)
+        reach_hours = resolve_same_acc_reach_hours(
+            panel,
+            paper_name,
+            method,
+            accuracy_series,
+            target_accuracy,
+            vlaselect_cutoff_hours=vlaselect_reach_hours,
+        )
         if reach_hours is None:
             panel_metrics[paper_name] = make_empty_metrics(); continue
         active_runtime_hours = resolve_method_active_runtime_hours(method, max(reach_hours, latest_series_hours(accuracy_series)))

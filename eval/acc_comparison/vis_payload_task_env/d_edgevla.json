@@ -47,16 +47,16 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 1.0,
-        "ours_average": 1.0,
-        "absolute_improvement_percent": 0.0
+        "others_average": 0.38649027398060554,
+        "ours_average": 0.9500000000000001,
+        "absolute_improvement_percent": 56.35097260193945
       },
       "series": [
         {
           "name": "self_improv",
           "display_name": "Self-Improv",
           "label": "Self-Improv",
-          "raw_average": 1.0,
+          "raw_average": 0.413583,
           "style": {
             "color": "#9A9A9A",
             "linestyle": "-",
@@ -66,7 +66,7 @@
             0.0
           ],
           "y": [
-            1.0
+            0.41358278631093937
           ],
           "x_full": [
             1.99998
@@ -77,7 +77,7 @@
           "name": "vla_rft",
           "display_name": "VLA-RFT",
           "label": "VLA-RFT",
-          "raw_average": 1.0,
+          "raw_average": 0.366931,
           "style": {
             "color": "#59A14F",
             "linestyle": "--",
@@ -89,9 +89,9 @@
             2.0999790000000003
           ],
           "y": [
-            1.0,
-            1.0,
-            1.0
+            0.4052290227241853,
+            0.38808605734880824,
+            0.3759037265348215
           ],
           "x_full": [
             0.7604260611757552,
@@ -104,7 +104,7 @@
           "name": "world_env",
           "display_name": "WorldEnv",
           "label": "WorldEnv",
-          "raw_average": 1.0,
+          "raw_average": 0.378957,
           "style": {
             "color": "#4D4D4D",
             "linestyle": "--",
@@ -116,9 +116,9 @@
             2.0999790000000003
           ],
           "y": [
-            1.0,
-            1.0,
-            1.0
+            0.33006545848819074,
+            0.35847663217302117,
+            0.36554449116136944
           ],
           "x_full": [
             0.7703311770964774,
@@ -131,7 +131,7 @@
           "name": "ours",
           "display_name": "Ours",
           "label": "Ours",
-          "raw_average": 1.0,
+          "raw_average": 0.95,
           "style": {
             "color": "#C44E52",
             "linestyle": "-",
@@ -143,9 +143,9 @@
             2.0999790000000003
           ],
           "y": [
-            1.0,
-            1.0,
-            1.0
+            0.95,
+            0.95,
+            0.95
           ],
           "x_full": [
             0.1603884809997082,

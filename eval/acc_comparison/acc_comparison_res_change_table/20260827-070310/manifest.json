@@ -1,0 +1,12 @@
+{
+  "suite_stamp": "20260827-070310",
+  "table_root": "acc_comparison/acc_comparison_res_change_table",
+  "figure_output": "acc_comparison/FIG_ACC_RESOURCE.pdf",
+  "resource_change_time_points": "[60,120,180,240,300]",
+  "resource_change_directions": "['increase','increase','decrease','increase','decrease']",
+  "resource_change_factors": "[0.3,0.3,-0.3,0.3,-0.3]",
+  "mwe": "1",
+  "mwe_workload_runtime_limit_seconds": "600",
+  "panels": [],
+  "families": []
+}

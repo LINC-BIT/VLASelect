@@ -65,8 +65,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/self_improv",
     "num_points": 2,
-    "avg_accuracy": 0.12116193237328583,
-    "final_accuracy": 0.24232386474657167,
+    "avg_accuracy": 0.11327515790660561,
+    "final_accuracy": 0.22655031581321122,
     "max_minutes": 1.99998
   },
   {
@@ -79,7 +79,7 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/vla_rft",
     "num_points": 3,
-    "avg_accuracy": 0.1702217743399988,
+    "avg_accuracy": 0.1606185055411083,
     "final_accuracy": 0.0,
     "max_minutes": 1.99998
   },
@@ -93,8 +93,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/vla_adapter_new/cl_suite/20260826-160837/world_env",
     "num_points": 3,
-    "avg_accuracy": 0.1956097771348666,
-    "final_accuracy": 0.21496901197293547,
+    "avg_accuracy": 0.1745853892558383,
+    "final_accuracy": 0.20884918441681444,
     "max_minutes": 1.99998
   },
   {
@@ -121,8 +121,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/self_improv",
     "num_points": 1,
-    "avg_accuracy": 0.3307669048495099,
-    "final_accuracy": 0.3307669048495099,
+    "avg_accuracy": 0.31129489128782445,
+    "final_accuracy": 0.31129489128782445,
     "max_minutes": 1.99998
   },
   {
@@ -135,8 +135,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/vla_rft",
     "num_points": 2,
-    "avg_accuracy": 0.4280479682263274,
-    "final_accuracy": 0.4613160494241869,
+    "avg_accuracy": 0.3415067388099303,
+    "final_accuracy": 0.3217764512288603,
     "max_minutes": 1.99998
   },
   {
@@ -149,8 +149,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/ckpt/tinyvla/cl_suite/20260827-043445/world_env",
     "num_points": 2,
-    "avg_accuracy": 0.36764869632101416,
-    "final_accuracy": 0.43693397089841257,
+    "avg_accuracy": 0.44387562035117656,
+    "final_accuracy": 0.4398750927273528,
     "max_minutes": 1.99998
   },
   {
@@ -177,8 +177,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/self_improv/run",
     "num_points": 1,
-    "avg_accuracy": 0.41358278631093937,
-    "final_accuracy": 0.41358278631093937,
+    "avg_accuracy": 0.40408771483144,
+    "final_accuracy": 0.40408771483144,
     "max_minutes": 1.99998
   },
   {
@@ -191,8 +191,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/vla_rft/run",
     "num_points": 3,
-    "avg_accuracy": 0.3669310384997666,
-    "final_accuracy": 0.3474782879688526,
+    "avg_accuracy": 0.3932943653613074,
+    "final_accuracy": 0.3700458603886361,
     "max_minutes": 1.99998
   },
   {
@@ -205,8 +205,8 @@
     "suite_manifest": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/manifest.json",
     "run_dir": "/home/zcr/vlaselect/eval/train/edgevla/cl_suite/20260826-215300/world_env/run",
     "num_points": 3,
-    "avg_accuracy": 0.3789569971311106,
-    "final_accuracy": 0.382036162134182,
+    "avg_accuracy": 0.43613753024142793,
+    "final_accuracy": 0.4440694076272163,
     "max_minutes": 1.99998
   },
   {

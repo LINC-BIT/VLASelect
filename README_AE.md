@@ -211,20 +211,6 @@ MWE=1 bash <script_path>
 | **EdgeVLA**: Knowledge Exchange Granularities | `api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh` | [EdgeVLA Granularity](./model_support.md) |
 
 
-
-## Expected Results and Variance
-
-Exact values may vary with GPU/CPU hardware, CUDA and driver versions, PyTorch versions, and random seeds. For artifact screening, allow approximately:
-
-| Metric | Normal variation |
-| --- | ---: |
-| Accuracy or success rate | +/-5 percentage points; up to +/-10 points for a short MWE tail |
-| Runtime | +/-20% on similar hardware; up to +/-35% on different GPUs |
-| GPU memory | +/-10% |
-| Energy | +/-25% |
-
-The main checks are successful completion, valid output files, populated plots, and the same qualitative trend or method ordering as the paper. If results differ more, first check the selected manifest, model/checkpoint, method list, and seed.
-
 ## Expected Cost for MWE Evaluation and results variation
 
 Approximate upper bounds reported for an individual MWE group are:

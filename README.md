@@ -554,9 +554,40 @@ And you can run the following commands to reproduce each figure/table in our eva
   bash run_sim_to_real.sh
   ```
 - The resource requirements and outputs are listed below:
-  | Resource Requirements | Experiment Results |
-  | --- | --- |
-  | a DOFBOT-SE single-arm robot<br>an AmazingHand dexterous hand | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#sim-to-real-transfer) |
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>Resource Requirements</th>
+      <th>Experiment Results</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>DOFBOT-SE sim-to-real transfer</td>
+      <td>a DOFBOT-SE single-arm robot</td>
+      <td>
+        <video
+          src="https://github.com/user-attachments/assets/9f7905c2-c88b-4d91-8b25-9d59a78566af"
+          controls
+          width="400">
+        </video>
+      </td>
+    </tr>
+    <tr>
+      <td>AmazingHand sim-to-real transfer</td>
+      <td>an AmazingHand dexterous hand</td>
+      <td>
+        <video
+          src="https://github.com/user-attachments/assets/c56c4114-c24c-4c35-b272-e9cf03848504"
+          controls
+          width="400">
+        </video>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 #### 2.2.8 Discussion 2: ICL (In-Context Learning)
 - **Option 1:** Commands for minimum working examples:

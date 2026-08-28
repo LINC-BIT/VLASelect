@@ -2,10 +2,12 @@
 
 ## Sim-to-real transfer
 - DOFBOT-SE:
-<video src="./videos/dofbot-se.mp4"></video>
-- AmazingHand:
-<video src="./videos/amazinghand.mp4"></video>
 
+https://github.com/user-attachments/assets/9f7905c2-c88b-4d91-8b25-9d59a78566af
+
+- AmazingHand:
+
+https://github.com/user-attachments/assets/c56c4114-c24c-4c35-b272-e9cf03848504
 
 ## ICL
 

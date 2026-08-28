@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 
 
 SMOOTHING_ALPHA = 0.6
+METHOD_LABELS = {
+    "mappo": "MAPPO",
+    "ours": "VLASelect",
+}
 
 
 def smooth_scores(scores, alpha: float = SMOOTHING_ALPHA):
@@ -41,6 +45,7 @@ def main() -> None:
         raise SystemExit(f"Invalid manifest: {args.manifest}")
 
     plotted = 0
+    all_scores = []
     fig, ax = plt.subplots(figsize=(7.5, 4.8))
     for run in manifest.get("runs", []):
         method = str(run.get("method", "unknown"))
@@ -67,13 +72,14 @@ def main() -> None:
         points.sort(key=lambda item: item[0])
         times = [item[0] for item in points]
         scores = smooth_scores([item[1] for item in points])
+        all_scores.extend(scores)
         ax.plot(
             times,
             scores,
             marker="o",
             linewidth=1.8,
             markersize=3.5,
-            label=method,
+            label=METHOD_LABELS.get(method.lower(), method),
         )
         plotted += 1
 
@@ -84,7 +90,7 @@ def main() -> None:
     ax.set_xlabel("Training time (minutes)")
     ax.set_ylabel("Accuracy (success rate)")
     ax.set_title("Multi-agent accuracy over training time")
-    ax.set_ylim(0.0, 1.05)
+    ax.set_ylim(min(all_scores) - 0.1, 1.05)
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()

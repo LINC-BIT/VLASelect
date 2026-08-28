@@ -2,8 +2,43 @@
 
 This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"**, which has been conditionally accepted by EuroSys'27.
 
-This repository is organized as follows:
+The artifacts are organized as follows, which contain **artifact components to reproduce each experiment in the paper**, as shown in Section 2.
 
+- [1. Artifact Overview](#1-artifact-overview)
+  - [1.1 Introduction](#11-introduction)
+  - [1.2 Preparation Before Artifacts Evaluation](#12-preparation-before-artifacts-evaluation)
+    - [1.2.1 Hardware Requirements](#121-hardware-requirements)
+    - [1.2.2 Software Requirements](#122-software-requirements)
+    - [1.2.3 Get Source Code](#123-get-source-code)
+    - [1.2.4 Install Dependencies (if Docker can be installed)](#124-install-dependencies-if-docker-can-be-installed)
+    - [1.2.5 Install Dependencies (if Docker cannot be installed)](#125-install-dependencies-if-docker-cannot-be-installed)
+    - [1.2.6 Install Dependencies for Plotting Scripts](#126-install-dependencies-for-plotting-scripts)
+- [2. Evaluation Reproduction](#2-evaluation-reproduction)
+  - [2.1 One-click Reproduction](#21-one-click-reproduction)
+  - [2.2 Step-by-Step Reproduction](#22-step-by-step-reproduction)
+    - [2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes](#221-figure-7-accuracy-under-tasksenvironment-changes)
+    - [2.2.2 (Figure 8) Accuracy Under Available Resource Changes](#222-figure-8-accuracy-under-available-resource-changes)
+    - [2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy](#223-figure-9-and-tables-23-overheads-under-the-same-accuracy)
+    - [2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules](#224-figure-10-time-breakdown-of-vlaselects-modules)
+    - [2.2.5 (Figure 11) Training Time Breakdown in Each Workload](#225-figure-11-training-time-breakdown-in-each-workload)
+    - [2.2.6 (Figure 12) Design Choice Validation by Ablation](#226-figure-12-design-choice-validation-by-ablation)
+    - [2.2.7 Discussion 1: Sim-to-real transfer](#227-discussion-1-sim-to-real-transfer)
+    - [2.2.8 Discussion 2: ICL (In-Context Learning)](#228-discussion-2-icl-in-context-learning)
+    - [2.2.9 Discussion 3: Maximum Supported Model Size](#229-discussion-3-maximum-supported-model-size)
+    - [2.2.10 Discussion 4: Applicability to multi-agent scenarios](#2210-discussion-4-applicability-to-multi-agent-scenarios)
+- [3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities](#3-supporting-various-vla-models-scaling-strategies-and-knowledge-exchange-granularities)
+  - [3.1 Example 1: VLA-Adapter](#31-example-1-vla-adapter)
+    - [3.1.1 Supporting the model](#311-supporting-the-model)
+    - [3.1.2 Supporting different scaling strategies](#312-supporting-different-scaling-strategies)
+    - [3.1.3 Supporting different knowledge exchange granularities](#313-supporting-different-knowledge-exchange-granularities)
+  - [3.2 Example 2: TinyVLA](#32-example-2-tinyvla)
+    - [3.2.1 Supporting the model](#321-supporting-the-model)
+    - [3.2.2 Supporting different scaling strategies](#322-supporting-different-scaling-strategies)
+    - [3.2.3 Supporting different knowledge exchange granularities](#323-supporting-different-knowledge-exchange-granularities)
+  - [3.3 Example 3: EdgeVLA](#33-example-3-edgevla)
+    - [3.3.1 Supporting the model](#331-supporting-the-model)
+    - [3.3.2 Supporting different scaling strategies](#332-supporting-different-scaling-strategies)
+    - [3.3.3 Supporting different knowledge exchange granularities](#333-supporting-different-knowledge-exchange-granularities)
 
 ## 1. Artifact Overview
 
@@ -25,7 +60,7 @@ This repository is organized as follows:
   of agents’ interactive environment into account to enable
   **large-small model collaborative learning**. 
   - In online RL, VLASelect employs an agent’s small model to quickly explore the
-  environment, selectively transfers its positive knowledge to
+  environment, **selectively transfers** its positive knowledge to
   the agent’s large model, and compensates its learning ability
   by swapping in the large model’s most accuracy-related neurons. 
   - In doing so, our approach combines the strengths of
@@ -35,7 +70,7 @@ This repository is organized as follows:
     ![](Method.png)
 
 - **Evaluation**: 
-  - Our experiments show that compared to 9 state-of-the-art VLA
+  - Our experiments compare 9 state-of-the-art VLA
   learning techniques across 4 embodied AI agents.
   - VLASelect
   achieves as much as 40.12% increase in task success rate,
@@ -43,7 +78,7 @@ This repository is organized as follows:
   energy consumption.
 
 
-### 1.2 Preparation Before Artifacts 
+### 1.2 Preparation Before Artifacts Evaluation
 
 #### 1.2.1 Hardware Requirements
 
@@ -83,15 +118,15 @@ This repository is organized as follows:
     | RHEL 8+ | CUDA 12.x+<br>(when using a GPU) | Kernel 5.4+<br>Docker 29.0+ |
 
 
-#### 1.2.3 Get source code
+#### 1.2.3 Get Source Code
 
-  You can obtain the source code for artifacts evaluation by the following command:
+  You can obtain the source code for artifacts evaluation by the following command. **The code does not perform any malicious or destructive operations**.
 
   ```bash
   git clone https://github.com/LINC-BIT/VLASelect.git
   ```
 
-#### 1.2.4 Install dependencies (if Docker can be installed)
+#### 1.2.4 Install Dependencies (if Docker can be installed)
 
 - **Step 1: Install Docker**
 
@@ -120,6 +155,7 @@ This repository is organized as follows:
   sudo systemctl status docker --no-pager
   sudo docker run hello-world
   ```
+  [Example running screenshots](install-step-1-example.md)
 
 - **Step 2: Install Docker plugin for using CUDA**
   
@@ -139,6 +175,7 @@ This repository is organized as follows:
   sudo nvidia-ctk runtime configure --runtime=docker
   sudo systemctl restart docker
   ```
+  [Example running screenshots](install-step-2-example.md)
 
 - **Step 3: Install the required dependencies of this artifact:**
 
@@ -155,6 +192,7 @@ This repository is organized as follows:
   # and install other dependencies in the Docker container
   TYPE=100M bash dep.sh
   ```
+  [Example running screenshots](install-step-3-example.md)
 
 - **Step 4: Check the installation:**
 
@@ -164,8 +202,9 @@ This repository is organized as follows:
   python -c "import torch; print(torch.cuda.is_available())"
   python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA not available')"
   ```
+  [Example running screenshots](imgs/4.1.png)
 
-#### 1.2.5 Install dependencies (if Docker cannot be installed)
+#### 1.2.5 Install Dependencies (if Docker cannot be installed)
 
 - If you cannot install Docker (e.g. no root permission), skip Section 1.2.4 and run the following commands instead. 
 
@@ -181,26 +220,38 @@ This repository is organized as follows:
   # Option 2: install dependencies without Docker in a ARM machine
   ARM=1 bash dep-non-docker.sh
   ```
+  [Example running screenshots](imgs/no-docker.png)
+
+#### 1.2.6 Install Dependencies for Plotting Scripts
+
+- Run the command below to install dependencies for plotting scripts:
+  ```bash
+  pip install matplotlib==3.10.8 pypdf==6.16.2
+  ```
 
 ## 2. Evaluation Reproduction
 
 ### 2.1 One-click Reproduction
-We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces result figures and tables.
+We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces resulting figures and tables.
+
+- **(Recommended) Option 1: Minimun working example (completed within 1 day and 20GB memory)**
+  ```bash
+  cd <VLASelect directory>
+  bash start_docker.sh
+  cd <VLASelect directory in the container>/eval
+  MWE=1 bash run.sh
+  ```
+- **Option 2: Full run (requiring 15 days and 60GB memory to complete)**
+  ```bash
+  cd <VLASelect directory>
+  bash start_docker.sh
+  cd <VLASelect directory in the container>/eval
+  bash run.sh
+  ```
+
 
 The reproducing steps of each experiment are described in Section 2.2.
 
-```bash
-cd <VLASelect directory>
-bash start_docker.sh
-
-cd <VLASelect directory in the container>/eval
-
-# Option 1: Full run (requiring more than 15 days to complete)
-bash run.sh
-
-# Option 2: Run minimum working examples (completed within 1 day)
-MWE=1 base run.sh
-```
 
 ### 2.2 Step-by-Step Reproduction
 
@@ -264,11 +315,16 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 - The three options' resource requirements and outputs are listed below:
 
-  | | Resource Requirements | Example Running Results |
+  | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
   | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run) |
-  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run) |
+  | Minimum working example on all methods | 3 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run) |
   | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run) |
+
+- **Note:** In minimum working examples, we have limited the training time for each method to 120s. However, the total runtime remains several hours due to:
+  - loading large model checkpoints (>1GB) for each method
+  - initializing RL environments based on the physical simulation engine
+  - evaluating each method's accuracy periodically
 
 
 #### 2.2.2 (Figure 8) Accuracy Under Available Resource Changes
@@ -326,7 +382,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 - The three options' resource requirements and outputs are listed below:
 
-  | | Resource Requirements | Example Running Results |
+  | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
   | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run-1) |
   | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run-1) |
@@ -384,7 +440,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 - The three options' resource requirements and outputs are listed below:
 
-  | | Resource Requirements | Example Running Results |
+  | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
   | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run) |
   | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run) |
@@ -400,7 +456,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   bash overhead_breakdown/run.sh
   ```
 - The resource requirements and outputs are listed below:
-  | Resource Requirements | Example Running Results |
+  | Resource Requirements | Example Running Outputs |
   | --- | --- |
   | 20 minutes, 60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run-1) |
 
@@ -455,7 +511,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 - The three options' resource requirements and outputs are listed below:
 
-  | | Resource Requirements | Example Running Results |
+  | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
   | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run-2) |
   | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run-2) |
@@ -479,7 +535,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 - The two options' resource requirements and outputs are listed below:
 
-  | | Resource Requirements | Example Running Results |
+  | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
   | Minimum working example | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#2-mwe-run) |
   | Full run | 40 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#1-full-scale-run) |
@@ -511,7 +567,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   ```
 - The two options' resource requirements and outputs are listed below:
 
-  | | Resource Requirements | Example Running Results |
+  | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
   | Minimum working example | 10 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
   | Full run | 7 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
@@ -541,7 +597,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 - The two options' resource requirements and outputs are listed below:
 
-  | | Resource Requirements | Example Running Results |
+  | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
   | Minimum working example | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-multi-agent-scenarios) |
   | Full run | 7 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-multi-agent-scenarios) |
@@ -620,7 +676,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     ```
   - The two options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#311-supporting-the-vla-adapter) |
     | Full run | 3 hours<br>60GB memory | - |
@@ -691,7 +747,7 @@ You can verify these methods as below:
     ```
   - The three options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example on three representative methods | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies) |
     | Minimum working example on all methods | 60 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies) |
@@ -731,7 +787,7 @@ You can verify these granularities as below:
     ```
   - The two options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example | 30 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#313-supporting-different-knowledge-exchange-granularities) |
     | Full run | 15 hours<br>60GB memory | - |
@@ -802,7 +858,7 @@ You can verify these granularities as below:
     ```
   - The two options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla) |
     | Full run | 3 hours<br>60GB memory | - |
@@ -861,7 +917,7 @@ You can verify these methods as below:
     ```
   - The three options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example on three representative methods | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies) |
     | Minimum working example on all methods | 60 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies) |
@@ -900,7 +956,7 @@ You can verify these granularities as below:
     ```
   - The two options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example | 30 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#323-supporting-different-knowledge-exchange-granularities) |
     | Full run | 15 hours<br>60GB memory | - |
@@ -973,7 +1029,7 @@ You can verify these granularities as below:
     ```
   - The two options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla) |
     | Full run | 3 hours<br>60GB memory | - |
@@ -1032,7 +1088,7 @@ You can verify these methods as below:
     ```
   - The three options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example on three representative methods | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla) |
     | Minimum working example on all methods | 60 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla) |
@@ -1071,7 +1127,7 @@ You can verify these granularities as below:
     ```
   - The two options' resource requirements and outputs are listed below:
 
-    | | Resource Requirements | Example Running Results |
+    | | Resource Requirements | Example Running Outputs |
     | --- | --- | --- |
     | Minimum working example | 30 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#333-swapping-granularity-ablation-on-edgevla) |
     | Full run | 15 hours<br>60GB memory | - |

@@ -59,7 +59,12 @@ from train.vla_adapter_new.model_impl.online_rl import (
     set_seed,
     strip_module_prefix,
 )
-from train.common.mwe_eval import SUCCESS_METRIC_WINDOW_EPISODES
+from train.common.mwe_eval import (
+    SUCCESS_METRIC_WINDOW_EPISODES,
+    append_episode_metric_batch,
+    summarize_episode_metric_tensors,
+    trim_episode_metric_tensors,
+)
 from train.common.train_success_metrics import (
     append_live_episode_metrics,
     summarize_training_episode_metrics,
@@ -931,7 +936,7 @@ def train(args: Args) -> None:
         metric.update(summarize_episode_metric_tensors(initial_episode_metrics))
         return metric
 
-    success_metric_window_episodes = SUCCESS_METRIC_WINDOW_EPISODES
+    success_metric_window_episodes = max(1, int(args.num_envs))
     if start_update <= 1 and global_step == 0:
         if use_train_success_only:
             initial_metric = collect_initial_training_metric()
@@ -1116,6 +1121,7 @@ def train(args: Args) -> None:
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
         rollout_start_time = time.perf_counter()
+        train_episode_metrics = defaultdict(list)
 
         for step in range(args.num_steps):
             global_step += args.num_envs

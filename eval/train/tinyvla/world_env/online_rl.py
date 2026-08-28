@@ -663,7 +663,7 @@ def train(args: Args) -> None:
         metric.update(summarize_episode_metric_tensors(initial_episode_metrics))
         return metric
 
-    success_metric_window_episodes = SUCCESS_METRIC_WINDOW_EPISODES
+    success_metric_window_episodes = max(1, int(args.num_envs))
     if use_train_success_only:
         initial_train_metrics = collect_initial_training_metric()
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)
@@ -764,6 +764,7 @@ def train(args: Args) -> None:
             "termination_bonus": 0.0,
             "virtual_done_rate": 0.0,
         }
+        train_episode_metrics = defaultdict(list)
 
         for step in range(args.num_steps):
             global_step += args.num_envs

@@ -207,8 +207,8 @@ class SuiteScheduler:
             ]
             if method == "self_improv":
                 smoke_env_items = [
-                    "SUPERVISED_UPDATES_PER_ITER_OVERRIDE=2" if item.startswith("SUPERVISED_UPDATES_PER_ITER_OVERRIDE=") else
-                    "SUPERVISED_BATCH_SIZE_OVERRIDE=256" if item.startswith("SUPERVISED_BATCH_SIZE_OVERRIDE=") else
+                    "SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1" if item.startswith("SUPERVISED_UPDATES_PER_ITER_OVERRIDE=") else
+                    "SUPERVISED_BATCH_SIZE_OVERRIDE=64" if item.startswith("SUPERVISED_BATCH_SIZE_OVERRIDE=") else
                     item
                     for item in smoke_env_items
                 ]

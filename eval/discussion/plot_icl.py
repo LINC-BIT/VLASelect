@@ -92,15 +92,17 @@ def draw_plot(
     plotted = 0
     missing: list[str] = []
     all_x: list[float] = []
+    all_y: list[float] = []
     for label, run_dir, color in curves:
         series = collect_series(run_dir, metric)
         if not series:
             missing.append(label)
             continue
         xs, ys = zip(*series)
+        smoothed_ys = smooth_values(list(ys), smoothing)
         ax.plot(
             xs,
-            smooth_values(list(ys), smoothing),
+            smoothed_ys,
             label=label,
             color=color,
             linewidth=2.4,
@@ -108,6 +110,7 @@ def draw_plot(
             markersize=3.5,
         )
         all_x.extend(xs)
+        all_y.extend(smoothed_ys)
         plotted += 1
 
     if missing:
@@ -116,7 +119,7 @@ def draw_plot(
     ax.set_xlabel("Time (minutes)")
     ax.set_ylabel("Accuracy / success rate (%)")
     ax.set_title("ICL comparison")
-    ax.set_ylim(0.0, 100.0)
+    ax.set_ylim(min(all_y) - 10.0, 100.0)
     if all_x:
         ax.set_xlim(left=0.0, right=max(max(all_x), 1.0))
     ax.grid(True, alpha=0.3)

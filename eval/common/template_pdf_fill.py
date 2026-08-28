@@ -318,7 +318,7 @@ def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[di
     if panel_ops['a']:
         stats = summary_stats[0] if len(summary_stats) > 0 else {}
         baseline_text, ours_text, improvement_text = value_text(stats)
-        replacement = f'Baselines / VLASelect avg. memory (GB): {baseline_text} / {ours_text} ({improvement_text}%)'
+        replacement = f'Baselines / VLASelect avg. memory (GB): {baseline_text} / {ours_text} ({improvement_text}%↓)'
         set_tj(panel_ops['a'][0], replacement)
         for op_index in panel_ops['a'][1:]:
             set_tj(op_index, '')
@@ -353,9 +353,9 @@ def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[di
         set_tj(op_indices[0], baseline_head)
         set_tj(op_indices[1], baseline_tail)
         set_tj(op_indices[2], f'/ {ours_text} ({improvement_text}%')
-        set_tj(op_indices[3], ';')
+        set_tj(op_indices[3], ';)')
         if len(op_indices) >= 5:
-            set_tj(op_indices[4], ')')
+            set_tj(op_indices[4], '')
 
     stream = DecodedStreamObject()
     stream.set_data(content.get_data())

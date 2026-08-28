@@ -77,6 +77,7 @@ def configure_human_defaults() -> None:
         "supervised_learning_rate": 6e-5,
         "eval_episodes": 16,
         "eval_every_updates": 1,
+        "max_episode_steps": 9,
         "max_runtime_hours": 400.0,
         "cuda_device": "1,2,3,4",
         "run_setup_smoke": False,

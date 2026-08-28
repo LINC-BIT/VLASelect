@@ -1,7 +1,10 @@
 import argparse
+import copy
+import io
 import ast
 import bisect
 import os
+import pickle
 import shutil
 import sys
 import time
@@ -17,9 +20,11 @@ from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict, deque
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Deque, Dict, List, Optional, Tuple, get_args, get_origin
 
+import dill
 import numpy as np
 import torch
 import torch.nn as nn
@@ -38,7 +43,12 @@ from train.vla_adapter_new.model_impl.online_rl import (
     save_metrics_history,
     strip_module_prefix,
 )
-from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
+from train.common.checkpoint_noise import (
+    get_baseline_pretrain_ckpt_noise_scale,
+    get_baseline_pretrain_ckpt_noise_seed,
+    is_mwe_checkpoint_noise_enabled,
+    maybe_apply_checkpoint_noise_to_state_dict,
+)
 from train.common.mwe_eval import (
     SUCCESS_METRIC_WINDOW_EPISODES,
     append_episode_metric_batch,
@@ -57,6 +67,10 @@ DEFAULT_STATIC_MODEL_CHECKPOINT = (
 DEFAULT_ENVS_ID = "['OpenCabinetDrawerEasyLevel0-v1', 'OpenCabinetDrawerEasyLevel0-v1']"
 DEFAULT_ENV_CHANGE_TIME_POINTS = "[10, 20]"
 DEFAULT_SUMMARY_NAME = "self_improv_training_summary.json"
+MATERIALIZED_FBS_POLICY_BYTES_KEY = "materialized_fbs_policy_bytes"
+MATERIALIZED_FBS_METADATA_KEY = "materialized_fbs_policy_metadata"
+MATERIALIZED_FBS_FORMAT_VERSION = 1
+MATERIALIZED_FBS_PICKLE_PROTOCOL = max(4, pickle.HIGHEST_PROTOCOL)
 
 
 @dataclass
@@ -307,6 +321,97 @@ class ActionBinTrajectoryBuffer:
         }
 
 
+def _materialized_fbs_noise_metadata() -> Dict[str, Any]:
+    enabled = is_mwe_checkpoint_noise_enabled()
+    return {
+        "enabled": enabled,
+        "scale": float(get_baseline_pretrain_ckpt_noise_scale()) if enabled else 0.0,
+        "seed": int(get_baseline_pretrain_ckpt_noise_seed()),
+    }
+
+
+
+def _expected_materialized_fbs_metadata(checkpoint_path: str | Path) -> Dict[str, Any]:
+    return {
+        "version": MATERIALIZED_FBS_FORMAT_VERSION,
+        "checkpoint_path": str(Path(checkpoint_path).resolve()),
+        "noise": _materialized_fbs_noise_metadata(),
+    }
+
+
+
+def maybe_load_materialized_fbs_policy_from_checkpoint(
+    checkpoint_path: str,
+    device: torch.device,
+) -> Optional[reference.EdgeVLAActorCritic]:
+    path = Path(checkpoint_path)
+    if not path.exists():
+        return None
+    checkpoint = torch.load(path, map_location="cpu")
+    if not isinstance(checkpoint, dict):
+        return None
+    expected_metadata = _expected_materialized_fbs_metadata(path)
+    metadata = checkpoint.get(MATERIALIZED_FBS_METADATA_KEY)
+    payload = checkpoint.get(MATERIALIZED_FBS_POLICY_BYTES_KEY)
+    if metadata != expected_metadata or not isinstance(payload, (bytes, bytearray)):
+        return None
+    policy = torch.load(io.BytesIO(payload), map_location="cpu", pickle_module=dill)
+    if not isinstance(policy, nn.Module):
+        print(f"[setup] ignoring invalid materialized FBS policy cache in {path}")
+        return None
+    policy = policy.to(device)
+    policy.device = device
+    print(f"[setup] loaded cached materialized FBS policy from {path}")
+    return policy
+
+
+
+def maybe_persist_materialized_fbs_policy_to_checkpoint(
+    checkpoint_path: str,
+    policy: reference.EdgeVLAActorCritic,
+) -> None:
+    path = Path(checkpoint_path)
+    if not path.exists():
+        return
+    try:
+        checkpoint = torch.load(path, map_location="cpu")
+    except Exception as exc:
+        print(f"[setup] failed to read checkpoint for materialized FBS cache: {path} ({exc})")
+        return
+    if isinstance(checkpoint, dict):
+        payload: Dict[str, Any] = dict(checkpoint)
+    elif isinstance(checkpoint, Mapping):
+        payload = {"policy": dict(checkpoint)}
+    else:
+        print(f"[setup] skipping materialized FBS cache because checkpoint payload is not dict-like: {path}")
+        return
+    expected_metadata = _expected_materialized_fbs_metadata(path)
+    existing_payload = payload.get(MATERIALIZED_FBS_POLICY_BYTES_KEY)
+    if payload.get(MATERIALIZED_FBS_METADATA_KEY) == expected_metadata and isinstance(existing_payload, (bytes, bytearray)):
+        return
+    policy_cpu = copy.deepcopy(policy).to(device=torch.device("cpu"))
+    policy_cpu.device = torch.device("cpu")
+    buffer = io.BytesIO()
+    torch.save(
+        policy_cpu,
+        buffer,
+        pickle_module=dill,
+        pickle_protocol=MATERIALIZED_FBS_PICKLE_PROTOCOL,
+    )
+    payload[MATERIALIZED_FBS_POLICY_BYTES_KEY] = buffer.getvalue()
+    payload[MATERIALIZED_FBS_METADATA_KEY] = expected_metadata
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    try:
+        torch.save(payload, tmp_path, pickle_protocol=MATERIALIZED_FBS_PICKLE_PROTOCOL)
+        tmp_path.replace(path)
+        print(f"[setup] cached materialized FBS policy into checkpoint: {path}")
+    except Exception as exc:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        print(f"[setup] failed to persist materialized FBS policy cache: {path} ({exc})")
+
+
+
 def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -> Dict[str, Any]:
     if not Path(checkpoint_path).exists():
         raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
@@ -378,16 +483,20 @@ def materialize_fbs_caches(
 
 
 def build_static_student_policy(args: Args, device: torch.device) -> reference.EdgeVLAActorCritic:
-    base_policy = reference.EdgeVLAActorCritic(
-        Path(args.model_dir),
-        device=device,
-        state_dim=args.state_dim,
-        action_dim=args.action_dim,
-        env_action_dim=args.env_action_dim,
-        controlled_action_indices=args.controlled_action_indices,
-    ).to(device)
-    fbs_policy = convert_to_fbs_model(base_policy, device).to(device)
-    load_policy_state_from_checkpoint(args.static_model_checkpoint, fbs_policy)
+    fbs_policy = maybe_load_materialized_fbs_policy_from_checkpoint(args.static_model_checkpoint, device)
+    base_policy = None
+    if fbs_policy is None:
+        base_policy = reference.EdgeVLAActorCritic(
+            Path(args.model_dir),
+            device=device,
+            state_dim=args.state_dim,
+            action_dim=args.action_dim,
+            env_action_dim=args.env_action_dim,
+            controlled_action_indices=args.controlled_action_indices,
+        ).to(device)
+        fbs_policy = convert_to_fbs_model(base_policy, device).to(device)
+        load_policy_state_from_checkpoint(args.static_model_checkpoint, fbs_policy)
+        maybe_persist_materialized_fbs_policy_to_checkpoint(args.static_model_checkpoint, fbs_policy)
     set_sparsity(fbs_policy, args.static_sparsity)
     materialize_fbs_caches(args, device, fbs_policy)
     static_policy = generate_static_small_model(fbs_policy, device=device, dtype=torch.bfloat16)
@@ -395,7 +504,8 @@ def build_static_student_policy(args: Args, device: torch.device) -> reference.E
     train_backbone_now = not args.freeze_vla_backbone and args.backbone_warmup_updates <= 0
     static_policy.configure_trainable_modules(train_backbone=train_backbone_now)
     static_policy.eval_micro_batch_size = args.eval_micro_batch_size
-    del base_policy
+    if base_policy is not None:
+        del base_policy
     del fbs_policy
     torch.cuda.empty_cache()
     return static_policy
@@ -710,7 +820,7 @@ def train(args: Args) -> None:
         metric.update(summarize_episode_metric_tensors(initial_episode_metrics))
         return metric
 
-    success_metric_window_episodes = SUCCESS_METRIC_WINDOW_EPISODES
+    success_metric_window_episodes = max(1, int(args.num_envs))
     if use_train_success_only:
         initial_train_metrics = collect_initial_training_metric()
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)

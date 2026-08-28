@@ -285,6 +285,7 @@ def make_vector_env(
         control_mode=args.control_mode,
         reward_mode=args.reward_mode,
         render_mode="rgb_array",
+        max_episode_steps=args.max_episode_steps,
         **backend_kwargs,
     )
     if video_output_dir is not None:
@@ -1481,7 +1482,7 @@ def train(args: Args) -> None:
             "elapsed_hours": (time.time() - train_start_time) / 3600.0,
         }
 
-        success_metric_window_episodes = SUCCESS_METRIC_WINDOW_EPISODES
+        success_metric_window_episodes = max(1, int(args.num_envs))
         metric.update(
             gather_metric_summary(
                 summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)

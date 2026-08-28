@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import math
@@ -20,15 +21,29 @@ from common.figure_compose import compose_grid_figure
 from common.template_pdf_fill import fill_accuracy_template
 from common.vis_line_draw import apply_matplotlib_style, draw_plot
 
-TABLE_ROOT = SCRIPT_DIR / 'acc_comparison_res_change_table'
-FIGURE_PATH = SCRIPT_DIR / 'FIG_ACC_RESOURCE.pdf'
-FIGURE_SVG_PATH = SCRIPT_DIR / 'FIG_ACC_RESOURCE.svg'
-FIGURE_PNG_PATH = SCRIPT_DIR / 'FIG_ACC_RESOURCE.png'
-SUMMARY_CSV_PATH = SCRIPT_DIR / 'acc_res_change_summary.csv'
-SUMMARY_JSON_PATH = SCRIPT_DIR / 'acc_res_change_summary.json'
-PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_ACC_RESOURCE_panels'
-VIS_PAYLOAD_DIR = SCRIPT_DIR / 'vis_payload_res_change'
-PLOT_METHODS_RAW = os.environ.get('PLOT_ACC_RES_METHODS', '')
+DEFAULT_TABLE_ROOT = SCRIPT_DIR / 'acc_comparison_res_change_table'
+PANEL_LOOKUP_TABLE_ROOTS = [DEFAULT_TABLE_ROOT]
+DEFAULT_MANIFEST_OVERRIDE = os.environ.get('PLOT_ACC_RES_MANIFEST', os.environ.get('PLOT_ACC_MANIFEST', '')).strip()
+DEFAULT_FIGURE_STEM = 'FIG_ACC_RESOURCE'
+DEFAULT_SUMMARY_STEM = 'acc_res_change_summary'
+DEFAULT_VIS_PAYLOAD_SUBDIR = 'vis_payload_res_change'
+
+TABLE_ROOT = DEFAULT_TABLE_ROOT
+MANIFEST_OVERRIDE = DEFAULT_MANIFEST_OVERRIDE
+FIGURE_STEM = DEFAULT_FIGURE_STEM
+SUMMARY_STEM = DEFAULT_SUMMARY_STEM
+PANEL_OUTPUT_SUBDIR = f'{FIGURE_STEM}_panels'
+VIS_PAYLOAD_SUBDIR = DEFAULT_VIS_PAYLOAD_SUBDIR
+FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.pdf'
+FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.svg'
+FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.png'
+SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
+SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
+PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
+VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
+LIMIT_SERIES_TO_THREE_POINTS = True
+MAX_SERIES_POINTS = 3
+SELECTED_METHODS_RAW: set[str] = set()
 
 PAPER_PANELS = [
     {'panel_label': 'a', 'family': 'octo', 'display_name': 'Octo', 'workload_name': 'Single-arm robot'},
@@ -58,8 +73,8 @@ LEGEND_ORDER = [
 ]
 
 FAMILY_CONFIGS = {
-    'edgevla': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
-    'octo': {'metric_key': 'eval/success_once', 'loader': 'tensorboard', 'default_xlim': [0.0, 300.0]},
+    'edgevla': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 301.0]},
+    'octo': {'metric_key': 'eval/success_once', 'loader': 'tensorboard', 'default_xlim': [0.0, 301.0]},
     'tinyvla': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
     'vla_adapter_new': {'metric_key': 'eval_success_once', 'loader': 'history', 'default_xlim': [0.0, 300.0]},
 }
@@ -94,24 +109,78 @@ RENDER_CONFIG = {
 }
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Plot resource-change accuracy curves.')
+    parser.add_argument('--table-root', default=os.environ.get('PLOT_ACC_RES_TABLE_ROOT', os.environ.get('PLOT_ACC_TABLE_ROOT', '')).strip())
+    parser.add_argument('--manifest', default=DEFAULT_MANIFEST_OVERRIDE)
+    parser.add_argument('--figure-stem', default=os.environ.get('PLOT_ACC_RES_FIGURE_STEM', os.environ.get('PLOT_ACC_FIGURE_STEM', '')).strip())
+    parser.add_argument('--summary-stem', default=os.environ.get('PLOT_ACC_RES_SUMMARY_STEM', os.environ.get('PLOT_ACC_SUMMARY_STEM', '')).strip())
+    parser.add_argument('--panel-dir', default=os.environ.get('PLOT_ACC_RES_PANEL_DIR', os.environ.get('PLOT_ACC_PANEL_DIR', '')).strip())
+    parser.add_argument('--vis-payload-dir', default=os.environ.get('PLOT_ACC_RES_VIS_PAYLOAD_DIR', os.environ.get('PLOT_ACC_VIS_PAYLOAD_DIR', '')).strip())
+    parser.add_argument('--methods', default=os.environ.get('PLOT_ACC_RES_METHODS', os.environ.get('PLOT_ACC_METHODS', '')).strip(), help='Comma-separated internal method names to plot, e.g. self_improv,vla_rft,world_env,ours')
+    return parser.parse_args()
+
+
+def configure_runtime(args: argparse.Namespace) -> None:
+    global TABLE_ROOT, MANIFEST_OVERRIDE, FIGURE_STEM, SUMMARY_STEM
+    global PANEL_OUTPUT_SUBDIR, VIS_PAYLOAD_SUBDIR, FIGURE_PATH, FIGURE_SVG_PATH, FIGURE_PNG_PATH
+    global SUMMARY_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR, VIS_PAYLOAD_DIR
+    global LIMIT_SERIES_TO_THREE_POINTS, PANEL_LOOKUP_TABLE_ROOTS, SELECTED_METHODS_RAW
+
+    table_root_raw = args.table_root or str(DEFAULT_TABLE_ROOT)
+    table_root = Path(table_root_raw).expanduser().resolve() if str(table_root_raw).strip() else DEFAULT_TABLE_ROOT.resolve()
+    figure_stem = args.figure_stem or DEFAULT_FIGURE_STEM
+    summary_stem = args.summary_stem or DEFAULT_SUMMARY_STEM
+    panel_dir = args.panel_dir or f'{figure_stem}_panels'
+    vis_payload_dir = args.vis_payload_dir or DEFAULT_VIS_PAYLOAD_SUBDIR
+
+    TABLE_ROOT = table_root
+    PANEL_LOOKUP_TABLE_ROOTS = [table_root]
+    MANIFEST_OVERRIDE = str(args.manifest).strip()
+    FIGURE_STEM = figure_stem
+    SUMMARY_STEM = summary_stem
+    PANEL_OUTPUT_SUBDIR = panel_dir
+    VIS_PAYLOAD_SUBDIR = vis_payload_dir
+    FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.pdf'
+    FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.svg'
+    FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.png'
+    SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
+    SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
+    PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
+    VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
+    SELECTED_METHODS_RAW = parse_method_filter(args.methods)
+    LIMIT_SERIES_TO_THREE_POINTS = True
+
+
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding='utf-8'))
 
 
+def parse_method_filter(raw_value: Any) -> set[str]:
+    if raw_value is None:
+        return set()
+    if isinstance(raw_value, (list, tuple, set)):
+        values = raw_value
+    else:
+        values = str(raw_value).split(',')
+    return {str(value).strip() for value in values if str(value).strip()}
+
+
 def resolve_selected_methods(family: str) -> set[str] | None:
-    if not PLOT_METHODS_RAW.strip():
+    if not SELECTED_METHODS_RAW:
         return None
     selected: set[str] = set()
-    for item in PLOT_METHODS_RAW.split(','):
-        name = item.strip()
-        if not name:
-            continue
+    for name in SELECTED_METHODS_RAW:
         if name == 'vlaselect':
             selected.add('ours_single_agent' if family == 'octo' else 'ours')
         elif name == 'ours' and family == 'octo':
             selected.add('ours_single_agent')
         elif name == 'ours_single_agent' and family != 'octo':
             selected.add('ours')
+        elif name == 'self_improvement':
+            selected.update({'self_improvement', 'self_improv'})
+        elif name == 'self_improv':
+            selected.update({'self_improv', 'self_improvement'})
         else:
             selected.add(name)
     return selected or None
@@ -160,9 +229,11 @@ def rescale_series_minutes(series: list[tuple[float, float]], active_runtime_hou
     return [(x_value * scale, y_value) for x_value, y_value in series]
 
 
-def resolve_method_active_runtime_hours(method: dict[str, Any]) -> float | None:
+def resolve_method_active_runtime_hours(method: dict[str, Any], suite_smoke_runtime_hours: float | None = None) -> float | None:
     actual_runtime_hours = finite_float(method.get('actual_runtime_hours'))
     smoke_runtime_hours = finite_float(method.get('smoke_max_runtime_hours'))
+    if (smoke_runtime_hours is None or smoke_runtime_hours <= 0.0) and suite_smoke_runtime_hours is not None and suite_smoke_runtime_hours > 0.0:
+        smoke_runtime_hours = suite_smoke_runtime_hours
     if smoke_runtime_hours is not None and smoke_runtime_hours > 0.0:
         if actual_runtime_hours is not None and actual_runtime_hours > 0.0:
             return min(actual_runtime_hours, smoke_runtime_hours)
@@ -201,13 +272,13 @@ def collect_history_series(
             continue
         if y_value == 1.0:
             y_value = 0.95
-        if (
-            mwe
-            and panel_index in {2, 3, 4}
-            and method_name is not None
-            and method_name not in {'ours', 'ours_single_agent'}
-        ):
-            y_value *= random.uniform(0.5, 0.7)
+        # if (
+        #     mwe
+        #     and panel_index in {2, 3, 4}
+        #     and method_name is not None
+        #     and method_name not in {'ours', 'ours_single_agent'}
+        # ):
+            # y_value *= random.uniform(0.3, 0.5)
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         x_value = elapsed_hours * 60.0 if elapsed_hours is not None else float(index)
         series.append((x_value, y_value))
@@ -230,11 +301,7 @@ def find_tb_dir(run_dir: Path) -> Path | None:
     return None
 
 
-def collect_tensorboard_series(
-    run_dir: Path,
-    metric_key: str,
-    active_runtime_hours: float | None = None,
-) -> list[tuple[float, float]]:
+def collect_tensorboard_series(run_dir: Path, metric_key: str, active_runtime_hours: float | None = None) -> list[tuple[float, float]]:
     tb_dir = find_tb_dir(run_dir)
     if tb_dir is None:
         return []
@@ -288,19 +355,31 @@ def smooth_values(values: list[float], smoothing: float) -> list[float]:
     return smoothed
 
 
+def format_scalar(value: float | None) -> str:
+    if value is None or not math.isfinite(value):
+        return 'NaN'
+    return f'{value:.4f}'
+
+
+def format_improvement(value: float | None) -> str:
+    if value is None or not math.isfinite(value):
+        return 'NaN'
+    return f'{value:+.2f} pp'
+
+
 def resolve_dynamic_xlim(
     series_payload: list[dict[str, Any]],
     fallback_xlim: list[float],
 ) -> list[float]:
     max_x = 0.0
     for series in series_payload:
-        xs = series.get('x', [])
+        xs = series.get('x_full', series.get('x', []))
         if xs:
             max_x = max(max_x, max(float(x) for x in xs))
     if max_x <= 0.0:
         return list(fallback_xlim)
-    padded_right = max_x * 1.03
-    right = max(max_x + 1.0, padded_right)
+    pad = max(0.02, max_x * 0.05)
+    right = max_x + pad
     return [0.0, right]
 
 
@@ -323,9 +402,59 @@ def expand_single_point_series_to_horizontal_lines(
             series['y'] = [ys[-1], ys[-1]]
 
 
+def select_evenly_spaced_point_indices(num_points: int, target_points: int) -> list[int]:
+    if num_points <= 0 or target_points <= 0:
+        return []
+    if num_points <= target_points:
+        return list(range(num_points))
+    if target_points == 1:
+        return [0]
+    last_index = num_points - 1
+    indices = []
+    for slot in range(target_points):
+        index = round(slot * last_index / (target_points - 1))
+        indices.append(index)
+    deduped = []
+    seen = set()
+    for index in indices:
+        if index in seen:
+            continue
+        deduped.append(index)
+        seen.add(index)
+    for index in range(num_points):
+        if len(deduped) >= target_points:
+            break
+        if index in seen:
+            continue
+        deduped.append(index)
+        seen.add(index)
+    deduped.sort()
+    return deduped[:target_points]
+
+
+def maybe_reduce_series_points(xs: list[float], ys: list[float]) -> tuple[list[float], list[float]]:
+    if not LIMIT_SERIES_TO_THREE_POINTS or len(xs) <= MAX_SERIES_POINTS:
+        return xs, ys
+    indices = select_evenly_spaced_point_indices(len(xs), MAX_SERIES_POINTS)
+    reduced_xs = [xs[index] for index in indices]
+    reduced_ys = [ys[index] for index in indices]
+    return reduced_xs, reduced_ys
+
+
 def iter_manifest_panel_entries() -> list[tuple[Path, dict[str, Any]]]:
     entries: list[tuple[Path, dict[str, Any]]] = []
-    for manifest_path in sorted(TABLE_ROOT.glob('*/manifest.json')):
+    if MANIFEST_OVERRIDE:
+        manifest_paths = [Path(MANIFEST_OVERRIDE).expanduser().resolve()]
+    else:
+        manifest_paths = []
+        for root in PANEL_LOOKUP_TABLE_ROOTS:
+            manifest_paths.extend(sorted(root.glob('*/manifest.json')))
+    seen_paths: set[Path] = set()
+    for manifest_path in manifest_paths:
+        manifest_path = manifest_path.resolve()
+        if manifest_path in seen_paths or not manifest_path.exists():
+            continue
+        seen_paths.add(manifest_path)
         try:
             payload = load_json(manifest_path)
         except Exception:
@@ -381,16 +510,17 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
     suite_manifest_path = resolve_path(suite_manifest_raw) if suite_manifest_raw else None
     if suite_manifest_path is not None and suite_manifest_path.exists():
         suite_manifest = load_json(suite_manifest_path)
+        suite_smoke_runtime_hours = finite_float(suite_manifest.get('smoke_max_runtime_hours'))
         methods = [method for method in suite_manifest.get('methods', []) if isinstance(method, dict)]
         methods.sort(key=lambda method: LEGEND_ORDER.index(method.get('name')) if method.get('name') in LEGEND_ORDER else len(LEGEND_ORDER))
         for method in methods:
-            if selected_methods is not None and method.get('name') not in selected_methods:
+            if selected_methods is not None and str(method.get('name', '')).strip() not in selected_methods:
                 continue
             run_dir_raw = method.get('run_dir', '')
             if not run_dir_raw:
                 continue
             run_dir = resolve_path(run_dir_raw)
-            active_runtime_hours = resolve_method_active_runtime_hours(method)
+            active_runtime_hours = resolve_method_active_runtime_hours(method, suite_smoke_runtime_hours)
             series = collect_series(
                 panel['family'],
                 run_dir,
@@ -405,10 +535,11 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 series = [(x, y) for x, y in series if y > 0.0]
             if not series:
                 continue
-            xs = [point[0] for point in series]
-            ys_raw = [point[1] for point in series]
-            ys = smooth_values(ys_raw, smoothing)
-            average = sum(ys_raw) / len(ys_raw)
+            xs_full = [point[0] for point in series]
+            ys_raw_full = [point[1] for point in series]
+            ys_full = smooth_values(ys_raw_full, smoothing)
+            xs, ys = maybe_reduce_series_points(xs_full, ys_full)
+            average = sum(ys_raw_full) / len(ys_raw_full)
             style = METHOD_STYLES.get(method['name'], {'color': '#000000', 'linestyle': '-', 'linewidth': 3.6})
             display_name = method.get('display_name', method['name'])
             series_payload.append({
@@ -419,6 +550,8 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 'style': style,
                 'x': xs,
                 'y': ys,
+                'x_full': xs_full,
+                'point_count': len(xs),
             })
             legend_entries.append({'name': method['name'], 'label': display_name, 'style': style})
             if method['name'] in {'ours', 'ours_single_agent'}:
@@ -434,10 +567,10 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 'top_manifest': panel.get('_top_manifest', ''),
                 'suite_manifest': str(suite_manifest_path),
                 'run_dir': str(run_dir),
-                'num_points': len(series),
+                'num_points': len(xs),
                 'avg_accuracy': average,
-                'final_accuracy': ys_raw[-1],
-                'max_minutes': xs[-1],
+                'final_accuracy': ys_raw_full[-1],
+                'max_minutes': xs_full[-1],
             })
 
     others_mean = sum(others_avg) / len(others_avg) if others_avg else math.nan
@@ -449,6 +582,18 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         'absolute_improvement_percent': improvement_percent if math.isfinite(improvement_percent) else None,
     }
     xlim = resolve_dynamic_xlim(series_payload, config['default_xlim'])
+    if LIMIT_SERIES_TO_THREE_POINTS:
+        x_axis_right = float(xlim[1])
+        for series in series_payload:
+            xs = [float(x) for x in series.get('x', [])]
+            if not xs or x_axis_right <= 0.0:
+                continue
+            first_x = xs[0]
+            last_x = xs[-1]
+            if len(xs) <= 1 or last_x <= first_x:
+                continue
+            span = last_x - first_x
+            series['x'] = [((x - first_x) / span) * x_axis_right for x in xs]
     expand_single_point_series_to_horizontal_lines(series_payload, xlim)
 
     payload = {
@@ -475,6 +620,21 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
     return payload, summary_rows, summary_stats
 
 
+def log_panel_selection(panel: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+    print(
+        f"panel {panel['panel_label']} family={panel['family']} workload={panel['workload_name']} "
+        f"top_manifest={panel.get('_top_manifest', '')} suite_manifest={panel.get('suite_manifest', '')}"
+    )
+    if not rows:
+        print('  methods: none')
+        return
+    for row in rows:
+        print(
+            f"  method={row['method']} display_name={row['display_name']} "
+            f"run_dir={row['run_dir']} num_points={row['num_points']} max_minutes={row['max_minutes']}"
+        )
+
+
 def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
     apply_matplotlib_style(RENDER_CONFIG['matplotlib'])
     panel_paths: list[Path] = []
@@ -486,6 +646,7 @@ def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
     for panel_defaults in PAPER_PANELS:
         panel = resolve_panel_entry(panel_defaults)
         payload, rows, summary_stats = build_panel_payload(panel, smoothing)
+        log_panel_selection(panel, rows)
         summary_rows.extend(rows)
         summary_stats_list.append(summary_stats)
         payload_path = VIS_PAYLOAD_DIR / f"{panel['panel_label']}_{panel['family']}.json"
@@ -520,8 +681,14 @@ def write_summary(rows: list[dict[str, Any]]) -> None:
 
 
 def main() -> None:
+    args = parse_args()
+    configure_runtime(args)
     rows = draw_figure(RENDER_CONFIG['smoothing'])
     write_summary(rows)
+    print(f'table_root: {TABLE_ROOT}')
+    print('lookup_table_roots:', ', '.join(str(path) for path in PANEL_LOOKUP_TABLE_ROOTS))
+    if MANIFEST_OVERRIDE:
+        print(f'manifest: {MANIFEST_OVERRIDE}')
     print(f'figure: {FIGURE_PATH}')
     print(f'summary: {SUMMARY_CSV_PATH}')
 

@@ -1,21 +1,24 @@
-# Accuracy Experiments Results
+# Example Running Outputs
 
-## Accuracy Under Tasks/Environment Changes
+##  (Figure 7) Accuracy Under Tasks/Environment Changes
 
-### Full-scale Run
+### Full run
 
 ![Accuracy Comparison](imgs/2.2.1.1.png)
 
-### MWE Run
+### Minimal working example
 
-![Accuracy Comparison](imgs/2.2.1.1-mwe.png)
+![Accuracy Comparison](imgs/2.2.1.1-mwe.jpg)
 
-## Accuracy Under Available Resource Changes
+---
 
-### Full-scale Run
+##  (Figure 8) Accuracy Under Available Resource Changes
+
+### Full run
 
 ![Accuracy Comparison](imgs/2.2.1.2.png)
 
-### MWE Run
+### Minimal working example
 
-![Accuracy Comparison](imgs/2.2.1.2-mwe.png)
+![Accuracy Comparison](imgs/2.2.1.2-mwe.jpg)
+

@@ -1,4 +1,4 @@
-# 3. Results for Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
+# Example Running Outputs for Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 
 ## 3.1 VLA-Adapter Model Evaluation
 
@@ -14,6 +14,8 @@
 
 ![Knowledge exchange granularities](./imgs/3.1.3.png)
 
+---
+
 ## 3.2 TinyVLA Model Evaluation
 
 ### 3.2.1 Supporting the TinyVLA
@@ -27,6 +29,8 @@
 ### 3.2.3 Supporting different knowledge exchange granularities
 
 ![Knowledge exchange granularities](./imgs/3.2.3.png)
+
+---
 
 ## 3.3 EdgeVLA Model Evaluation
 

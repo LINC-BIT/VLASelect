@@ -1,21 +1,19 @@
-# Discussion Experiments Results
+# Expected running outputs
 
-## ICL
+## Discussion 2: ICL (In-Context Learning)
 
+### Minimal working example
 ![alt text](./imgs/2.5.2.png)
 
-## Applicability to VLA models
 
-
-N/A: The original paper only provides qualitative justification without empirical data.
-
-## Maximum supported model size
+## Discussion 3: Maximum Supported Model Size
 
 | Source | Supported Model Size | Hardware / Environment |
 | --- | --- | --- |
-| **Paper** | Up to 11.3 GB (Xavier), Up to 24.0 GB (Orin) | Jetson Xavier / Jetson Orin |
-| **Testbed** | ~2.5–24.0 GB | Host with 32 GB VRAM |
+| **Full run** | Up to 11.3 GB (Xavier), Up to 24.0 GB (Orin) | Jetson Xavier / Jetson Orin |
+| **Minimal working example** | ~2.5–24.0 GB | Host with 32 GB VRAM |
 
-## Applicability to multi-agent scenarios
+## Discussion 4: Applicability to multi-agent scenarios
 
+### Minimal working example
 ![alt text](./imgs/2.2.4.5.png)

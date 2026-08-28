@@ -1,15 +1,11 @@
-# Expected Results: Ablation Study
+# Example Running Outputs
 
-This document presents the expected ablation study results across different hardware environments.
+## (Figure 12) Design Choice Validation by Ablation
 
-## 1. Full-Scale Run
-
-Below are the ablation study results obtained on the standard training server:
+## Full run
 
 ![Ablation Results - Training Server](./imgs/2.2.3.png)
 
-## 2. MWE Run
-
-Below are the ablation study results evaluated under resource-constrained settings:
+## Minimal working example
 
 ![Ablation Results - Constrained Server](./imgs/2.2.3-mwe.jpg)

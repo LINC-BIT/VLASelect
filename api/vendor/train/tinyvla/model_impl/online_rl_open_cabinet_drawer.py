@@ -34,6 +34,12 @@ from PIL import Image
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import AutoProcessor
 
+from train.common.env_contract_cache import (
+    build_env_contract_cache_key,
+    load_env_contract_from_cache,
+    save_env_contract_to_cache,
+)
+
 from online_rl import (
     broadcast_object,
     cleanup_runtime,
@@ -164,6 +170,18 @@ def get_controlled_action_indices(action_mapping: Dict[str, Tuple[int, int]]) ->
 
 
 def inspect_env_contract(args: "Args", device: torch.device) -> Tuple[int, int, Tuple[int, ...]]:
+    cache_key = build_env_contract_cache_key(
+        env_id=args.env_id,
+        obs_mode=args.obs_mode,
+        control_mode=args.control_mode,
+        reward_mode=args.reward_mode,
+        device_type=device.type,
+        device_index=device.index,
+    )
+    cached = load_env_contract_from_cache(cache_key)
+    if cached is not None:
+        return cached
+
     backend_kwargs = get_maniskill_backend_kwargs(device)
     env = gym.make(
         args.env_id,
@@ -171,7 +189,7 @@ def inspect_env_contract(args: "Args", device: torch.device) -> Tuple[int, int, 
         obs_mode=args.obs_mode,
         control_mode=args.control_mode,
         reward_mode=args.reward_mode,
-        render_mode="rgb_array",
+        render_mode=None,
         **backend_kwargs,
     )
     obs, _ = env.reset(seed=args.seed)
@@ -179,9 +197,11 @@ def inspect_env_contract(args: "Args", device: torch.device) -> Tuple[int, int, 
     state_dim = int(extract_cabinet_state_batch_from_obs(obs).shape[-1])
     action_mapping = getattr(env.unwrapped.agent.controller, "action_mapping", None)
     if not isinstance(action_mapping, dict):
+        env.close()
         raise RuntimeError(f"Unable to inspect controller action mapping for env {args.env_id}")
     controlled_action_indices = get_controlled_action_indices(action_mapping)
     env.close()
+    save_env_contract_to_cache(cache_key, action_dim, state_dim, controlled_action_indices)
     return action_dim, state_dim, controlled_action_indices
 
 
@@ -254,13 +274,14 @@ def make_vector_env(
     video_max_steps: Optional[int] = None,
 ) -> ManiSkillVectorEnv:
     backend_kwargs = get_maniskill_backend_kwargs(device)
+    env_render_mode = "rgb_array" if video_output_dir is not None else None
     env = gym.make(
         args.env_id,
         num_envs=num_envs,
         obs_mode=args.obs_mode,
         control_mode=args.control_mode,
         reward_mode=args.reward_mode,
-        render_mode="rgb_array",
+        render_mode=env_render_mode,
         **backend_kwargs,
     )
     if video_output_dir is not None:
@@ -1061,7 +1082,7 @@ def run_vla_inference_smoke(
         obs_mode=args.obs_mode,
         control_mode=args.control_mode,
         reward_mode=args.reward_mode,
-        render_mode="rgb_array",
+        render_mode=None,
         **backend_kwargs,
     )
     obs, _ = env.reset(seed=args.seed)

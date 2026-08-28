@@ -481,17 +481,18 @@ def _same_acc_summary_path_for_panel(panel: dict[str, Any], top_manifest: dict[s
 def _load_same_acc_cutoff_hours(top_manifest: dict[str, Any]) -> tuple[dict[tuple[str, str], float], str]:
     cutoff_hours_by_method: dict[tuple[str, str], float] = {}
     sources: list[str] = []
-    seen_summary_paths: set[Path] = set()
+    seen_source_labels: set[str] = set()
     for family, panel in _family_panels(top_manifest).items():
         summary_path = _same_acc_summary_path_for_panel(panel, top_manifest)
-        if summary_path is None or summary_path in seen_summary_paths:
+        if summary_path is None:
             continue
-        seen_summary_paths.add(summary_path)
         payload = _read_json(summary_path)
+        source_label = _display_path(summary_path)
+        if source_label not in seen_source_labels:
+            sources.append(source_label)
+            seen_source_labels.add(source_label)
         if not isinstance(payload, list):
-            sources.append(_display_path(summary_path))
             continue
-        sources.append(_display_path(summary_path))
         for row in payload:
             if not isinstance(row, dict):
                 continue

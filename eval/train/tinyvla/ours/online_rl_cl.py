@@ -59,6 +59,16 @@ from train.vla_adapter_new.model_impl.online_rl import (
     set_seed,
     strip_module_prefix,
 )
+from train.common.mwe_eval import (
+    SUCCESS_METRIC_WINDOW_EPISODES,
+    append_episode_metric_batch,
+    summarize_episode_metric_tensors,
+    trim_episode_metric_tensors,
+)
+from train.common.train_success_metrics import (
+    append_live_episode_metrics,
+    summarize_training_episode_metrics,
+)
 from train.vla_adapter_new.ours.generate_static_small_model import (
     feedback_static_small_model_to_large_model,
     generate_static_small_model_with_returning_pruning_info,
@@ -914,8 +924,7 @@ def train(args: Args) -> None:
                 initial_obs, _, _, _, infos = envs.step(action)
                 done_mask, episode_metrics = reference.get_completed_episode_metrics(infos)
                 if done_mask is not None and done_mask.any():
-                    for key, value_tensor in episode_metrics.items():
-                        initial_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+                    append_episode_metric_batch(initial_episode_metrics, episode_metrics, done_mask)
 
         metric: Dict[str, Any] = {
             "update": 0,
@@ -924,9 +933,10 @@ def train(args: Args) -> None:
             "env_id": current_env_id,
             "env_index": current_env_index,
         }
-        metric.update(reference.gather_metric_summary(summarize_episode_metrics(initial_episode_metrics)))
+        metric.update(summarize_episode_metric_tensors(initial_episode_metrics))
         return metric
 
+    success_metric_window_episodes = max(1, int(args.num_envs))
     if start_update <= 1 and global_step == 0:
         if use_train_success_only:
             initial_metric = collect_initial_training_metric()
@@ -1108,10 +1118,10 @@ def train(args: Args) -> None:
         final_values.zero_()
         rollout_rgbs: List[torch.Tensor] = []
         rollout_states: List[np.ndarray] = []
-        train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
         rollout_start_time = time.perf_counter()
+        train_episode_metrics = defaultdict(list)
 
         for step in range(args.num_steps):
             global_step += args.num_envs
@@ -1274,7 +1284,12 @@ def train(args: Args) -> None:
             "env_id": current_env_id,
             "env_index": current_env_index,
         }
-        metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+        metric.update(
+            reference.gather_metric_summary(
+                summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)
+            )
+        )
+        trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
 
         if update % args.eval_every_updates == 0 or update == num_updates:
             eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)

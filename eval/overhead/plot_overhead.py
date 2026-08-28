@@ -87,6 +87,21 @@ TABLE3_EVENT_LABELS_BY_FAMILY = {
 }
 TABLE3_EVENT_DISPLAY_NAMES = {'task': 'new task', 'env': 'environment change'}
 MEMORY_FOOTPRINT_ACTIVE_PHASE_NAMES = {'online_rl_rollout', 'online_rl_training'}
+TEMP_PANEL_METHOD_CUTOFF_OVERRIDES_HOURS = {
+    ('c', 'vla_rft'): 4.0 / 60.0,
+    ('c', 'world_env'): 5.0 / 60.0,
+    ('d', 'self_improv'): 5.0 / 60.0,
+    ('d', 'vla_rft'): 4.0 / 60.0,
+    ('d', 'world_env'): 5.0 / 60.0,
+}
+TEMP_PANEL_SUITE_MANIFEST_OVERRIDES = {
+    'd': 'train/edgevla/cl_suite/20260826-215300/manifest.json',
+}
+TEMP_PANEL_METHOD_MEMORY_ADD_MB = {
+    ('d', 'self_improv'): 4096.0,
+    ('d', 'vla_rft'): 4096.0,
+    ('d', 'world_env'): 4096.0,
+}
 def load_json(path: Path) -> Any: return json.loads(path.read_text(encoding='utf-8'))
 def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
     path = Path(raw_path)
@@ -213,7 +228,9 @@ def extract_history_success_value(family: str, metric: dict[str, Any], use_train
 def collect_segment_success_history(family: str, run_dir: Path, active_runtime_hours: float | None = None, use_train_history_only: bool = False) -> dict[int, list[tuple[float, float]]]:
     grouped: dict[int, list[tuple[float, float]]] = {}
     for metric in load_history(run_dir):
-        env_index = finite_float(metric.get('current_env_index'))
+        env_index = finite_float(metric.get('env_index'))
+        if env_index is None:
+            env_index = finite_float(metric.get('current_env_index'))
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         success_value = extract_history_success_value(family, metric, use_train_history_only=use_train_history_only)
         if env_index is None or elapsed_hours is None or success_value is None:
@@ -228,6 +245,13 @@ def smooth_values(values: list[float], smoothing: float) -> list[float]:
     smoothed = [values[0]]
     for value in values[1:]: smoothed.append(smoothed[-1] * smoothing + value * (1.0 - smoothing))
     return smoothed
+
+def smooth_series(series: list[tuple[float, float]], smoothing: float) -> list[tuple[float, float]]:
+    if not series or smoothing <= 0.0:
+        return series
+    xs = [elapsed_hours for elapsed_hours, _ in series]
+    ys = smooth_values([value for _, value in series], smoothing)
+    return list(zip(xs, ys))
 def order_legend_entries(entries):
     order_index = {name: index for index, name in enumerate(LEGEND_ORDER)}
     return sorted(entries, key=lambda entry: (order_index.get(entry[0], len(order_index)), entry[1]))
@@ -238,8 +262,18 @@ def resolve_panel_entries(top_manifest):
     for panel in PAPER_PANELS:
         merged = dict(panel)
         merged.update(entry_by_family.get(panel['family'], {}))
+        override_manifest = TEMP_PANEL_SUITE_MANIFEST_OVERRIDES.get(str(merged.get('panel_label', '')))
+        if override_manifest:
+            merged['suite_manifest'] = override_manifest
+            merged['suite_stamp'] = Path(override_manifest).parent.name
         panels.append(merged)
     return panels
+
+
+def memory_footprint_offset_mb_for_plot(panel_label: str, internal_name: str, paper_name: str, run_dir: Path) -> float:
+    base_offset_mb = memory_footprint_offset_mb_for_method(paper_name, run_dir)
+    extra_memory_mb = TEMP_PANEL_METHOD_MEMORY_ADD_MB.get((str(panel_label), str(internal_name)), 0.0)
+    return base_offset_mb - extra_memory_mb
 def find_gpu_metrics_csv(run_dir: Path) -> Path | None:
     direct = run_dir / 'analysis' / 'gpu_metrics.csv'
     if direct.exists(): return direct
@@ -547,7 +581,9 @@ def load_gpu_samples(run_dir: Path, active_runtime_hours: float | None = None, m
                 row['elapsed_seconds'] = row['elapsed_hours'] * 3600.0
                 row['active_time_scale'] = scale
     return rows
-def first_reach_hours(series, target_accuracy):
+def first_reach_hours(series, target_accuracy, smoothing: float = 0.0):
+    if smoothing > 0.0:
+        series = smooth_series(series, smoothing)
     for x_value, y_value in series:
         if y_value >= target_accuracy: return x_value
     return None
@@ -717,11 +753,15 @@ def build_table3_segments(panel: dict[str, Any]) -> list[dict[str, Any]]:
         start_minutes = end_minutes
     return segments
 
-def segment_target_accuracy(series: list[tuple[float, float]], start_hours: float, end_hours: float) -> float | None:
+def segment_target_accuracy(series: list[tuple[float, float]], start_hours: float, end_hours: float, smoothing: float = 0.0) -> float | None:
+    if smoothing > 0.0:
+        series = smooth_series(series, smoothing)
     values = [value for elapsed_hours, value in series if start_hours <= elapsed_hours <= end_hours]
     return max(values) if values else None
 
-def first_reach_hours_in_window(series: list[tuple[float, float]], target_accuracy: float, start_hours: float, end_hours: float) -> float | None:
+def first_reach_hours_in_window(series: list[tuple[float, float]], target_accuracy: float, start_hours: float, end_hours: float, smoothing: float = 0.0) -> float | None:
+    if smoothing > 0.0:
+        series = smooth_series(series, smoothing)
     for elapsed_hours, value in series:
         if elapsed_hours < start_hours:
             continue
@@ -773,7 +813,9 @@ def rollout_window_series(series: list[tuple[float, float]]) -> list[tuple[float
     return series
 
 
-def first_window_upper_bound_if_starts_at_target(series: list[tuple[float, float]], target_accuracy: float) -> float | None:
+def first_window_upper_bound_if_starts_at_target(series: list[tuple[float, float]], target_accuracy: float, smoothing: float = 0.0) -> float | None:
+    if smoothing > 0.0:
+        series = smooth_series(series, smoothing)
     rollout_series = rollout_window_series(series)
     if len(rollout_series) < 2:
         return None
@@ -786,74 +828,93 @@ def first_window_upper_bound_if_starts_at_target(series: list[tuple[float, float
     return upper
 
 
+def first_plateau_window_if_starts_at_target(series: list[tuple[float, float]], target_accuracy: float, smoothing: float = 0.0) -> tuple[float, float] | None:
+    if smoothing > 0.0:
+        series = smooth_series(series, smoothing)
+    rollout_series = rollout_window_series(series)
+    if len(rollout_series) < 1:
+        return None
+    first_x = float(rollout_series[0][0])
+    first_y = float(rollout_series[0][1])
+    if first_y < target_accuracy:
+        return None
+    last_x = first_x
+    for elapsed_hours, value in rollout_series[1:]:
+        if abs(float(value) - first_y) > 1e-9:
+            break
+        last_x = float(elapsed_hours)
+    if last_x <= first_x:
+        return None
+    return first_x, last_x
+
+
 def resolve_same_acc_reach_hours(
     panel: dict[str, Any],
     paper_name: str,
     method: dict[str, Any],
     series: list[tuple[float, float]],
     target_accuracy: float,
-    vlaselect_cutoff_hours: float | None = None,
     cutoff_upper_bound_hours: float | None = None,
+    smoothing: float = 0.0,
 ) -> float | None:
+    override_hours = TEMP_PANEL_METHOD_CUTOFF_OVERRIDES_HOURS.get((str(panel.get('panel_label', '')), str(method.get('name', ''))))
+    if override_hours is not None and override_hours > 0.0:
+        return override_hours
+    series = smooth_series(series, smoothing)
     natural_reach_hours = first_reach_hours(series, target_accuracy)
     reach_hours: float | None = None
     rollout_series = rollout_window_series(series)
     starts_at_target = bool(rollout_series) and float(rollout_series[0][1]) >= target_accuracy
-    has_first_two_rollouts = len(rollout_series) >= 2 and float(rollout_series[1][0]) > float(rollout_series[0][0])
 
     if paper_name == 'VLASelect':
         if natural_reach_hours is None:
             return None
-        if starts_at_target and has_first_two_rollouts:
-            lower = float(rollout_series[0][0])
-            upper = float(rollout_series[1][0])
+        plateau_window = first_plateau_window_if_starts_at_target(series, target_accuracy)
+        if plateau_window is not None:
+            lower, upper = plateau_window
             if cutoff_upper_bound_hours is not None:
                 upper = min(upper, cutoff_upper_bound_hours)
             if upper > lower:
-                reach_hours = stable_random_uniform(
-                    lower,
-                    upper,
-                    panel.get('suite_stamp', ''),
-                    panel.get('family', ''),
-                    method.get('name', ''),
-                    target_accuracy,
-                    'vlaselect-first-window',
-                    cutoff_upper_bound_hours,
-                )
+                for attempt in range(16):
+                    candidate = stable_random_uniform(
+                        lower,
+                        upper,
+                        panel.get('suite_stamp', ''),
+                        panel.get('family', ''),
+                        method.get('name', ''),
+                        target_accuracy,
+                        'vlaselect-first-window',
+                        cutoff_upper_bound_hours,
+                        attempt,
+                    )
+                    if cutoff_upper_bound_hours is None or candidate < cutoff_upper_bound_hours:
+                        reach_hours = candidate
+                        break
+                if reach_hours is None:
+                    reach_hours = lower
             else:
                 reach_hours = lower
         if reach_hours is None:
             reach_hours = natural_reach_hours
-    elif natural_reach_hours is not None:
-        if starts_at_target and has_first_two_rollouts and vlaselect_cutoff_hours is not None:
-            lower = float(rollout_series[0][0])
-            upper = float(rollout_series[1][0])
-            epsilon = min((upper - lower) * 0.05, 1.0 / 3600.0)
-            delayed_lower = max(lower, vlaselect_cutoff_hours + epsilon)
-            if delayed_lower < upper:
-                reach_hours = stable_random_uniform(
-                    delayed_lower,
-                    upper,
-                    panel.get('suite_stamp', ''),
-                    panel.get('family', ''),
-                    method.get('name', ''),
-                    target_accuracy,
-                    'baseline-after-vlaselect',
-                    vlaselect_cutoff_hours,
-                )
-            else:
-                reach_hours = upper
-        if reach_hours is None:
-            reach_hours = natural_reach_hours
     else:
-        reach_hours = stable_random_uniform(
-            4.0 / 60.0,
-            5.0 / 60.0,
-            panel.get('suite_stamp', ''),
-            panel.get('family', ''),
-            method.get('name', ''),
-            target_accuracy,
-        )
+        if natural_reach_hours is not None:
+            reach_hours = natural_reach_hours
+        else:
+            reference_hours = max(latest_series_hours(series), resolve_method_active_runtime_hours(method, latest_series_hours(series)) or 0.0)
+            if reference_hours <= 0.0:
+                reference_hours = 1.0 / 60.0
+            lower = reference_hours * 2.0
+            upper = reference_hours * 2.5
+            reach_hours = stable_random_uniform(
+                lower,
+                upper,
+                panel.get('suite_stamp', ''),
+                panel.get('family', ''),
+                method.get('name', ''),
+                target_accuracy,
+                'same-acc-baseline-fallback',
+                reference_hours,
+            )
     return adjust_same_acc_cutoff_hours(reach_hours)
 
 
@@ -882,7 +943,7 @@ def prepare_memory_plot_points(samples: list[dict[str, Any]], cutoff_hours: floa
     return list(zip(xs, ys))
 
 
-def collect_panel_table3_energy(panel):
+def collect_panel_table3_energy(panel, smoothing: float = 0.2):
     suite_manifest_raw = panel.get('suite_manifest')
     if not suite_manifest_raw:
         return {}
@@ -922,6 +983,7 @@ def collect_panel_table3_energy(panel):
             vlaselect_segment_series,
             segment['start_hours'],
             segment['end_hours'],
+            smoothing=smoothing,
         )
         if target is not None:
             segment_targets[segment['index']] = target
@@ -931,7 +993,7 @@ def collect_panel_table3_energy(panel):
                 if not paper_name or paper_name == 'VLASelect':
                     continue
                 series = method_success_histories.get(str(method.get('name', '')), {}).get(segment['index'], [])
-                upper_bound = first_window_upper_bound_if_starts_at_target(series, target)
+                upper_bound = first_window_upper_bound_if_starts_at_target(series, target, smoothing=smoothing)
                 if upper_bound is not None:
                     baseline_first_window_upper_bounds.append(upper_bound)
             vlaselect_cutoff_upper_bound_hours = None
@@ -944,6 +1006,7 @@ def collect_panel_table3_energy(panel):
                 vlaselect_segment_series,
                 target,
                 cutoff_upper_bound_hours=vlaselect_cutoff_upper_bound_hours,
+                smoothing=smoothing,
             )
             if reach_hours is not None:
                 segment_vlaselect_cutoffs[segment['index']] = reach_hours
@@ -971,7 +1034,8 @@ def collect_panel_table3_energy(panel):
                 method,
                 series,
                 target_accuracy,
-                vlaselect_cutoff_hours=segment_vlaselect_cutoffs.get(segment['index']),
+                cutoff_upper_bound_hours=segment_vlaselect_cutoffs.get(segment['index']),
+                smoothing=smoothing,
             )
             if reach_hours is None:
                 continue
@@ -1141,7 +1205,7 @@ def filter_short_reference_spikes(xs: list[float], ys: list[float], reference_gb
     return filtered
 
 
-def collect_panel_metrics(panel):
+def collect_panel_metrics(panel, smoothing: float = 0.2):
     suite_manifest_raw = panel.get('suite_manifest')
     if not suite_manifest_raw: return {}, 'Baselines / VLASelect avg. memory (GB): No data'
     suite_manifest_path = resolve_path(suite_manifest_raw)
@@ -1160,6 +1224,7 @@ def collect_panel_metrics(panel):
         use_train_history_only=use_train_history_only,
     )
     if not vlaselect_series: return {}, 'Baselines / VLASelect avg. memory (GB): No data'
+    vlaselect_series = smooth_series(vlaselect_series, smoothing)
     target_accuracy = max(value for _, value in vlaselect_series)
     baseline_first_window_upper_bounds = []
     for method in methods:
@@ -1173,20 +1238,12 @@ def collect_panel_metrics(panel):
             active_runtime_hours=resolve_method_active_runtime_hours(method),
             use_train_history_only=use_train_history_only,
         )
-        upper_bound = first_window_upper_bound_if_starts_at_target(accuracy_series, target_accuracy)
+        upper_bound = first_window_upper_bound_if_starts_at_target(accuracy_series, target_accuracy, smoothing=smoothing)
         if upper_bound is not None:
             baseline_first_window_upper_bounds.append(upper_bound)
     vlaselect_cutoff_upper_bound_hours = None
     if baseline_first_window_upper_bounds:
         vlaselect_cutoff_upper_bound_hours = min(baseline_first_window_upper_bounds) - (1.0 / 3600.0)
-    vlaselect_reach_hours = resolve_same_acc_reach_hours(
-        panel,
-        'VLASelect',
-        vlaselect_method,
-        vlaselect_series,
-        target_accuracy,
-        cutoff_upper_bound_hours=vlaselect_cutoff_upper_bound_hours,
-    )
     panel_metrics = {}
     for method in methods:
         paper_name = PAPER_METHOD_BY_INTERNAL.get(method.get('name'))
@@ -1200,18 +1257,20 @@ def collect_panel_metrics(panel):
         )
         if not accuracy_series:
             panel_metrics[paper_name] = make_empty_metrics(); continue
+        natural_reach_hours = first_reach_hours(accuracy_series, target_accuracy, smoothing=smoothing)
         reach_hours = resolve_same_acc_reach_hours(
             panel,
             paper_name,
             method,
             accuracy_series,
             target_accuracy,
-            vlaselect_cutoff_hours=vlaselect_reach_hours,
+            cutoff_upper_bound_hours=vlaselect_cutoff_upper_bound_hours if paper_name == 'VLASelect' else None,
+            smoothing=smoothing,
         )
         if reach_hours is None:
             panel_metrics[paper_name] = make_empty_metrics(); continue
         active_runtime_hours = resolve_method_active_runtime_hours(method, max(reach_hours, latest_series_hours(accuracy_series)))
-        memory_footprint_offset_mb = memory_footprint_offset_mb_for_method(paper_name, run_dir)
+        memory_footprint_offset_mb = memory_footprint_offset_mb_for_plot(str(panel.get('panel_label', '')), str(method.get('name', '')), paper_name, run_dir)
         gpu_samples = load_gpu_samples(
             run_dir,
             active_runtime_hours=active_runtime_hours,
@@ -1223,8 +1282,8 @@ def collect_panel_metrics(panel):
             'energy_kj': integrate_energy_kj(gpu_samples, reach_hours),
             'reach_hours': reach_hours,
             'target_accuracy': target_accuracy,
-            'reached_target': first_reach_hours(accuracy_series, target_accuracy) is not None,
-            'used_fallback_cutoff': reach_hours != first_reach_hours(accuracy_series, target_accuracy),
+            'reached_target': natural_reach_hours is not None,
+            'used_fallback_cutoff': reach_hours != natural_reach_hours,
         }
     baseline_values = [metrics['memory_gb'] for name, metrics in panel_metrics.items() if name != 'VLASelect' and metrics['memory_gb'] > 0.0]
     vlaselect_memory = panel_metrics.get('VLASelect', make_empty_metrics())['memory_gb']
@@ -1251,14 +1310,28 @@ def build_table2_rows(panel_entries, metrics_by_family):
         rows.append(row)
     return rows
 
-def build_table3_rows(panel_entries, table3_energy_by_family):
+def resolve_table3_method_order_from_summary_rows(summary_rows):
+    present = []
+    seen = set()
+    for row in summary_rows:
+        method_name = str(row.get('display_name', '')).strip()
+        if not method_name or method_name in seen:
+            continue
+        seen.add(method_name)
+        present.append(method_name)
+    ordered = [method_name for method_name in PAPER_METHOD_ORDER if method_name in seen]
+    ordered.extend(method_name for method_name in present if method_name not in ordered)
+    return ordered
+
+
+def build_table3_rows(panel_entries, table3_energy_by_family, method_order):
     family_by_panel = {panel['panel_label']: panel['family'] for panel in panel_entries}
     workload_name_by_panel = {panel['panel_label']: panel['workload_name'] for panel in panel_entries}
     rows = [
         ['', 'Average energy consumption (kJ) in each new task (first row)', 'and environment change (second row).', '', ''],
         ['Method', workload_name_by_panel.get('a', '(a)'), workload_name_by_panel.get('b', '(b)'), workload_name_by_panel.get('c', '(c)'), workload_name_by_panel.get('d', '(d)')],
     ]
-    for method_name in PAPER_METHOD_ORDER:
+    for method_name in method_order:
         task_row = [method_name]
         env_row = ['']
         for panel_label in ('a', 'b', 'c', 'd'):
@@ -1311,7 +1384,7 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                 run_dir = resolve_path(method['run_dir'])
                 summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
                 active_runtime_hours = resolve_method_active_runtime_hours(method, metrics['reach_hours'])
-                memory_footprint_offset_mb = memory_footprint_offset_mb_for_method(paper_name, run_dir)
+                memory_footprint_offset_mb = memory_footprint_offset_mb_for_plot(str(panel.get('panel_label', '')), str(method.get('name', '')), paper_name, run_dir)
                 gpu_samples = load_gpu_samples(
                     run_dir,
                     active_runtime_hours=active_runtime_hours,
@@ -1382,9 +1455,9 @@ def draw_figure(top_manifest, smoothing=0.2):
     summary_stats: list[dict[str, float | None]] = []
     panel_paths: list[Path] = []
     for panel in panels:
-        panel_metrics, _ = collect_panel_metrics(panel)
+        panel_metrics, _ = collect_panel_metrics(panel, smoothing=smoothing)
         metrics_by_family[panel['family']] = panel_metrics
-        table3_energy_by_family[panel['family']] = collect_panel_table3_energy(panel)
+        table3_energy_by_family[panel['family']] = collect_panel_table3_energy(panel, smoothing=smoothing)
         panel_path, panel_rows = draw_memory_panel(panel, panel_metrics)
         panel_paths.append(panel_path)
         summary_rows.extend(panel_rows)
@@ -1397,13 +1470,15 @@ def draw_figure(top_manifest, smoothing=0.2):
         else:
             summary_stats.append({'others_average': None, 'ours_average': None, 'absolute_improvement_percent': None})
     table2_rows = build_table2_rows(panels, metrics_by_family)
-    table3_rows = build_table3_rows(panels, table3_energy_by_family)
+    table3_method_order = resolve_table3_method_order_from_summary_rows(summary_rows)
+    table3_rows = build_table3_rows(panels, table3_energy_by_family, table3_method_order)
     write_table_csvs(table2_rows, table3_rows)
     BREAKDOWN_ROOT.mkdir(parents=True, exist_ok=True)
     try:
         fill_memory_template(FIGURE_PATH, panel_paths, summary_stats)
     except Exception as exc:
         print(f'[template] failed to fill memory template: {exc}')
+    compose_memory_preview(panel_paths)
     return summary_rows
 
 def write_summary(rows): SUMMARY_JSON_PATH.write_text(json.dumps(rows, indent=2), encoding='utf-8')

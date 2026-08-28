@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "",
-    "suite_manifest": ""
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_comparison_res_change_table/20260827-212824/manifest.json",
+    "suite_manifest": "ckpt/vla_adapter_new/cl_suite/20260827-212824/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        300.0
+        2.0999790000000003
       ],
       "ylim": [
         0.0,
@@ -47,12 +47,163 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": null,
-        "ours_average": null,
-        "absolute_improvement_percent": null
+        "others_average": 0.15833333333333333,
+        "ours_average": 0.7722222222222223,
+        "absolute_improvement_percent": 61.38888888888889
       },
-      "series": [],
-      "legend_entries": []
+      "series": [
+        {
+          "name": "self_improv",
+          "display_name": "Self-Improv",
+          "label": "Self-Improv",
+          "raw_average": 0.2375,
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.49505528325398734,
+            2.0999790000000003
+          ],
+          "y": [
+            0.0,
+            0.0,
+            0.28500000000000003
+          ],
+          "x_full": [
+            0.05365765247200459,
+            0.20499935307551503,
+            0.5124894603420058,
+            1.99998
+          ],
+          "point_count": 3
+        },
+        {
+          "name": "vla_rft",
+          "display_name": "VLA-RFT",
+          "label": "VLA-RFT",
+          "raw_average": 0.0,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.6347088558673741,
+            2.0999790000000003
+          ],
+          "y": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "x_full": [
+            0.18618284898718815,
+            0.7343945761020043,
+            1.9999799999999999
+          ],
+          "point_count": 3
+        },
+        {
+          "name": "world_env",
+          "display_name": "WorldEnv",
+          "label": "WorldEnv",
+          "raw_average": 0.2375,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            1.909668060029812,
+            2.0999790000000003
+          ],
+          "y": [
+            0.0,
+            0.0,
+            0.28500000000000003
+          ],
+          "x_full": [
+            0.19749489521506436,
+            0.7541639102767678,
+            1.8366294928883176,
+            1.9999800000000003
+          ],
+          "point_count": 3
+        },
+        {
+          "name": "ours",
+          "display_name": "VLASelect",
+          "label": "VLASelect",
+          "raw_average": 0.772222,
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            0.5300047922383687,
+            2.0999790000000003
+          ],
+          "y": [
+            0.3333333333333333,
+            0.5533333333333333,
+            0.8139433333333334
+          ],
+          "x_full": [
+            0.48672457312544926,
+            0.5584904397279276,
+            0.8686486914734091,
+            1.4582941097914615,
+            1.5485485265208543,
+            1.99998
+          ],
+          "point_count": 3
+        }
+      ],
+      "legend_entries": [
+        {
+          "name": "self_improv",
+          "label": "Self-Improv",
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "vla_rft",
+          "label": "VLA-RFT",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "world_env",
+          "label": "WorldEnv",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ours",
+          "label": "VLASelect",
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        }
+      ]
     }
   }
 }

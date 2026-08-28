@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import Any
 
 ROLLOUT_RE = re.compile(r"\[rollout\]\s+update=(?P<update>\d+)\/(?P<total_updates>\d+)\s+step=(?P<step>\d+)\/(?P<total_steps>\d+)")
+POST_ROLLOUT_RE = re.compile(
+    r"\[post-rollout\]\s+update=(?P<update>\d+)\/(?P<total_updates>\d+)\s+phase=(?P<phase>[a-z_\-]+)"
+)
 TRAIN_UPDATE_RE = re.compile(r"\[train\]\s+update=(?P<update>\d+)\/(?P<total_updates>\d+)")
 TRAIN_STEP_RE = re.compile(r"(?:^|\s)step=(?P<global_step>\d+)(?:\s|$)")
 ITER_RE = re.compile(r"\biter=(?P<iter>\d+)\b")
@@ -88,6 +91,14 @@ class MethodState:
             self.total_updates = int(rollout_match.group("total_updates"))
             self.step = int(rollout_match.group("step"))
             self.total_steps = int(rollout_match.group("total_steps"))
+
+        post_rollout_match = POST_ROLLOUT_RE.search(line)
+        if post_rollout_match:
+            self.phase = post_rollout_match.group("phase")
+            self.update = int(post_rollout_match.group("update"))
+            self.total_updates = int(post_rollout_match.group("total_updates"))
+            self.step = None
+            self.total_steps = None
 
         train_match = TRAIN_UPDATE_RE.search(line)
         if train_match:

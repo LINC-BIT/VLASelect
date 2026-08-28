@@ -81,7 +81,7 @@ def draw_plot(
     ricl_dir: Path,
     output_path: Path,
     metric: str,
-    smoothing: float = 0.6,
+    smoothing: float = 0.8,
 ) -> None:
     curves = [
         ("VLASelect", vlaselect_dir, "#2563eb"),
@@ -92,15 +92,17 @@ def draw_plot(
     plotted = 0
     missing: list[str] = []
     all_x: list[float] = []
+    all_y: list[float] = []
     for label, run_dir, color in curves:
         series = collect_series(run_dir, metric)
         if not series:
             missing.append(label)
             continue
         xs, ys = zip(*series)
+        smoothed_ys = smooth_values(list(ys), smoothing)
         ax.plot(
             xs,
-            smooth_values(list(ys), smoothing),
+            smoothed_ys,
             label=label,
             color=color,
             linewidth=2.4,
@@ -108,6 +110,7 @@ def draw_plot(
             markersize=3.5,
         )
         all_x.extend(xs)
+        all_y.extend(smoothed_ys)
         plotted += 1
 
     if missing:
@@ -116,7 +119,7 @@ def draw_plot(
     ax.set_xlabel("Time (minutes)")
     ax.set_ylabel("Accuracy / success rate (%)")
     ax.set_title("ICL comparison")
-    ax.set_ylim(0.0, 100.0)
+    ax.set_ylim(min(all_y) - 10.0, 100.0)
     if all_x:
         ax.set_xlim(left=0.0, right=max(max(all_x), 1.0))
     ax.grid(True, alpha=0.3)
@@ -134,18 +137,21 @@ def main() -> int:
     parser.add_argument("--ricl-run-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--metric", choices=tuple(METRIC_KEYS), default="success_once")
-    parser.add_argument("--smoothing", type=float, default=0.6)
+    parser.add_argument("--smoothing", type=float, default=0.8)
     args = parser.parse_args()
     if not 0.0 <= args.smoothing <= 1.0:
         parser.error("--smoothing must be in [0, 1]")
 
-    draw_plot(
-        args.vlaselect_run_dir,
-        args.ricl_run_dir,
-        args.output,
-        args.metric,
-        args.smoothing,
-    )
+    try:
+        draw_plot(
+            args.vlaselect_run_dir,
+            args.ricl_run_dir,
+            args.output,
+            args.metric,
+            args.smoothing,
+        )
+    except (FileNotFoundError, json.JSONDecodeError, ValueError) as exc:
+        parser.exit(1, f"[ICL] error: {exc}\n")
     print(f"[ICL] Plot saved to {args.output}")
     return 0
 

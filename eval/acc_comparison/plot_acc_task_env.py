@@ -52,6 +52,7 @@ PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
 VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
 LIMIT_SERIES_TO_THREE_POINTS = False
 MAX_SERIES_POINTS = 3
+SELECTED_METHODS_RAW: set[str] = set()
 
 PAPER_PANELS = [
     {'panel_label': 'a', 'family': 'octo', 'display_name': 'Octo', 'workload_name': 'Single-arm robot'},
@@ -129,6 +130,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--summary-stem', default=os.environ.get('PLOT_ACC_SUMMARY_STEM', '').strip())
     parser.add_argument('--panel-dir', default=os.environ.get('PLOT_ACC_PANEL_DIR', '').strip())
     parser.add_argument('--vis-payload-dir', default=os.environ.get('PLOT_ACC_VIS_PAYLOAD_DIR', '').strip())
+    parser.add_argument('--methods', default=os.environ.get('PLOT_ACC_METHODS', '').strip(), help='Comma-separated internal method names to plot, e.g. self_improv,vla_rft,world_env,ours')
     parser.add_argument('--from-same-acc', action='store_true', default=parse_bool(os.environ.get('PLOT_ACC_FROM_SAME_ACC', '0')))
     parser.add_argument('--from-task-env-table', action='store_true', default=parse_bool(os.environ.get('PLOT_ACC_FROM_TASK_ENV_TABLE', '0')))
     return parser.parse_args()
@@ -138,7 +140,7 @@ def configure_runtime(args: argparse.Namespace) -> None:
     global TABLE_ROOT, MANIFEST_OVERRIDE, FIGURE_STEM, SUMMARY_STEM
     global PANEL_OUTPUT_SUBDIR, VIS_PAYLOAD_SUBDIR, FIGURE_PATH, FIGURE_SVG_PATH, FIGURE_PNG_PATH
     global SUMMARY_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR, VIS_PAYLOAD_DIR
-    global LIMIT_SERIES_TO_THREE_POINTS, PANEL_LOOKUP_TABLE_ROOTS
+    global LIMIT_SERIES_TO_THREE_POINTS, PANEL_LOOKUP_TABLE_ROOTS, SELECTED_METHODS_RAW
 
     hinted_same_acc = any(
         hint_is_same_acc(candidate)
@@ -192,6 +194,7 @@ def configure_runtime(args: argparse.Namespace) -> None:
     SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
     PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
     VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
+    SELECTED_METHODS_RAW = parse_method_filter(args.methods)
     LIMIT_SERIES_TO_THREE_POINTS = inferred_same_acc or any(
         hint_is_same_acc(candidate)
         for candidate in (FIGURE_STEM, SUMMARY_STEM, PANEL_OUTPUT_SUBDIR, VIS_PAYLOAD_SUBDIR, TABLE_ROOT, MANIFEST_OVERRIDE)
@@ -200,6 +203,36 @@ def configure_runtime(args: argparse.Namespace) -> None:
 
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding='utf-8'))
+
+
+def parse_method_filter(raw_value: Any) -> set[str]:
+    if raw_value is None:
+        return set()
+    if isinstance(raw_value, (list, tuple, set)):
+        values = raw_value
+    else:
+        values = str(raw_value).split(',')
+    return {str(value).strip() for value in values if str(value).strip()}
+
+
+def resolve_selected_methods(family: str) -> set[str] | None:
+    if not SELECTED_METHODS_RAW:
+        return None
+    selected: set[str] = set()
+    for name in SELECTED_METHODS_RAW:
+        if name == 'vlaselect':
+            selected.add('ours_single_agent' if family == 'octo' else 'ours')
+        elif name == 'ours' and family == 'octo':
+            selected.add('ours_single_agent')
+        elif name == 'ours_single_agent' and family != 'octo':
+            selected.add('ours')
+        elif name == 'self_improvement':
+            selected.update({'self_improvement', 'self_improv'})
+        elif name == 'self_improv':
+            selected.update({'self_improv', 'self_improvement'})
+        else:
+            selected.add(name)
+    return selected or None
 
 
 def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
@@ -515,6 +548,7 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         None,
     )
     metric_keys = history_metric_keys_for_family(panel['family'], mwe=use_train_history_only)
+    selected_methods = resolve_selected_methods(panel['family'])
     summary_rows: list[dict[str, Any]] = []
     series_payload = []
     others_avg: list[float] = []
@@ -529,6 +563,8 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
         methods = [method for method in suite_manifest.get('methods', []) if isinstance(method, dict)]
         methods.sort(key=lambda method: LEGEND_ORDER.index(method.get('name')) if method.get('name') in LEGEND_ORDER else len(LEGEND_ORDER))
         for method in methods:
+            if selected_methods is not None and str(method.get('name', '')).strip() not in selected_methods:
+                continue
             run_dir_raw = method.get('run_dir', '')
             if not run_dir_raw:
                 continue

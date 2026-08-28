@@ -1,10 +1,5 @@
 # Discussion Experiments Results
 
-## Sim-to-real transfer
-
-N/A: Not verified due to hardware unavailability
-
-
 ## ICL
 
 ![alt text](./imgs/2.5.2.png)

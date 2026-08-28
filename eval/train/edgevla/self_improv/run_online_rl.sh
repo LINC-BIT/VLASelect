@@ -31,6 +31,10 @@ RUN_SETUP_SMOKE=${RUN_SETUP_SMOKE_OVERRIDE:-false}
 ROLLOUT_MICRO_BATCH_SIZE=${ROLLOUT_MICRO_BATCH_SIZE_OVERRIDE:-256}
 EVAL_MICRO_BATCH_SIZE=${EVAL_MICRO_BATCH_SIZE_OVERRIDE:-256}
 UPDATE_MICRO_BATCH_SIZE=${UPDATE_MICRO_BATCH_SIZE_OVERRIDE:-32}
+SUPERVISED_UPDATES_PER_ITER=${SUPERVISED_UPDATES_PER_ITER_OVERRIDE:-8}
+SUPERVISED_BATCH_SIZE=${SUPERVISED_BATCH_SIZE_OVERRIDE:-128}
+SUPERVISED_ONLINE_RATIO=${SUPERVISED_ONLINE_RATIO_OVERRIDE:-1.0}
+ONLINE_BUFFER_CAPACITY=${ONLINE_BUFFER_CAPACITY_OVERRIDE:-6000}
 STATIC_MODEL_CHECKPOINT=${STATIC_MODEL_CHECKPOINT_OVERRIDE:-"ckpt/edgevla/ours/outputs/bc_unitree_g1_lift_apple_fbs/20260511-171959/best_policy.pt"}
 
 if [ -n "$EXP_NAME" ]; then
@@ -102,12 +106,12 @@ PYTHON_CMD=(
     --env-action-dim 25
     --state-dim 73
     --early-stop-zero-success-minutes "$EARLY_STOP_ZERO_SUCCESS_MINUTES"
-    --supervised-updates-per-iter 8
-    --supervised-batch-size 128
-    --supervised-online-ratio 1.0
+    --supervised-updates-per-iter "$SUPERVISED_UPDATES_PER_ITER"
+    --supervised-batch-size "$SUPERVISED_BATCH_SIZE"
+    --supervised-online-ratio "$SUPERVISED_ONLINE_RATIO"
     --warmup-success-steps-before-supervised 0
     --min-success-steps-for-supervised 10
-    --online-buffer-capacity 6000
+    --online-buffer-capacity "$ONLINE_BUFFER_CAPACITY"
     --static-sparsity 0.8
     --cuda-device "$CUDA_DEVICES"
 )

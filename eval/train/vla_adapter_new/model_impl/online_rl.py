@@ -165,23 +165,36 @@ def explained_variance(predictions: torch.Tensor, targets: torch.Tensor, device:
     return float((1.0 - error_var / target_var).item())
 
 
-def gather_metric_summary(local_summary: Dict[str, Tuple[float, int]]) -> Dict[str, float]:
-    if not is_distributed():
-        return {
-            key: (value_sum / count)
-            for key, (value_sum, count) in local_summary.items()
-            if count > 0
-        }
+def gather_metric_summary(local_summary: Dict[str, Tuple[float, int] | float]) -> Dict[str, float]:
+    if not local_summary:
+        return {}
 
-    gathered: List[Optional[Dict[str, Tuple[float, int]]]] = [None for _ in range(get_world_size())]
+    first_value = next(iter(local_summary.values()))
+    values_are_pairs = isinstance(first_value, (tuple, list))
+
+    if not is_distributed():
+        if values_are_pairs:
+            return {
+                key: (value_sum / count)
+                for key, (value_sum, count) in local_summary.items()
+                if count > 0
+            }
+        return {key: float(value) for key, value in local_summary.items()}
+
+    gathered: List[Optional[Dict[str, Tuple[float, int] | float]]] = [None for _ in range(get_world_size())]
     dist.all_gather_object(gathered, local_summary)
     merged: Dict[str, List[float]] = defaultdict(lambda: [0.0, 0.0])
     for summary in gathered:
         if summary is None:
             continue
-        for key, (value_sum, count) in summary.items():
-            merged[key][0] += float(value_sum)
-            merged[key][1] += float(count)
+        for key, value in summary.items():
+            if isinstance(value, (tuple, list)):
+                value_sum, count = value
+                merged[key][0] += float(value_sum)
+                merged[key][1] += float(count)
+            else:
+                merged[key][0] += float(value)
+                merged[key][1] += 1.0
     return {
         key: merged_value[0] / merged_value[1]
         for key, merged_value in merged.items()

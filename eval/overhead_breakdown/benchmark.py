@@ -116,30 +116,44 @@ def plot_overhead_breakdown(workloads: Dict[str, Dict[str, float]], output: Path
             for index, (color, label) in enumerate(zip(colors, MODULE_LABELS))
         ],
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.18),
-        ncol=1,
+        bbox_to_anchor=(0.5, 1.14),
+        ncol=3,
         frameon=False,
         fontsize=12,
     )
+    module_values = [
+        tuple(float(workloads[family][metric_name]) for metric_name in metric_names)
+        for family in family_order
+    ]
     training_values = [float(workloads[family].get("one_training_iteration_seconds", 0.0)) for family in family_order]
     bar_totals = left.copy()
-    for y, total, training_seconds in zip(y_positions, bar_totals, training_values):
-        if training_seconds <= 0.0:
-            continue
+    annotation_offset = max(float(np.max(bar_totals)) * 0.018, 0.02)
+    for y, total, modules, training_seconds in zip(y_positions, bar_totals, module_values, training_values):
         x = total + max(float(np.max(bar_totals)) * 0.018, 0.02)
-        axis.text(
-            x,
-            y,
-            f"one training iteration: {training_seconds:.2f} s",
-            va="center",
-            ha="left",
-            fontsize=12,
-            clip_on=False,
-        )
+        if sum(modules) > 0.0:
+            axis.text(
+                x,
+                y - 0.15,
+                f"Module 1/2/3: {modules[0]:.3f} / {modules[1]:.3f} / {modules[2]:.3f} s",
+                va="center",
+                ha="left",
+                fontsize=14,
+                clip_on=False,
+            )
+        if training_seconds > 0.0:
+            axis.text(
+                x,
+                y + 0.15,
+                f"One training iteration: {training_seconds:.2f} s",
+                va="center",
+                ha="left",
+                fontsize=14,
+                clip_on=False,
+            )
     max_total = max(float(np.max(bar_totals)), 1e-6)
-    max_annotation = max((total + max(max_total * 0.018, 0.02) for total in bar_totals), default=max_total)
+    max_annotation = max((total + annotation_offset for total in bar_totals), default=max_total)
     axis.set_xlim(0.0, max(max_total * 1.60, max_annotation * 1.35))
-    figure.tight_layout()
+    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.90))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, dpi=220, bbox_inches="tight")
     plt.close(figure)

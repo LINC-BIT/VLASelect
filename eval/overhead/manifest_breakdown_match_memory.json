@@ -1,0 +1,83 @@
+{
+  "suite_stamp": "breakdown-match-memory",
+  "table_root": "overhead/manual",
+  "figure_all_methods_output": "overhead/FIG_BREAKDOWN_ALL_METHODS.pdf",
+  "all_methods_csv": "overhead/overhead_breakdown_table/BREAKDOWN_ALL_METHODS.csv",
+  "same_acc_manifest": "",
+  "panels": [
+    {
+      "panel_label": "a",
+      "family": "octo",
+      "display_name": "Octo",
+      "workload_name": "Single-arm robot",
+      "suite_stamp": "20260826-121034",
+      "suite_manifest": "ckpt/cl_suite/20260826-121034/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    },
+    {
+      "panel_label": "b",
+      "family": "vla_adapter_new",
+      "display_name": "VLA-Adapter",
+      "workload_name": "Dexterous hand",
+      "suite_stamp": "20260826-160837",
+      "suite_manifest": "ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    },
+    {
+      "panel_label": "c",
+      "family": "tinyvla",
+      "display_name": "TinyVLA",
+      "workload_name": "Mobile manipulator",
+      "suite_stamp": "20260827-043445",
+      "suite_manifest": "ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    },
+    {
+      "panel_label": "d",
+      "family": "edgevla",
+      "display_name": "EdgeVLA",
+      "workload_name": "Humanoid robot",
+      "suite_stamp": "20260826-215300",
+      "suite_manifest": "train/edgevla/cl_suite/20260826-215300/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    }
+  ],
+  "families": [
+    {
+      "panel_label": "a",
+      "family": "octo",
+      "display_name": "Octo",
+      "workload_name": "Single-arm robot",
+      "suite_stamp": "20260826-121034",
+      "suite_manifest": "ckpt/cl_suite/20260826-121034/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    },
+    {
+      "panel_label": "b",
+      "family": "vla_adapter_new",
+      "display_name": "VLA-Adapter",
+      "workload_name": "Dexterous hand",
+      "suite_stamp": "20260826-160837",
+      "suite_manifest": "ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    },
+    {
+      "panel_label": "c",
+      "family": "tinyvla",
+      "display_name": "TinyVLA",
+      "workload_name": "Mobile manipulator",
+      "suite_stamp": "20260827-043445",
+      "suite_manifest": "ckpt/tinyvla/cl_suite/20260827-043445/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    },
+    {
+      "panel_label": "d",
+      "family": "edgevla",
+      "display_name": "EdgeVLA",
+      "workload_name": "Humanoid robot",
+      "suite_stamp": "20260826-215300",
+      "suite_manifest": "train/edgevla/cl_suite/20260826-215300/manifest.json",
+      "_same_acc_summary_path": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_summary.json"
+    }
+  ]
+}

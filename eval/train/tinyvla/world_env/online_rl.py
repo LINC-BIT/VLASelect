@@ -38,6 +38,12 @@ from train.vla_adapter_new.model_impl.online_rl import (
     strip_module_prefix,
 )
 from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
+from train.common.mwe_eval import (
+    SUCCESS_METRIC_WINDOW_EPISODES,
+    append_episode_metric_batch,
+    summarize_episode_metric_tensors,
+    trim_episode_metric_tensors,
+)
 from train.vla_adapter_new.ours.generate_static_small_model import generate_static_small_model
 from train.tinyvla.ours.model_with_fbs import convert_to_fbs_model
 from train.vla_adapter_new.world_env.pretrain_world_model import HandDynamicsWorldModel, StateNormalizer
@@ -625,8 +631,41 @@ def train(args: Args) -> None:
         return True, False, elapsed_minutes
 
     use_train_success_only = parse_bool(os.environ.get("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "0"))
+    def collect_initial_training_metric() -> Dict[str, Any]:
+        """Measure the initial policy on the training environments before PPO updates."""
+        initial_obs, _ = envs.reset(seed=args.seed + current_env_index)
+        initial_episode_metrics = defaultdict(list)
+        baseline_steps = max(1, int(args.max_episode_steps or 100))
+        raw_policy.eval()
+        with torch.no_grad():
+            for _ in range(baseline_steps):
+                rgbs = reference.extract_rgb_batch_from_obs(initial_obs)
+                states = reference.extract_cabinet_state_batch_from_obs(initial_obs)
+                action, _, _, _, _ = reference.batched_get_action_and_value_no_grad(
+                    raw_policy,
+                    rgbs,
+                    states,
+                    micro_batch_size=args.rollout_micro_batch_size,
+                    deterministic=False,
+                )
+                initial_obs, _, _, _, infos = envs.step(action)
+                done_mask, episode_metrics = reference.get_completed_episode_metrics(infos)
+                if done_mask is not None and done_mask.any():
+                    append_episode_metric_batch(initial_episode_metrics, episode_metrics, done_mask)
+
+        metric: Dict[str, Any] = {
+            "update": 0,
+            "global_step": 0,
+            "elapsed_hours": 0.0,
+            "env_id": current_env_id,
+            "env_index": current_env_index,
+        }
+        metric.update(summarize_episode_metric_tensors(initial_episode_metrics))
+        return metric
+
+    success_metric_window_episodes = max(1, int(args.num_envs))
     if use_train_success_only:
-        initial_train_metrics = reference.evaluate_policy(raw_policy, envs, max(1, args.num_envs))
+        initial_train_metrics = collect_initial_training_metric()
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)
         next_done = torch.zeros(args.num_envs, device=device)
     else:
@@ -711,7 +750,6 @@ def train(args: Args) -> None:
         final_values.zero_()
         rollout_rgbs: List[torch.Tensor] = []
         rollout_states: List[np.ndarray] = []
-        train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
         rollout_start_time = time.perf_counter()
@@ -726,6 +764,7 @@ def train(args: Args) -> None:
             "termination_bonus": 0.0,
             "virtual_done_rate": 0.0,
         }
+        train_episode_metrics = defaultdict(list)
 
         for step in range(args.num_steps):
             global_step += args.num_envs
@@ -780,7 +819,7 @@ def train(args: Args) -> None:
                 )
 
                 partial_success_metrics = reference.gather_metric_summary(
-                    summarize_episode_metrics(train_episode_metrics)
+                    summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)
                 )
                 partial_max_success = max(
                     float(partial_success_metrics.get("train_success_once", 0.0)),
@@ -796,10 +835,8 @@ def train(args: Args) -> None:
                     break
 
             done_mask, episode_metrics = reference.get_completed_episode_metrics(infos)
-            if done_mask is not None:
-                if done_mask.any():
-                    for key, value_tensor in episode_metrics.items():
-                        train_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+            if done_mask is not None and done_mask.any():
+                append_episode_metric_batch(train_episode_metrics, episode_metrics, done_mask)
                 if "final_observation" in infos and truncation_mask.any():
                     final_obs = infos["final_observation"]
                     bootstrap_idx = truncation_mask.detach().cpu().numpy().astype(bool)
@@ -841,7 +878,14 @@ def train(args: Args) -> None:
                 "wm_termination_bonus": reward_info_last["termination_bonus"],
                 "wm_virtual_done_rate": reward_info_last["virtual_done_rate"],
             }
-            metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+            metric.update(
+                reference.gather_metric_summary(
+                    summarize_episode_metric_tensors(
+                        train_episode_metrics, max_num_values=success_metric_window_episodes
+                    )
+                )
+            )
+            trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
             snapshot_time_breakdown_to_metric(
                 metric,
                 rollout_seconds=partial_rollout_seconds,
@@ -971,7 +1015,12 @@ def train(args: Args) -> None:
             "wm_termination_bonus": reward_info_last["termination_bonus"],
             "wm_virtual_done_rate": reward_info_last["virtual_done_rate"],
         }
-        metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+        metric.update(
+            reference.gather_metric_summary(
+                summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)
+            )
+        )
+        trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
 
         if update % args.eval_every_updates == 0 or update == num_updates:
             eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)

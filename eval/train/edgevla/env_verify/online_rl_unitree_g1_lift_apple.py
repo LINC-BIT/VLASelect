@@ -210,7 +210,7 @@ def run_env_contract_smoke(args: reference.Args, device: torch.device, output_di
         obs_mode=args.obs_mode,
         control_mode=args.control_mode,
         reward_mode=args.reward_mode,
-        render_mode="rgb_array",
+        render_mode=None,
         **backend_kwargs,
     )
     try:

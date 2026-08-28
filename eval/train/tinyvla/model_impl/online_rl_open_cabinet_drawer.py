@@ -61,7 +61,11 @@ from online_rl import (
 )
 from prismatic.vla.action_tokenizer import ActionTokenizer
 from train.common.random_init_vla import maybe_build_random_init_vla_bundle
-from train.common.mwe_eval import use_train_success_only
+from train.common.mwe_eval import SUCCESS_METRIC_WINDOW_EPISODES, use_train_success_only
+from train.common.train_success_metrics import (
+    append_live_episode_metrics,
+    summarize_training_episode_metrics,
+)
 
 
 TASK_PROMPT = "open the cabinet drawer."
@@ -281,6 +285,7 @@ def make_vector_env(
         control_mode=args.control_mode,
         reward_mode=args.reward_mode,
         render_mode="rgb_array",
+        max_episode_steps=args.max_episode_steps,
         **backend_kwargs,
     )
     if video_output_dir is not None:
@@ -1290,7 +1295,6 @@ def train(args: Args) -> None:
         final_values.zero_()
         rollout_rgbs: List[torch.Tensor] = []
         rollout_states: List[np.ndarray] = []
-        train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
 
@@ -1343,10 +1347,8 @@ def train(args: Args) -> None:
                     )
 
             done_mask, episode_metrics = get_completed_episode_metrics(infos)
-            if done_mask is not None:
-                if done_mask.any():
-                    for key, value_tensor in episode_metrics.items():
-                        train_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+            if done_mask is not None and done_mask.any():
+                append_episode_metric_batch(train_episode_metrics, episode_metrics, done_mask)
                 bootstrap_mask = truncation_mask
                 if "final_observation" in infos and bootstrap_mask.any():
                     final_obs = infos["final_observation"]
@@ -1480,12 +1482,13 @@ def train(args: Args) -> None:
             "elapsed_hours": (time.time() - train_start_time) / 3600.0,
         }
 
-        local_train_summary = {}
-        for key, values in train_episode_metrics.items():
-            if values:
-                cat = torch.cat(values)
-                local_train_summary[f"train_{key}"] = (float(cat.sum().item()), int(cat.numel()))
-        metric.update(gather_metric_summary(local_train_summary))
+        success_metric_window_episodes = max(1, int(args.num_envs))
+        metric.update(
+            gather_metric_summary(
+                summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)
+            )
+        )
+        trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
         if use_train_success_only():
             for source_key, target_key in (
                 ("train_success_once", "eval_success_once"),

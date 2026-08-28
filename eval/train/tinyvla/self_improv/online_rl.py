@@ -1,7 +1,10 @@
 import argparse
+import copy
+import io
 import ast
 import bisect
 import os
+import pickle
 import shutil
 import sys
 import time
@@ -17,9 +20,11 @@ from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from collections import defaultdict, deque
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Deque, Dict, List, Optional, Tuple, get_args, get_origin
 
+import dill
 import numpy as np
 import torch
 import torch.nn as nn
@@ -38,7 +43,18 @@ from train.vla_adapter_new.model_impl.online_rl import (
     save_metrics_history,
     strip_module_prefix,
 )
-from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
+from train.common.checkpoint_noise import (
+    get_baseline_pretrain_ckpt_noise_scale,
+    get_baseline_pretrain_ckpt_noise_seed,
+    is_mwe_checkpoint_noise_enabled,
+    maybe_apply_checkpoint_noise_to_state_dict,
+)
+from train.common.mwe_eval import (
+    SUCCESS_METRIC_WINDOW_EPISODES,
+    append_episode_metric_batch,
+    summarize_episode_metric_tensors,
+    trim_episode_metric_tensors,
+)
 from train.vla_adapter_new.ours.generate_static_small_model import generate_static_small_model
 from train.tinyvla.ours.model_with_fbs import convert_to_fbs_model
 
@@ -51,6 +67,10 @@ DEFAULT_STATIC_MODEL_CHECKPOINT = (
 DEFAULT_ENVS_ID = "['OpenCabinetDrawerEasyLevel0-v1', 'OpenCabinetDrawerEasyLevel0-v1']"
 DEFAULT_ENV_CHANGE_TIME_POINTS = "[10, 20]"
 DEFAULT_SUMMARY_NAME = "self_improv_training_summary.json"
+MATERIALIZED_FBS_POLICY_BYTES_KEY = "materialized_fbs_policy_bytes"
+MATERIALIZED_FBS_METADATA_KEY = "materialized_fbs_policy_metadata"
+MATERIALIZED_FBS_FORMAT_VERSION = 1
+MATERIALIZED_FBS_PICKLE_PROTOCOL = max(4, pickle.HIGHEST_PROTOCOL)
 
 
 @dataclass
@@ -301,6 +321,97 @@ class ActionBinTrajectoryBuffer:
         }
 
 
+def _materialized_fbs_noise_metadata() -> Dict[str, Any]:
+    enabled = is_mwe_checkpoint_noise_enabled()
+    return {
+        "enabled": enabled,
+        "scale": float(get_baseline_pretrain_ckpt_noise_scale()) if enabled else 0.0,
+        "seed": int(get_baseline_pretrain_ckpt_noise_seed()),
+    }
+
+
+
+def _expected_materialized_fbs_metadata(checkpoint_path: str | Path) -> Dict[str, Any]:
+    return {
+        "version": MATERIALIZED_FBS_FORMAT_VERSION,
+        "checkpoint_path": str(Path(checkpoint_path).resolve()),
+        "noise": _materialized_fbs_noise_metadata(),
+    }
+
+
+
+def maybe_load_materialized_fbs_policy_from_checkpoint(
+    checkpoint_path: str,
+    device: torch.device,
+) -> Optional[reference.EdgeVLAActorCritic]:
+    path = Path(checkpoint_path)
+    if not path.exists():
+        return None
+    checkpoint = torch.load(path, map_location="cpu")
+    if not isinstance(checkpoint, dict):
+        return None
+    expected_metadata = _expected_materialized_fbs_metadata(path)
+    metadata = checkpoint.get(MATERIALIZED_FBS_METADATA_KEY)
+    payload = checkpoint.get(MATERIALIZED_FBS_POLICY_BYTES_KEY)
+    if metadata != expected_metadata or not isinstance(payload, (bytes, bytearray)):
+        return None
+    policy = torch.load(io.BytesIO(payload), map_location="cpu", pickle_module=dill)
+    if not isinstance(policy, nn.Module):
+        print(f"[setup] ignoring invalid materialized FBS policy cache in {path}")
+        return None
+    policy = policy.to(device)
+    policy.device = device
+    print(f"[setup] loaded cached materialized FBS policy from {path}")
+    return policy
+
+
+
+def maybe_persist_materialized_fbs_policy_to_checkpoint(
+    checkpoint_path: str,
+    policy: reference.EdgeVLAActorCritic,
+) -> None:
+    path = Path(checkpoint_path)
+    if not path.exists():
+        return
+    try:
+        checkpoint = torch.load(path, map_location="cpu")
+    except Exception as exc:
+        print(f"[setup] failed to read checkpoint for materialized FBS cache: {path} ({exc})")
+        return
+    if isinstance(checkpoint, dict):
+        payload: Dict[str, Any] = dict(checkpoint)
+    elif isinstance(checkpoint, Mapping):
+        payload = {"policy": dict(checkpoint)}
+    else:
+        print(f"[setup] skipping materialized FBS cache because checkpoint payload is not dict-like: {path}")
+        return
+    expected_metadata = _expected_materialized_fbs_metadata(path)
+    existing_payload = payload.get(MATERIALIZED_FBS_POLICY_BYTES_KEY)
+    if payload.get(MATERIALIZED_FBS_METADATA_KEY) == expected_metadata and isinstance(existing_payload, (bytes, bytearray)):
+        return
+    policy_cpu = copy.deepcopy(policy).to(device=torch.device("cpu"))
+    policy_cpu.device = torch.device("cpu")
+    buffer = io.BytesIO()
+    torch.save(
+        policy_cpu,
+        buffer,
+        pickle_module=dill,
+        pickle_protocol=MATERIALIZED_FBS_PICKLE_PROTOCOL,
+    )
+    payload[MATERIALIZED_FBS_POLICY_BYTES_KEY] = buffer.getvalue()
+    payload[MATERIALIZED_FBS_METADATA_KEY] = expected_metadata
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    try:
+        torch.save(payload, tmp_path, pickle_protocol=MATERIALIZED_FBS_PICKLE_PROTOCOL)
+        tmp_path.replace(path)
+        print(f"[setup] cached materialized FBS policy into checkpoint: {path}")
+    except Exception as exc:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        print(f"[setup] failed to persist materialized FBS policy cache: {path} ({exc})")
+
+
+
 def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -> Dict[str, Any]:
     if not Path(checkpoint_path).exists():
         raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
@@ -372,16 +483,20 @@ def materialize_fbs_caches(
 
 
 def build_static_student_policy(args: Args, device: torch.device) -> reference.EdgeVLAActorCritic:
-    base_policy = reference.EdgeVLAActorCritic(
-        Path(args.model_dir),
-        device=device,
-        state_dim=args.state_dim,
-        action_dim=args.action_dim,
-        env_action_dim=args.env_action_dim,
-        controlled_action_indices=args.controlled_action_indices,
-    ).to(device)
-    fbs_policy = convert_to_fbs_model(base_policy, device).to(device)
-    load_policy_state_from_checkpoint(args.static_model_checkpoint, fbs_policy)
+    fbs_policy = maybe_load_materialized_fbs_policy_from_checkpoint(args.static_model_checkpoint, device)
+    base_policy = None
+    if fbs_policy is None:
+        base_policy = reference.EdgeVLAActorCritic(
+            Path(args.model_dir),
+            device=device,
+            state_dim=args.state_dim,
+            action_dim=args.action_dim,
+            env_action_dim=args.env_action_dim,
+            controlled_action_indices=args.controlled_action_indices,
+        ).to(device)
+        fbs_policy = convert_to_fbs_model(base_policy, device).to(device)
+        load_policy_state_from_checkpoint(args.static_model_checkpoint, fbs_policy)
+        maybe_persist_materialized_fbs_policy_to_checkpoint(args.static_model_checkpoint, fbs_policy)
     set_sparsity(fbs_policy, args.static_sparsity)
     materialize_fbs_caches(args, device, fbs_policy)
     static_policy = generate_static_small_model(fbs_policy, device=device, dtype=torch.bfloat16)
@@ -389,7 +504,8 @@ def build_static_student_policy(args: Args, device: torch.device) -> reference.E
     train_backbone_now = not args.freeze_vla_backbone and args.backbone_warmup_updates <= 0
     static_policy.configure_trainable_modules(train_backbone=train_backbone_now)
     static_policy.eval_micro_batch_size = args.eval_micro_batch_size
-    del base_policy
+    if base_policy is not None:
+        del base_policy
     del fbs_policy
     torch.cuda.empty_cache()
     return static_policy
@@ -672,8 +788,41 @@ def train(args: Args) -> None:
         return True, False, elapsed_minutes
 
     use_train_success_only = parse_bool(os.environ.get("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "0"))
+    def collect_initial_training_metric() -> Dict[str, Any]:
+        """Measure the initial policy on the training environments before PPO updates."""
+        initial_obs, _ = envs.reset(seed=args.seed + current_env_index)
+        initial_episode_metrics = defaultdict(list)
+        baseline_steps = max(1, int(args.max_episode_steps or 100))
+        raw_policy.eval()
+        with torch.no_grad():
+            for _ in range(baseline_steps):
+                rgbs = reference.extract_rgb_batch_from_obs(initial_obs)
+                states = reference.extract_cabinet_state_batch_from_obs(initial_obs)
+                action, _, _, _, _ = reference.batched_get_action_and_value_no_grad(
+                    raw_policy,
+                    rgbs,
+                    states,
+                    micro_batch_size=args.rollout_micro_batch_size,
+                    deterministic=False,
+                )
+                initial_obs, _, _, _, infos = envs.step(action)
+                done_mask, episode_metrics = reference.get_completed_episode_metrics(infos)
+                if done_mask is not None and done_mask.any():
+                    append_episode_metric_batch(initial_episode_metrics, episode_metrics, done_mask)
+
+        metric: Dict[str, Any] = {
+            "update": 0,
+            "global_step": 0,
+            "elapsed_hours": 0.0,
+            "env_id": current_env_id,
+            "env_index": current_env_index,
+        }
+        metric.update(summarize_episode_metric_tensors(initial_episode_metrics))
+        return metric
+
+    success_metric_window_episodes = max(1, int(args.num_envs))
     if use_train_success_only:
-        initial_train_metrics = reference.evaluate_policy(raw_policy, envs, max(1, args.num_envs))
+        initial_train_metrics = collect_initial_training_metric()
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)
         next_done = torch.zeros(args.num_envs, device=device)
     else:
@@ -757,13 +906,13 @@ def train(args: Args) -> None:
         final_values.zero_()
         rollout_rgbs: List[torch.Tensor] = []
         rollout_states: List[np.ndarray] = []
-        train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
         rollout_start_time = time.perf_counter()
         abort_during_rollout = False
         abort_reason: Optional[str] = None
         rollout_steps_completed = 0
+        train_episode_metrics = defaultdict(list)
 
         for step in range(args.num_steps):
             global_step += args.num_envs
@@ -823,7 +972,7 @@ def train(args: Args) -> None:
                 )
 
                 partial_success_metrics = reference.gather_metric_summary(
-                    summarize_episode_metrics(train_episode_metrics)
+                    summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)
                 )
                 partial_max_success = max(
                     float(partial_success_metrics.get("train_success_once", 0.0)),
@@ -839,10 +988,8 @@ def train(args: Args) -> None:
                     break
 
             done_mask, episode_metrics = reference.get_completed_episode_metrics(infos)
-            if done_mask is not None:
-                if done_mask.any():
-                    for key, value_tensor in episode_metrics.items():
-                        train_episode_metrics[key].append(value_tensor[done_mask].float().detach().cpu())
+            if done_mask is not None and done_mask.any():
+                append_episode_metric_batch(train_episode_metrics, episode_metrics, done_mask)
                 if "final_observation" in infos and truncation_mask.any():
                     final_obs = infos["final_observation"]
                     bootstrap_idx = truncation_mask.detach().cpu().numpy().astype(bool)
@@ -891,7 +1038,14 @@ def train(args: Args) -> None:
                 "online_buffer_steps": float(len(online_buffer)),
                 "online_success_trajectories": float(online_buffer.num_success_trajectories),
             }
-            metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+            metric.update(
+                reference.gather_metric_summary(
+                    summarize_episode_metric_tensors(
+                        train_episode_metrics, max_num_values=success_metric_window_episodes
+                    )
+                )
+            )
+            trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
             snapshot_time_breakdown_to_metric(
                 metric,
                 rollout_seconds=partial_rollout_seconds,
@@ -913,7 +1067,12 @@ def train(args: Args) -> None:
         rollout_time = time.perf_counter() - rollout_start_time
         runtime_tracker.add_active_seconds(rollout_time)
         cumulative_rollout_seconds += rollout_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=gae start "
+            f"rollout_s={rollout_time:.2f}"
+        )
 
+        gae_start_time = time.perf_counter()
         with torch.no_grad():
             next_value = reference.batched_get_value_no_grad(
                 raw_policy,
@@ -934,6 +1093,11 @@ def train(args: Args) -> None:
                 delta = rewards_buf[t] + args.gamma * real_next_values - values_buf[t]
                 advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * next_nonterminal * lastgaelam
             returns = advantages + values_buf
+        gae_time = time.perf_counter() - gae_start_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=gae done "
+            f"elapsed_s={gae_time:.2f}"
+        )
 
         b_rgbs = torch.cat(rollout_rgbs, dim=0)
         b_states = np.concatenate(rollout_states, axis=0)
@@ -955,6 +1119,12 @@ def train(args: Args) -> None:
 
         update_start_time = time.perf_counter()
         raw_policy.eval()
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=ppo start "
+            f"epochs={args.update_epochs} global_batch_size={global_batch_size} "
+            f"minibatch_size={local_minibatch_size}"
+        )
+        ppo_start_time = time.perf_counter()
         for _ in range(args.update_epochs):
             np.random.shuffle(inds)
             epoch_stats = defaultdict(list)
@@ -989,12 +1159,29 @@ def train(args: Args) -> None:
             entropy_value = float(np.mean(epoch_stats["entropy"])) if epoch_stats["entropy"] else 0.0
             if stopped_on_minibatch_kl or approx_kl > args.target_kl:
                 break
+        ppo_time = time.perf_counter() - ppo_start_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=ppo done "
+            f"elapsed_s={ppo_time:.2f} approx_kl={approx_kl:.5f} "
+            f"stopped_on_minibatch_kl={stopped_on_minibatch_kl}"
+        )
 
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=supervised start "
+            f"online_buffer_steps={len(online_buffer)}"
+        )
+        supervised_start_time = time.perf_counter()
         bc_stats = run_supervised_stage(
             args=args,
             policy=raw_policy,
             optimizer=sl_optimizer,
             online_buffer=online_buffer,
+        )
+        supervised_time = time.perf_counter() - supervised_start_time
+        print(
+            f"[post-rollout] update={update}/{num_updates} phase=supervised done "
+            f"elapsed_s={supervised_time:.2f} bc_loss={float(bc_stats.get('bc_loss', 0.0)):.6f} "
+            f"bc_updates={int(bc_stats.get('bc_updates', 0.0))}"
         )
 
         update_time = time.perf_counter() - update_start_time
@@ -1023,9 +1210,19 @@ def train(args: Args) -> None:
             "online_success_trajectories": float(online_buffer.num_success_trajectories),
             **bc_stats,
         }
-        metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
+        metric.update(
+            reference.gather_metric_summary(
+                summarize_episode_metric_tensors(train_episode_metrics, max_num_values=success_metric_window_episodes)
+            )
+        )
+        trim_episode_metric_tensors(train_episode_metrics, success_metric_window_episodes)
 
         if update % args.eval_every_updates == 0 or update == num_updates:
+            print(
+                f"[post-rollout] update={update}/{num_updates} phase=eval start "
+                f"episodes={args.eval_episodes}"
+            )
+            eval_start_time = time.perf_counter()
             eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
             metric.update({f"eval_{key}": value for key, value in eval_metrics.items()})
             if test_video_envs is not None:
@@ -1046,6 +1243,11 @@ def train(args: Args) -> None:
                     global_step,
                     best_success_once,
                 )
+            eval_time = time.perf_counter() - eval_start_time
+            print(
+                f"[post-rollout] update={update}/{num_updates} phase=eval done "
+                f"elapsed_s={eval_time:.2f} eval_success_once={success_once:.4f}"
+            )
 
         snapshot_time_breakdown_to_metric(
             metric,

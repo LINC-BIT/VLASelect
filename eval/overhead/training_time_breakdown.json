@@ -85,16 +85,16 @@
           "model_update_hours": 9.65792147649659e-05
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.0056676874159994894,
-          "model_update_hours": 0.06968779283291292
+          "rollout_hours": 0.006069406216103946,
+          "model_update_hours": 0.07922912439861748
         },
         "tinyvla": {
-          "rollout_hours": 0.013413623124716752,
-          "model_update_hours": 0.08122715262304862
+          "rollout_hours": 0.013344178933313943,
+          "model_update_hours": 0.07974560131803932
         },
         "edgevla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.012897643446591115,
+          "model_update_hours": 0.0704356898867422
         }
       }
     },
@@ -125,16 +125,16 @@
           "model_update_hours": 0.00030990284350183275
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.029469476020316698,
-          "model_update_hours": 0.0009246861940137231
+          "rollout_hours": 0.032658894792483704,
+          "model_update_hours": 0.001036131077465446
         },
         "tinyvla": {
-          "rollout_hours": 0.017790454171356693,
-          "model_update_hours": 5.0570806237911263e-05
+          "rollout_hours": 0.034315359732524184,
+          "model_update_hours": 7.488713363677056e-05
         },
         "edgevla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.03686099423111753,
+          "model_update_hours": 7.519038361755924e-05
         }
       }
     },
@@ -145,16 +145,16 @@
           "model_update_hours": 0.0003056987043884065
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.027684719043411556,
-          "model_update_hours": 0.0007916637803178056
+          "rollout_hours": 0.03312580851391734,
+          "model_update_hours": 0.0008295437988838077
         },
         "tinyvla": {
-          "rollout_hours": 0.018800798730352886,
-          "model_update_hours": 5.044164451006573e-05
+          "rollout_hours": 0.03402356681695286,
+          "model_update_hours": 9.609743917179812e-05
         },
         "edgevla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.040391681548337346,
+          "model_update_hours": 7.586467891491743e-05
         }
       }
     },
@@ -201,20 +201,20 @@
     "ours": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0014770599627308193,
-          "model_update_hours": 0.0002169649055197192
+          "rollout_hours": 0.0014688666680152554,
+          "model_update_hours": 0.0002158982983889913
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.005060517262075361,
-          "model_update_hours": 0.0022312350434851155
+          "rollout_hours": 0.0067742201186857896,
+          "model_update_hours": 0.003134800473813386
         },
         "tinyvla": {
-          "rollout_hours": 0.01369029942288762,
-          "model_update_hours": 0.020231232820531457
+          "rollout_hours": 0.004460412066413552,
+          "model_update_hours": 0.009391902879647033
         },
         "edgevla": {
-          "rollout_hours": 0.0,
-          "model_update_hours": 0.0
+          "rollout_hours": 0.010206907398068323,
+          "model_update_hours": 0.014861919764157364
         }
       }
     }

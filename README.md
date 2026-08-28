@@ -53,6 +53,10 @@ The artifacts are organized as follows, which contain **artifact components to r
   - In existing agentic AI systems, the resource-intensive training of deployed
   VLA models has become a critical bottleneck. 
 
+  <p align="center">
+    <img src="vlaselect-intro.png" width="50%">
+  </p>
+
 - **Method**: 
 
   - In this paper,
@@ -552,7 +556,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 - The resource requirements and outputs are listed below:
   | Resource Requirements | Experiment Results |
   | --- | --- |
-  | a DOFBOT-SE single-arm robot<br>an AmazingHand dexterous hand | [Video]() |
+  | a DOFBOT-SE single-arm robot<br>an AmazingHand dexterous hand | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#sim-to-real-transfer) |
 
 #### 2.2.8 Discussion 2: ICL (In-Context Learning)
 - **Option 1:** Commands for minimum working examples:

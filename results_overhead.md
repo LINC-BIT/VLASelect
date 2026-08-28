@@ -1,17 +1,19 @@
 # Example Running Outputs
 
-## (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy
+## (Figure 9 Tables 2/3) Overheads Under The Same Accuracy
+
+> **Key observation:** VLASelect consistently achieves the target accuracy with **the shortest execution** time and **the most reduced resource consumption** compared to all baseline methods.
 
 ### Full run
 
 #### Figure 9: Full-scale Example for Memory Footprint Comparison in a new task
 
-![Overhead Comparison - Full Run](imgs/2.2.2.1.png)
+<img src="imgs/2.2.2.1.png" alt="Overhead Comparison - Full Run" style="zoom:150%;" />
 
 #### Table 2: Full-scale Example for Average Energy Consumption (kJ) in each new task
 
 | Method | Time (h) - Single-arm | Time (h) - Dexterous | Time (h) - Mobile | Time (h) - Humanoid | Memory (GB) - Single-arm | Memory (GB) - Dexterous | Memory (GB) - Mobile | Memory (GB) - Humanoid | Energy (kJ) - Single-arm | Energy (kJ) - Dexterous | Energy (kJ) - Mobile | Energy (kJ) - Humanoid |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| :--: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **ConRFT** | 3.88 | 3.14 | 2.83 | 3.78 | 19.12 | 20.88 | 27.92 | 35.71 | 360.39 | 294.89 | 334.87 | 600.23 |
 | **FlaRe** | 2.56 | 3.60 | 2.92 | 2.91 | 23.14 | 31.39 | 27.49 | 33.70 | 295.13 | 384.55 | 384.75 | 492.30 |
 | **iRe-VLA** | 2.71 | 3.38 | 2.78 | 3.31 | 21.93 | 24.55 | 27.30 | 42.19 | 253.73 | 374.00 | 382.41 | 630.36 |
@@ -26,7 +28,7 @@
 #### Table 3: Full-scale Example for Overhead comparison under the same learning accuracy
 
 | Method | Trial / Task | Single-arm robot | Dexterous hand | Mobile manipulator | Humanoid robot |
-| :--- | :---: | :---: | :---: | :---: | :---: |
+| :--: | :---: | :---: | :---: | :---: | :---: |
 | **ConRFT** | Task 1<br>Task 2 | 342.37<br>403.51 | 346.31<br>274.05 | 499.84<br>291.68 | 787.19<br>570.22 |
 | **FlaRe** | Task 1<br>Task 2 | 318.06<br>254.18 | 477.07<br>317.51 | 461.29<br>379.37 | 671.17<br>452.06 |
 | **iRe-VLA** | Task 1<br>Task 2 | 383.33<br>213.81 | 530.53<br>204.04 | 505.40<br>273.55 | 661.88<br>564.21 |
@@ -68,17 +70,21 @@
 
 ## (Figure 10) Time Breakdown of VLASelect's Modules
 
+> **Key observation:** The execution time of VLASelect core modules are obviously less than training iteration time.
+
 ### Full run
 
 ![Time Breakdown - Full Run](imgs/2.2.2.2.png)
 
 ### Minimal working example
 
-![Time Breakdown - MWE](imgs/2.2.2.2-mwe.png)
+<img src="imgs/2.2.2.2-mwe.png" alt="Time Breakdown - MWE" style="zoom: 25%;" />
 
 ---
 
 ## (Figure 11) Training Time Breakdown in Each Workload
+
+> **Key observation:** Under identical workloads, VLASelect achieves **shorter runtime** while maintaining high accuracy compared with other baselines.
 
 ### Full run
 

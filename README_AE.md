@@ -28,8 +28,6 @@ The model-integration and extensibility examples from Section 3 of the original 
 
 ## Get the source code
 
-
-
 ``` bash
 git clone https://github.com/LINC-BIT/VLASelect.git
 cd VLASelect

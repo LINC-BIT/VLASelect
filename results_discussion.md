@@ -1,8 +1,10 @@
 # Discussion Experiments Results
 
 ## Sim-to-real transfer
-
-N/A: Not verified due to hardware unavailability
+- DOFBOT-SE:
+<video src="./videos/dofbot-se.mp4"></video>
+- AmazingHand:
+<video src="./videos/amazinghand.mp4"></video>
 
 
 ## ICL

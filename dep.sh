@@ -457,7 +457,8 @@ def resolve_paths():
     for entry in with_429_retry('checkpoint file listing', iter_tree):
         entry_type = getattr(entry, 'type', None)
         rel_path = getattr(entry, 'path', '')
-        if entry_type not in (None, 'file'):
+        entry_size = getattr(entry, 'size', None)
+        if entry_type != 'file' and entry_size is None:
             continue
         if not rel_path or rel_path.endswith('/'):
             continue
@@ -591,7 +592,8 @@ def get_repo_file_paths():
     for entry in with_429_retry('ManiSkill file listing', iter_tree):
         entry_type = getattr(entry, 'type', None)
         rel_path = getattr(entry, 'path', '')
-        if entry_type not in (None, 'file'):
+        entry_size = getattr(entry, 'size', None)
+        if entry_type != 'file' and entry_size is None:
             continue
         if not rel_path or rel_path.endswith('/'):
             continue

@@ -1,4 +1,4 @@
-![](vlaselect-intro1.png)
+![](vlaselect-intro.png)
 
 # VLASelect Artifacts Evaluation
 
@@ -9,7 +9,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 [Artifact Checklist](./ARTIFACT-CHECKLIST.md)<br>
 [Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.pdf)<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
-[Docker Image](https://hub.docker.com/repository/docker/cz22edd/pytorch/tags/maniskillv2/sha256-bfbedf8025c694677d0e252cf07afd1285ce477f47f595f6f3253045320e196e)
+[Docker Image](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2)
 
 ## Outline
 

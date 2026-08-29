@@ -1,6 +1,6 @@
 # Example Running Outputs
 
-##  (Figure 7) Accuracy Under Tasks/Environment Changes
+##  (Figure 7 in section 5.2.1) Accuracy Under Tasks/Environment Changes
 
 > **Key observation:** VLASelect consistently performs **Highest average accuracy** under tasks and environment changes.
 
@@ -14,7 +14,7 @@
 
 ---
 
-##  (Figure 8) Accuracy Under Available Resource Changes
+##  (Figure 8 in section 5.2.2) Accuracy Under Available Resource Changes
 
 > **Key observation:** VLASelect consistently performs **highest average accuracy** under available resource changes.
 

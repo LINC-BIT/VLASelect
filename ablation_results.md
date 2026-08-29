@@ -1,6 +1,6 @@
-# Example Running Outputs
+# Example Running Outputs<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-## (Figure 12 in section 5.4) Design Choice Validation by Ablation
+## (Figure 12 in section 5.4) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 > **Key observation:** under both configurations (full run and minimal working example) **all modules consistently contribute to the final accuracy**.
 

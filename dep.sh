@@ -48,13 +48,22 @@ require_cmd() {
     fi
 }
 
-require_python_pip() {
+ensure_python_pip() {
     local python_bin=$1
     if "$python_bin" -m pip --version >/dev/null 2>&1; then
         return
     fi
 
-    echo "[dep.sh] $python_bin is available, but the pip module is missing." >&2
+    log "$python_bin is available, but the pip module is missing; attempting bootstrap via ensurepip"
+    if "$python_bin" -m ensurepip --upgrade >/dev/null 2>&1; then
+        if "$python_bin" -m pip --version >/dev/null 2>&1; then
+            log "bootstrapped pip for $python_bin via ensurepip"
+            "$python_bin" -m pip install --upgrade pip >/dev/null 2>&1 || true
+            return
+        fi
+    fi
+
+    echo "[dep.sh] $python_bin is available, but the pip module is missing and automatic bootstrap via ensurepip failed." >&2
     echo "[dep.sh] Install python3-pip (or an equivalent pip package for $python_bin) and rerun this script." >&2
     exit 1
 }
@@ -299,7 +308,7 @@ require_hf_downloader() {
     fi
 
     require_cmd python3 "Install Python 3 or the Hugging Face CLI on the host machine."
-    require_python_pip python3
+    ensure_python_pip python3
     if python3 -c 'import huggingface_hub' >/dev/null 2>&1; then
         log "found Python package: huggingface_hub"
         return

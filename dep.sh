@@ -576,26 +576,18 @@ def with_429_retry(label, action):
             time.sleep(wait_seconds)
 
 
-def resolve_paths(allow_patterns):
-    if not allow_patterns:
-        return []
+repo_file_paths = None
 
-    wildcard_patterns = [pattern for pattern in allow_patterns if any(ch in pattern for ch in '*?[')]
-    exact_paths = [pattern for pattern in allow_patterns if pattern not in wildcard_patterns]
-    resolved_paths = []
-    seen = set()
 
-    for rel_path in exact_paths:
-        if rel_path not in seen:
-            resolved_paths.append(rel_path)
-            seen.add(rel_path)
-
-    if not wildcard_patterns:
-        return resolved_paths
+def get_repo_file_paths():
+    global repo_file_paths
+    if repo_file_paths is not None:
+        return repo_file_paths
 
     def iter_tree():
         return list(api.list_repo_tree(repo_id=repo_id, repo_type=repo_type, revision=revision, recursive=True))
 
+    repo_file_paths = []
     for entry in with_429_retry('ManiSkill file listing', iter_tree):
         entry_type = getattr(entry, 'type', None)
         rel_path = getattr(entry, 'path', '')
@@ -603,6 +595,39 @@ def resolve_paths(allow_patterns):
             continue
         if not rel_path or rel_path.endswith('/'):
             continue
+        repo_file_paths.append(rel_path)
+    return repo_file_paths
+
+
+def resolve_paths(allow_patterns):
+    if not allow_patterns:
+        return []
+
+    file_paths = get_repo_file_paths()
+    wildcard_patterns = [pattern for pattern in allow_patterns if any(ch in pattern for ch in '*?[')]
+    exact_paths = [pattern for pattern in allow_patterns if pattern not in wildcard_patterns]
+    resolved_paths = []
+    seen = set()
+
+    for rel_path in exact_paths:
+        if rel_path in file_paths:
+            if rel_path not in seen:
+                resolved_paths.append(rel_path)
+                seen.add(rel_path)
+            continue
+
+        prefix = rel_path.rstrip('/') + '/'
+        prefix_matches = [path for path in file_paths if path.startswith(prefix)]
+        if prefix_matches:
+            for match in prefix_matches:
+                if match not in seen:
+                    resolved_paths.append(match)
+                    seen.add(match)
+            continue
+
+        raise RuntimeError(f'No Hugging Face files matched path or directory prefix: {rel_path}')
+
+    for rel_path in file_paths:
         if any(fnmatch.fnmatch(rel_path, pattern) for pattern in wildcard_patterns) and rel_path not in seen:
             resolved_paths.append(rel_path)
             seen.add(rel_path)

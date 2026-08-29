@@ -48,6 +48,48 @@ require_cmd() {
     fi
 }
 
+attempt_host_python_pip_install() {
+    local python_bin=$1
+    if ! command -v apt-get >/dev/null 2>&1; then
+        return 1
+    fi
+
+    log "attempting to install python3-pip via apt-get"
+    if command -v sudo >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get install -y python3-pip
+    else
+        apt-get update && apt-get install -y python3-pip
+    fi
+
+    "$python_bin" -m pip --version >/dev/null 2>&1
+}
+
+ensure_python_pip() {
+    local python_bin=$1
+    if "$python_bin" -m pip --version >/dev/null 2>&1; then
+        return
+    fi
+
+    log "$python_bin is available, but the pip module is missing; attempting bootstrap via ensurepip"
+    if "$python_bin" -m ensurepip --upgrade >/dev/null 2>&1; then
+        if "$python_bin" -m pip --version >/dev/null 2>&1; then
+            log "bootstrapped pip for $python_bin via ensurepip"
+            "$python_bin" -m pip install --upgrade pip >/dev/null 2>&1 || true
+            return
+        fi
+    fi
+
+    if attempt_host_python_pip_install "$python_bin"; then
+        log "installed python3-pip for $python_bin via apt-get"
+        "$python_bin" -m pip install --upgrade pip >/dev/null 2>&1 || true
+        return
+    fi
+
+    echo "[dep.sh] $python_bin is available, but the pip module is missing and automatic bootstrap via ensurepip/apt-get failed." >&2
+    echo "[dep.sh] Install python3-pip (or an equivalent pip package for $python_bin) and rerun this script." >&2
+    exit 1
+}
+
 resolve_docker_image() {
     if [[ -n "$DOCKER_IMAGE" ]]; then
         return
@@ -288,6 +330,7 @@ require_hf_downloader() {
     fi
 
     require_cmd python3 "Install Python 3 or the Hugging Face CLI on the host machine."
+    ensure_python_pip python3
     if python3 -c 'import huggingface_hub' >/dev/null 2>&1; then
         log "found Python package: huggingface_hub"
         return

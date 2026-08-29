@@ -48,6 +48,7 @@ from train.octo.ours.evolving_envs import PickCubeEnvMutable
 from train.octo.world_env.draw_online_rl_acc import draw_success_curve
 from train.octo.world_env.pretrain_world_model import DynamicsWorldModel, StateNormalizer
 from forgetting.past_env_eval import record_past_env_snapshot
+from forgetting.training.ewc import EWCState
 
 
 @dataclass
@@ -117,6 +118,10 @@ class Args:
     wm_reward_clip: float = 2.0
     success_termination_threshold: float = 0.6
     success_bonus: float = 0.2
+
+    ewc_enabled: bool = True
+    ewc_lambda: float = 1000.0
+    ewc_fisher_decay: float = 1.0
 
     curve_output: Optional[str] = None
     curve_tag: str = "eval/success_at_end"
@@ -673,7 +678,7 @@ def evaluate(agent, eval_envs, args: Args, logger: Optional[Logger], global_step
     return mean_metrics
 
 
-def save_checkpoint(run_name, filename, agent, optimizer, iteration, extra_metrics=None):
+def save_checkpoint(run_name, filename, agent, optimizer, iteration, extra_metrics=None, ewc_state=None):
     os.makedirs(f"ckpt/{run_name}/checkpoints", exist_ok=True)
     payload = {
         "agent": agent.state_dict(),
@@ -682,6 +687,8 @@ def save_checkpoint(run_name, filename, agent, optimizer, iteration, extra_metri
     }
     if extra_metrics:
         payload.update(extra_metrics)
+    if ewc_state is not None:
+        payload["ewc_state"] = ewc_state.state_dict()
     maybe_save_model_checkpoint(payload, f"ckpt/{run_name}/checkpoints/{filename}")
 
 
@@ -781,6 +788,7 @@ def main():
     agent = build_agent_from_checkpoint(args, device, env_kwargs)
     reflector = WorldEnvReflector(args.world_model_checkpoint, device)
     optimizer = optim.Adam([parameter for parameter in agent.parameters() if parameter.requires_grad], lr=args.learning_rate, eps=1e-5)
+    ewc_state = EWCState(args.ewc_enabled, args.ewc_lambda, args.ewc_fisher_decay)
 
     obs = DictArray((args.num_steps, args.num_envs), envs.single_observation_space, device=device)
     actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape, device=device)
@@ -844,6 +852,7 @@ def main():
             elapsed_minutes,
         )
         if scheduled_env_index >= len(continual_env_schedule.env_ids):
+            ewc_state.consolidate(agent)
             record_past_env_snapshot(
                 agent=agent, args=args, env_ids=continual_env_schedule.env_ids,
                 completed_env_index=current_env_index, elapsed_minutes=elapsed_minutes,
@@ -857,6 +866,7 @@ def main():
             return False, False, elapsed_minutes
 
         previous_env_id = current_env_id
+        ewc_state.consolidate(agent)
         record_past_env_snapshot(
             agent=agent, args=args, env_ids=continual_env_schedule.env_ids,
             completed_env_index=current_env_index, elapsed_minutes=elapsed_minutes,
@@ -983,6 +993,7 @@ def main():
         entropy_loss = torch.tensor(0.0, device=device)
         pg_loss = torch.tensor(0.0, device=device)
         v_loss = torch.tensor(0.0, device=device)
+        ewc_penalty = torch.zeros((), device=device)
 
         for _ in range(args.update_epochs):
             np.random.shuffle(b_inds)
@@ -1015,7 +1026,10 @@ def main():
                 newvalue = newvalue.view(-1)
                 v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
                 entropy_loss = entropy.mean()
-                loss = pg_loss - args.ent_coef * entropy_loss + args.vf_coef * v_loss
+                task_loss = pg_loss - args.ent_coef * entropy_loss + args.vf_coef * v_loss
+                ewc_state.observe(task_loss, agent)
+                ewc_penalty = ewc_state.penalty(agent)
+                loss = task_loss + ewc_penalty
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -1061,6 +1075,8 @@ def main():
                     "update_time": update_time,
                     "env_reward_mean": env_rewards.mean().item(),
                     "verified_reward_mean": verified_rewards.mean().item(),
+                    "ewc_penalty": float(ewc_penalty.detach().item()),
+                    "ewc_fisher_mean": ewc_state.mean_fisher(),
                 },
             )
         )
@@ -1074,6 +1090,8 @@ def main():
             logger.add_scalar("losses/value_loss", v_loss.item(), global_step)
             logger.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
             logger.add_scalar("losses/entropy", entropy_loss.item(), global_step)
+            logger.add_scalar("losses/ewc_penalty", ewc_penalty.item(), global_step)
+            logger.add_scalar("continual/ewc_fisher_mean", ewc_state.mean_fisher(), global_step)
             logger.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
             logger.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
             logger.add_scalar("losses/clipfrac", float(np.mean(clipfracs)) if clipfracs else 0.0, global_step)
@@ -1096,6 +1114,7 @@ def main():
                 optimizer,
                 iteration,
                 {k: v for k, v in {"success_once": best_success_once, "success_at_end": success_end}.items() if v is not None},
+                ewc_state=ewc_state,
             )
         if success_end is not None and success_end >= best_success_end:
             best_success_end = success_end
@@ -1106,6 +1125,7 @@ def main():
                 optimizer,
                 iteration,
                 {k: v for k, v in {"success_once": success_once, "success_at_end": best_success_end}.items() if v is not None},
+                ewc_state=ewc_state,
             )
 
         if args.save_model and iteration % args.eval_freq == 0:
@@ -1116,10 +1136,12 @@ def main():
                 optimizer,
                 iteration,
                 {k: v for k, v in {"success_once": success_once, "success_at_end": success_end}.items() if v is not None},
+                ewc_state=ewc_state,
             )
 
     if args.save_model:
-        save_checkpoint(run_name, "last.pt", agent, optimizer, last_iteration, None)
+        ewc_state.consolidate(agent)
+        save_checkpoint(run_name, "last.pt", agent, optimizer, last_iteration, None, ewc_state=ewc_state)
 
     json_metrics.save_final_eval(last_eval_metrics)
     close_envs(envs, eval_envs)

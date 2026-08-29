@@ -1,0 +1,251 @@
+{
+  "suite_stamp": "20260829-ablation-shared-transition-test-v2",
+  "mwe": true,
+  "table_root": "ablation/ablation_table",
+  "figure_output": "ablation/FIG_ABLATION.pdf",
+  "summary_csv": "ablation/ablation_summary.csv",
+  "checkpoint_path": "ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt",
+  "notes": [
+    "The underlying small-model generation, channel inheritance, optimizer remapping, and feedback logic come from eval/ours.",
+    "Each ablation curve records the intended changed_options so the comparison is easier to audit.",
+    "The following group options share one VLASelect run under ckpt/ablation/<suite>/shared_vlaselect/default/[agent]: scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, scaling_down_freezing_vs_pruning/freezing, neuron_swapping/with_swapping, knowledge_accumulation/selective_accumulation.",
+    "All remaining ablation choices still read their own per-choice run directories and are executed separately.",
+    "If a run directory has no metrics yet, plot_ablation.py will emit 0 rows in ablation_summary.csv and keep a placeholder bar in the vis-style figure."
+  ],
+  "panels": [
+    {
+      "panel_label": "a",
+      "panel_id": "scaling_law_function",
+      "title": "(a) Scaling law function",
+      "workload_name": "Single-arm robot",
+      "curves": [
+        {
+          "curve_id": "with_scaling_law",
+          "label": "With scaling law",
+          "color": "#C44E52",
+          "linestyle": "-",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/shared_vlaselect/default/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+          "changed_options": []
+        },
+        {
+          "curve_id": "without_scaling_law",
+          "label": "Without scaling law",
+          "color": "#4D4D4D",
+          "linestyle": "--",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/scaling_law_function/without_scaling_law/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Target-batch generation without the target-trajectory scaling-law path.",
+          "changed_options": [
+            "small_model_generation_strategy"
+          ]
+        }
+      ]
+    },
+    {
+      "panel_label": "b",
+      "panel_id": "neuron_grained_scaling_up",
+      "title": "(b) Neuron-grained scaling up",
+      "workload_name": "Single-arm robot",
+      "curves": [
+        {
+          "curve_id": "random",
+          "label": "Random",
+          "color": "#4D4D4D",
+          "linestyle": "--",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/neuron_grained_scaling_up/random/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Random neuron selection.",
+          "changed_options": [
+            "small_model_ab_strategy"
+          ]
+        },
+        {
+          "curve_id": "inverse",
+          "label": "Most accuracy-unrelated",
+          "color": "#4C78A8",
+          "linestyle": ":",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/neuron_grained_scaling_up/inverse/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Keep the least important neurons.",
+          "changed_options": [
+            "small_model_ab_strategy"
+          ]
+        },
+        {
+          "curve_id": "neuron_grained",
+          "label": "Most accuracy-related",
+          "color": "#C44E52",
+          "linestyle": "-",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/shared_vlaselect/default/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+          "changed_options": []
+        }
+      ]
+    },
+    {
+      "panel_label": "c",
+      "panel_id": "scaling_down_freezing_vs_pruning",
+      "title": "(c) Scaling down by freezing vs pruning",
+      "workload_name": "Single-arm robot",
+      "curves": [
+        {
+          "curve_id": "pruning",
+          "label": "Pruning",
+          "color": "#4D4D4D",
+          "linestyle": "--",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/scaling_down_freezing_vs_pruning/pruning/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Train a structurally pruned small model with the proposed scaling-up policy but without neuron swapping or knowledge accumulation.",
+          "changed_options": [
+            "small_model_training_variant"
+          ]
+        },
+        {
+          "curve_id": "freezing",
+          "label": "Freezing",
+          "color": "#C44E52",
+          "linestyle": "-",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/shared_vlaselect/default/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+          "changed_options": []
+        }
+      ]
+    },
+    {
+      "panel_label": "d",
+      "panel_id": "neuron_swapping",
+      "title": "(d) Neuron swapping",
+      "workload_name": "Single-arm robot",
+      "curves": [
+        {
+          "curve_id": "random_swapping",
+          "label": "Random swapping",
+          "color": "#4D4D4D",
+          "linestyle": "--",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/neuron_swapping/random_swapping/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Repeated regeneration with randomly selected swapped-in neurons.",
+          "changed_options": [
+            "small_model_regeneration_ab_strategy"
+          ]
+        },
+        {
+          "curve_id": "with_swapping",
+          "label": "With swapping",
+          "color": "#C44E52",
+          "linestyle": "-",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/shared_vlaselect/default/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+          "changed_options": []
+        }
+      ]
+    },
+    {
+      "panel_label": "e",
+      "panel_id": "knowledge_accumulation",
+      "title": "(e) Knowledge accumulation",
+      "workload_name": "Single-arm robot",
+      "curves": [
+        {
+          "curve_id": "no_accumulation",
+          "label": "No accumulation",
+          "color": "#4D4D4D",
+          "linestyle": "--",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/knowledge_accumulation/no_accumulation/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Disable knowledge accumulation by using feedback_alpha=0.",
+          "changed_options": [
+            "small_model_feedback_alpha"
+          ]
+        },
+        {
+          "curve_id": "accumulate_every_rollout",
+          "label": "Every-rollout accumulation",
+          "color": "#4C78A8",
+          "linestyle": ":",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/knowledge_accumulation/accumulate_every_rollout/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Accumulate knowledge before every rollout.",
+          "changed_options": [
+            "small_model_feedback_schedule"
+          ]
+        },
+        {
+          "curve_id": "selective_accumulation",
+          "label": "Selective accumulation",
+          "color": "#C44E52",
+          "linestyle": "-",
+          "run_dir": "ckpt/ablation/20260829-ablation-shared-transition-test-v2/shared_vlaselect/default/[agent]",
+          "metric_source": "history",
+          "metric_key": [
+            "train_success_once",
+            "train/success_once",
+            "success_once"
+          ],
+          "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+          "changed_options": []
+        }
+      ]
+    }
+  ]
+}

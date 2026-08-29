@@ -189,7 +189,7 @@ should_run_curve() {
         if [[ "$item" == "$key" ]]; then
             return 0
         fi
-    done < <(printf "%s" "$ABLATION_SELECTION" | tr ',' '\n')
+    done < <(printf "%s\n" "$ABLATION_SELECTION" | tr ',' '\n')
 
     return 1
 }
@@ -340,14 +340,13 @@ manifest_path = Path(sys.argv[1])
 suite_stamp = sys.argv[2]
 checkpoint_path = sys.argv[3]
 is_mwe = sys.argv[4] == "1"
-shared_run_dir = f"ckpt/ablation/{suite_stamp}/shared_vlaselect/default/[agent]"
-# The following group options reuse this single canonical VLASelect run:
+# The following group options each run their own experiment, but all use the
+# same canonical VLASelect configuration:
 # scaling_law_function/with_scaling_law,
 # neuron_grained_scaling_up/neuron_grained,
 # scaling_down_freezing_vs_pruning/freezing,
 # neuron_swapping/with_swapping,
 # knowledge_accumulation/selective_accumulation.
-# All remaining ablation choices keep their own per-choice run directories.
 
 def metric_source():
     return "history" if is_mwe else "tensorboard"
@@ -377,10 +376,10 @@ panels = [
                 "label": "With scaling law",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": shared_run_dir,
+                "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_law_function/with_scaling_law/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+                "notes": "Canonical VLASelect run for this group.",
                 "changed_options": [],
             },
             {
@@ -429,10 +428,10 @@ panels = [
                 "label": "Most accuracy-related",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": shared_run_dir,
+                "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_grained_scaling_up/neuron_grained/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+                "notes": "Canonical VLASelect run for this group.",
                 "changed_options": [],
             },
         ],
@@ -459,10 +458,10 @@ panels = [
                 "label": "Freezing",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": shared_run_dir,
+                "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/freezing/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+                "notes": "Canonical VLASelect run for this group.",
                 "changed_options": [],
             },
         ],
@@ -489,10 +488,10 @@ panels = [
                 "label": "With swapping",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": shared_run_dir,
+                "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/with_swapping/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+                "notes": "Canonical VLASelect run for this group.",
                 "changed_options": [],
             },
         ],
@@ -530,10 +529,10 @@ panels = [
                 "label": "Selective accumulation",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": shared_run_dir,
+                "run_dir": f"ckpt/ablation/{suite_stamp}/knowledge_accumulation/selective_accumulation/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
+                "notes": "Canonical VLASelect run for this group.",
                 "changed_options": [],
             },
         ],
@@ -550,8 +549,8 @@ payload = {
     "notes": [
         "The underlying small-model generation, channel inheritance, optimizer remapping, and feedback logic come from eval/ours.",
         "Each ablation curve records the intended changed_options so the comparison is easier to audit.",
-        "The following group options share one VLASelect run under ckpt/ablation/<suite>/shared_vlaselect/default/[agent]: scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, scaling_down_freezing_vs_pruning/freezing, neuron_swapping/with_swapping, knowledge_accumulation/selective_accumulation.",
-        "All remaining ablation choices still read their own per-choice run directories and are executed separately.",
+        "The following group options each run separately but use the same canonical VLASelect configuration: scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, scaling_down_freezing_vs_pruning/freezing, neuron_swapping/with_swapping, knowledge_accumulation/selective_accumulation.",
+        "All non-red-bar ablation choices use their own per-choice configurations as before.",
         "If a run directory has no metrics yet, plot_ablation.py will emit 0 rows in ablation_summary.csv and keep a placeholder bar in the vis-style figure.",
     ],
     "panels": panels,
@@ -560,12 +559,6 @@ payload = {
 manifest_path.parent.mkdir(parents=True, exist_ok=True)
 manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 PY
-}
-
-launch_shared_vlaselect_reference() {
-    local gpu="$1"
-    log "launching shared canonical VLASelect run for scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, scaling_down_freezing_vs_pruning/freezing, neuron_swapping/with_swapping, and knowledge_accumulation/selective_accumulation on gpu=${gpu}"
-    launch_curve "shared_vlaselect" "default" "$gpu"
 }
 
 launch_curve() {
@@ -646,7 +639,7 @@ launch_curve() {
             cmd+=(--max-sparsity 0.99 --small_model_training_variant pruned --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:freezing)
-            cmd+=(--max-sparsity 0.8 --small_model_training_variant frozen --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_swapping:with_swapping)
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
@@ -725,13 +718,8 @@ launch_selected_curves() {
     local panel_id
     local curve_key
     local gpu
-    local shared_reference_gpu="${curve_gpu_map[scaling_law_function:with_scaling_law]:-0}"
 
-    if ! launch_shared_vlaselect_reference "$shared_reference_gpu"; then
-        failure=1
-    fi
-
-    log "launching the remaining ablation choices with their own per-choice run directories"
+    log "launching all ablation choices; each group runs independently, and all red-bar choices use the same canonical VLASelect configuration"
 
     while IFS= read -r panel_id; do
         [[ -z "$panel_id" ]] && continue

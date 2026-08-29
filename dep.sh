@@ -333,26 +333,26 @@ require_hf_downloader() {
 
     require_cmd python3 "Install Python 3 or the Hugging Face CLI on the host machine."
     ensure_python_pip python3
-    if python3 -c 'import huggingface_hub' >/dev/null 2>&1; then
-        log "found Python package: huggingface_hub"
+    if python3 -c 'import huggingface_hub, requests' >/dev/null 2>&1; then
+        log "found Python packages: huggingface_hub, requests"
         return
     fi
 
-    log "installing missing Hugging Face downloader via pip"
-    python3 -m pip install -U "huggingface_hub[cli]"
+    log "installing missing Hugging Face downloader dependencies via pip"
+    python3 -m pip install -U "huggingface_hub[cli]" requests
 
     if command -v hf >/dev/null 2>&1; then
         log "found Hugging Face CLI after installation: $(command -v hf)"
         return
     fi
 
-    if python3 -c 'import huggingface_hub' >/dev/null 2>&1; then
-        log "found Python package after installation: huggingface_hub"
+    if python3 -c 'import huggingface_hub, requests' >/dev/null 2>&1; then
+        log "found Python packages after installation: huggingface_hub, requests"
         return
     fi
 
-    echo "[dep.sh] failed to install Hugging Face downloader automatically." >&2
-    echo '[dep.sh] Please install it manually: python3 -m pip install -U "huggingface_hub[cli]"' >&2
+    echo "[dep.sh] failed to install Hugging Face downloader dependencies automatically." >&2
+    echo '[dep.sh] Please install them manually: python3 -m pip install -U "huggingface_hub[cli]" requests' >&2
     exit 1
 }
 
@@ -463,9 +463,9 @@ download_hf_maniskill_data() {
         started_here=1
     fi
 
-    if ! docker exec "$CONTAINER_NAME" bash -lc "python -c 'import huggingface_hub'" >/dev/null 2>&1; then
-        log "installing container Python package: huggingface_hub"
-        docker exec "$CONTAINER_NAME" bash -lc "python -m pip install -U 'huggingface_hub'" || status=$?
+    if ! docker exec "$CONTAINER_NAME" bash -lc "python -c 'import huggingface_hub, requests'" >/dev/null 2>&1; then
+        log "installing container Python packages: huggingface_hub, requests"
+        docker exec "$CONTAINER_NAME" bash -lc "python -m pip install -U 'huggingface_hub' requests" || status=$?
     fi
 
     if [[ "$status" -eq 0 ]]; then

@@ -1238,7 +1238,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 Based on the example in Section 3.1.1, you can support VLA-Adapter with 10 other scaling strategies as listed below:
 
-- **Knowledge Distillation**
+- **Knowledge Distillation (6 techniques)**
   1. **Logit Distillation**: Distill the large model's output logits to the small model. To use this method, you can set the online RL function `run_training()`'s third argument to `LogitDistillationScaling()`:
       ```python
       run_training(model_impl, parse_args(), LogitDistillationScaling())
@@ -1263,7 +1263,7 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter with 10 other
       ```python
       run_training(model_impl, parse_args(), DistiLLMScaling())
       ```
-- **Dynamic Pruning**:
+- **Dynamic Pruning (4 techniques)**:
   1. **LLM in a Flash**：Remove the most unimportant neurons in FFN layers according to the given dataset. It is proposed in the paper "(ACL'24) 
 LLM in a flash: Efficient Large Language Model Inference with Limited Memory". To use this method, you can set the online RL function `run_training()`'s third argument to `LLMInAFlashScaling()`:
       ```python

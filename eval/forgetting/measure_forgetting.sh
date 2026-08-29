@@ -69,7 +69,7 @@ declare -A METHOD_SCRIPT=(
     [world_env]="$SCRIPT_DIR/training/world_env/run_online_rl.sh"
     [vlaselect]="$SCRIPT_DIR/training/vlaselect/run_online_rl.sh"
 )
-declare -A METHOD_GPU=([self_improv]=5 [vla_rft]=6 [world_env]=0 [vlaselect]=3)
+declare -A METHOD_GPU=([self_improv]=0 [vla_rft]=0 [world_env]=0 [vlaselect]=0)
 
 METHODS_TO_RUN="${FORGETTING_METHODS:-self_improv,vla_rft,world_env,vlaselect}"
 while IFS= read -r method; do
@@ -80,7 +80,7 @@ while IFS= read -r method; do
     fi
     log_file="$RUN_ROOT/logs/${method}.log"
     exp_name="forgetting/${SUITE_STAMP}/${method}"
-    echo "[forgetting] starting ${method} (serial); log=${log_file}"
+    echo "[forgetting] starting ${method} (serial)"
     common_env=(
         SUITE_STAMP="$SUITE_STAMP"
         PYTHONPATH="$EVAL_ROOT:${PYTHONPATH:-}"
@@ -122,7 +122,7 @@ while IFS= read -r method; do
     elif [[ "$method" == "world_env" ]]; then
         common_env+=(WORLD_MODEL_CKPT="${WORLD_ENV_WM_CKPT:-ckpt/PickCube-v1/baselines/world_env/world_model/20260425-032853-run032_e2/checkpoints/best_with_reference.pt}")
     fi
-    env "${common_env[@]}" bash "${METHOD_SCRIPT[$method]}" > "$log_file" 2>&1
+    env "${common_env[@]}" bash "${METHOD_SCRIPT[$method]}"
     printf '%s\t%s\n' "$method" "$exp_name" >> "$RUN_ROOT/runs.tsv"
 done < <(printf '%s\n' "$METHODS_TO_RUN" | tr ',' '\n')
 

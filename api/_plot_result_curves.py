@@ -146,6 +146,31 @@ def _metric_value(metric: Dict[str, Any], requested: str) -> Optional[float]:
     return None
 
 
+def _accuracy_improvement(
+    series: List[Tuple[str, List[float], List[float]]], common_end: float
+) -> float:
+    """Return VLASelect's final absolute improvement over other methods.
+
+    Accuracy values are stored as fractions in the result histories.  The
+    returned value is kept as a fraction too and is converted to percentage
+    points only when it is printed.  Curves with different durations are
+    compared at the same endpoint used by the plot.
+    """
+    final_values: Dict[str, float] = {}
+    for label, xs, ys in series:
+        _, interpolated_ys = _interpolate_missing(xs, ys, common_end)
+        if interpolated_ys and math.isfinite(interpolated_ys[-1]):
+            final_values[label] = interpolated_ys[-1]
+
+    vlaselect = final_values.get("default")
+    other_values = [value for label, value in final_values.items() if label != "default"]
+    if vlaselect is None or not other_values:
+        # A single-run plot has no baseline to compare against, but the CLI
+        # contract still requires the improvement line to be emitted.
+        return 0.0
+    return vlaselect - (sum(other_values) / len(other_values))
+
+
 def plot_category(
     results_dir: Path,
     output_path: Path,
@@ -191,6 +216,7 @@ def plot_category(
     order = {method: index for index, method in enumerate(_METHOD_ORDER)}
     series.sort(key=lambda item: order.get(item[0], len(order)))
     common_end = max(xs[-1] for _, xs, _ in series)
+    improvement = _accuracy_improvement(series, common_end)
     figure, axis = plt.subplots(figsize=(12, 6))
     for label, xs, ys in series:
         interpolated_xs, interpolated_ys = _interpolate_missing(xs, ys, common_end)
@@ -209,6 +235,7 @@ def plot_category(
     figure.subplots_adjust(right=0.76)
     figure.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(figure)
+    print(f"VLASelect accuracy improvement: {improvement * 100:.2f}%")
     return len(series)
 
 

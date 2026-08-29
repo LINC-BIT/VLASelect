@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plot VLASelect versus ConRFT accuracy for CNN and MLP experiments."""
+"""Plot VLASelect versus RLVLA accuracy for CNN and MLP experiments."""
 from __future__ import annotations
 
 import argparse
@@ -77,22 +77,39 @@ def main():
         "MLP": (args.mlp_vlaselect or latest(root / "mlp"), args.mlp_conrft or latest(root / "mlp-conrft")),
     }
     fig, axes = plt.subplots(1, 2, figsize=(15, 6), dpi=200, sharey=True)
+    improvements = []
     for ax, (title, (vla_path, conrft_path)) in zip(axes, paths.items()):
         vx, vy = load_series(vla_path)
         cx, cy = load_series(conrft_path)
-        ax.plot(list(vx), smooth(list(vy), 0.7), linewidth=2.8, label="VLASelect")
-        ax.plot(list(cx), smooth(list(cy), 0.7), linewidth=2.8, label="ConRFT")
+        vx, vy = list(vx), smooth(list(vy), 0.7)
+        cx, cy = list(cx), smooth(list(cy), 0.7)
+        ax.plot(vx, vy, linewidth=2.8, label="VLASelect")
+        ax.plot(cx, cy, linewidth=2.8, label="RLVLA")
         ax.set_title(title, fontsize=20)
         ax.set_xlabel("Time (minutes)", fontsize=15)
         ax.set_ylim(-0.1, 1.0)
         ax.grid(alpha=0.3)
         ax.legend(fontsize=12)
+        vla_mean = sum(vy) / len(vy)
+        conrft_mean = sum(cy) / len(cy)
+        improvement = vla_mean - conrft_mean
+        improvements.append(improvement)
+        print(
+            f"[compare] {title}: VLASelect mean={vla_mean:.4f}, "
+            f"RLVLA mean={conrft_mean:.4f}, "
+            f"absolute improvement={improvement:+.4f} ({improvement * 100:+.2f} pp)"
+        )
     axes[0].set_ylabel("Accuracy", fontsize=15)
     fig.tight_layout()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.output)
     plt.close(fig)
     print(f"[plot] output={args.output}")
+    overall_improvement = sum(improvements) / len(improvements)
+    print(
+        f"[compare] overall mean absolute improvement="
+        f"{overall_improvement:+.4f} ({overall_improvement * 100:+.2f} pp)"
+    )
 
 
 if __name__ == "__main__":

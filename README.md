@@ -1,3 +1,4 @@
+
 ![](vlaselect-intro1.png)
 
 # VLASelect Artifacts Evaluation
@@ -6,16 +7,18 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 ## Downloads
 
-[Artifact Checklist](./ARTIFACT-CHECKLIST.md)<br>
+[Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
 [Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.pdf)<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
-[Docker Image](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2)
+Docker Image: <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version (requiring further dependency installation)](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[33GB version (requiring no further dependency installation)](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2)
 
-## Outline
+## Outline (Evaluation process/workflow and Reusability)
 
 <a href="#1-artifact-overview">1. Artifact Overview</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#11-introduction">1.1 Introduction</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#12-preparation-before-artifacts-evaluation">1.2 Preparation Before Artifacts Evaluation</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#12-hardwaresoftware-requirements-and-dependencies">1.2 Hardware/software Requirements and Dependencies</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#121-hardware-requirements">1.2.1 Hardware Requirements</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#122-software-requirements">1.2.2 Software Requirements</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#123-get-source-code">1.2.3 Get Source Code</a><br>
@@ -27,29 +30,33 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 <a href="#2-evaluation-reproduction">2. Evaluation Reproduction</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#21-one-click-reproduction">2.1 One-click Reproduction</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#22-step-by-step-reproduction">2.2 Step-by-Step Reproduction</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#221-figure-7-accuracy-under-tasksenvironment-changes">2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#222-figure-8-accuracy-under-available-resource-changes">2.2.2 (Figure 8) Accuracy Under Available Resource Changes</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#223-figure-9-and-tables-23-overheads-under-the-same-accuracy">2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#224-figure-10-time-breakdown-of-vlaselects-modules">2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#225-figure-11-training-time-breakdown-in-each-workload">2.2.5 (Figure 11) Training Time Breakdown in Each Workload</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#226-figure-12-design-choice-validation-by-ablation">2.2.6 (Figure 12) Design Choice Validation by Ablation</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#227-discussion-1-sim-to-real-transfer">2.2.7 Discussion 1: Sim-to-real transfer</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#228-discussion-2-icl-in-context-learning">2.2.8 Discussion 2: ICL (In-Context Learning)</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#229-discussion-3-maximum-supported-model-size">2.2.9 Discussion 3: Maximum Supported Model Size</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2210-discussion-4-applicability-to-multi-agent-scenarios">2.2.10 Discussion 4: Applicability to multi-agent scenarios</a><br>
-<a href="#3-supporting-various-vla-models-scaling-strategies-and-knowledge-exchange-granularities">3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#221-figure-7-in-section-521-accuracy-under-tasksenvironment-changes">2.2.1 (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#222-figure-8-in-section-522-accuracy-under-available-resource-changes">2.2.2 (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#223-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy">2.2.3 (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#224-figure-10-in-section-532-time-breakdown-of-vlaselects-modules">2.2.4 (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#225-figure-11-in-section-532-training-time-breakdown-in-each-workload">2.2.5 (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#226-figure-12-in-section-54-design-choice-validation-by-ablation">2.2.6 (Figure 12 in Section 5.4) Design Choice Validation by Ablation</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#227-discussion-1-in-section-55-sim-to-real-transfer">2.2.7 (Discussion 1 in Section 5.5) Sim-to-real transfer</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#228-discussion-2-in-section-55-icl-in-context-learning">2.2.8 (Discussion 2 in Section 5.5) ICL (In-Context Learning)</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#229-discussion-3-in-section-55-maximum-supported-model-size">2.2.9 (Discussion 3 in Section 5.5) Maximum Supported Model Size</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2210-discussion-4-in-section-55-applicability-to-multi-agent-scenarios">2.2.10 (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2211-discussion-5-in-section-55-comparison-with-alternative-model-scaling-techniques">2.2.11 (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2212-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities">2.2.12 (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2213-discussion-7-in-section-55-forgetting-on-previously-learned-environmentstasks">2.2.13 (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2214-discussion-8-in-section-55-applicability-to-mlpcnn-models">2.2.14 (Discussion 8 in Section 5.5) Applicability to MLP/CNN models</a><br>
+<a href="#3-reusability-integrating-vlaselect-with-vla-models-scaling-strategies-and-knowledge-exchange-granularities">3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#31-example-1-vla-adapter">3.1 Example 1: VLA-Adapter</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#311-supporting-the-model">3.1.1 Supporting the model</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#312-supporting-different-scaling-strategies">3.1.2 Supporting different scaling strategies</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#313-supporting-different-knowledge-exchange-granularities">3.1.3 Supporting different knowledge exchange granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#311-model-integration-interface">3.1.1 Model Integration Interface</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#312-integrating-different-scaling-strategies">3.1.2 Integrating Different Scaling Strategies</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#313-integrating-different-knowledge-exchange-granularities">3.1.3 Integrating Different Knowledge Exchange Granularities</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#32-example-2-tinyvla">3.2 Example 2: TinyVLA</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#321-supporting-the-model">3.2.1 Supporting the model</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#322-supporting-different-scaling-strategies">3.2.2 Supporting different scaling strategies</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#323-supporting-different-knowledge-exchange-granularities">3.2.3 Supporting different knowledge exchange granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#321-model-integration-interface">3.2.1 Model Integration Interface</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#322-integrating-different-scaling-strategies">3.2.2 Integrating Different Scaling Strategies</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#323-integrating-different-knowledge-exchange-granularities">3.2.3 Integrating Different Knowledge Exchange Granularities</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#33-example-3-edgevla">3.3 Example 3: EdgeVLA</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#331-supporting-the-model">3.3.1 Supporting the model</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#332-supporting-different-scaling-strategies">3.3.2 Supporting different scaling strategies</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#333-supporting-different-knowledge-exchange-granularities">3.3.3 Supporting different knowledge exchange granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#331-model-integration-interface">3.3.1 Model Integration Interface</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#332-integrating-different-scaling-strategies">3.3.2 Integrating Different Scaling Strategies</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#333-integrating-different-knowledge-exchange-granularities">3.3.3 Integrating Different Knowledge Exchange Granularities</a><br>
 
 ## 1. Artifact Overview
 
@@ -90,7 +97,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
   energy consumption.
 
 
-### 1.2 Preparation Before Artifacts Evaluation<img src="./heading-divider.svg" alt="" width="100%" height="1">
+### 1.2 Hardware/software Requirements and Dependencies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 #### 1.2.1 Hardware Requirements<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
@@ -98,7 +105,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
   | RAM | CPU | Disk | GPU |
   |---|---|---|---|
-   128 GB | One 64-core server CPU<br>(e.g., Intel(R) Xeon(R) Gold 6430) | At least<br>150 GB free | One NVIDIA GPU with<br>more than 60 GB VRAM<br>(e.g., A100) |
+   128 GB | One 64-core server CPU (e.g., Intel(R) Xeon(R) Gold 6430) | At least<br>150 GB free | One NVIDIA GPU with more than 60 GB VRAM (e.g., A100) |
 
 - **Option 2: Minimum hardware requirements for running minimal working examples**:
 
@@ -140,7 +147,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 #### 1.2.4 Install Dependencies (if Docker can be installed)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-- **Step 1: Install Docker**
+- **Step 1: Install Docker** ([Example running screenshots](install-step-1-example.md))
 
   ```bash
   # Add Docker's official GPG key:
@@ -167,9 +174,9 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
   sudo systemctl status docker --no-pager
   sudo docker run hello-world
   ```
-  [Example running screenshots](install-step-1-example.md)
+  
 
-- **Step 2: Install Docker plugin for using CUDA**
+- **Step 2: Install Docker plugin for using CUDA** ([Example running screenshots](install-step-2-example.md))
   
   ```bash
   sudo apt-get update
@@ -187,9 +194,9 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
   sudo nvidia-ctk runtime configure --runtime=docker
   sudo systemctl restart docker
   ```
-  [Example running screenshots](install-step-2-example.md)
+  
 
-- **Step 3: Install the required dependencies of this artifact:**
+- **Step 3: Install the required dependencies of this artifact:** ([Example running screenshots](install-step-3-example.md))
 
   ```bash
   cd <VLASelect directory>
@@ -204,9 +211,9 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
   # and install other dependencies in the Docker container
   TYPE=100M bash dep.sh
   ```
-  [Example running screenshots](install-step-3-example.md)
+  
 
-- **Step 4: Check the installation:**
+- **Step 4: Check the installation:** ([Example running screenshots](imgs/4.1.png))
 
   ```bash
   bash start_docker.sh
@@ -214,11 +221,11 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
   python -c "import torch; print(torch.cuda.is_available())"
   python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CUDA not available')"
   ```
-  [Example running screenshots](imgs/4.1.png)
+  
 
 #### 1.2.5 Install Dependencies (if Docker cannot be installed)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-- If you cannot install Docker (e.g. no root permission), skip Section 1.2.4 and run the following commands instead. 
+- If you cannot install Docker (e.g. no root permission), skip Section 1.2.4 and run the following commands instead. ([Example running screenshots](imgs/no-docker.png))
 
   ```bash
   # Option 1: install dependencies without Docker in a x86 machine
@@ -232,7 +239,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
   # Option 2: install dependencies without Docker in a ARM machine
   ARM=1 bash dep-non-docker.sh
   ```
-  [Example running screenshots](imgs/no-docker.png)
+  
 
 #### 1.2.6 Install Dependencies for Plotting Scripts<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
@@ -245,7 +252,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 - **Dataset for pre-training**: 
 
-  We use one demonstration dataset in the ManiSkill Benchmark for pre-training VLA models. It is stored in [Hugging Face](https://huggingface.co/datasets/haosulab/ManiSkill_PickCube). You can download it by the following command:
+  We do not anonymize or discard any raw data. We use the demonstration dataset in the ManiSkill Benchmark for pre-training VLA models. It is stored in [Hugging Face](https://huggingface.co/datasets/haosulab/ManiSkill_PickCube). You can download it by the following command:
   ```bash
   python -m mani_skill.utils.download_demo PushCube-v1
   ``` 
@@ -275,7 +282,7 @@ We provide a one-click script `eval/run.sh` that runs all experiments sequential
   cd <VLASelect directory in the container>/eval
   MWE=1 bash run.sh
   ```
-- **Option 2: Full run (requiring 15 days and 60GB memory to complete)**
+- **Option 2: Full run (completed within 15 days and 60GB memory)**
   ```bash
   cd <VLASelect directory>
   bash start_docker.sh
@@ -299,7 +306,7 @@ cd <VLASelect directory in the container>/eval
 
 And you can run the following commands to reproduce each figure/table in our evaluation.
 
-#### 2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.1 (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
@@ -361,7 +368,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   - evaluating each method's accuracy periodically
 
 
-#### 2.2.2 (Figure 8) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.2 (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
 
@@ -424,7 +431,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.3 (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
@@ -482,7 +489,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.4 (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - Commands for full run:
   ```bash
@@ -495,7 +502,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   | 40 minutes<br>60GB memory<br>30GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-1) |
 
 
-#### 2.2.5 (Figure 11) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.5 (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
@@ -552,7 +559,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   | Full run | 140 hours<br>60GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-run-2) |
 
 
-#### 2.2.6 (Figure 12) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.6 (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples:
   ```bash
@@ -576,7 +583,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.7 Discussion 1: Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.7 (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - Commands for full run:
   ```bash
@@ -621,7 +628,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.8 Discussion 2: ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.8 (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 - **Option 1:** Commands for minimum working examples:
   ```bash
   cd discussion
@@ -639,7 +646,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   | Minimum working example | 10 minutes<br>20GB memory<br>8GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#minimal-working-example) |
   | Full run | 7 hours<br>60GB memory<br>8GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-2-icl-in-context-learning) |
 
-#### 2.2.9 Discussion 3: Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.9 (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
 - Commands for full run:
   ```bash
   cd discussion
@@ -650,7 +657,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   | --- | --- |
   | 1 hours<br>32GB memory<br>3GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-3-maximum-supported-model-size) |
 
-#### 2.2.10 Discussion 4: Applicability to multi-agent scenarios**<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.10 (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
 - **Option 1:** Commands for minimum working examples:
   ```bash
   cd discussion
@@ -670,7 +677,87 @@ And you can run the following commands to reproduce each figure/table in our eva
   | Full run | 7 hours<br>60GB memory<br>1GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-4-applicability-to-multi-agent-scenarios) |
 
 
-## 3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
+#### 2.2.11 (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+- **Option 1:** Commands for minimum working examples on three representative methods:
+  ```bash
+  cd <VLASelect directory>
+  MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
+  ```
+- **Option 2:** Commands for minimum working examples on all methods:
+  ```bash
+  cd <VLASelect directory>
+  MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
+  ```
+- **Option 3:** Commands for full run:
+  ```bash
+  cd <VLASelect directory>
+  bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
+  ```
+- The three options' resource requirements and outputs are listed below:
+
+  | | Resource Requirements | Example Running Outputs |
+  | --- | --- | --- |
+  | Minimum working example on three representative methods | 20 minutes<br>20GB memory | [Link]() |
+  | Minimum working example on all methods | 60 minutes<br>20GB memory | [Link]() |
+  | Full run | 40 hours<br>60GB memory | - |
+
+
+#### 2.2.12 (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Outputs |
+    | --- | --- | --- |
+    | Minimum working example | 30 minutes<br>20GB memory | [Link]() |
+    | Full run | 15 hours<br>60GB memory | - |
+
+#### 2.2.13 (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash forgetting/measure_forgetting.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    bash forgetting/measure_forgetting.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Outputs |
+    | --- | --- | --- |
+    | Minimum working example | 20 minutes<br>20GB memory | [Link]() |
+    | Full run | 13 hours<br>60GB memory | - |
+
+#### 2.2.14 (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    cd api/model_type
+    MWE=1 bash run.sh
+    ```
+  - **Option 2:** Commands for full run:
+    ```bash
+    cd api/model_type
+    MWE=1 bash run.sh
+    ```
+  - The two options' resource requirements and outputs are listed below:
+
+    | | Resource Requirements | Example Running Outputs |
+    | --- | --- | --- |
+    | Minimum working example | 20 minutes<br>20GB memory | [Link]() |
+    | Full run | 13 hours<br>60GB memory | - |
+
+
+## 3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 
 VLASelect can support various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning), and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
 
@@ -680,9 +767,9 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 ### 3.1 Example 1: VLA-Adapter<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.1.1 Supporting the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.1.1 Model Integration Interface<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-- **Supporting steps**:
+- **Detailed integration steps**:
 
   - **Step 1:** Creating a new file, and creating a class `VLAAdapterImplementation` inherited from `VLAModelInterface`.
 
@@ -749,7 +836,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     | Full run | 3 hours<br>60GB memory | - |
 
 
-#### 3.1.2 Supporting different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.1.2 Integrating Different Scaling Strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.1.1, you can support VLA-Adapter with 10 other scaling strategies as listed below:
 
@@ -821,7 +908,7 @@ You can verify these methods as below:
     | Full run | 40 hours<br>60GB memory | - |
 
 
-#### 3.1.3 Supporting different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.1.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.1.1, you can support VLA-Adapter at different knowledge exchange strategies as listed below:
 
@@ -862,9 +949,9 @@ You can verify these granularities as below:
 
 ### 3.2 Example 2: TinyVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.2.1 Supporting the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.2.1 Model Integration Interface<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-- **Supporting steps**:
+- **Detailed integration steps**:
 
   - **Step 1:** Creating a new file, and creating a class `TinyVLAImplementation` inherited from `VLAModelInterface`.
 
@@ -930,7 +1017,7 @@ You can verify these granularities as below:
     | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla) |
     | Full run | 3 hours<br>60GB memory | - |
 
-#### 3.2.2 Supporting different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.2.2 Integrating Different Scaling Strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.2.1, you can support TinyVLA with 10 other scaling strategies. 
 
@@ -991,7 +1078,7 @@ You can verify these methods as below:
     | Full run | 40 hours<br>60GB memory | - |
 
 
-#### 3.2.3 Supporting different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.2.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.2.1, you can support TinyVLA with other knowledge exchange granularities. 
 
@@ -1033,9 +1120,9 @@ You can verify these granularities as below:
 
 ### 3.3 Example 3: EdgeVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.3.1 Supporting the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.3.1 Model Integration Interface<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-- **Supporting steps**:
+- **Detailed integration steps**:
 
   - **Step 1:** Creating a new file, and creating a class `EdgeVLAImplementation` inherited from `VLAModelInterface`.
 
@@ -1101,7 +1188,7 @@ You can verify these granularities as below:
     | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla) |
     | Full run | 3 hours<br>60GB memory | - |
 
-#### 3.3.2 Supporting different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.3.2 Integrating Different Scaling Strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.3.1, you can support EdgeVLA with 10 other scaling strategies. 
 
@@ -1162,7 +1249,7 @@ You can verify these methods as below:
     | Full run | 40 hours<br>60GB memory | - |
 
 
-#### 3.3.3 Supporting different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.3.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.3.1, you can support EdgeVLA with other knowledge exchange granularities. 
 

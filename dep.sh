@@ -48,6 +48,22 @@ require_cmd() {
     fi
 }
 
+attempt_host_python_pip_install() {
+    local python_bin=$1
+    if ! command -v apt-get >/dev/null 2>&1; then
+        return 1
+    fi
+
+    log "attempting to install python3-pip via apt-get"
+    if command -v sudo >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get install -y python3-pip
+    else
+        apt-get update && apt-get install -y python3-pip
+    fi
+
+    "$python_bin" -m pip --version >/dev/null 2>&1
+}
+
 ensure_python_pip() {
     local python_bin=$1
     if "$python_bin" -m pip --version >/dev/null 2>&1; then
@@ -63,7 +79,13 @@ ensure_python_pip() {
         fi
     fi
 
-    echo "[dep.sh] $python_bin is available, but the pip module is missing and automatic bootstrap via ensurepip failed." >&2
+    if attempt_host_python_pip_install "$python_bin"; then
+        log "installed python3-pip for $python_bin via apt-get"
+        "$python_bin" -m pip install --upgrade pip >/dev/null 2>&1 || true
+        return
+    fi
+
+    echo "[dep.sh] $python_bin is available, but the pip module is missing and automatic bootstrap via ensurepip/apt-get failed." >&2
     echo "[dep.sh] Install python3-pip (or an equivalent pip package for $python_bin) and rerun this script." >&2
     exit 1
 }

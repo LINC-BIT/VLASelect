@@ -8,7 +8,11 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 ## Downloads
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
+<<<<<<< Updated upstream
 [Evaluation Report on a Small Machine](./Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
+=======
+[Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
+>>>>>>> Stashed changes
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version (requiring further dependency installation)](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m)<br>
@@ -99,7 +103,7 @@ Docker Image: <br>
 
 ### 1.2 Hardware/software Requirements and Dependencies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 1.2.1 Hardware Requirements<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.1 Hardware Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1: Recommended hardware for fully running our artifacts**:
 
@@ -180,7 +184,7 @@ Docker Image: <br>
     </tbody>
   </table>
 
-#### 1.2.2 Software Requirements<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.2 Software Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1: Recommended software for fully running our artifacts**:
 
@@ -241,7 +245,7 @@ Docker Image: <br>
   </table>
 
 
-#### 1.2.3 Get Source Code<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.3 Get Source Code<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
   You can obtain the source code for artifacts evaluation by the following command. **The code does not perform any malicious or destructive operations**.
 
@@ -249,7 +253,7 @@ Docker Image: <br>
   git clone https://github.com/LINC-BIT/VLASelect.git
   ```
 
-#### 1.2.4 Install Dependencies (if Docker can be installed)<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.4 Install Dependencies (if Docker can be installed)<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Step 1: Install Docker** ([Example running screenshots](install-step-1-example.md))
 
@@ -327,7 +331,7 @@ Docker Image: <br>
   ```
   
 
-#### 1.2.5 Install Dependencies (if Docker cannot be installed)<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.5 Install Dependencies (if Docker cannot be installed)<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - If you cannot install Docker (e.g. no root permission), skip Section 1.2.4 and run the following commands instead. ([Example running screenshots](imgs/no-docker.png))
 
@@ -345,14 +349,14 @@ Docker Image: <br>
   ```
   
 
-#### 1.2.6 Install Dependencies for Plotting Scripts<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.6 Install Dependencies for Plotting Scripts<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Run the command below to install dependencies for plotting scripts:
   ```bash
   pip install matplotlib==3.10.8 pypdf==6.16.2
   ```
 
-#### 1.2.7 About Dataset<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.7 About Dataset<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Dataset for pre-training**: 
 
@@ -386,7 +390,7 @@ Docker Image: <br>
     </tr>
     <tr>
       <td><strong>Out-of-memory error during the reproduction</strong>: You see errors like <code>torch.OutOfMemoryError: CUDA out of memory</code> when running the reproduction script.</td>
-      <td>1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>2. Run the minimum working example.</td>
+      <td>1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>2. Run the minimum running example.</td>
     </tr>
     
     
@@ -400,7 +404,7 @@ Docker Image: <br>
 
 We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces resulting figures and tables.
 
-- **(Recommended) Option 1: Minimun working example (completed within 1 day and 20GB memory)**
+- **(Recommended) Option 1: Minimum running example (completed within 1 day and 20GB memory)**
   ```bash
   cd <VLASelect directory>
   bash start_docker.sh
@@ -431,14 +435,14 @@ cd <VLASelect directory in the container>/eval
 
 And you can run the following commands to reproduce each figure/table in our evaluation.
 
-**Note:** In minimum working examples, we have limited the training time of each method to less than 5 minutes. However, the total runtime may remain several hours due to:
+**Note:** In minimum running examples, we have limited the training time of each method to less than 5 minutes. However, the total runtime may remain several hours due to:
   - Loading large model checkpoints (>1GB) for each method
   - Initializing RL environments based on the physical simulation engine
   - Evaluating each method's accuracy periodically
 
-#### 2.2.1 (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.1 (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum working examples on three representative methods:
+- **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
   cd acc_comparison
 
@@ -453,7 +457,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_humanoid_robot.sh
   python3 plot_acc_task_env.py
   ```
-- **Option 2:** Commands for minimum working examples on all methods:
+- **Option 2:** Commands for small running examples on all methods:
   ```bash
   cd acc_comparison
 
@@ -496,12 +500,12 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example on three methods</td>
+        <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
-        <td>Minimum working example on all methods</td>
+        <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example">Link</a></td>
       </tr>
@@ -516,9 +520,9 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.2 (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.2 (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum working examples on three representative methods:
+- **Option 1:** Commands for minimum running examples on three representative methods:
 
   ```bash
   cd acc_comparison
@@ -535,7 +539,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   python3 plot_acc_res_change.py
   ```
 
-- **Option 2:** Commands for minimum working examples on all methods:
+- **Option 2:** Commands for small running examples on all methods:
 
   ```bash
   cd acc_comparison
@@ -581,12 +585,12 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example on three methods</td>
+        <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example-1">Link</a></td>
       </tr>
       <tr>
-        <td>Minimum working example on all methods</td>
+        <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example-1">Link</a></td>
       </tr>
@@ -600,9 +604,9 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.3 (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.3 (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum working examples on three representative methods:
+- **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
   cd overhead
 
@@ -617,7 +621,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   bash overhead_same_acc_humanoid_robot.sh
   python3 plot_overhead.py
   ```
-- **Option 2:** Commands for minimum working examples on all methods:
+- **Option 2:** Commands for small running examples on all methods:
   ```bash
   cd overhead
 
@@ -660,12 +664,12 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example on three methods</td>
+        <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
-        <td>Minimum working example on all methods</td>
+        <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example">Link</a></td>
       </tr>
@@ -679,7 +683,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.4 (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.4 (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for full run:
   ```bash
@@ -703,9 +707,9 @@ And you can run the following commands to reproduce each figure/table in our eva
   </table>
 
 
-#### 2.2.5 (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.5 (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum working examples on three representative methods:
+- **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
   cd overhead
 
@@ -720,7 +724,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods_humanoid_robot.sh
   python3 plot_breakdown_all_methods.py
   ```
-- **Option 2:** Commands for minimum working examples on all methods:
+- **Option 2:** Commands for small running examples on all methods:
   ```bash
   cd overhead
 
@@ -763,12 +767,12 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example on three methods</td>
+        <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-2">Link</a></td>
       </tr>
       <tr>
-        <td>Minimum working example on all methods</td>
+        <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-2">Link</a></td>
       </tr>
@@ -781,9 +785,9 @@ And you can run the following commands to reproduce each figure/table in our eva
   </table>
 
 
-#### 2.2.6 (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.6 (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum working examples:
+- **Option 1:** Commands for minimum running examples:
   ```bash
   cd ablation
   MWE=1 bash run_ablation.sh
@@ -808,7 +812,7 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example</td>
+        <td>Minimum running example</td>
         <td>1 hours<br>20GB memory<br>30GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#minimal-working-example">Link</a></td>
       </tr>
@@ -822,7 +826,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.7 (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.7 (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for full run:
   ```bash
@@ -867,8 +871,8 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.8 (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
-- **Option 1:** Commands for minimum working examples:
+#### 2.2.8 (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+- **Option 1:** Commands for minimum running examples:
   ```bash
   cd discussion
   MWE=1 bash compare_icl.sh
@@ -890,7 +894,7 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example</td>
+        <td>Minimum running example</td>
         <td>10 minutes<br>20GB memory<br>8GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#minimal-working-example">Link</a></td>
       </tr>
@@ -902,7 +906,7 @@ And you can run the following commands to reproduce each figure/table in our eva
     </tbody>
   </table>
 
-#### 2.2.9 (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.9 (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 - Commands for full run:
   ```bash
   cd discussion
@@ -924,8 +928,8 @@ And you can run the following commands to reproduce each figure/table in our eva
     </tbody>
   </table>
 
-#### 2.2.10 (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
-- **Option 1:** Commands for minimum working examples:
+#### 2.2.10 (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+- **Option 1:** Commands for minimum running examples:
   ```bash
   cd discussion
   MWE=1 bash run_multi_agent.sh
@@ -948,7 +952,7 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example</td>
+        <td>Minimum running example</td>
         <td>20 minutes<br>20GB memory<br>1GB disk space</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#minimal-working-example-1">Link</a></td>
       </tr>
@@ -961,14 +965,14 @@ And you can run the following commands to reproduce each figure/table in our eva
   </table>
 
 
-#### 2.2.11 (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.11 (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum working examples on three representative methods:
+- **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
   cd <VLASelect directory>
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
   ```
-- **Option 2:** Commands for minimum working examples on all methods:
+- **Option 2:** Commands for small running examples on all methods:
   ```bash
   cd <VLASelect directory>
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
@@ -990,12 +994,12 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum working example on three representative methods</td>
+        <td>Minimum running example on three representative methods</td>
         <td>20 minutes<br>20GB memory</td>
         <td><a href="">Link</a></td>
       </tr>
       <tr>
-        <td>Minimum working example on all methods</td>
+        <td>Small running example on all methods</td>
         <td>60 minutes<br>20GB memory</td>
         <td><a href="">Link</a></td>
       </tr>
@@ -1008,9 +1012,9 @@ And you can run the following commands to reproduce each figure/table in our eva
   </table>
 
 
-#### 2.2.12 (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.12 (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
@@ -1030,7 +1034,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory</td>
           <td><a href="">Link</a></td>
         </tr>
@@ -1042,9 +1046,9 @@ And you can run the following commands to reproduce each figure/table in our eva
       </tbody>
     </table>
 
-#### 2.2.13 (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.13 (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash forgetting/measure_forgetting.sh
     ```
@@ -1064,7 +1068,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>20 minutes<br>20GB memory</td>
           <td><a href="">Link</a></td>
         </tr>
@@ -1076,9 +1080,9 @@ And you can run the following commands to reproduce each figure/table in our eva
       </tbody>
     </table>
 
-#### 2.2.14 (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.14 (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     cd api/model_type
     MWE=1 bash run.sh
@@ -1100,7 +1104,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>20 minutes<br>20GB memory</td>
           <td><a href="">Link</a></td>
         </tr>
@@ -1148,7 +1152,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 ### 3.1 Example 1: VLA-Adapter<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.1.1 Model Integration Interface<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.1.1 Model Integration Interface<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Detailed integration steps**:
 
@@ -1201,7 +1205,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 - After the integration, you can use VLASelect to train the integrated model:
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
     ```
@@ -1221,7 +1225,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>3 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#311-supporting-the-vla-adapter">Link</a></td>
         </tr>
@@ -1234,7 +1238,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     </table>
 
 
-#### 3.1.2 Integrating Different Scaling Strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.1.2 Integrating Different Scaling Strategies<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.1.1, you can support VLA-Adapter with 10 other scaling strategies as listed below:
 
@@ -1285,11 +1289,11 @@ PowerInfer: Fast Large Language Model Serving with a Consumer-grade GPU". To use
 
 After the integration, you can use VLASelect to train the model with the integrated scaling strategies:
 
-  - **Option 1:** Commands for minimum working examples on three representative methods:
+  - **Option 1:** Commands for minimum running examples on three representative methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for minimum working examples on all methods:
+  - **Option 2:** Commands for small running examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
     ```
@@ -1309,12 +1313,12 @@ After the integration, you can use VLASelect to train the model with the integra
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example on three representative methods</td>
+          <td>Minimum running example on three representative methods</td>
           <td>20 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
-          <td>Minimum working example on all methods</td>
+          <td>Small running example on all methods</td>
           <td>60 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies">Link</a></td>
         </tr>
@@ -1327,7 +1331,7 @@ After the integration, you can use VLASelect to train the model with the integra
     </table>
 
 
-#### 3.1.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.1.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.1.1, you can support VLA-Adapter at different knowledge exchange strategies as listed below:
 
@@ -1350,7 +1354,7 @@ Based on the example in Section 3.1.1, you can support VLA-Adapter at different 
 
 After the integration, you can use VLASelect to train the model at the integrated knowledge exchange granularities:
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
@@ -1370,7 +1374,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#313-supporting-different-knowledge-exchange-granularities">Link</a></td>
         </tr>
@@ -1385,7 +1389,7 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 ### 3.2 Example 2: TinyVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.2.1 Model Integration Interface<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.2.1 Model Integration Interface<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Detailed integration steps**:
 
@@ -1438,7 +1442,7 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 - After the integration, you can use VLASelect to train the integrated model:
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
     ```
@@ -1458,7 +1462,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>3 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla">Link</a></td>
         </tr>
@@ -1470,7 +1474,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </tbody>
     </table>
 
-#### 3.2.2 Integrating Different Scaling Strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.2.2 Integrating Different Scaling Strategies<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.2.1, you can support TinyVLA with 10 other scaling strategies. 
 
@@ -1510,11 +1514,11 @@ run_training(model_impl, parse_args(), EdgeTAScaling())
 
 After the integration, you can use VLASelect to train the model with the integrated scaling strategies:
 
-  - **Option 1:** Commands for minimum working examples on three representative methods:
+  - **Option 1:** Commands for minimum running examples on three representative methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for minimum working examples on all methods:
+  - **Option 2:** Commands for small running examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
     ```
@@ -1534,12 +1538,12 @@ After the integration, you can use VLASelect to train the model with the integra
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example on three representative methods</td>
+          <td>Minimum running example on three representative methods</td>
           <td>20 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
-          <td>Minimum working example on all methods</td>
+          <td>Small running example on all methods</td>
           <td>60 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies">Link</a></td>
         </tr>
@@ -1552,7 +1556,7 @@ After the integration, you can use VLASelect to train the model with the integra
     </table>
 
 
-#### 3.2.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.2.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.2.1, you can support TinyVLA with other knowledge exchange granularities. 
 
@@ -1574,7 +1578,7 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 
 After the integration, you can use VLASelect to train the model at the integrated knowledge exchange granularities:
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
     ```
@@ -1594,7 +1598,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#323-supporting-different-knowledge-exchange-granularities">Link</a></td>
         </tr>
@@ -1611,7 +1615,7 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 ### 3.3 Example 3: EdgeVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.3.1 Model Integration Interface<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.3.1 Model Integration Interface<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Detailed integration steps**:
 
@@ -1664,7 +1668,7 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 - After the integration, you can use VLASelect to train the integrated model:
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
     ```
@@ -1684,7 +1688,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>3 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla">Link</a></td>
         </tr>
@@ -1696,7 +1700,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </tbody>
     </table>
 
-#### 3.3.2 Integrating Different Scaling Strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.3.2 Integrating Different Scaling Strategies<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.3.1, you can support EdgeVLA with 10 other scaling strategies. 
 
@@ -1736,11 +1740,11 @@ run_training(model_impl, parse_args(), EdgeTAScaling())
 
 After the integration, you can use VLASelect to train the model with the integrated scaling strategies:
 
-  - **Option 1:** Commands for minimum working examples on three representative methods:
+  - **Option 1:** Commands for minimum running examples on three representative methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for minimum working examples on all methods:
+  - **Option 2:** Commands for small running examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
     ```
@@ -1760,12 +1764,12 @@ After the integration, you can use VLASelect to train the model with the integra
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example on three representative methods</td>
+          <td>Minimum running example on three representative methods</td>
           <td>20 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla">Link</a></td>
         </tr>
         <tr>
-          <td>Minimum working example on all methods</td>
+          <td>Small running example on all methods</td>
           <td>60 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla">Link</a></td>
         </tr>
@@ -1778,7 +1782,7 @@ After the integration, you can use VLASelect to train the model with the integra
     </table>
 
 
-#### 3.3.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 3.3.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.3.1, you can support EdgeVLA with other knowledge exchange granularities. 
 
@@ -1800,7 +1804,7 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 
 After the integration, you can use VLASelect to train the model at the integrated knowledge exchange granularities:
 
-  - **Option 1:** Commands for minimum working examples:
+  - **Option 1:** Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
     ```
@@ -1820,7 +1824,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum working example</td>
+          <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#333-swapping-granularity-ablation-on-edgevla">Link</a></td>
         </tr>

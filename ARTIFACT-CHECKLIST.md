@@ -35,7 +35,7 @@ We have conducted a self-check and listed the results below.
 <tr><td>The artifact must not include obsolete or unrelated code or data</td><td>✅</td></tr>
 <tr><td>If existing code or data has been modified, the artifact should clearly separate the modifications from the original</td><td>✅<br>We do not modify existing code or data.</td></tr>
 <tr><td>If the paper makes soundness claims, such as proofs, there should be simple scripts to verify these, such as listing proof assumptions</td><td>✅<br>No proof</td></tr>
-<tr><td>If the paper makes quantifiable claims, such as code size per module, there should be simple scripts to output these</td><td>✅<br>We provide 10 scripts to output all quantifiable claims in the paper, as listed in <a href="https://github.com/LINC-BIT/VLASelect#2-evaluation-reproduction">Section 2 in README.md</a>.</td></tr>
+<tr><td>If the paper makes quantifiable claims, such as code size per module, there should be simple scripts to output these</td><td>✅<br>We provide 14 scripts to output all quantifiable claims in the paper, as listed in <a href="https://github.com/LINC-BIT/VLASelect#2-evaluation-reproduction">Section 2 in README.md</a>.</td></tr>
 </tbody>
 </table>
 <br>
@@ -51,7 +51,7 @@ We have conducted a self-check and listed the results below.
 <table style="width: 100%; table-layout: fixed;">
 <thead><tr><th width="60%">Checklist Item</th><th width="40%">Our Artifact</th></tr></thead>
 <tbody>
-<tr><td>Run and extend a “minimal working example”</td><td>✅<br>We provide 19 minimal working example in <a href="https://github.com/LINC-BIT/VLASelect#2-evaluation-reproduction">Section 2 in README.md</a> and <a href="https://github.com/LINC-BIT/VLASelect#3-reusability-integrating-vlaselect-with-vla-models-scaling-strategies-and-knowledge-exchange-granularities">Section 3 in README.md</a>. Running them can reproduce evaluation and verify VLASelect's applicability.</td></tr>
+<tr><td>Run and extend a “minimal working example”</td><td>✅<br>We provide 23 minimal working example in <a href="https://github.com/LINC-BIT/VLASelect#2-evaluation-reproduction">Section 2 in README.md</a> and <a href="https://github.com/LINC-BIT/VLASelect#3-reusability-integrating-vlaselect-with-vla-models-scaling-strategies-and-knowledge-exchange-granularities">Section 3 in README.md</a>. Running them can reproduce evaluation and verify VLASelect's applicability.</td></tr>
 <tr><td>Compile and execute the artifact, including pre-installation steps</td><td>✅<br><a href="https://github.com/LINC-BIT/VLASelect#123-get-source-code">Sections 1.2.3 to 1.2.6 in README.md</a></td></tr>
 <tr><td>Configure the artifact, such as selecting IP addresses or disks</td><td>✅<br><a href="https://github.com/LINC-BIT/VLASelect#123-get-source-code">Sections 1.2.3 to 1.2.6 in README.md</a></td></tr>
 <tr><td>Know the expected resource use per kind of experiment, such as “5 minutes, 10 GB of disk space”</td><td>✅<br>1. We provide the expected resource use per experiment in <a href="https://github.com/LINC-BIT/VLASelect#2-evaluation-reproduction">Section 2 in README.md</a> and <a href="https://github.com/LINC-BIT/VLASelect#3-reusability-integrating-vlaselect-with-vla-models-scaling-strategies-and-knowledge-exchange-granularities">Section 3 in README.md</a>.<br>2. We provide the overall expected resource use in <a href="https://github.com/LINC-BIT/VLASelect#121-hardware-requirements">Section 1.2.1 in README.md</a>.</td></tr>
@@ -84,7 +84,7 @@ We have conducted a self-check and listed the results below.
 <thead><tr><th width="60%">Checklist Item</th><th width="40%">Our Artifact</th></tr></thead>
 <tbody>
 <tr><td>Artifacts must be usable on other environments than the authors’, though software may require specific hardware such as one model of network card.</td><td>✅<br>1. We provide several options of hardware/software in <a href="https://github.com/LINC-BIT/VLASelect#121-hardware-requirements">Sections 1.2.1 and 1.2.2 in README.md</a>.<br>2. We have tested the artifact evaluation in a smaller environment than the paper, and provided the <a href="https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md">evaluation report</a>.</td></tr>
-<tr><td>Manual work such as writing configuration files must be minimized. There must be no redundant manual steps such as writing the same configuration values in multiple places, as this inevitably leads to human error.</td><td>✅<br>We provide 19 automatic scripts for evaluation reproduction, which do not include any manual work of writing additional files.</td></tr>
+<tr><td>Manual work such as writing configuration files must be minimized. There must be no redundant manual steps such as writing the same configuration values in multiple places, as this inevitably leads to human error.</td><td>✅<br>We provide 23 automatic scripts for evaluation reproduction, which do not include any manual work of writing additional files.</td></tr>
 </tbody>
 </table>
 

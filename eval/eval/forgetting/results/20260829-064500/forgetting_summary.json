@@ -1,0 +1,66 @@
+{
+  "metric": "success_once",
+  "improvement": "absolute_percentage_points",
+  "env_count": 3,
+  "methods": {
+    "self_improv": {
+      "run_dir": null,
+      "quality": "missing",
+      "series": [
+        null,
+        null,
+        null
+      ]
+    },
+    "vla_rft": {
+      "run_dir": null,
+      "quality": "missing",
+      "series": [
+        null,
+        null,
+        null
+      ]
+    },
+    "world_env": {
+      "run_dir": null,
+      "quality": "missing",
+      "series": [
+        null,
+        null,
+        null
+      ]
+    },
+    "vlaselect": {
+      "run_dir": null,
+      "quality": "missing",
+      "series": [
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  "rows": [
+    {
+      "env_index": 1,
+      "self_improv": null,
+      "vla_rft": null,
+      "world_env": null,
+      "vlaselect": null
+    },
+    {
+      "env_index": 2,
+      "self_improv": null,
+      "vla_rft": null,
+      "world_env": null,
+      "vlaselect": null
+    },
+    {
+      "env_index": 3,
+      "self_improv": null,
+      "vla_rft": null,
+      "world_env": null,
+      "vlaselect": null
+    }
+  ]
+}

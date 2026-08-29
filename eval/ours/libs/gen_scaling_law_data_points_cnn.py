@@ -100,6 +100,32 @@ def generate_small_cnn(fbs_model: nn.Module,
         ranked = torch.argsort(raw_scores[indices], descending=True, stable=True)
         return indices[ranked[:limit]]
 
+    def _build_ablation_unpruned_filters_index(
+        default_indices: torch.Tensor,
+        raw_scores: torch.Tensor,
+        expected_kept_count: int,
+        strategy: str,
+    ) -> torch.Tensor:
+        default_indices = _complete_unpruned_filters_index(
+            default_indices,
+            raw_scores,
+            expected_kept_count,
+        )
+        if strategy == 'random':
+            return torch.randperm(raw_scores.size(0), device=raw_scores.device)[:expected_kept_count]
+        if strategy == 'inverse':
+            num_replace = max(1, expected_kept_count // 2)
+            num_keep_default = expected_kept_count - num_replace
+            kept_default = _rank_indices(default_indices, raw_scores, num_keep_default)
+            candidate_mask = torch.ones(raw_scores.size(0), dtype=torch.bool, device=raw_scores.device)
+            candidate_mask[kept_default] = False
+            candidate_indices = candidate_mask.nonzero(as_tuple=True)[0]
+            ranked_low = torch.argsort(raw_scores[candidate_indices], descending=False, stable=True)
+            added = candidate_indices[ranked_low[:num_replace]]
+            mixed = torch.cat([kept_default, added], dim=0)
+            return _complete_unpruned_filters_index(mixed, raw_scores, expected_kept_count)
+        return default_indices
+
     def _merge_selected_indices(layer_name: str,
                                 current_indices: torch.Tensor,
                                 raw_scores: torch.Tensor,
@@ -187,12 +213,16 @@ def generate_small_cnn(fbs_model: nn.Module,
             raw_w = _aggregate_scores(get_module(fbs_model, layer_name).cached_raw_w)
             expected_kept_count = _get_expected_kept_count(layer)
 
-            if ab_strategy == 'random':
-                unpruned_filters_index = torch.randperm(raw_w.size(0), device=raw_w.device)[:expected_kept_count]
-            elif ab_strategy == 'inverse':
-                unpruned_filters_index = torch.argsort(raw_w, descending=False, stable=True)[:expected_kept_count]
+            default_unpruned_filters_index = w.nonzero(as_tuple=True)[0]
+            if ab_strategy in {'random', 'inverse'}:
+                unpruned_filters_index = _build_ablation_unpruned_filters_index(
+                    default_unpruned_filters_index,
+                    raw_w,
+                    expected_kept_count,
+                    ab_strategy,
+                )
             else:
-                unpruned_filters_index = w.nonzero(as_tuple=True)[0]
+                unpruned_filters_index = default_unpruned_filters_index
             unpruned_filters_index = _complete_unpruned_filters_index(
                 unpruned_filters_index,
                 raw_w,
@@ -222,12 +252,16 @@ def generate_small_cnn(fbs_model: nn.Module,
             raw_w = _aggregate_scores(layer.cached_raw_w)
             expected_kept_count = _get_expected_kept_count(layer)
 
-            if ab_strategy == 'random':
-                unpruned_filters_index = torch.randperm(raw_w.size(0), device=raw_w.device)[:expected_kept_count]
-            elif ab_strategy == 'inverse':
-                unpruned_filters_index = torch.argsort(raw_w, descending=False, stable=True)[:expected_kept_count]
+            default_unpruned_filters_index = w.nonzero(as_tuple=True)[0]
+            if ab_strategy in {'random', 'inverse'}:
+                unpruned_filters_index = _build_ablation_unpruned_filters_index(
+                    default_unpruned_filters_index,
+                    raw_w,
+                    expected_kept_count,
+                    ab_strategy,
+                )
             else:
-                unpruned_filters_index = w.nonzero(as_tuple=True)[0]
+                unpruned_filters_index = default_unpruned_filters_index
             unpruned_filters_index = _complete_unpruned_filters_index(
                 unpruned_filters_index,
                 raw_w,

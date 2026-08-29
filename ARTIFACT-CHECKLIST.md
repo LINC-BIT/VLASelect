@@ -1,4 +1,4 @@
-# EuroSys'27 Artifact Checklist
+# EuroSys'27 Artifact Evaluation Checklist (Available, Functional, Reproduced)
 
 The official checklist for EuroSys'27 artifact evaluation is listed in [https://sysartifacts.github.io/eurosys2027/badges](https://sysartifacts.github.io/eurosys2027/badges). 
 

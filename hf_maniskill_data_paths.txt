@@ -1,2 +1,12 @@
-partnet_mobility/**
+partnet_mobility/meta/info_cabinet_drawer_train.json
+partnet_mobility/1000
+partnet_mobility/1004
+partnet_mobility/1005
+partnet_mobility/1013
+partnet_mobility/1016
+partnet_mobility/1021
+partnet_mobility/1024
+partnet_mobility/1027
+partnet_mobility/1032
+partnet_mobility/1033
 assets.zip

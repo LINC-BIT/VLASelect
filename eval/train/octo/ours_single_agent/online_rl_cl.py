@@ -2749,6 +2749,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
 def apply_mwe_overrides(args: Args) -> Args:
     if os.environ.get("MWE", "0") == "1":
+        os.environ.setdefault("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "1")
         # Keep the same training path while using a deliberately tiny footprint for
         # verification runs. VLA language-model activations dominate memory during
         # PPO, so MWE prioritizes proving the path is runnable over throughput.

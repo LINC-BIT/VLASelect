@@ -40,6 +40,7 @@ if [[ "$MWE" == "1" ]]; then
     ABLATION_SELECTION="${ABLATION_SELECTION:-}"
     export MWE_ACTIVE_RUNTIME_ONLY=1
     export MWE_MAX_RUNTIME_MINUTES="${ABLATION_MWE_MAX_RUNTIME_MINUTES:-2}"
+    export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=1
 fi
 vlaselect_resource_summary_start "run_ablation.sh"
 vlaselect_install_cleanup_trap
@@ -594,7 +595,7 @@ launch_curve() {
     fi
 
     local -a cmd=(
-        env MWE_ACTIVE_RUNTIME_ONLY="${MWE_ACTIVE_RUNTIME_ONLY:-0}" MWE_MAX_RUNTIME_MINUTES="${MWE_MAX_RUNTIME_MINUTES:-5}" "$PYTHON_BIN" -u -m train.octo.ours_single_agent.online_rl_cl
+        env MWE_ACTIVE_RUNTIME_ONLY="${MWE_ACTIVE_RUNTIME_ONLY:-0}" MWE_MAX_RUNTIME_MINUTES="${MWE_MAX_RUNTIME_MINUTES:-5}" VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY="${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY:-0}" "$PYTHON_BIN" -u -m train.octo.ours_single_agent.online_rl_cl
         --exp-name "$exp_name"
         --env-id "$BASE_ENV_ID"
         --envs-id "$BASE_ENVS_ID"

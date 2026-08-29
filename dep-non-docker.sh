@@ -18,6 +18,9 @@ PIP_INDEX_URL_FALLBACKS=${PIP_INDEX_URL_FALLBACKS:-https://pypi.tuna.tsinghua.ed
 PIP_EXTRA_INDEX_URL_DEFAULT=${PIP_EXTRA_INDEX_URL_DEFAULT:-}
 MANISKILL_VERSION=${MANISKILL_VERSION:-3.0.0b22}
 DEEPSPEED_VERSION=0.15.0
+PYPDF_VERSION=${PYPDF_VERSION:-6.16.2}
+PIN_VERSION=${PIN_VERSION:-2.7.0}
+NOISE_VERSION=${NOISE_VERSION:-1.2.2}
 
 INSTALL_SYSTEM_DEPS=${INSTALL_SYSTEM_DEPS:-0}
 INSTALL_FLASH_ATTN=${INSTALL_FLASH_ATTN:-0}
@@ -258,7 +261,7 @@ PY
 install_filtered_requirements() {
     log "installing filtered Python dependencies from $REQ_FILTERED"
     run_pip_install_with_fallbacks "filtered requirements" -r "$REQ_FILTERED"         || die "failed to install filtered requirements from all configured package indexes."
-    run_pip_install_with_fallbacks "runtime helper packages" -U "huggingface_hub[cli]" pypdf pin noise         || die "failed to install runtime helper packages from all configured package indexes."
+    run_pip_install_with_fallbacks "runtime helper packages" -U "huggingface_hub[cli]" "pypdf==${PYPDF_VERSION}" "pin==${PIN_VERSION}" "noise==${NOISE_VERSION}"         || die "failed to install runtime helper packages from all configured package indexes."
 }
 
 default_hf_ckpt_paths() {
@@ -277,6 +280,7 @@ eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_agent.pt
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_opt.pt
 eval/ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt
+eval/ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth
 eval/ckpt/PickCube-v1/baselines/world_env/world_model/20260425-032853-run032_e2/checkpoints/best_with_reference.pt
 eval/ckpt/PickCube-v1/baselines/vla_rft/world_model/20260424-160154-run32x2/checkpoints/best.pt
 eval/ckpt/vla_adapter_new/world_env/outputs/world_model/20260503-075340/checkpoints/best_with_reference.pt
@@ -325,6 +329,20 @@ download_hf_checkpoints() {
     fi
     "${cmd[@]}"
 }
+
+ensure_default_state_norm_stats() {
+    local target="$ROOT_DIR/eval/ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth"
+    local source="$ROOT_DIR/eval/train/octo/ours/PickCube-v1-state-max-min.pth"
+
+    if [[ -f "$target" || ! -f "$source" ]]; then
+        return
+    fi
+
+    log "staging fallback state norm stats: $target"
+    mkdir -p "$(dirname "$target")"
+    cp "$source" "$target"
+}
+
 
 run_post_checks() {
     log "running post-install checks"
@@ -383,6 +401,7 @@ main() {
     build_filtered_requirements
     install_filtered_requirements
     download_hf_checkpoints
+    ensure_default_state_norm_stats
     run_post_checks
     print_summary
 }

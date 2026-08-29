@@ -37,6 +37,9 @@ HF_HUB_HTTP_MAX_RETRIES=${HF_HUB_HTTP_MAX_RETRIES:-6}
 HF_HUB_RETRY_BASE_SECONDS=${HF_HUB_RETRY_BASE_SECONDS:-15}
 HF_HUB_FILE_DELAY_SECONDS=${HF_HUB_FILE_DELAY_SECONDS:-0.2}
 DEEPSPEED_VERSION=0.15.0
+PYPDF_VERSION=${PYPDF_VERSION:-6.16.2}
+PIN_VERSION=${PIN_VERSION:-2.7.0}
+NOISE_VERSION=${NOISE_VERSION:-1.2.2}
 
 log() {
     echo "[dep.sh] $*"
@@ -273,6 +276,7 @@ eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_agent.pt
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_opt.pt
 eval/ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt
+eval/ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth
 eval/ckpt/PickCube-v1/ours/octo/pretrain_feature_aggregator/20260409-153956-feature_aggregator_lr3e-5_dual_stream_action_gate_reg_0_h4_2layergate_none/[agent1]/checkpoints copy/best_success_end.pt
 eval/ckpt/PickCube-v1/ours/octo/pretrain_feature_aggregator/20260409-153956-feature_aggregator_lr3e-5_dual_stream_action_gate_reg_0_h4_2layergate_none/[agent1]/checkpoints copy/best_success_end.pt.feature_aggregators
 eval/ckpt/PickCube-v1/ours/octo/pretrain_feature_aggregator/20260409-153956-feature_aggregator_lr3e-5_dual_stream_action_gate_reg_0_h4_2layergate_none/[agent2]/checkpoints copy/best_success_end.pt
@@ -502,6 +506,20 @@ for index, rel_path in enumerate(resolved_paths, start=1):
     download_file(rel_path)
 PY
 }
+
+ensure_default_state_norm_stats() {
+    local target="$ROOT_DIR/eval/ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth"
+    local source="$ROOT_DIR/eval/train/octo/ours/PickCube-v1-state-max-min.pth"
+
+    if [[ -f "$target" || ! -f "$source" ]]; then
+        return
+    fi
+
+    log "staging fallback state norm stats: $target"
+    mkdir -p "$(dirname "$target")"
+    cp "$source" "$target"
+}
+
 
 ensure_container_maniskill_dirs() {
     docker exec "$CONTAINER_NAME" bash -lc \
@@ -759,9 +777,9 @@ install_container_runtime_dependencies() {
         started_here=1
     fi
 
-    ensure_container_python_package pypdf pypdf
-    ensure_container_python_package pinocchio pin
-    ensure_container_python_package noise noise
+    ensure_container_python_package pypdf "pypdf==${PYPDF_VERSION}"
+    ensure_container_python_package pinocchio "pin==${PIN_VERSION}"
+    ensure_container_python_package noise "noise==${NOISE_VERSION}"
     install_container_deepspeed
 
     if [[ "$started_here" == "1" ]]; then
@@ -865,6 +883,7 @@ check_nvidia_runtime
 pull_image
 resolve_container_paths
 download_hf_checkpoints
+ensure_default_state_norm_stats
 remove_existing_container
 ensure_container
 install_container_runtime_dependencies

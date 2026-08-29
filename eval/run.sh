@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "$SCRIPT_DIR"
 
 MWE="${MWE:-0}"
@@ -19,6 +20,15 @@ RUN_OVERHEAD_SAME_ACC="${RUN_OVERHEAD_SAME_ACC:-1}"
 RUN_BREAKDOWN_ALL="${RUN_BREAKDOWN_ALL:-1}"
 RUN_BREAKDOWN_MODULES="${RUN_BREAKDOWN_MODULES:-1}"
 RUN_ABLATION="${RUN_ABLATION:-1}"
+RUN_DISCUSSION_ICL="${RUN_DISCUSSION_ICL:-1}"
+RUN_DISCUSSION_MODEL_SIZE="${RUN_DISCUSSION_MODEL_SIZE:-1}"
+RUN_DISCUSSION_MULTI_AGENT="${RUN_DISCUSSION_MULTI_AGENT:-1}"
+RUN_DISCUSSION_ALT_SCALING="${RUN_DISCUSSION_ALT_SCALING:-1}"
+RUN_DISCUSSION_GRANULARITY="${RUN_DISCUSSION_GRANULARITY:-1}"
+RUN_DISCUSSION_FORGETTING="${RUN_DISCUSSION_FORGETTING:-1}"
+RUN_DISCUSSION_MLP_CNN="${RUN_DISCUSSION_MLP_CNN:-1}"
+RUN_DISCUSSION_SIM_TO_REAL="${RUN_DISCUSSION_SIM_TO_REAL:-0}"
+DISCUSSION_MODEL_SIZE_FAMILY="${DISCUSSION_MODEL_SIZE_FAMILY:-tinyvla}"
 
 log() {
     echo "[run.sh] $*"
@@ -74,10 +84,50 @@ if [[ "$RUN_ABLATION" == "1" ]]; then
     fi
 fi
 
+if [[ "$RUN_DISCUSSION_SIM_TO_REAL" == "1" ]]; then
+    run_step "Discussion 1: sim-to-real transfer" bash discussion/run_sim_to_real.sh
+fi
+
+if [[ "$RUN_DISCUSSION_ICL" == "1" ]]; then
+    run_step "Discussion 2: ICL" env MWE="$MWE" bash discussion/compare_icl.sh
+fi
+
+if [[ "$RUN_DISCUSSION_MODEL_SIZE" == "1" ]]; then
+    run_step "Discussion 3: maximum supported model size" env MODEL_SIZE_LIMIT_FAMILY="$DISCUSSION_MODEL_SIZE_FAMILY" bash discussion/sweep_model_size.sh
+fi
+
+if [[ "$RUN_DISCUSSION_MULTI_AGENT" == "1" ]]; then
+    run_step "Discussion 4: multi-agent scenarios" env MWE="$MWE" bash discussion/run_multi_agent.sh
+fi
+
+if [[ "$RUN_DISCUSSION_ALT_SCALING" == "1" ]]; then
+    if [[ "$MWE" == "1" ]]; then
+        run_step "Discussion 5: alternative scaling techniques (3 representative methods)" bash "$ROOT_DIR/api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh"
+    else
+        run_step "Discussion 5: alternative scaling techniques" bash "$ROOT_DIR/api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh"
+    fi
+fi
+
+if [[ "$RUN_DISCUSSION_GRANULARITY" == "1" ]]; then
+    run_step "Discussion 6: knowledge exchange granularities" env MWE="$MWE" bash "$ROOT_DIR/api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh"
+fi
+
+if [[ "$RUN_DISCUSSION_FORGETTING" == "1" ]]; then
+    run_step "Discussion 7: forgetting on previous tasks" env MWE="$MWE" bash forgetting/measure_forgetting.sh
+fi
+
+if [[ "$RUN_DISCUSSION_MLP_CNN" == "1" ]]; then
+    run_step "Discussion 8: MLP/CNN applicability" bash "$ROOT_DIR/api/model_type/run.sh" "$MWE"
+fi
+
 cat <<'MSG'
 [run.sh] primary evaluation scripts finished.
 [run.sh] Notes:
 [run.sh] - The postprocess scripts now generate panel images first and then stitch them into final figures close to the paper layout.
 [run.sh] - Each experiment entry script performs its own preflight sanity check before launch.
+[run.sh] - Main experiment figures are written under `eval/acc_comparison/`, `eval/overhead/`, and `eval/ablation/`, including `FIG_ACC_TASK_ENV.*`, `FIG_ACC_RESOURCE.*`, `FIG_MEMORY_FOOTPOINT.*`, `FIG_BREAKDOWN_ALL_METHODS.*`, `FIG_BREAKDOWN_MODULES.*`, and `FIG_ABLATION.*`.
+[run.sh] - Discussion outputs are written under `eval/discussion/results/` plus fixed summary plots such as `eval/discussion/FIG_VLA_APPLICABILITY.*`; model-scaling discussion outputs are under `api/results/vla_adapter/`; MLP/CNN applicability outputs are under `api/model_type/`.
+[run.sh] - Raw checkpoints, metrics histories, and intermediate manifests remain under `eval/ckpt/`, `eval/overhead/*table/`, `eval/ablation/ablation_table/`, `eval/forgetting/results/`, and `eval/discussion/results/`.
+[run.sh] - Discussion 1 (sim-to-real) is skipped by default because it requires physical robot hardware; run `RUN_DISCUSSION_SIM_TO_REAL=1 bash run.sh` only on the supported setup.
 [run.sh] - To run the short sanity-check mode instead, use `MWE=1 bash run.sh`.
 MSG

@@ -15,6 +15,7 @@ if str(REPO_ROOT) not in sys.path:
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
+from train.common.memory_accounting import MemoryPhaseTracker
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Deque, Dict, List, Optional, Tuple, get_args, get_origin
@@ -38,6 +39,11 @@ from train.vla_adapter_new.model_impl.online_rl import (
     strip_module_prefix,
 )
 from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
+from train.common.materialized_fbs_cache import (
+    build_materialized_fbs_metadata,
+    maybe_load_materialized_fbs_policy_from_checkpoint,
+    maybe_persist_materialized_fbs_policy_to_checkpoint,
+)
 from train.vla_adapter_new.ours.generate_static_small_model import generate_static_small_model
 from train.tinyvla.ours.model_with_fbs import convert_to_fbs_model
 
@@ -375,16 +381,32 @@ def materialize_fbs_caches(
 
 
 def build_static_student_policy(args: Args, device: torch.device) -> reference.EdgeVLAActorCritic:
-    base_policy = reference.EdgeVLAActorCritic(
-        Path(args.model_dir),
-        device=device,
-        state_dim=args.state_dim,
-        action_dim=args.action_dim,
-        env_action_dim=args.env_action_dim,
-        controlled_action_indices=args.controlled_action_indices,
-    ).to(device)
-    fbs_policy = convert_to_fbs_model(base_policy, device).to(device)
-    load_policy_state_from_checkpoint(args.static_model_checkpoint, fbs_policy)
+    materialized_fbs_metadata = build_materialized_fbs_metadata(
+        args.static_model_checkpoint,
+        include_baseline_noise=True,
+    )
+    fbs_policy = maybe_load_materialized_fbs_policy_from_checkpoint(
+        args.static_model_checkpoint,
+        device,
+        expected_metadata=materialized_fbs_metadata,
+    )
+    base_policy = None
+    if fbs_policy is None:
+        base_policy = reference.EdgeVLAActorCritic(
+            Path(args.model_dir),
+            device=device,
+            state_dim=args.state_dim,
+            action_dim=args.action_dim,
+            env_action_dim=args.env_action_dim,
+            controlled_action_indices=args.controlled_action_indices,
+        ).to(device)
+        fbs_policy = convert_to_fbs_model(base_policy, device).to(device)
+        load_policy_state_from_checkpoint(args.static_model_checkpoint, fbs_policy)
+        maybe_persist_materialized_fbs_policy_to_checkpoint(
+            args.static_model_checkpoint,
+            fbs_policy,
+            expected_metadata=materialized_fbs_metadata,
+        )
     set_sparsity(fbs_policy, args.static_sparsity)
     materialize_fbs_caches(args, device, fbs_policy)
     static_policy = generate_static_small_model(fbs_policy, device=device, dtype=torch.bfloat16)
@@ -392,7 +414,8 @@ def build_static_student_policy(args: Args, device: torch.device) -> reference.E
     train_backbone_now = not args.freeze_vla_backbone and args.backbone_warmup_updates <= 0
     static_policy.configure_trainable_modules(train_backbone=train_backbone_now)
     static_policy.eval_micro_batch_size = args.eval_micro_batch_size
-    del base_policy
+    if base_policy is not None:
+        del base_policy
     del fbs_policy
     torch.cuda.empty_cache()
     return static_policy
@@ -581,6 +604,8 @@ def train(args: Args) -> None:
     run_name = args.run_name or time.strftime("%Y%m%d-%H%M%S")
     output_dir = mkdir(Path(args.output_dir) / run_name)
     copy_run_metadata(output_dir, args)
+    memory_phase_tracker = MemoryPhaseTracker(output_dir)
+    memory_phase_tracker.mark("setup", force=True)
     print(f"[setup] output_dir={output_dir}")
     print(f"[setup] device={device}")
     print(f"[setup] initial_env_id={current_env_id}")
@@ -603,6 +628,7 @@ def train(args: Args) -> None:
     if args.run_setup_smoke:
         reference.run_vla_inference_smoke(runtime_args, device, output_dir, policy=raw_policy)
 
+    memory_phase_tracker.mark("workload_initialization")
     envs, eval_envs, test_video_envs = build_runtime_envs(
         runtime_args,
         device,
@@ -661,6 +687,7 @@ def train(args: Args) -> None:
         eval_envs = None
         test_video_envs = None
         clear_torch_cuda_cache()
+        memory_phase_tracker.mark("workload_initialization")
         envs, eval_envs, test_video_envs = build_runtime_envs(
             runtime_args,
             device,
@@ -674,6 +701,7 @@ def train(args: Args) -> None:
         active_episode_buffers = [[] for _ in range(args.num_envs)]
         return True, False, elapsed_minutes
 
+    memory_phase_tracker.mark("evaluation")
     initial_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     initial_metric = {
         "update": 0,
@@ -740,6 +768,7 @@ def train(args: Args) -> None:
         train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
+        memory_phase_tracker.mark("online_rl_rollout")
         rollout_start_time = time.perf_counter()
         abort_during_rollout = False
         abort_reason: Optional[str] = None
@@ -933,6 +962,7 @@ def train(args: Args) -> None:
         stopped_on_minibatch_kl = False
         skipped_updates_on_kl = 0
 
+        memory_phase_tracker.mark("online_rl_training")
         update_start_time = time.perf_counter()
         raw_policy.eval()
         for _ in range(args.update_epochs):
@@ -1006,6 +1036,7 @@ def train(args: Args) -> None:
         metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
 
         if update % args.eval_every_updates == 0 or update == num_updates:
+            memory_phase_tracker.mark("evaluation")
             eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
             metric.update({f"eval_{key}": value for key, value in eval_metrics.items()})
             if test_video_envs is not None:
@@ -1085,6 +1116,7 @@ def train(args: Args) -> None:
             )
             break
 
+    memory_phase_tracker.mark("evaluation")
     final_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     save_json(output_dir / "final_eval_metrics.json", final_eval_metrics)
     save_metrics_history(output_dir, metrics_history)

@@ -29,6 +29,11 @@ from train.common.time_breakdown import (
     update_combined_search_enhancement_seconds,
     write_time_breakdown,
 )
+from train.common.materialized_fbs_cache import (
+    build_materialized_fbs_metadata,
+    maybe_load_materialized_fbs_policy_from_checkpoint,
+    maybe_persist_materialized_fbs_policy_to_checkpoint,
+)
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
@@ -801,14 +806,26 @@ def train(args: Args) -> None:
     cumulative_rollout_seconds = 0.0
     cumulative_training_seconds = 0.0
 
-    large_agent = reference.HandVLAAdapterActorCritic(
-        Path(args.model_dir),
-        device=device,
-        state_dim=args.state_dim,
-        action_dim=args.action_dim,
-    ).to(device)
-    large_agent = convert_to_fbs_model(large_agent, device).to(device)
-    load_policy_state_from_checkpoint(args.large_agent_checkpoint, large_agent)
+    materialized_fbs_metadata = build_materialized_fbs_metadata(args.large_agent_checkpoint)
+    large_agent = maybe_load_materialized_fbs_policy_from_checkpoint(
+        args.large_agent_checkpoint,
+        device,
+        expected_metadata=materialized_fbs_metadata,
+    )
+    if large_agent is None:
+        large_agent = reference.HandVLAAdapterActorCritic(
+            Path(args.model_dir),
+            device=device,
+            state_dim=args.state_dim,
+            action_dim=args.action_dim,
+        ).to(device)
+        large_agent = convert_to_fbs_model(large_agent, device).to(device)
+        load_policy_state_from_checkpoint(args.large_agent_checkpoint, large_agent)
+        maybe_persist_materialized_fbs_policy_to_checkpoint(
+            args.large_agent_checkpoint,
+            large_agent,
+            expected_metadata=materialized_fbs_metadata,
+        )
     large_agent.eval_micro_batch_size = args.eval_micro_batch_size
     memory_exclusion_path = write_module_memory_exclusion_metadata(
         output_dir,

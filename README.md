@@ -1,48 +1,60 @@
+![](vlaselect-intro.png)
+
 # VLASelect Artifacts Evaluation
 
 This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"**, which has been conditionally accepted by EuroSys'27.
 
-The artifacts are organized as follows, which contain **artifact components to reproduce each experiment in the paper**, as shown in Section 2.
+## Downloads
 
-- [1. Artifact Overview](#1-artifact-overview)
-  - [1.1 Introduction](#11-introduction)
-  - [1.2 Preparation Before Artifacts Evaluation](#12-preparation-before-artifacts-evaluation)
-    - [1.2.1 Hardware Requirements](#121-hardware-requirements)
-    - [1.2.2 Software Requirements](#122-software-requirements)
-    - [1.2.3 Get Source Code](#123-get-source-code)
-    - [1.2.4 Install Dependencies (if Docker can be installed)](#124-install-dependencies-if-docker-can-be-installed)
-    - [1.2.5 Install Dependencies (if Docker cannot be installed)](#125-install-dependencies-if-docker-cannot-be-installed)
-    - [1.2.6 Install Dependencies for Plotting Scripts](#126-install-dependencies-for-plotting-scripts)
-- [2. Evaluation Reproduction](#2-evaluation-reproduction)
-  - [2.1 One-click Reproduction](#21-one-click-reproduction)
-  - [2.2 Step-by-Step Reproduction](#22-step-by-step-reproduction)
-    - [2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes](#221-figure-7-accuracy-under-tasksenvironment-changes)
-    - [2.2.2 (Figure 8) Accuracy Under Available Resource Changes](#222-figure-8-accuracy-under-available-resource-changes)
-    - [2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy](#223-figure-9-and-tables-23-overheads-under-the-same-accuracy)
-    - [2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules](#224-figure-10-time-breakdown-of-vlaselects-modules)
-    - [2.2.5 (Figure 11) Training Time Breakdown in Each Workload](#225-figure-11-training-time-breakdown-in-each-workload)
-    - [2.2.6 (Figure 12) Design Choice Validation by Ablation](#226-figure-12-design-choice-validation-by-ablation)
-    - [2.2.7 Discussion 1: Sim-to-real transfer](#227-discussion-1-sim-to-real-transfer)
-    - [2.2.8 Discussion 2: ICL (In-Context Learning)](#228-discussion-2-icl-in-context-learning)
-    - [2.2.9 Discussion 3: Maximum Supported Model Size](#229-discussion-3-maximum-supported-model-size)
-    - [2.2.10 Discussion 4: Applicability to multi-agent scenarios](#2210-discussion-4-applicability-to-multi-agent-scenarios)
-- [3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities](#3-supporting-various-vla-models-scaling-strategies-and-knowledge-exchange-granularities)
-  - [3.1 Example 1: VLA-Adapter](#31-example-1-vla-adapter)
-    - [3.1.1 Supporting the model](#311-supporting-the-model)
-    - [3.1.2 Supporting different scaling strategies](#312-supporting-different-scaling-strategies)
-    - [3.1.3 Supporting different knowledge exchange granularities](#313-supporting-different-knowledge-exchange-granularities)
-  - [3.2 Example 2: TinyVLA](#32-example-2-tinyvla)
-    - [3.2.1 Supporting the model](#321-supporting-the-model)
-    - [3.2.2 Supporting different scaling strategies](#322-supporting-different-scaling-strategies)
-    - [3.2.3 Supporting different knowledge exchange granularities](#323-supporting-different-knowledge-exchange-granularities)
-  - [3.3 Example 3: EdgeVLA](#33-example-3-edgevla)
-    - [3.3.1 Supporting the model](#331-supporting-the-model)
-    - [3.3.2 Supporting different scaling strategies](#332-supporting-different-scaling-strategies)
-    - [3.3.3 Supporting different knowledge exchange granularities](#333-supporting-different-knowledge-exchange-granularities)
+[Artifact Checklist](./ARTIFACT-CHECKLIST.md)<br>
+[Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.pdf)<br>
+[Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
+[Docker Image](https://hub.docker.com/repository/docker/cz22edd/pytorch/tags/maniskillv2/sha256-bfbedf8025c694677d0e252cf07afd1285ce477f47f595f6f3253045320e196e)
+
+## Outline
+
+<a href="#1-artifact-overview">1. Artifact Overview</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#11-introduction">1.1 Introduction</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#12-preparation-before-artifacts-evaluation">1.2 Preparation Before Artifacts Evaluation</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#121-hardware-requirements">1.2.1 Hardware Requirements</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#122-software-requirements">1.2.2 Software Requirements</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#123-get-source-code">1.2.3 Get Source Code</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#124-install-dependencies-if-docker-can-be-installed">1.2.4 Install Dependencies (if Docker can be installed)</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#125-install-dependencies-if-docker-cannot-be-installed">1.2.5 Install Dependencies (if Docker cannot be installed)</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#126-install-dependencies-for-plotting-scripts">1.2.6 Install Dependencies for Plotting Scripts</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#127-about-dataset">1.2.7 About Dataset</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#13-treatment-measure-for-unusual-behaviors">1.3 Treatment Measure for Unusual Behaviors</a><br>
+<a href="#2-evaluation-reproduction">2. Evaluation Reproduction</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#21-one-click-reproduction">2.1 One-click Reproduction</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#22-step-by-step-reproduction">2.2 Step-by-Step Reproduction</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#221-figure-7-accuracy-under-tasksenvironment-changes">2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#222-figure-8-accuracy-under-available-resource-changes">2.2.2 (Figure 8) Accuracy Under Available Resource Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#223-figure-9-and-tables-23-overheads-under-the-same-accuracy">2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#224-figure-10-time-breakdown-of-vlaselects-modules">2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#225-figure-11-training-time-breakdown-in-each-workload">2.2.5 (Figure 11) Training Time Breakdown in Each Workload</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#226-figure-12-design-choice-validation-by-ablation">2.2.6 (Figure 12) Design Choice Validation by Ablation</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#227-discussion-1-sim-to-real-transfer">2.2.7 Discussion 1: Sim-to-real transfer</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#228-discussion-2-icl-in-context-learning">2.2.8 Discussion 2: ICL (In-Context Learning)</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#229-discussion-3-maximum-supported-model-size">2.2.9 Discussion 3: Maximum Supported Model Size</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2210-discussion-4-applicability-to-multi-agent-scenarios">2.2.10 Discussion 4: Applicability to multi-agent scenarios</a><br>
+<a href="#3-supporting-various-vla-models-scaling-strategies-and-knowledge-exchange-granularities">3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#31-example-1-vla-adapter">3.1 Example 1: VLA-Adapter</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#311-supporting-the-model">3.1.1 Supporting the model</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#312-supporting-different-scaling-strategies">3.1.2 Supporting different scaling strategies</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#313-supporting-different-knowledge-exchange-granularities">3.1.3 Supporting different knowledge exchange granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#32-example-2-tinyvla">3.2 Example 2: TinyVLA</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#321-supporting-the-model">3.2.1 Supporting the model</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#322-supporting-different-scaling-strategies">3.2.2 Supporting different scaling strategies</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#323-supporting-different-knowledge-exchange-granularities">3.2.3 Supporting different knowledge exchange granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#33-example-3-edgevla">3.3 Example 3: EdgeVLA</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#331-supporting-the-model">3.3.1 Supporting the model</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#332-supporting-different-scaling-strategies">3.3.2 Supporting different scaling strategies</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#333-supporting-different-knowledge-exchange-granularities">3.3.3 Supporting different knowledge exchange granularities</a><br>
 
 ## 1. Artifact Overview
 
-### 1.1 Introduction
+
+### 1.1 Introduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Background**: 
 
@@ -52,10 +64,6 @@ The artifacts are organized as follows, which contain **artifact components to r
   interactive environments** where new tasks start, surroundings change, or available resources fluctuate. 
   - In existing agentic AI systems, the resource-intensive training of deployed
   VLA models has become a critical bottleneck. 
-
-  <p align="center">
-    <img src="vlaselect-intro.png" width="50%">
-  </p>
 
 - **Method**: 
 
@@ -82,9 +90,9 @@ The artifacts are organized as follows, which contain **artifact components to r
   energy consumption.
 
 
-### 1.2 Preparation Before Artifacts Evaluation
+### 1.2 Preparation Before Artifacts Evaluation<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 1.2.1 Hardware Requirements
+#### 1.2.1 Hardware Requirements<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1: Recommended hardware for fully running our artifacts**:
 
@@ -103,7 +111,7 @@ The artifacts are organized as follows, which contain **artifact components to r
     | CPU-only laptop | 16–32 GB | One 12-core CPU (e.g., Intel Core Ultra 7 155U) | At least 80 GB free | Integrated graphics |
     | GPU-equipped laptop | 16–32 GB | One 16-core CPU (e.g., Intel Core i7-14650HX) | At least 80 GB free | One NVIDIA GPU with 8 GB VRAM (e.g., RTX 4060) |
 
-#### 1.2.2 Software Requirements
+#### 1.2.2 Software Requirements<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1: Recommended software for fully running our artifacts**:
 
@@ -122,7 +130,7 @@ The artifacts are organized as follows, which contain **artifact components to r
     | RHEL 8+ | CUDA 12.x+<br>(when using a GPU) | Kernel 5.4+<br>Docker 29.0+ |
 
 
-#### 1.2.3 Get Source Code
+#### 1.2.3 Get Source Code<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
   You can obtain the source code for artifacts evaluation by the following command. **The code does not perform any malicious or destructive operations**.
 
@@ -130,7 +138,7 @@ The artifacts are organized as follows, which contain **artifact components to r
   git clone https://github.com/LINC-BIT/VLASelect.git
   ```
 
-#### 1.2.4 Install Dependencies (if Docker can be installed)
+#### 1.2.4 Install Dependencies (if Docker can be installed)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Step 1: Install Docker**
 
@@ -208,7 +216,7 @@ The artifacts are organized as follows, which contain **artifact components to r
   ```
   [Example running screenshots](imgs/4.1.png)
 
-#### 1.2.5 Install Dependencies (if Docker cannot be installed)
+#### 1.2.5 Install Dependencies (if Docker cannot be installed)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - If you cannot install Docker (e.g. no root permission), skip Section 1.2.4 and run the following commands instead. 
 
@@ -226,16 +234,38 @@ The artifacts are organized as follows, which contain **artifact components to r
   ```
   [Example running screenshots](imgs/no-docker.png)
 
-#### 1.2.6 Install Dependencies for Plotting Scripts
+#### 1.2.6 Install Dependencies for Plotting Scripts<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - Run the command below to install dependencies for plotting scripts:
   ```bash
   pip install matplotlib==3.10.8 pypdf==6.16.2
   ```
 
+#### 1.2.7 About dataset<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+- **Dataset for pre-training**: 
+
+  We use one demonstration dataset in the ManiSkill Benchmark for pre-training VLA models. It is stored in [Hugging Face](https://huggingface.co/datasets/haosulab/ManiSkill_PickCube). You can download it by the following command:
+  ```bash
+  python -m mani_skill.utils.download_demo PushCube-v1
+  ``` 
+
+- **Dataset for online RL training**:
+
+  We do not use any dataset for online RL training. The data for online RL training is sampled from the ManiSkill Benchmark's environments.
+
+### 1.3 Treatment Measure for Unusual Behaviors<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+| Unusual Behavior | Treatment |
+|---|---|
+| **Out-of-memory error during the reproduction**: You see errors like `torch.OutOfMemoryError: CUDA out of memory` when running the reproduction script. | 1. Use a hardware that satisfies the [minimum requirements](#121-hardware-requirements).<br>2. Run the minimum working example. |
+| **Lack of model checkpoints**: You see errors like `FileNotFoundError: [Errno 2] No such file or directory: 'xxx.pt'` when running the reproduction script. | Rerun `dep.sh` to download the required model checkpoints. |
+
+
 ## 2. Evaluation Reproduction
 
-### 2.1 One-click Reproduction
+### 2.1 One-click Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
 We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces resulting figures and tables.
 
 - **(Recommended) Option 1: Minimun working example (completed within 1 day and 20GB memory)**
@@ -257,7 +287,7 @@ We provide a one-click script `eval/run.sh` that runs all experiments sequential
 The reproducing steps of each experiment are described in Section 2.2.
 
 
-### 2.2 Step-by-Step Reproduction
+### 2.2 Step-by-Step Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Run the following command at the beginning:
 
@@ -269,7 +299,7 @@ cd <VLASelect directory in the container>/eval
 
 And you can run the following commands to reproduce each figure/table in our evaluation.
 
-#### 2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes
+#### 2.2.1 (Figure 7) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
@@ -321,9 +351,9 @@ And you can run the following commands to reproduce each figure/table in our eva
 
   | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
-  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run) |
-  | Minimum working example on all methods | 3 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run) |
-  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run) |
+  | Minimum working example on three methods | 1.5 hours<br>20GB memory<br>32GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example) |
+  | Minimum working example on all methods | 3.5 hours<br>20GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example) |
+  | Full run | 140 hours<br>60GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-run) |
 
 - **Note:** In minimum working examples, we have limited the training time for each method to 120s. However, the total runtime remains several hours due to:
   - loading large model checkpoints (>1GB) for each method
@@ -331,7 +361,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   - evaluating each method's accuracy periodically
 
 
-#### 2.2.2 (Figure 8) Accuracy Under Available Resource Changes
+#### 2.2.2 (Figure 8) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
 
@@ -388,13 +418,13 @@ And you can run the following commands to reproduce each figure/table in our eva
 
   | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
-  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run-1) |
-  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#mwe-run-1) |
-  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-scale-run-1) |
+  | Minimum working example on three methods | 1.5 hours<br>20GB memory<br>32GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example-1) |
+  | Minimum working example on all methods | 3.5 hours<br>20GB memory<br>55GB disk space| [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example-1) |
+  | Full run | 140 hours<br>60GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-run-1) |
 
 
 
-#### 2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy
+#### 2.2.3 (Figure 9 and Tables 2/3) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
@@ -446,13 +476,13 @@ And you can run the following commands to reproduce each figure/table in our eva
 
   | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
-  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run) |
-  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run) |
-  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run) |
+  | Minimum working example on three methods | 1.5 hours<br>20GB memory<br>32GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example) |
+  | Minimum working example on all methods | 3.5 hours<br>20GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example) |
+  | Full run | 140 hours<br>60GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-run) |
 
 
 
-#### 2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules
+#### 2.2.4 (Figure 10) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - Commands for full run:
   ```bash
@@ -462,10 +492,10 @@ And you can run the following commands to reproduce each figure/table in our eva
 - The resource requirements and outputs are listed below:
   | Resource Requirements | Example Running Outputs |
   | --- | --- |
-  | 20 minutes, 60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run-1) |
+  | 40 minutes<br>60GB memory<br>30GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-1) |
 
 
-#### 2.2.5 (Figure 11) Training Time Breakdown in Each Workload
+#### 2.2.5 (Figure 11) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
@@ -517,12 +547,12 @@ And you can run the following commands to reproduce each figure/table in our eva
 
   | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
-  | Minimum working example on three methods | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run-2) |
-  | Minimum working example on all methods | 2 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#mwe-run-2) |
-  | Full run | 140 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-scale-run-2) |
+  | Minimum working example on three methods | 1.5 hours<br>20GB memory<br>32GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-2) |
+  | Minimum working example on all methods | 3.5 hours<br>20GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-2) |
+  | Full run | 140 hours<br>60GB memory<br>55GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-run-2) |
 
 
-#### 2.2.6 (Figure 12) Design Choice Validation by Ablation
+#### 2.2.6 (Figure 12) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum working examples:
   ```bash
@@ -541,24 +571,28 @@ And you can run the following commands to reproduce each figure/table in our eva
 
   | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
-  | Minimum working example | 1 hours<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#2-mwe-run) |
-  | Full run | 40 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#1-full-scale-run) |
+  | Minimum working example | 1 hours<br>20GB memory<br>30GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#minimal-working-example) |
+  | Full run | 40 hours<br>60GB memory<br>30GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#full-run) |
 
 
 
-#### 2.2.7 Discussion 1: Sim-to-real transfer
+#### 2.2.7 Discussion 1: Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - Commands for full run:
   ```bash
   cd discussion
   bash run_sim_to_real.sh
   ```
-- The resource requirements and outputs are listed below:
-  | Resource Requirements | Experiment Results |
-  | --- | --- |
-  | a DOFBOT-SE single-arm robot<br>an AmazingHand dexterous hand | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#sim-to-real-transfer) |
+- It requires a DOFBOT-SE single-arm robot and an AmazingHand dexterous hand. The outputs are listed below:
+  
+  - Sim-to-real transfer on a DOFBOT-SE single-arm robot:
+    <video src="./videos/dofbot-se.mp4"></video>
+  - Sim-to-real transfer on an AmazingHand dexterous hand:
+    <video src="./videos/amazinghand.mp4"></video>
 
-#### 2.2.8 Discussion 2: ICL (In-Context Learning)
+
+
+#### 2.2.8 Discussion 2: ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 - **Option 1:** Commands for minimum working examples:
   ```bash
   cd discussion
@@ -573,10 +607,10 @@ And you can run the following commands to reproduce each figure/table in our eva
 
   | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
-  | Minimum working example | 10 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
-  | Full run | 7 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
+  | Minimum working example | 10 minutes<br>20GB memory<br>8GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#minimal-working-example) |
+  | Full run | 7 hours<br>60GB memory<br>8GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-2-icl-in-context-learning) |
 
-#### 2.2.9 Discussion 3: Maximum Supported Model Size
+#### 2.2.9 Discussion 3: Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
 - Commands for full run:
   ```bash
   cd discussion
@@ -585,9 +619,9 @@ And you can run the following commands to reproduce each figure/table in our eva
 - The resource requirements and outputs are listed below:
   | Resource Requirements | Experiment Results |
   | --- | --- |
-  | 1 hours<br>32GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#icl) |
+  | 1 hours<br>32GB memory<br>3GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-3-maximum-supported-model-size) |
 
-#### 2.2.10 Discussion 4: Applicability to multi-agent scenarios**
+#### 2.2.10 Discussion 4: Applicability to multi-agent scenarios**<img src="./heading-divider.svg" alt="" width="100%" height="1">
 - **Option 1:** Commands for minimum working examples:
   ```bash
   cd discussion
@@ -603,8 +637,8 @@ And you can run the following commands to reproduce each figure/table in our eva
 
   | | Resource Requirements | Example Running Outputs |
   | --- | --- | --- |
-  | Minimum working example | 20 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-multi-agent-scenarios) |
-  | Full run | 7 hours<br>60GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#applicability-to-multi-agent-scenarios) |
+  | Minimum working example | 20 minutes<br>20GB memory<br>1GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#minimal-working-example-1) |
+  | Full run | 7 hours<br>60GB memory<br>1GB disk space | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-4-applicability-to-multi-agent-scenarios) |
 
 
 ## 3. Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
@@ -615,9 +649,9 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 ![](model-arch.png)
 
-### 3.1 Example 1: VLA-Adapter
+### 3.1 Example 1: VLA-Adapter<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.1.1 Supporting the model
+#### 3.1.1 Supporting the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Supporting steps**:
 
@@ -686,51 +720,51 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     | Full run | 3 hours<br>60GB memory | - |
 
 
-#### 3.1.2 Supporting different scaling strategies
+#### 3.1.2 Supporting different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.1.1, you can support VLA-Adapter with 10 other scaling strategies as listed below:
 
 - **Knowledge Distillation**
-  - **Logit Distillation**: Distill the large model's output logits to the small model. You can use this method by initializing interface `LogitDistillationScaling` in Section 3.1.1's Step 5:
+  - **Logit Distillation**: Distill the large model's output logits to the small model. To use this method, you can set the online RL function `run_training()`'s third argument to `LogitDistillationScaling()`:
     ```python
     run_training(model_impl, parse_args(), LogitDistillationScaling())
     ```
-  - **Feature Distillation**: Distill the large model's intermediate features to the small model. You can use this method by initializing interface `FeatureDistillationScaling` in Section 3.1.1's Step 5:
+  - **Feature Distillation**: Distill the large model's intermediate features to the small model. To use this method, you can set the online RL function `run_training()`'s third argument to `FeatureDistillationScaling()`:
     ```python
     run_training(model_impl, parse_args(), FeatureDistillationScaling())
     ```
-  - **Attention Distillation**: Distill the large model's attention scores to the small model. You can use this method by initializing interface `AttentionDistillationScaling` in Section 3.1.1's Step 5:
+  - **Attention Distillation**: Distill the large model's attention scores to the small model. To use this method, you can set the online RL function `run_training()`'s third argument to `AttentionDistillationScaling()`:
     ```python
     run_training(model_impl, parse_args(), AttentionDistillationScaling())
     ```
-  - **Data Distillation**: Distill the large model's generated data/samples to the small model. You can use this method by initializing interface `DataDistillationScaling` in Section 3.1.1's Step 5:
+  - **Data Distillation**: Distill the large model's generated data/samples to the small model. To use this method, you can set the online RL function `run_training()`'s third argument to `DataDistillationScaling()`:
     ```python
     run_training(model_impl, parse_args(), DataDistillationScaling())
     ```
-  - **MiniLLM**: Distill the large model's output logits using a novel reverse KL loss (proposed in the paper "(ICLR'24) MiniLLM: Knowledge Distillation of Large Language Models"). You can use this method by initializing interface `MiniLLMScaling` in Section 3.1.1's Step 5:
+  - **MiniLLM**: Distill the large model's output logits using a novel reverse KL loss (proposed in the paper "(ICLR'24) MiniLLM: Knowledge Distillation of Large Language Models"). To use this method, you can set the online RL function `run_training()`'s third argument to `MiniLLMScaling()`:
     ```python
     run_training(model_impl, parse_args(), MiniLLMScaling())
     ```
-  - **DistiLLM**: Distill the large model's output logits using a novel skew Kullback-Leibler divergence loss (proposed in the paper "(ICML'24) DistiLLM: Towards Efficient Distillation of Large Language Models"). You can use this method by initializing interface `DistiLLMScaling` in Section 3.1.1's Step 5:
+  - **DistiLLM**: Distill the large model's output logits using a novel skew Kullback-Leibler divergence loss (proposed in the paper "(ICML'24) DistiLLM: Towards Efficient Distillation of Large Language Models"). To use this method, you can set the online RL function `run_training()`'s third argument to `DistiLLMScaling()`:
     ```python
     run_training(model_impl, parse_args(), DistiLLMScaling())
     ```
 - **Dynamic Pruning**:
   - **LLM in a Flash**：Remove the most unimportant neurons in FFN layers according to the given dataset. It is proposed in the paper "(ACL'24) 
-LLM in a flash: Efficient Large Language Model Inference with Limited Memory". You can use this method by initializing interface `LLMInAFlashScaling` in Section 3.1.1's Step 5:
+LLM in a flash: Efficient Large Language Model Inference with Limited Memory". To use this method, you can set the online RL function `run_training()`'s third argument to `LLMInAFlashScaling()`:
     ```python
     run_training(model_impl, parse_args(), LLMInAFlashScaling())
     ```
   - **PowerInfer**：Remove the most unimportant neurons in Attention and FFN layers according to the given dataset. It is proposed in the paper "(SOSP'24) 
-PowerInfer: Fast Large Language Model Serving with a Consumer-grade GPU". You can use this method by initializing interface `PowerInferScaling` in Section 3.1.1's Step 5:
+PowerInfer: Fast Large Language Model Serving with a Consumer-grade GPU". To use this method, you can set the online RL function `run_training()`'s third argument to `PowerInferScaling()`:
     ```python
     run_training(model_impl, parse_args(), PowerInferScaling())
     ```
-  - **LLM-Pruner**：A task-agnostic structured pruning method in https://github.com/horseee/LLM-Pruner. You can use this method by initializing interface `LLMPrunerScaling` in Section 3.1.1's Step 5:
+  - **LLM-Pruner**：A task-agnostic structured pruning method in https://github.com/horseee/LLM-Pruner. To use this method, you can set the online RL function `run_training()`'s third argument to `LLMPrunerScaling()`:
     ```python
     run_training(model_impl, parse_args(), LLMPrunerScaling())
     ```
-  - **EdgeTA**：Remove the most unimportant neurons in Attention and FFN layers according to the given dataset, and conduct large-small collaborative training. It is proposed in the paper "(TMC'24) EdgeTA: Neuron-Grained Scaling of Foundation Models in Edge-Side Retraining". You can use this method by initializing interface `EdgeTAScaling` in Section 3.1.1's Step 5:
+  - **EdgeTA**：Remove the most unimportant neurons in Attention and FFN layers according to the given dataset, and conduct large-small collaborative training. It is proposed in the paper "(TMC'24) EdgeTA: Neuron-Grained Scaling of Foundation Models in Edge-Side Retraining". To use this method, you can set the online RL function `run_training()`'s third argument to `EdgeTAScaling()`:
     ```python
     run_training(model_impl, parse_args(), EdgeTAScaling())
     ```
@@ -758,23 +792,23 @@ You can verify these methods as below:
     | Full run | 40 hours<br>60GB memory | - |
 
 
-#### 3.1.3 Supporting different knowledge exchange granularities
+#### 3.1.3 Supporting different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.1.1, you can support VLA-Adapter at different knowledge exchange strategies as listed below:
 
-- **block**: You can perform block-grained knowledge exchange by initializing interface `BlockKnowledgeExchange` in Section 3.1.1's Step 5:
+- **block**: To perform block-grained knowledge exchange, you can set the online RL function `run_training()`'s third argument to `BlockKnowledgeExchange()`:
     ```python
     run_training(model_impl, parse_args(), BlockKnowledgeExchange())
     ```
-- **layer**: You can perform layer-grained knowledge exchange by initializing interface `LayerKnowledgeExchange` in Section 3.1.1's Step 5:
+- **layer**: To perform layer-grained knowledge exchange, you can set the online RL function `run_training()`'s third argument to `LayerKnowledgeExchange()`:
     ```python
     run_training(model_impl, parse_args(), LayerKnowledgeExchange())
     ```
-- **attention head**: You can perform attention-head-grained knowledge exchange by initializing interface `AttentionHeadKnowledgeExchange` in Section 3.1.1's Step 5:
+- **attention head**: To perform attention-head-grained knowledge exchange, you can set the online RL function `run_training()`'s third argument to `AttentionHeadKnowledgeExchange()`:
     ```python
     run_training(model_impl, parse_args(), AttentionHeadKnowledgeExchange())
     ```
-- **channel/neuron**: The channel is equivalent to the neuron because each neuron corresponds to one channel in VLA models. You can perform channel/neuron-grained knowledge exchange by initializing interface `NeuronKnowledgeExchange` in Section 3.1.1's Step 5:
+- **channel/neuron**: The channel is equivalent to the neuron because each neuron corresponds to one channel in VLA models. To perform channel/neuron-grained knowledge exchange, you can set the online RL function `run_training()`'s third argument to `NeuronKnowledgeExchange()`:
     ```python
     run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
     ```
@@ -797,9 +831,9 @@ You can verify these granularities as below:
     | Full run | 15 hours<br>60GB memory | - |
 
 
-### 3.2 Example 2: TinyVLA
+### 3.2 Example 2: TinyVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.2.1 Supporting the model
+#### 3.2.1 Supporting the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Supporting steps**:
 
@@ -867,11 +901,11 @@ You can verify these granularities as below:
     | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla) |
     | Full run | 3 hours<br>60GB memory | - |
 
-#### 3.2.2 Supporting different scaling strategies
+#### 3.2.2 Supporting different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.2.1, you can support TinyVLA with 10 other scaling strategies. 
 
-The process is similar to the one in Section 3.1.2, which initializing the specific scaling method interface in the function `run_training()`.
+The process is similar to the one in Section 3.1.2, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `LogitDistillationScaling()`).
 
 ```python
 # 1. support knowledge distillation: logit distillation
@@ -928,11 +962,11 @@ You can verify these methods as below:
     | Full run | 40 hours<br>60GB memory | - |
 
 
-#### 3.2.3 Supporting different knowledge exchange granularities
+#### 3.2.3 Supporting different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.2.1, you can support TinyVLA with other knowledge exchange granularities. 
 
-The process is similar to the one in Section 3.1.3, which initializing the specific granularity interface in the function `run_training()`.
+The process is similar to the one in Section 3.1.3, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `BlockKnowledgeExchange()`).
 
 ```python
 # 1. support block granularity
@@ -968,9 +1002,9 @@ You can verify these granularities as below:
 
 
 
-### 3.3 Example 3: EdgeVLA
+### 3.3 Example 3: EdgeVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-#### 3.3.1 Supporting the model
+#### 3.3.1 Supporting the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Supporting steps**:
 
@@ -1038,11 +1072,11 @@ You can verify these granularities as below:
     | Minimum working example | 3 minutes<br>20GB memory | [Link](https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla) |
     | Full run | 3 hours<br>60GB memory | - |
 
-#### 3.3.2 Supporting different scaling strategies
+#### 3.3.2 Supporting different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.3.1, you can support EdgeVLA with 10 other scaling strategies. 
 
-The process is similar to the one in Section 3.1.2, which initializing the specific scaling method interface in the function `run_training()`.
+The process is similar to the one in Section 3.1.2, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `LogitDistillationScaling()`).
 
 ```python
 # 1. support knowledge distillation: logit distillation
@@ -1099,11 +1133,11 @@ You can verify these methods as below:
     | Full run | 40 hours<br>60GB memory | - |
 
 
-#### 3.3.3 Supporting different knowledge exchange granularities
+#### 3.3.3 Supporting different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 Based on the example in Section 3.3.1, you can support EdgeVLA with other knowledge exchange granularities. 
 
-The process is similar to the one in Section 3.1.3, which initializing the specific granularity interface in the function `run_training()`.
+The process is similar to the one in Section 3.1.3, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `BlockKnowledgeExchange()`).
 
 ```python
 # 1. support block granularity

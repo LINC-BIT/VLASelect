@@ -227,6 +227,10 @@ eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_agent.pt
 eval/ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/latest_opt.pt
 eval/ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt
+eval/ckpt/PickCube-v1/ours/octo/pretrain_feature_aggregator/20260409-153956-feature_aggregator_lr3e-5_dual_stream_action_gate_reg_0_h4_2layergate_none/[agent1]/checkpoints copy/best_success_end.pt
+eval/ckpt/PickCube-v1/ours/octo/pretrain_feature_aggregator/20260409-153956-feature_aggregator_lr3e-5_dual_stream_action_gate_reg_0_h4_2layergate_none/[agent1]/checkpoints copy/best_success_end.pt.feature_aggregators
+eval/ckpt/PickCube-v1/ours/octo/pretrain_feature_aggregator/20260409-153956-feature_aggregator_lr3e-5_dual_stream_action_gate_reg_0_h4_2layergate_none/[agent2]/checkpoints copy/best_success_end.pt
+eval/ckpt/PickCube-v1/ours/octo/pretrain_feature_aggregator/20260409-153956-feature_aggregator_lr3e-5_dual_stream_action_gate_reg_0_h4_2layergate_none/[agent2]/checkpoints copy/best_success_end.pt.feature_aggregators
 eval/ckpt/PickCube-v1/baselines/world_env/world_model/20260425-032853-run032_e2/checkpoints/best_with_reference.pt
 eval/ckpt/PickCube-v1/baselines/vla_rft/world_model/20260424-160154-run32x2/checkpoints/best.pt
 eval/ckpt/vla_adapter_new/world_env/outputs/world_model/20260503-075340/checkpoints/best_with_reference.pt

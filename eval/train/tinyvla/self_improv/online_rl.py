@@ -19,6 +19,7 @@ from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
+from train.common.memory_accounting import MemoryPhaseTracker
 from collections import defaultdict, deque
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
@@ -340,6 +341,22 @@ def _expected_materialized_fbs_metadata(checkpoint_path: str | Path) -> Dict[str
 
 
 
+def _deserialize_materialized_fbs_policy(
+    payload: bytes | bytearray,
+    checkpoint_path: str | Path,
+) -> Optional[nn.Module]:
+    try:
+        policy = torch.load(io.BytesIO(payload), map_location="cpu", pickle_module=dill)
+    except Exception as exc:
+        print(f"[setup] ignoring unreadable materialized FBS policy cache in {checkpoint_path} ({exc})")
+        return None
+    if not isinstance(policy, nn.Module):
+        print(f"[setup] ignoring invalid materialized FBS policy cache in {checkpoint_path}")
+        return None
+    return policy
+
+
+
 def maybe_load_materialized_fbs_policy_from_checkpoint(
     checkpoint_path: str,
     device: torch.device,
@@ -355,9 +372,8 @@ def maybe_load_materialized_fbs_policy_from_checkpoint(
     payload = checkpoint.get(MATERIALIZED_FBS_POLICY_BYTES_KEY)
     if metadata != expected_metadata or not isinstance(payload, (bytes, bytearray)):
         return None
-    policy = torch.load(io.BytesIO(payload), map_location="cpu", pickle_module=dill)
-    if not isinstance(policy, nn.Module):
-        print(f"[setup] ignoring invalid materialized FBS policy cache in {path}")
+    policy = _deserialize_materialized_fbs_policy(payload, path)
+    if policy is None:
         return None
     policy = policy.to(device)
     policy.device = device
@@ -388,7 +404,9 @@ def maybe_persist_materialized_fbs_policy_to_checkpoint(
     expected_metadata = _expected_materialized_fbs_metadata(path)
     existing_payload = payload.get(MATERIALIZED_FBS_POLICY_BYTES_KEY)
     if payload.get(MATERIALIZED_FBS_METADATA_KEY) == expected_metadata and isinstance(existing_payload, (bytes, bytearray)):
-        return
+        if _deserialize_materialized_fbs_policy(existing_payload, path) is not None:
+            return
+        print(f"[setup] overwriting unreadable materialized FBS policy cache in {path}")
     policy_cpu = copy.deepcopy(policy).to(device=torch.device("cpu"))
     policy_cpu.device = torch.device("cpu")
     buffer = io.BytesIO()
@@ -398,7 +416,11 @@ def maybe_persist_materialized_fbs_policy_to_checkpoint(
         pickle_module=dill,
         pickle_protocol=MATERIALIZED_FBS_PICKLE_PROTOCOL,
     )
-    payload[MATERIALIZED_FBS_POLICY_BYTES_KEY] = buffer.getvalue()
+    serialized_policy = buffer.getvalue()
+    if _deserialize_materialized_fbs_policy(serialized_policy, path) is None:
+        print(f"[setup] skipping materialized FBS cache persist because serialized policy is unreadable: {path}")
+        return
+    payload[MATERIALIZED_FBS_POLICY_BYTES_KEY] = serialized_policy
     payload[MATERIALIZED_FBS_METADATA_KEY] = expected_metadata
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     try:
@@ -694,6 +716,8 @@ def train(args: Args) -> None:
     run_name = args.run_name or time.strftime("%Y%m%d-%H%M%S")
     output_dir = mkdir(Path(args.output_dir) / run_name)
     copy_run_metadata(output_dir, args)
+    memory_phase_tracker = MemoryPhaseTracker(output_dir)
+    memory_phase_tracker.mark("setup", force=True)
     print(f"[setup] output_dir={output_dir}")
     print(f"[setup] device={device}")
     print(f"[setup] initial_env_id={current_env_id}")
@@ -716,6 +740,7 @@ def train(args: Args) -> None:
     if args.run_setup_smoke:
         reference.run_vla_inference_smoke(runtime_args, device, output_dir, policy=raw_policy)
 
+    memory_phase_tracker.mark("workload_initialization")
     envs, eval_envs, test_video_envs = build_runtime_envs(
         runtime_args,
         device,
@@ -774,6 +799,7 @@ def train(args: Args) -> None:
         eval_envs = None
         test_video_envs = None
         clear_torch_cuda_cache()
+        memory_phase_tracker.mark("workload_initialization")
         envs, eval_envs, test_video_envs = build_runtime_envs(
             runtime_args,
             device,
@@ -826,6 +852,7 @@ def train(args: Args) -> None:
         next_obs, _ = envs.reset(seed=args.seed + current_env_index)
         next_done = torch.zeros(args.num_envs, device=device)
     else:
+        memory_phase_tracker.mark("evaluation")
         initial_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     initial_metric = {
         "update": 0,
@@ -908,6 +935,7 @@ def train(args: Args) -> None:
         rollout_states: List[np.ndarray] = []
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
+        memory_phase_tracker.mark("online_rl_rollout")
         rollout_start_time = time.perf_counter()
         abort_during_rollout = False
         abort_reason: Optional[str] = None
@@ -1117,6 +1145,7 @@ def train(args: Args) -> None:
         stopped_on_minibatch_kl = False
         skipped_updates_on_kl = 0
 
+        memory_phase_tracker.mark("online_rl_training")
         update_start_time = time.perf_counter()
         raw_policy.eval()
         print(
@@ -1223,6 +1252,7 @@ def train(args: Args) -> None:
                 f"episodes={args.eval_episodes}"
             )
             eval_start_time = time.perf_counter()
+            memory_phase_tracker.mark("evaluation")
             eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
             metric.update({f"eval_{key}": value for key, value in eval_metrics.items()})
             if test_video_envs is not None:
@@ -1307,6 +1337,7 @@ def train(args: Args) -> None:
             )
             break
 
+    memory_phase_tracker.mark("evaluation")
     final_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     save_json(output_dir / "final_eval_metrics.json", final_eval_metrics)
     save_metrics_history(output_dir, metrics_history)

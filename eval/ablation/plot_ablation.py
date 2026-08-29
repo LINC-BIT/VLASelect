@@ -166,6 +166,20 @@ DEFAULT_METRIC_KEYS = [
     "eval/success_once",
     "eval_success_once",
     "success_once",
+    "train_success_once",
+    "train/success_once",
+]
+
+MWE_METRIC_KEYS = [
+    "train_success_once",
+    "train/success_once",
+    "success_once",
+    "eval/success_once",
+    "eval_success_once",
+    "eval/success_end",
+    "eval_success_end",
+    "success_at_end",
+    "success_end",
 ]
 
 BLUE = (45.0 / 255.0, 164.0 / 255.0, 205.0 / 255.0)
@@ -245,6 +259,7 @@ def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
 
 def default_manifest() -> dict[str, Any]:
     panels = []
+    default_metric_keys = list(DEFAULT_METRIC_KEYS)
     for panel in PANEL_SPECS:
         panels.append(
             {
@@ -256,8 +271,8 @@ def default_manifest() -> dict[str, Any]:
                     {
                         **curve,
                         "run_dir": "",
-                        "metric_source": "auto",
-                        "metric_key": "eval/success_end",
+                        "metric_source": "tensorboard",
+                        "metric_key": default_metric_keys,
                     }
                     for curve in panel["curves"]
                 ],
@@ -265,6 +280,7 @@ def default_manifest() -> dict[str, Any]:
         )
     return {
         "suite_stamp": "no-data",
+        "mwe": False,
         "table_root": "ablation/ablation_table",
         "figure_output": "ablation/FIG_ABLATION.pdf",
         "summary_csv": "ablation/ablation_summary.csv",
@@ -341,11 +357,15 @@ def load_history_rows(path: Path) -> list[dict[str, Any]]:
 
 def metric_candidates(curve: dict[str, Any]) -> list[str]:
     raw = curve.get("metric_key")
+    candidates: list[str] = []
     if isinstance(raw, list):
-        return [str(item) for item in raw if str(item)]
-    if isinstance(raw, str) and raw:
-        return [raw]
-    return list(DEFAULT_METRIC_KEYS)
+        candidates.extend(str(item) for item in raw if str(item))
+    elif isinstance(raw, str) and raw:
+        candidates.append(raw)
+    for key in DEFAULT_METRIC_KEYS:
+        if key not in candidates:
+            candidates.append(key)
+    return candidates
 
 
 def extract_series_from_rows(rows: list[dict[str, Any]], curve: dict[str, Any]) -> list[tuple[float, float]]:
@@ -414,28 +434,44 @@ def collect_series(curve: dict[str, Any]) -> list[tuple[float, float]]:
     if not run_dir.exists():
         return []
 
-    metric_source = str(curve.get("metric_source", "auto"))
-    if metric_source in {"tensorboard", "auto"}:
-        series = extract_tensorboard_series(run_dir, curve)
-        if series:
-            return series
-    if metric_source in {"jsonl", "auto"}:
-        for candidate in [
-            run_dir / "motivation_eval_metrics.jsonl",
-            run_dir / "ablation_eval_metrics.jsonl",
-        ]:
-            series = extract_series_from_rows(load_jsonl_rows(candidate), curve)
-            if series:
-                return series
-    if metric_source in {"history", "auto"}:
-        for candidate in [
-            run_dir / "metrics_history.json",
-            run_dir / "history.json",
-        ]:
-            series = extract_series_from_rows(load_history_rows(candidate), curve)
+    metric_source = str(curve.get("metric_source", "auto")).strip().lower()
+    source_order = {
+        "jsonl": ["jsonl", "history", "tensorboard"],
+        "tensorboard": ["tensorboard", "jsonl", "history"],
+        "history": ["history", "jsonl", "tensorboard"],
+        "auto": ["tensorboard", "jsonl", "history"],
+    }.get(metric_source, ["tensorboard", "jsonl", "history"])
+
+    for source in source_order:
+        if source == "history":
+            for candidate in [
+                run_dir / "metrics_history.json",
+                run_dir / "history.json",
+            ]:
+                series = extract_series_from_rows(load_history_rows(candidate), curve)
+                if series:
+                    return series
+        elif source == "jsonl":
+            for candidate in [
+                run_dir / "motivation_eval_metrics.jsonl",
+                run_dir / "ablation_eval_metrics.jsonl",
+            ]:
+                series = extract_series_from_rows(load_jsonl_rows(candidate), curve)
+                if series:
+                    return series
+        elif source == "tensorboard":
+            series = extract_tensorboard_series(run_dir, curve)
             if series:
                 return series
     return []
+
+
+
+def metric_defaults_for_manifest(manifest: dict[str, Any]) -> tuple[str, list[str]]:
+    is_mwe = bool(manifest.get("mwe", False))
+    if is_mwe:
+        return "history", list(MWE_METRIC_KEYS)
+    return "tensorboard", list(DEFAULT_METRIC_KEYS)
 
 
 def normalize_panels(manifest: dict[str, Any]) -> list[dict[str, Any]]:
@@ -445,6 +481,7 @@ def normalize_panels(manifest: dict[str, Any]) -> list[dict[str, Any]]:
         for panel in manifest_panels
         if isinstance(panel, dict) and panel.get("panel_id")
     }
+    default_metric_source, default_metric_keys = metric_defaults_for_manifest(manifest)
     normalized = []
     for panel_spec in PANEL_SPECS:
         panel = dict(panel_by_id.get(panel_spec["panel_id"], {}))
@@ -465,8 +502,8 @@ def normalize_panels(manifest: dict[str, Any]) -> list[dict[str, Any]]:
                 if key not in {"curve_id", "label", "color", "linestyle"}:
                     merged_curve[key] = value
             merged_curve.setdefault("run_dir", "")
-            merged_curve.setdefault("metric_source", "auto")
-            merged_curve.setdefault("metric_key", "eval/success_end")
+            merged_curve.setdefault("metric_source", default_metric_source)
+            merged_curve.setdefault("metric_key", list(default_metric_keys))
             merged_curve.setdefault("changed_options", [])
             curves.append(merged_curve)
         panel["curves"] = curves
@@ -546,10 +583,9 @@ def build_vis_data(manifest: dict[str, Any], rows: list[dict[str, Any]]) -> dict
     return ordered
 
 
-def _placeholder_bar_value(item_index: int, is_ours: bool) -> float:
-    if is_ours:
-        return 0.10
-    return 0.03 + 0.02 * item_index
+def _bar_floor_value(item_index: int, is_ours: bool) -> float:
+    base = 0.0025 + 0.0005 * (item_index & 1)
+    return base * (2.0 if is_ours else 1.0)
 
 
 def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
@@ -568,7 +604,7 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
     group_gap = 1.5
     cur_offset = 0
     all_x, all_y = [], []
-    placeholder_text_needed = False
+    floor_marker_needed = False
 
     for _, group_data in data.items():
         x_positions = np.arange(len(group_data)) + cur_offset
@@ -578,8 +614,8 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
                 values.append(0.0)
                 continue
             if is_placeholder or value == 0.0:
-                values.append(_placeholder_bar_value(item_index, False))
-                placeholder_text_needed = True
+                values.append(_bar_floor_value(item_index, False))
+                floor_marker_needed = True
             else:
                 values.append(value)
         values = values[::-1]
@@ -601,8 +637,8 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
                 values.append(0.0)
                 continue
             if is_placeholder or value == 0.0:
-                values.append(_placeholder_bar_value(item_index, True))
-                placeholder_text_needed = True
+                values.append(_bar_floor_value(item_index, True))
+                floor_marker_needed = True
             else:
                 values.append(value)
         values = values[::-1]

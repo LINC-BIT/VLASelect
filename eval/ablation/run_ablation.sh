@@ -38,7 +38,8 @@ if [[ "$MWE" == "1" ]]; then
     RUN_EXPERIMENTS=1
     SMOKE=1
     ABLATION_SELECTION="${ABLATION_SELECTION:-}"
-    export MWE_MAX_RUNTIME_MINUTES="${MWE_MAX_RUNTIME_MINUTES:-2}"
+    export MWE_ACTIVE_RUNTIME_ONLY=1
+    export MWE_MAX_RUNTIME_MINUTES="${ABLATION_MWE_MAX_RUNTIME_MINUTES:-2}"
 fi
 vlaselect_resource_summary_start "run_ablation.sh"
 vlaselect_install_cleanup_trap
@@ -339,6 +340,14 @@ manifest_path = Path(sys.argv[1])
 suite_stamp = sys.argv[2]
 checkpoint_path = sys.argv[3]
 is_mwe = sys.argv[4] == "1"
+shared_run_dir = f"ckpt/ablation/{suite_stamp}/shared_vlaselect/default/[agent]"
+# The following group options reuse this single canonical VLASelect run:
+# scaling_law_function/with_scaling_law,
+# neuron_grained_scaling_up/neuron_grained,
+# scaling_down_freezing_vs_pruning/freezing,
+# neuron_swapping/with_swapping,
+# knowledge_accumulation/selective_accumulation.
+# All remaining ablation choices keep their own per-choice run directories.
 
 def metric_source():
     return "history" if is_mwe else "tensorboard"
@@ -368,10 +377,10 @@ panels = [
                 "label": "With scaling law",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_law_function/with_scaling_law/[agent]",
+                "run_dir": shared_run_dir,
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Default VLASelect continual setting.",
+                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
                 "changed_options": [],
             },
             {
@@ -420,10 +429,10 @@ panels = [
                 "label": "Most accuracy-related",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_grained_scaling_up/neuron_grained/[agent]",
+                "run_dir": shared_run_dir,
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Default score-based neuron selection.",
+                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
                 "changed_options": [],
             },
         ],
@@ -450,10 +459,10 @@ panels = [
                 "label": "Freezing",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/freezing/[agent]",
+                "run_dir": shared_run_dir,
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Train a gate-masked small model by freezing inactive neurons instead of structurally pruning them.",
+                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
                 "changed_options": [],
             },
         ],
@@ -480,10 +489,10 @@ panels = [
                 "label": "With swapping",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/with_swapping/[agent]",
+                "run_dir": shared_run_dir,
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Repeated regeneration with neuron-index-guided partial channel replacement.",
+                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
                 "changed_options": [],
             },
         ],
@@ -521,10 +530,10 @@ panels = [
                 "label": "Selective accumulation",
                 "color": "#C44E52",
                 "linestyle": "-",
-                "run_dir": f"ckpt/ablation/{suite_stamp}/knowledge_accumulation/selective_accumulation/[agent]",
+                "run_dir": shared_run_dir,
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Feedback only after significant success improvement.",
+                "notes": "Shared canonical VLASelect run reused by the VLASelect-backed option in this group.",
                 "changed_options": [],
             },
         ],
@@ -541,6 +550,8 @@ payload = {
     "notes": [
         "The underlying small-model generation, channel inheritance, optimizer remapping, and feedback logic come from eval/ours.",
         "Each ablation curve records the intended changed_options so the comparison is easier to audit.",
+        "The following group options share one VLASelect run under ckpt/ablation/<suite>/shared_vlaselect/default/[agent]: scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, scaling_down_freezing_vs_pruning/freezing, neuron_swapping/with_swapping, knowledge_accumulation/selective_accumulation.",
+        "All remaining ablation choices still read their own per-choice run directories and are executed separately.",
         "If a run directory has no metrics yet, plot_ablation.py will emit 0 rows in ablation_summary.csv and keep a placeholder bar in the vis-style figure.",
     ],
     "panels": panels,
@@ -549,6 +560,12 @@ payload = {
 manifest_path.parent.mkdir(parents=True, exist_ok=True)
 manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 PY
+}
+
+launch_shared_vlaselect_reference() {
+    local gpu="$1"
+    log "launching shared canonical VLASelect run for scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, scaling_down_freezing_vs_pruning/freezing, neuron_swapping/with_swapping, and knowledge_accumulation/selective_accumulation on gpu=${gpu}"
+    launch_curve "shared_vlaselect" "default" "$gpu"
 }
 
 launch_curve() {
@@ -584,7 +601,7 @@ launch_curve() {
     fi
 
     local -a cmd=(
-        "$PYTHON_BIN" -u -m train.octo.ours_single_agent.online_rl_cl
+        env MWE_ACTIVE_RUNTIME_ONLY="${MWE_ACTIVE_RUNTIME_ONLY:-0}" MWE_MAX_RUNTIME_MINUTES="${MWE_MAX_RUNTIME_MINUTES:-5}" "$PYTHON_BIN" -u -m train.octo.ours_single_agent.online_rl_cl
         --exp-name "$exp_name"
         --env-id "$BASE_ENV_ID"
         --envs-id "$BASE_ENVS_ID"
@@ -607,6 +624,9 @@ launch_curve() {
     )
 
     case "${panel_id}:${curve_id}" in
+        shared_vlaselect:default)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            ;;
         scaling_law_function:with_scaling_law)
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
@@ -623,7 +643,7 @@ launch_curve() {
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:pruning)
-            cmd+=(--max-sparsity 0.8 --small_model_training_variant pruned --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.99 --small_model_training_variant pruned --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:freezing)
             cmd+=(--max-sparsity 0.8 --small_model_training_variant frozen --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
@@ -705,6 +725,13 @@ launch_selected_curves() {
     local panel_id
     local curve_key
     local gpu
+    local shared_reference_gpu="${curve_gpu_map[scaling_law_function:with_scaling_law]:-0}"
+
+    if ! launch_shared_vlaselect_reference "$shared_reference_gpu"; then
+        failure=1
+    fi
+
+    log "launching the remaining ablation choices with their own per-choice run directories"
 
     while IFS= read -r panel_id; do
         [[ -z "$panel_id" ]] && continue

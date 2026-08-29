@@ -71,3 +71,7 @@ eval/**/panels.jsonl
 eval/**/motivation_eval_metrics.jsonl
 eval/**/ablation_eval_metrics.jsonl
 eval/**/run-metrics.jsonl
+
+tmp_mask_*.pth 
+wandb/
+eval/forgetting/results

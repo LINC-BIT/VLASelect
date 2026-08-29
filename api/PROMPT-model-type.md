@@ -1,3 +1,3 @@
 我想要验证我们的方法能够支持CNN或MLP的训练。
 
-新建文件夹api/model_type，在其中新加cnn.sh，用于验证我们的方法能够支持CNN的训练。该脚本可以完全复制eval/train/octo/ours_single_agent/online_rl_ours_single_agent_cl.sh及其相关文件。你可以把所有相关的文件（不包括模型权重）都拷贝到api/model_type中，保证api/model_type中的代码是可以独立运行的，不需要依赖于其它文件夹，与其它文件夹隔离。
+新建文件夹api/model_type，在其中新加cnn.sh，用于验证我们的方法能够支持CNN的训练。该脚本可以完全复制eval/train/octo/ours_single_agent/online_rl_ours_single_agent_cl.sh及其相关文件，因为这个脚本和workload就是在CNN上跑的。你可以把所有相关的文件（不包括模型权重）都拷贝到api/model_type中，保证api/model_type中的代码是可以独立运行的，不需要依赖于其它文件夹，与其它文件夹隔离。

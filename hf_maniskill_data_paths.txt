@@ -1,4 +1,3 @@
-partnet_mobility/meta/info_cabinet_drawer_train.json
 partnet_mobility/1000
 partnet_mobility/1004
 partnet_mobility/1005

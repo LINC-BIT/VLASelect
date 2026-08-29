@@ -2155,11 +2155,13 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         if iteration % args.eval_freq == 1 or iteration == start_iter_idx or args.eval_freq == 1:
             avg_success_once = None
             avg_success_end = None
+            metric_snapshot_source = "eval"
             skip_metric_snapshot = use_train_success_only() and not last_train_metrics
 
             if skip_metric_snapshot:
                 print(f"Client {agent_name} train-success-only snapshot skipped because no completed training episodes were observed yet")
             elif use_train_success_only():
+                metric_snapshot_source = "train"
                 if "success_once" in last_train_metrics:
                     avg_success_once = float(last_train_metrics["success_once"])
                 if "success_at_end" in last_train_metrics:
@@ -2209,7 +2211,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                     logger.add_scalar(f"eval/success_end", avg_success_end, global_step)
             if not skip_metric_snapshot:
                 if avg_success_once is not None:
-                    print(f"Client {agent_name} eval success_once={avg_success_once:.4f}")
+                    print(f"Client {agent_name} {metric_snapshot_source} success_once={avg_success_once:.4f}")
                 if avg_success_end is not None:
                     current_success_end = float(avg_success_end)
                     if success_end_at_last_small_model_feedback is None:

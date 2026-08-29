@@ -32,6 +32,8 @@ CONTAINER_MS_ASSET_DIR=${CONTAINER_MS_ASSET_DIR:-}
 CONTAINER_MANISKILL_DATA_DIR=${CONTAINER_MANISKILL_DATA_DIR:-}
 CONTAINER_PARTNET_DATA_DIR=${CONTAINER_PARTNET_DATA_DIR:-}
 HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-120}
+HF_HUB_MAX_WORKERS=${HF_HUB_MAX_WORKERS:-8}
+HF_HUB_HTTP_MAX_RETRIES=${HF_HUB_HTTP_MAX_RETRIES:-6}
 DEEPSPEED_VERSION=0.15.0
 
 log() {
@@ -360,7 +362,7 @@ download_hf_checkpoints() {
     fi
 
     require_hf_downloader
-    export HF_HUB_DOWNLOAD_TIMEOUT
+    export HF_HUB_DOWNLOAD_TIMEOUT HF_HUB_MAX_WORKERS HF_HUB_HTTP_MAX_RETRIES
 
     log "downloading checkpoints from Hugging Face repo: $HF_CKPT_REPO"
     if [[ -n "$HF_CKPT_LIST" ]]; then
@@ -391,28 +393,51 @@ download_hf_checkpoints() {
     HF_CKPT_REVISION="$HF_CKPT_REVISION" \
     HF_CKPT_LOCAL_DIR="$HOST_REPO_DIR" \
     HF_CKPT_PATTERNS_JSON="$patterns_json" \
+    HF_HUB_MAX_WORKERS="$HF_HUB_MAX_WORKERS" \
+    HF_HUB_HTTP_MAX_RETRIES="$HF_HUB_HTTP_MAX_RETRIES" \
     HF_TOKEN="${HF_TOKEN:-}" \
     python3 - <<'PY'
 import json
 import os
+import time
 from pathlib import Path
+
 from huggingface_hub import snapshot_download
+from requests.exceptions import HTTPError
 
 repo_id = os.environ['HF_CKPT_REPO']
 repo_type = os.environ['HF_CKPT_REPO_TYPE']
 revision = os.environ['HF_CKPT_REVISION']
 local_dir = Path(os.environ['HF_CKPT_LOCAL_DIR'])
 patterns = json.loads(os.environ['HF_CKPT_PATTERNS_JSON'])
+max_workers = max(1, int(os.environ.get('HF_HUB_MAX_WORKERS', '8')))
+max_retries = max(1, int(os.environ.get('HF_HUB_HTTP_MAX_RETRIES', '6')))
 token = os.environ.get('HF_TOKEN') or None
 
-snapshot_download(
-    repo_id=repo_id,
-    repo_type=repo_type,
-    revision=revision,
-    local_dir=local_dir,
-    allow_patterns=patterns,
-    token=token,
-)
+workers = max_workers
+for attempt in range(1, max_retries + 1):
+    try:
+        snapshot_download(
+            repo_id=repo_id,
+            repo_type=repo_type,
+            revision=revision,
+            local_dir=local_dir,
+            allow_patterns=patterns,
+            token=token,
+            max_workers=workers,
+        )
+        break
+    except HTTPError as exc:
+        status_code = getattr(getattr(exc, 'response', None), 'status_code', None)
+        if status_code != 429 or attempt >= max_retries:
+            raise
+        wait_seconds = min(60, 5 * (2 ** (attempt - 1)))
+        print(
+            f'[dep.sh] Hugging Face returned 429 for checkpoints; retrying in {wait_seconds}s with max_workers={workers}',
+            flush=True,
+        )
+        time.sleep(wait_seconds)
+        workers = max(1, workers // 2)
 PY
 }
 
@@ -459,12 +484,15 @@ download_hf_maniskill_data() {
             log "ManiSkill data list: built into dep.sh"
         fi
 
-        docker exec             -e HF_MANISKILL_DATA_REPO="$HF_MANISKILL_DATA_REPO"             -e HF_MANISKILL_DATA_REPO_TYPE="$HF_MANISKILL_DATA_REPO_TYPE"             -e HF_MANISKILL_DATA_REVISION="$HF_MANISKILL_DATA_REVISION"             -e HF_MANISKILL_DATA_LOCAL_DIR="$CONTAINER_MANISKILL_DATA_DIR"             -e HF_MANISKILL_PARTNET_LOCAL_DIR="$CONTAINER_PARTNET_DATA_DIR"             -e HF_MANISKILL_DATA_PATTERNS_JSON="$patterns_json"             -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT"             -e HF_TOKEN             -e HTTP_PROXY             -e HTTPS_PROXY             -e ALL_PROXY             -e NO_PROXY             "$CONTAINER_NAME"             bash -lc "python - <<'PY_HF_DATA'
+        docker exec             -e HF_MANISKILL_DATA_REPO="$HF_MANISKILL_DATA_REPO"             -e HF_MANISKILL_DATA_REPO_TYPE="$HF_MANISKILL_DATA_REPO_TYPE"             -e HF_MANISKILL_DATA_REVISION="$HF_MANISKILL_DATA_REVISION"             -e HF_MANISKILL_DATA_LOCAL_DIR="$CONTAINER_MANISKILL_DATA_DIR"             -e HF_MANISKILL_PARTNET_LOCAL_DIR="$CONTAINER_PARTNET_DATA_DIR"             -e HF_MANISKILL_DATA_PATTERNS_JSON="$patterns_json"             -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT"             -e HF_HUB_MAX_WORKERS="$HF_HUB_MAX_WORKERS"             -e HF_HUB_HTTP_MAX_RETRIES="$HF_HUB_HTTP_MAX_RETRIES"             -e HF_TOKEN             -e HTTP_PROXY             -e HTTPS_PROXY             -e ALL_PROXY             -e NO_PROXY             "$CONTAINER_NAME"             bash -lc "python - <<'PY_HF_DATA'
 import json
 import os
+import time
 from pathlib import Path
 import zipfile
+
 from huggingface_hub import snapshot_download
+from requests.exceptions import HTTPError
 
 repo_id = os.environ['HF_MANISKILL_DATA_REPO']
 repo_type = os.environ['HF_MANISKILL_DATA_REPO_TYPE']
@@ -472,20 +500,38 @@ revision = os.environ['HF_MANISKILL_DATA_REVISION']
 regular_local_dir = Path(os.environ['HF_MANISKILL_DATA_LOCAL_DIR'])
 partnet_local_dir = Path(os.environ['HF_MANISKILL_PARTNET_LOCAL_DIR'])
 patterns = json.loads(os.environ['HF_MANISKILL_DATA_PATTERNS_JSON'])
+max_workers = max(1, int(os.environ.get('HF_HUB_MAX_WORKERS', '8')))
+max_retries = max(1, int(os.environ.get('HF_HUB_HTTP_MAX_RETRIES', '6')))
 token = os.environ.get('HF_TOKEN') or None
 
 
-def snapshot_with_patterns(allow_patterns, local_dir):
+def snapshot_with_patterns(allow_patterns, local_dir, label):
     if not allow_patterns:
         return
-    snapshot_download(
-        repo_id=repo_id,
-        repo_type=repo_type,
-        revision=revision,
-        local_dir=local_dir,
-        allow_patterns=allow_patterns,
-        token=token,
-    )
+    workers = max_workers
+    for attempt in range(1, max_retries + 1):
+        try:
+            snapshot_download(
+                repo_id=repo_id,
+                repo_type=repo_type,
+                revision=revision,
+                local_dir=local_dir,
+                allow_patterns=allow_patterns,
+                token=token,
+                max_workers=workers,
+            )
+            return
+        except HTTPError as exc:
+            status_code = getattr(getattr(exc, 'response', None), 'status_code', None)
+            if status_code != 429 or attempt >= max_retries:
+                raise
+            wait_seconds = min(60, 5 * (2 ** (attempt - 1)))
+            print(
+                f'[dep.sh] Hugging Face returned 429 while downloading {label}; retrying in {wait_seconds}s with max_workers={workers}',
+                flush=True,
+            )
+            time.sleep(wait_seconds)
+            workers = max(1, workers // 2)
 
 
 partnet_patterns = [pattern for pattern in patterns if pattern == 'partnet_mobility' or pattern.startswith('partnet_mobility/')]
@@ -495,10 +541,10 @@ partnet_regular_patterns = [pattern for pattern in partnet_patterns if not patte
 archive_patterns = [pattern for pattern in regular_patterns if pattern.lower().endswith('.zip')]
 regular_patterns = [pattern for pattern in regular_patterns if not pattern.lower().endswith('.zip')]
 
-snapshot_with_patterns(regular_patterns, regular_local_dir)
-snapshot_with_patterns(archive_patterns, regular_local_dir)
-snapshot_with_patterns(partnet_regular_patterns, partnet_local_dir)
-snapshot_with_patterns(partnet_archive_patterns, partnet_local_dir)
+snapshot_with_patterns(regular_patterns, regular_local_dir, 'regular ManiSkill assets')
+snapshot_with_patterns(archive_patterns, regular_local_dir, 'regular ManiSkill archives')
+snapshot_with_patterns(partnet_regular_patterns, partnet_local_dir, 'PartNet-Mobility assets')
+snapshot_with_patterns(partnet_archive_patterns, partnet_local_dir, 'PartNet-Mobility archives')
 
 
 def safe_extract_zip(zip_path: Path, target_dir: Path) -> None:

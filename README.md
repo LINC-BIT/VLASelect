@@ -1,4 +1,4 @@
-![](vlaselect-intro.png)
+![](vlaselect-intro1.png)
 
 # VLASelect Artifacts Evaluation
 

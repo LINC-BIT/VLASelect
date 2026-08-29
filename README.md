@@ -8,11 +8,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 ## Downloads
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
-<<<<<<< Updated upstream
-[Evaluation Report on a Small Machine](./Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
-=======
 [Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
->>>>>>> Stashed changes
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version (requiring further dependency installation)](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m)<br>
@@ -995,17 +991,17 @@ And you can run the following commands to reproduce each figure/table in our eva
     <tbody>
       <tr>
         <td>Minimum running example on three representative methods</td>
-        <td>20 minutes<br>20GB memory</td>
+        <td>20 minutes<br>20GB memory<br>30GB disk space</td>
         <td><a href="">Link</a></td>
       </tr>
       <tr>
         <td>Small running example on all methods</td>
-        <td>60 minutes<br>20GB memory</td>
+        <td>60 minutes<br>20GB memory<br>30GB disk space</td>
         <td><a href="">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
-        <td>40 hours<br>60GB memory</td>
+        <td>40 hours<br>60GB memory<br>30GB disk space</td>
         <td>-</td>
       </tr>
     </tbody>
@@ -1035,12 +1031,12 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>30 minutes<br>20GB memory</td>
+          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>15 hours<br>60GB memory</td>
+          <td>15 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1069,12 +1065,12 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>20 minutes<br>20GB memory</td>
+          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>13 hours<br>60GB memory</td>
+          <td>13 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1105,12 +1101,12 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>20 minutes<br>20GB memory</td>
+          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>13 hours<br>60GB memory</td>
+          <td>13 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1226,12 +1222,12 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>3 minutes<br>20GB memory</td>
+          <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#311-supporting-the-vla-adapter">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>3 hours<br>60GB memory</td>
+          <td>3 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1314,17 +1310,17 @@ After the integration, you can use VLASelect to train the model with the integra
       <tbody>
         <tr>
           <td>Minimum running example on three representative methods</td>
-          <td>20 minutes<br>20GB memory</td>
+          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Small running example on all methods</td>
-          <td>60 minutes<br>20GB memory</td>
+          <td>60 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>40 hours<br>60GB memory</td>
+          <td>40 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1375,12 +1371,12 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>30 minutes<br>20GB memory</td>
+          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#313-supporting-different-knowledge-exchange-granularities">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>15 hours<br>60GB memory</td>
+          <td>15 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1463,12 +1459,12 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>3 minutes<br>20GB memory</td>
+          <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>3 hours<br>60GB memory</td>
+          <td>3 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1539,17 +1535,17 @@ After the integration, you can use VLASelect to train the model with the integra
       <tbody>
         <tr>
           <td>Minimum running example on three representative methods</td>
-          <td>20 minutes<br>20GB memory</td>
+          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Small running example on all methods</td>
-          <td>60 minutes<br>20GB memory</td>
+          <td>60 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>40 hours<br>60GB memory</td>
+          <td>40 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1599,12 +1595,12 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>30 minutes<br>20GB memory</td>
+          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#323-supporting-different-knowledge-exchange-granularities">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>15 hours<br>60GB memory</td>
+          <td>15 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1689,12 +1685,12 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>3 minutes<br>20GB memory</td>
+          <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>3 hours<br>60GB memory</td>
+          <td>3 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1765,17 +1761,17 @@ After the integration, you can use VLASelect to train the model with the integra
       <tbody>
         <tr>
           <td>Minimum running example on three representative methods</td>
-          <td>20 minutes<br>20GB memory</td>
+          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Small running example on all methods</td>
-          <td>60 minutes<br>20GB memory</td>
+          <td>60 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>40 hours<br>60GB memory</td>
+          <td>40 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1825,12 +1821,12 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum running example</td>
-          <td>30 minutes<br>20GB memory</td>
+          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#333-swapping-granularity-ablation-on-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
-          <td>15 hours<br>60GB memory</td>
+          <td>15 hours<br>60GB memory<br>30GB disk space</td>
           <td>-</td>
         </tr>
       </tbody>

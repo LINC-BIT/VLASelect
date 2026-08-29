@@ -113,7 +113,6 @@ PYTHON_CMD=(
     --small-model-feedback-alpha 0.1
     --small-model-regeneration-increment-ratio 0.05
     --reset-optimizer-after-regeneration true
-    --max-sparsity 0.8
     --early-stop-zero-success-minutes "$EARLY_STOP_ZERO_SUCCESS_MINUTES"
     --cuda-device "$CUDA_DEVICES"
 )

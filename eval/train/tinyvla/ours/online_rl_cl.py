@@ -1,6 +1,7 @@
 import argparse
 import ast
 import bisect
+import gc
 import os
 import re
 import sys
@@ -69,12 +70,18 @@ from train.common.train_success_metrics import (
     append_live_episode_metrics,
     summarize_training_episode_metrics,
 )
+from train.common.materialized_fbs_cache import (
+    build_materialized_fbs_metadata,
+    maybe_load_materialized_fbs_policy_from_checkpoint,
+    maybe_persist_materialized_fbs_policy_to_checkpoint,
+)
 from train.vla_adapter_new.ours.generate_static_small_model import (
     feedback_static_small_model_to_large_model,
     generate_static_small_model_with_returning_pruning_info,
     inherit_static_small_model_retained_channels,
 )
 from train.tinyvla.ours.model_with_fbs import convert_to_fbs_model
+from ours.libs.train_with_fbs.lib import set_sparsity
 
 
 DEFAULT_MODEL_DIR = reference.DEFAULT_MODEL_DIR
@@ -194,6 +201,7 @@ class Args:
     large_agent_checkpoint: str = DEFAULT_FBS_CHECKPOINT
     continue_train_from: Optional[str] = None
     max_sparsity: float = 0.9
+    small_model_sparsity: Optional[float] = None
     small_model_generation_strategy: str = "target-single-traj"
     small_model_generation_policy: str = "small"
     small_model_feedback_schedule: Optional[str] = None
@@ -693,6 +701,82 @@ def reset_optimizer_state_for_model(optimizer: optim.Optimizer, model: nn.Module
         optimizer.state.pop(param, None)
 
 
+def resolve_small_model_sparsity(args: Args) -> float:
+    sparsity = args.max_sparsity if args.small_model_sparsity is None else float(args.small_model_sparsity)
+    if not 0.0 <= sparsity <= 1.0:
+        raise ValueError(f"small_model_sparsity must be in [0, 1], got {sparsity}")
+    if sparsity > float(args.max_sparsity):
+        raise ValueError(
+            f"small_model_sparsity ({sparsity}) cannot exceed max_sparsity ({args.max_sparsity}); "
+            "increase max_sparsity as well if you want a more aggressive compression target"
+        )
+    return sparsity
+
+
+def _sync_cuda_if_needed(device: torch.device) -> None:
+    if device.type == "cuda" and torch.cuda.is_available():
+        torch.cuda.synchronize()
+
+
+def _tensor_storage_key(tensor: Optional[torch.Tensor]) -> Optional[tuple[Any, ...]]:
+    if tensor is None:
+        return None
+    device_index = tensor.device.index if tensor.device.type == "cuda" else None
+    storage_ptr = int(tensor.untyped_storage().data_ptr()) if tensor.numel() > 0 else 0
+    return (tensor.device.type, device_index, str(tensor.dtype), tuple(tensor.shape), storage_ptr)
+
+
+def _collect_shared_tensor_keys(module: nn.Module) -> set[tuple[Any, ...]]:
+    keys: set[tuple[Any, ...]] = set()
+    for tensor in list(module.parameters()) + list(module.buffers()):
+        key = _tensor_storage_key(tensor)
+        if key is not None:
+            keys.add(key)
+    return keys
+
+
+def move_large_agent_to_cpu(large_agent: nn.Module, small_agent: nn.Module, device: torch.device, reason: str) -> None:
+    if device.type != "cuda":
+        return
+    shared_tensor_keys = _collect_shared_tensor_keys(small_agent)
+    moved_params = 0
+    moved_buffers = 0
+    skipped_shared = 0
+    for param in large_agent.parameters():
+        key = _tensor_storage_key(param)
+        if key in shared_tensor_keys:
+            skipped_shared += 1
+            continue
+        if param.device.type != "cpu":
+            param.data = param.data.to("cpu")
+            if param.grad is not None:
+                param.grad = param.grad.to("cpu")
+            moved_params += 1
+    for buffer in large_agent.buffers():
+        key = _tensor_storage_key(buffer)
+        if key in shared_tensor_keys:
+            skipped_shared += 1
+            continue
+        if buffer.device.type != "cpu":
+            buffer.data = buffer.data.to("cpu")
+            moved_buffers += 1
+    _sync_cuda_if_needed(device)
+    gc.collect()
+    torch.cuda.empty_cache()
+    print(
+        f"[large-agent] selectively offloaded to CPU before {reason} "
+        f"(moved_params={moved_params} moved_buffers={moved_buffers} skipped_shared={skipped_shared})"
+    )
+
+
+def move_large_agent_to_gpu(large_agent: nn.Module, device: torch.device, reason: str) -> None:
+    if device.type != "cuda":
+        return
+    large_agent.to(device)
+    _sync_cuda_if_needed(device)
+    print(f"[large-agent] moved to GPU for {reason}")
+
+
 def regenerate_small_model_in_place(
     large_agent,
     small_agent,
@@ -702,6 +786,8 @@ def regenerate_small_model_in_place(
     eval_envs,
     device: torch.device,
 ):
+    target_sparsity = resolve_small_model_sparsity(args)
+    set_sparsity(large_agent, target_sparsity)
     search_start_time = time.perf_counter()
     sample, forward_seconds = collect_sample_for_small_model_generation(args, large_agent=large_agent, small_agent=small_agent, eval_envs=eval_envs, device=device)
     search_seconds = time.perf_counter() - search_start_time
@@ -816,17 +902,31 @@ def train(args: Args) -> None:
     cumulative_rollout_seconds = 0.0
     cumulative_training_seconds = 0.0
 
-    large_agent = reference.EdgeVLAActorCritic(
-        Path(args.model_dir),
-        device=device,
-        state_dim=args.state_dim,
-        action_dim=args.action_dim,
-        env_action_dim=args.env_action_dim,
-        controlled_action_indices=args.controlled_action_indices,
-    ).to(device)
-    large_agent = convert_to_fbs_model(large_agent, device, max_sparsity=args.max_sparsity).to(device)
-    load_policy_state_from_checkpoint(args.large_agent_checkpoint, large_agent)
+    materialized_fbs_metadata = build_materialized_fbs_metadata(args.large_agent_checkpoint)
+    large_agent = maybe_load_materialized_fbs_policy_from_checkpoint(
+        args.large_agent_checkpoint,
+        device,
+        expected_metadata=materialized_fbs_metadata,
+    )
+    if large_agent is None:
+        large_agent = reference.EdgeVLAActorCritic(
+            Path(args.model_dir),
+            device=device,
+            state_dim=args.state_dim,
+            action_dim=args.action_dim,
+            env_action_dim=args.env_action_dim,
+            controlled_action_indices=args.controlled_action_indices,
+        ).to(device)
+        large_agent = convert_to_fbs_model(large_agent, device, max_sparsity=args.max_sparsity).to(device)
+        load_policy_state_from_checkpoint(args.large_agent_checkpoint, large_agent)
+        maybe_persist_materialized_fbs_policy_to_checkpoint(
+            args.large_agent_checkpoint,
+            large_agent,
+            expected_metadata=materialized_fbs_metadata,
+        )
+    set_sparsity(large_agent, resolve_small_model_sparsity(args))
     large_agent.eval_micro_batch_size = args.eval_micro_batch_size
+    large_agent.eval()
     memory_exclusion_path = write_module_memory_exclusion_metadata(
         output_dir,
         module=large_agent,
@@ -866,6 +966,7 @@ def train(args: Args) -> None:
     module_breakdown["small_model_generation_seconds"] += time.perf_counter() - enhancer_start_time
     update_combined_search_enhancement_seconds(module_breakdown)
     optimizer = reference.build_optimizer(args, small_agent)
+    move_large_agent_to_cpu(large_agent, small_agent, device, reason="evaluation/online_rl")
     memory_phase_tracker.mark("evaluation")
 
     start_update, global_step, best_success_once, resumed_pruning_info = maybe_load_training_checkpoint(
@@ -1077,6 +1178,7 @@ def train(args: Args) -> None:
             success_end_at_last_feedback=success_end_at_last_small_model_feedback,
         ):
             memory_phase_tracker.mark("large_model_runtime_excluded")
+            move_large_agent_to_gpu(large_agent, device, reason="small-model feedback")
             print("[ours] feedback small model before rollout")
             feedback_start_time = time.perf_counter()
             feedback_static_small_model_to_large_model(
@@ -1086,6 +1188,7 @@ def train(args: Args) -> None:
                 alpha=args.small_model_feedback_alpha,
             )
             module_breakdown["small_model_feedback_seconds"] += time.perf_counter() - feedback_start_time
+            move_large_agent_to_cpu(large_agent, small_agent, device, reason="online_rl rollout")
             success_end_at_last_small_model_feedback = current_success_end
 
         if should_regenerate_small_model_before_rollout(
@@ -1097,6 +1200,7 @@ def train(args: Args) -> None:
             update_at_last_regeneration=update_at_last_small_model_regeneration,
         ):
             memory_phase_tracker.mark("large_model_runtime_excluded")
+            move_large_agent_to_gpu(large_agent, device, reason="small-model regeneration")
             print("[ours] regenerate small model before rollout")
             current_pruning_info, forward_seconds, enhancer_seconds = regenerate_small_model_in_place(
                 large_agent,
@@ -1110,6 +1214,7 @@ def train(args: Args) -> None:
             module_breakdown["large_model_forward_seconds"] += forward_seconds
             module_breakdown["small_model_generation_seconds"] += enhancer_seconds
             update_combined_search_enhancement_seconds(module_breakdown)
+            move_large_agent_to_cpu(large_agent, small_agent, device, reason="online_rl rollout")
             success_end_at_last_small_model_regeneration = current_success_end
             update_at_last_small_model_regeneration = update
 

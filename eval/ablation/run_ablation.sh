@@ -37,7 +37,8 @@ export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS
 if [[ "$MWE" == "1" ]]; then
     RUN_EXPERIMENTS=1
     SMOKE=1
-    ABLATION_SELECTION="${ABLATION_SELECTION:-scaling_law_function:with_scaling_law,scaling_law_function:without_scaling_law}"
+    ABLATION_SELECTION="${ABLATION_SELECTION:-}"
+    export MWE_MAX_RUNTIME_MINUTES="${MWE_MAX_RUNTIME_MINUTES:-2}"
 fi
 vlaselect_resource_summary_start "run_ablation.sh"
 vlaselect_install_cleanup_trap
@@ -284,8 +285,12 @@ launch_panel_group() {
         fi
         curve_id="${curve_key#*:}"
         if command -v timeout >/dev/null 2>&1; then
-            timeout --preserve-status -k 10s "${per_curve_limit_seconds}s" \
+            if [[ "$per_curve_limit_seconds" -gt 0 ]]; then
+                timeout --preserve-status -k 10s "${per_curve_limit_seconds}s" \
+                    bash -lc "$(declare -f vlaselect_register_cleanup_manifest vlaselect_register_cleanup_pid vlaselect_start_file_log_tail log print_log_excerpt run_curve_command launch_curve); set -euo pipefail; launch_curve '$panel_id' '$curve_id' '$gpu'"
+            else
                 bash -lc "$(declare -f vlaselect_register_cleanup_manifest vlaselect_register_cleanup_pid vlaselect_start_file_log_tail log print_log_excerpt run_curve_command launch_curve); set -euo pipefail; launch_curve '$panel_id' '$curve_id' '$gpu'"
+            fi
         else
             launch_curve "$panel_id" "$curve_id" "$gpu"
         fi
@@ -303,14 +308,18 @@ run_panel_group_with_limit() {
         return 0
     fi
 
-    per_curve_limit_seconds=$((ABLATION_PANEL_RUNTIME_LIMIT_SECONDS / selected_curve_count))
-    if [[ "$per_curve_limit_seconds" -le 0 ]]; then
-        per_curve_limit_seconds=1
+    if [[ "$MWE" == "1" ]]; then
+        per_curve_limit_seconds=0
+    else
+        per_curve_limit_seconds=$((ABLATION_PANEL_RUNTIME_LIMIT_SECONDS / selected_curve_count))
+        if [[ "$per_curve_limit_seconds" -le 0 ]]; then
+            per_curve_limit_seconds=1
+        fi
     fi
 
     export SUITE_STAMP LAUNCH_LOG_DIR BASE_ENV_ID BASE_ENVS_ID BASE_ENV_CHANGE_TIME_POINTS EFFECTIVE_BASE_ENV_CHANGE_TIME_POINTS
     export ENV_CONFIG_PATH STATE_NORM_STATS_PATH CHECKPOINT_PATH SMOKE PYTHON_BIN TAIL_LOG ABLATION_SELECTION
-    export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS
+    export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS MWE
 
     if ! command -v timeout >/dev/null 2>&1; then
         echo "[warn] timeout command not found; panel ${panel_id} cannot be evenly hard-capped" >&2
@@ -321,7 +330,7 @@ run_panel_group_with_limit() {
 
 
 write_manifest() {
-    "$PYTHON_BIN" - <<'PY' "$MANIFEST_JSON" "$SUITE_STAMP" "$CHECKPOINT_PATH"
+    "$PYTHON_BIN" - <<'PY' "$MANIFEST_JSON" "$SUITE_STAMP" "$CHECKPOINT_PATH" "$MWE"
 import json
 import sys
 from pathlib import Path
@@ -329,6 +338,23 @@ from pathlib import Path
 manifest_path = Path(sys.argv[1])
 suite_stamp = sys.argv[2]
 checkpoint_path = sys.argv[3]
+is_mwe = sys.argv[4] == "1"
+
+def metric_source():
+    return "history" if is_mwe else "tensorboard"
+
+def metric_keys():
+    if is_mwe:
+        return ["train_success_once", "train/success_once", "success_once"]
+    return [
+        "eval/success_end",
+        "eval_success_end",
+        "success_at_end",
+        "success_end",
+        "eval/success_once",
+        "eval_success_once",
+        "success_once",
+    ]
 
 panels = [
     {
@@ -343,8 +369,8 @@ panels = [
                 "color": "#C44E52",
                 "linestyle": "-",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_law_function/with_scaling_law/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Default VLASelect continual setting.",
                 "changed_options": [],
             },
@@ -354,8 +380,8 @@ panels = [
                 "color": "#4D4D4D",
                 "linestyle": "--",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_law_function/without_scaling_law/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Target-batch generation without the target-trajectory scaling-law path.",
                 "changed_options": ["small_model_generation_strategy"],
             },
@@ -373,8 +399,8 @@ panels = [
                 "color": "#4D4D4D",
                 "linestyle": "--",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_grained_scaling_up/random/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Random neuron selection.",
                 "changed_options": ["small_model_ab_strategy"],
             },
@@ -384,8 +410,8 @@ panels = [
                 "color": "#4C78A8",
                 "linestyle": ":",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_grained_scaling_up/inverse/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Keep the least important neurons.",
                 "changed_options": ["small_model_ab_strategy"],
             },
@@ -395,8 +421,8 @@ panels = [
                 "color": "#C44E52",
                 "linestyle": "-",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_grained_scaling_up/neuron_grained/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Default score-based neuron selection.",
                 "changed_options": [],
             },
@@ -414,8 +440,8 @@ panels = [
                 "color": "#4D4D4D",
                 "linestyle": "--",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/pruning/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Train a structurally pruned small model with the proposed scaling-up policy but without neuron swapping or knowledge accumulation.",
                 "changed_options": ["small_model_training_variant"],
             },
@@ -425,8 +451,8 @@ panels = [
                 "color": "#C44E52",
                 "linestyle": "-",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/freezing/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Train a gate-masked small model by freezing inactive neurons instead of structurally pruning them.",
                 "changed_options": [],
             },
@@ -444,8 +470,8 @@ panels = [
                 "color": "#4D4D4D",
                 "linestyle": "--",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/random_swapping/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Repeated regeneration with randomly selected swapped-in neurons.",
                 "changed_options": ["small_model_regeneration_ab_strategy"],
             },
@@ -455,8 +481,8 @@ panels = [
                 "color": "#C44E52",
                 "linestyle": "-",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/with_swapping/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Repeated regeneration with neuron-index-guided partial channel replacement.",
                 "changed_options": [],
             },
@@ -474,8 +500,8 @@ panels = [
                 "color": "#4D4D4D",
                 "linestyle": "--",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/knowledge_accumulation/no_accumulation/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Disable knowledge accumulation by using feedback_alpha=0.",
                 "changed_options": ["small_model_feedback_alpha"],
             },
@@ -485,8 +511,8 @@ panels = [
                 "color": "#4C78A8",
                 "linestyle": ":",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/knowledge_accumulation/accumulate_every_rollout/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Accumulate knowledge before every rollout.",
                 "changed_options": ["small_model_feedback_schedule"],
             },
@@ -496,8 +522,8 @@ panels = [
                 "color": "#C44E52",
                 "linestyle": "-",
                 "run_dir": f"ckpt/ablation/{suite_stamp}/knowledge_accumulation/selective_accumulation/[agent]",
-                "metric_source": "tensorboard",
-                "metric_key": "eval/success_end",
+                "metric_source": metric_source(),
+                "metric_key": metric_keys(),
                 "notes": "Feedback only after significant success improvement.",
                 "changed_options": [],
             },
@@ -507,6 +533,7 @@ panels = [
 
 payload = {
     "suite_stamp": suite_stamp,
+    "mwe": is_mwe,
     "table_root": "ablation/ablation_table",
     "figure_output": "ablation/FIG_ABLATION.pdf",
     "summary_csv": "ablation/ablation_summary.csv",
@@ -674,96 +701,40 @@ launch_selected_curves() {
         curve_gpu_map["$curve_key"]="$gpu"
     done < <(resolve_curve_gpu_map)
 
-    declare -A last_pid_by_gpu=()
-    local -a active_pids=()
     local failure=0
+    local panel_id
+    local curve_key
+    local gpu
 
-    if [[ "$MWE" == "1" ]]; then
-        local panel_id
-        local curve_key
-        local gpu
-        while IFS= read -r panel_id; do
-            [[ -z "$panel_id" ]] && continue
-            if ! should_run_panel "$panel_id"; then
-                continue
-            fi
-            gpu=""
-            while IFS= read -r curve_key; do
-                [[ -z "$curve_key" ]] && continue
-                if ! should_run_curve "$curve_key"; then
-                    continue
-                fi
-                gpu="${curve_gpu_map[$curve_key]}"
-                break
-            done < <(list_panel_curve_keys "$panel_id")
-            if [[ -z "$gpu" ]]; then
-                continue
-            fi
-
-            local wait_for_pid="${last_pid_by_gpu[$gpu]:-}"
-            if [[ -n "$wait_for_pid" ]]; then
-                (
-                    while kill -0 "$wait_for_pid" 2>/dev/null; do
-                        sleep "$GPU_QUEUE_POLL_SECONDS"
-                    done
-                    run_panel_group_with_limit "$panel_id" "$gpu"
-                ) &
-            else
-                (
-                    run_panel_group_with_limit "$panel_id" "$gpu"
-                ) &
-            fi
-            local launch_pid=$!
-            last_pid_by_gpu["$gpu"]="$launch_pid"
-            active_pids+=("$launch_pid")
-        done < <(list_panel_ids)
-    else
-        local curve_keys=(
-            scaling_law_function:with_scaling_law
-            scaling_law_function:without_scaling_law
-            neuron_grained_scaling_up:random
-            neuron_grained_scaling_up:inverse
-            neuron_grained_scaling_up:neuron_grained
-            scaling_down_freezing_vs_pruning:pruning
-            scaling_down_freezing_vs_pruning:freezing
-            neuron_swapping:with_swapping
-            neuron_swapping:random_swapping
-            knowledge_accumulation:no_accumulation
-            knowledge_accumulation:accumulate_every_rollout
-            knowledge_accumulation:selective_accumulation
-        )
-
-        for curve_key in "${curve_keys[@]}"; do
+    while IFS= read -r panel_id; do
+        [[ -z "$panel_id" ]] && continue
+        if ! should_run_panel "$panel_id"; then
+            continue
+        fi
+        gpu=""
+        while IFS= read -r curve_key; do
+            [[ -z "$curve_key" ]] && continue
             if ! should_run_curve "$curve_key"; then
                 continue
             fi
-            local panel_id="${curve_key%%:*}"
-            local curve_id="${curve_key#*:}"
-            local gpu="${curve_gpu_map[$curve_key]}"
-            local wait_for_pid="${last_pid_by_gpu[$gpu]:-}"
-            if [[ -n "$wait_for_pid" ]]; then
-                (
-                    while kill -0 "$wait_for_pid" 2>/dev/null; do
-                        sleep "$GPU_QUEUE_POLL_SECONDS"
-                    done
-                    launch_curve "$panel_id" "$curve_id" "$gpu"
-                ) &
-            else
-                (
-                    launch_curve "$panel_id" "$curve_id" "$gpu"
-                ) &
-            fi
-            local launch_pid=$!
-            last_pid_by_gpu["$gpu"]="$launch_pid"
-            active_pids+=("$launch_pid")
-        done
-    fi
-
-    for launch_pid in "${active_pids[@]}"; do
-        if ! wait "$launch_pid"; then
-            failure=1
+            gpu="${curve_gpu_map[$curve_key]}"
+            break
+        done < <(list_panel_curve_keys "$panel_id")
+        if [[ -z "$gpu" ]]; then
+            continue
         fi
-    done
+
+        if [[ "$MWE" == "1" ]]; then
+            if ! run_panel_group_with_limit "$panel_id" "$gpu"; then
+                failure=1
+            fi
+        else
+            if ! launch_panel_group "$panel_id" "$gpu" 0; then
+                failure=1
+            fi
+        fi
+    done < <(list_panel_ids)
+
     return "$failure"
 }
 

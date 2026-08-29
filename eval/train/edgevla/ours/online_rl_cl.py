@@ -97,7 +97,8 @@ def configure_human_defaults() -> None:
         "state_dim": 73,
         "run_setup_smoke": False,
         "large_agent_checkpoint": DEFAULT_FBS_CHECKPOINT,
-        "max_sparsity": 0.8,
+        "max_sparsity": 0.9,
+        "small_model_sparsity": 0.9,
         "early_stop_zero_success_minutes": 45000.0,
     }
     for field_name, value in defaults.items():

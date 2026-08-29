@@ -21,7 +21,7 @@ if str(EVAL_ROOT) not in sys.path:
     sys.path.insert(0, str(EVAL_ROOT))
 from common.figure_compose import compose_grid_figure, render_legend_image
 from common.template_pdf_fill import fill_memory_template
-from plot_breakdown_impl import load_summary_aligned_manifest
+from plot_breakdown_impl import load_top_manifest_from_table_root
 TABLE_ROOT = SCRIPT_DIR / 'overhead_same_acc_table'
 BREAKDOWN_ROOT = SCRIPT_DIR / 'overhead_breakdown_table'
 LATEST_POINTER = TABLE_ROOT / 'latest.txt'
@@ -87,21 +87,9 @@ TABLE3_EVENT_LABELS_BY_FAMILY = {
 }
 TABLE3_EVENT_DISPLAY_NAMES = {'task': 'new task', 'env': 'environment change'}
 MEMORY_FOOTPRINT_ACTIVE_PHASE_NAMES = {'online_rl_rollout', 'online_rl_training'}
-TEMP_PANEL_METHOD_CUTOFF_OVERRIDES_HOURS = {
-    ('c', 'vla_rft'): 4.0 / 60.0,
-    ('c', 'world_env'): 5.0 / 60.0,
-    ('d', 'self_improv'): 5.0 / 60.0,
-    ('d', 'vla_rft'): 4.0 / 60.0,
-    ('d', 'world_env'): 5.0 / 60.0,
-}
-TEMP_PANEL_SUITE_MANIFEST_OVERRIDES = {
-    'd': 'train/edgevla/cl_suite/20260826-215300/manifest.json',
-}
-TEMP_PANEL_METHOD_MEMORY_ADD_MB = {
-    ('d', 'self_improv'): 4096.0,
-    ('d', 'vla_rft'): 4096.0,
-    ('d', 'world_env'): 4096.0,
-}
+TEMP_PANEL_METHOD_CUTOFF_OVERRIDES_HOURS = {}
+TEMP_PANEL_SUITE_MANIFEST_OVERRIDES = {}
+TEMP_PANEL_METHOD_MEMORY_ADD_MB = {}
 def load_json(path: Path) -> Any: return json.loads(path.read_text(encoding='utf-8'))
 def resolve_path(raw_path: str, base_dir: Path = EVAL_ROOT) -> Path:
     path = Path(raw_path)
@@ -141,10 +129,12 @@ def find_latest_manifest() -> Path | None:
 
 
 def load_default_manifest() -> dict[str, Any]:
-    manifest = load_summary_aligned_manifest([TABLE_ROOT], TABLE_ROOT)
+    manifest, manifest_path = load_top_manifest_from_table_root(TABLE_ROOT, None)
+    manifest = dict(manifest) if isinstance(manifest, dict) else default_manifest()
     manifest.setdefault('figure_output', 'overhead/FIG_MEMORY_FOOTPOINT.pdf')
     manifest.setdefault('table2_output', 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv')
     manifest.setdefault('table3_output', 'overhead/overhead_breakdown_table/TAB_ENERGY.csv')
+    manifest['_resolved_manifest_label'] = str(manifest_path) if manifest_path is not None else str(manifest.get('suite_stamp', 'merged-latest'))
     return manifest
 def default_manifest() -> dict[str, Any]:
     return {
@@ -1500,7 +1490,7 @@ for family in ('octo', 'vla_adapter_new', 'tinyvla', 'edgevla'):
         print(f'[selected] {family}: {source}')
 rows = draw_figure(top_manifest)
 write_summary(rows)
-print(f'manifest: {manifest_path or "merged-summary-aligned"}')
+print(f"manifest: {manifest_path or top_manifest.get('_resolved_manifest_label', 'merged-latest')}")
 print(f'figure: {FIGURE_PATH}')
 print(f'table2: {TABLE2_CSV_PATH}')
 print(f'table3: {TABLE3_CSV_PATH}')

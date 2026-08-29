@@ -56,17 +56,20 @@ SCRIPT_BY_METHOD = {
 
 def select_methods(raw_selection: str) -> list[str]:
     if not raw_selection:
-        return list(METHOD_ORDER)
-    methods: list[str] = []
-    for item in raw_selection.split(","):
-        method = item.strip()
-        if not method:
-            continue
-        if method not in SCRIPT_BY_METHOD:
-            raise ValueError(f"Unknown method: {method}")
-        methods.append(method)
-    if not methods:
-        raise ValueError("No methods selected.")
+        methods = list(METHOD_ORDER)
+    else:
+        methods: list[str] = []
+        for item in raw_selection.split(","):
+            method = item.strip()
+            if not method:
+                continue
+            if method not in SCRIPT_BY_METHOD:
+                raise ValueError(f"Unknown method: {method}")
+            methods.append(method)
+        if not methods:
+            raise ValueError("No methods selected.")
+    if "ours" in methods:
+        methods = ["ours", *[method for method in methods if method != "ours"]]
     return methods
 
 

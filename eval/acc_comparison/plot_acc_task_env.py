@@ -50,7 +50,7 @@ SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
 SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
 VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
-LIMIT_SERIES_TO_THREE_POINTS = False
+LIMIT_SERIES_TO_THREE_POINTS = True
 MAX_SERIES_POINTS = 3
 SELECTED_METHODS_RAW: set[str] = set()
 
@@ -195,10 +195,7 @@ def configure_runtime(args: argparse.Namespace) -> None:
     PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
     VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
     SELECTED_METHODS_RAW = parse_method_filter(args.methods)
-    LIMIT_SERIES_TO_THREE_POINTS = inferred_same_acc or any(
-        hint_is_same_acc(candidate)
-        for candidate in (FIGURE_STEM, SUMMARY_STEM, PANEL_OUTPUT_SUBDIR, VIS_PAYLOAD_SUBDIR, TABLE_ROOT, MANIFEST_OVERRIDE)
-    )
+    LIMIT_SERIES_TO_THREE_POINTS = True
 
 
 def load_json(path: Path) -> Any:
@@ -321,13 +318,6 @@ def collect_history_series(
             continue
         if y_value == 1.0:
             y_value = 0.95
-        if (
-            mwe
-            and panel_index in {2, 3, 4}
-            and method_name is not None
-            and method_name not in {'ours', 'ours_single_agent'}
-        ):
-            y_value *= random.uniform(0.3, 0.5)
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         x_value = elapsed_hours * 60.0 if elapsed_hours is not None else float(index)
         series.append((x_value, y_value))

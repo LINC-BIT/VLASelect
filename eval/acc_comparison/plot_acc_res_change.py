@@ -272,13 +272,6 @@ def collect_history_series(
             continue
         if y_value == 1.0:
             y_value = 0.95
-        # if (
-        #     mwe
-        #     and panel_index in {2, 3, 4}
-        #     and method_name is not None
-        #     and method_name not in {'ours', 'ours_single_agent'}
-        # ):
-            # y_value *= random.uniform(0.3, 0.5)
         elapsed_hours = finite_float(metric.get('elapsed_hours'))
         x_value = elapsed_hours * 60.0 if elapsed_hours is not None else float(index)
         series.append((x_value, y_value))

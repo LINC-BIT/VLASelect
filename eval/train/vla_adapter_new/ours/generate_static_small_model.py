@@ -1,10 +1,24 @@
 import copy
+from functools import partial
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
+from timm.models.vision_transformer import LayerScale
+
+
+def unpack_tuple(fn):
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        return result[0] if isinstance(result, tuple) else result
+
+    return wrapper
+
+
+def _ls_new_forward(self, x: torch.Tensor) -> torch.Tensor:
+    return x.mul_(self.scale_factor) if self.inplace else x * self.scale_factor
 
 
 sys.path.append("./")
@@ -225,6 +239,33 @@ def _record_pruning_info(
     pruning_info["layer_dims"][layer_name] = int(dim)
 
 
+def _rebind_prismatic_featurizer_forward(featurizer: nn.Module) -> None:
+    num_blocks = len(featurizer.blocks)
+    featurizer.forward = unpack_tuple(partial(featurizer.get_intermediate_layers, n={num_blocks - 2}))
+
+
+def _rebind_prismatic_layerscale_forward(ls_module: LayerScale) -> None:
+    ls_module.forward = _ls_new_forward.__get__(ls_module, LayerScale)
+
+
+def _repair_deepcopied_prismatic_methods(model: nn.Module) -> None:
+    vla = getattr(model, "vla", None)
+    vision_backbone = getattr(vla, "vision_backbone", None)
+    if vision_backbone is None:
+        return
+
+    featurizer = getattr(vision_backbone, "featurizer", None)
+    if featurizer is not None and hasattr(featurizer, "blocks") and hasattr(featurizer, "get_intermediate_layers"):
+        _rebind_prismatic_featurizer_forward(featurizer)
+    fused_featurizer = getattr(vision_backbone, "fused_featurizer", None)
+    if fused_featurizer is not None and hasattr(fused_featurizer, "blocks") and hasattr(fused_featurizer, "get_intermediate_layers"):
+        _rebind_prismatic_featurizer_forward(fused_featurizer)
+
+    for module in vision_backbone.modules():
+        if isinstance(module, LayerScale) and hasattr(module, "scale_factor"):
+            _rebind_prismatic_layerscale_forward(module)
+
+
 def _generate_static_small_model_internal(
     actor: nn.Module,
     previous_pruning_info: Optional[dict],
@@ -247,6 +288,7 @@ def _generate_static_small_model_internal(
     ]
 
     small_model = copy.deepcopy(actor)
+    _repair_deepcopied_prismatic_methods(small_model)
     model_copies = [
         (small_model, qkv_layers, proj_layers, ff1_layers, ff2_layers),
         (small_model.vla.language_model, qkv_layers2, proj_layers2, ff1_layers2, ff2_layers2),

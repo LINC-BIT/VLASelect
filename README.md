@@ -241,7 +241,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
   pip install matplotlib==3.10.8 pypdf==6.16.2
   ```
 
-#### 1.2.7 About dataset<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 1.2.7 About Dataset<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - **Dataset for pre-training**: 
 
@@ -583,12 +583,41 @@ And you can run the following commands to reproduce each figure/table in our eva
   cd discussion
   bash run_sim_to_real.sh
   ```
-- It requires a DOFBOT-SE single-arm robot and an AmazingHand dexterous hand. The outputs are listed below:
-  
-  - Sim-to-real transfer on a DOFBOT-SE single-arm robot:
-    <video src="./videos/dofbot-se.mp4"></video>
-  - Sim-to-real transfer on an AmazingHand dexterous hand:
-    <video src="./videos/amazinghand.mp4"></video>
+- The resource requirements and outputs are listed below:
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Resource Requirements</th>
+        <th>Example Running Outputs</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>DOFBOT-SE sim-to-real transfer</td>
+        <td>a DOFBOT-SE single-arm robot</td>
+        <td>
+          <video
+            src="https://github.com/user-attachments/assets/9f7905c2-c88b-4d91-8b25-9d59a78566af"
+            controls
+            width="400">
+          </video>
+        </td>
+      </tr>
+      <tr>
+        <td>AmazingHand sim-to-real transfer</td>
+        <td>an AmazingHand dexterous hand</td>
+        <td>
+          <video
+            src="https://github.com/user-attachments/assets/c56c4114-c24c-4c35-b272-e9cf03848504"
+            controls
+            width="400">
+          </video>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
 
 

@@ -421,6 +421,10 @@ token = os.environ.get('HF_TOKEN') or None
 api = HfApi(token=token)
 
 
+def log_progress(message):
+    print(f'[dep.sh] {message}', flush=True)
+
+
 def with_429_retry(label, action):
     for attempt in range(1, max_retries + 1):
         try:
@@ -454,6 +458,7 @@ def resolve_paths():
     def iter_tree():
         return list(api.list_repo_tree(repo_id=repo_id, repo_type=repo_type, revision=revision, recursive=True))
 
+    log_progress('listing checkpoint files from Hugging Face repo tree')
     for entry in with_429_retry('checkpoint file listing', iter_tree):
         entry_type = getattr(entry, 'type', None)
         rel_path = getattr(entry, 'path', '')
@@ -465,6 +470,7 @@ def resolve_paths():
         if any(fnmatch.fnmatch(rel_path, pattern) for pattern in wildcard_patterns) and rel_path not in seen:
             resolved_paths.append(rel_path)
             seen.add(rel_path)
+    log_progress(f'resolved {len(resolved_paths)} checkpoint files for download')
     return resolved_paths
 
 
@@ -489,7 +495,10 @@ def download_file(rel_path):
         time.sleep(file_delay_seconds)
 
 
-for rel_path in resolve_paths():
+resolved_paths = resolve_paths()
+for index, rel_path in enumerate(resolved_paths, start=1):
+    if index == 1 or index % 20 == 0 or index == len(resolved_paths):
+        log_progress(f'checkpoint download progress: {index}/{len(resolved_paths)} ({rel_path})')
     download_file(rel_path)
 PY
 }
@@ -561,6 +570,10 @@ token = os.environ.get('HF_TOKEN') or None
 api = HfApi(token=token)
 
 
+def log_progress(message):
+    print(f'[dep.sh] {message}', flush=True)
+
+
 def with_429_retry(label, action):
     for attempt in range(1, max_retries + 1):
         try:
@@ -589,6 +602,7 @@ def get_repo_file_paths():
         return list(api.list_repo_tree(repo_id=repo_id, repo_type=repo_type, revision=revision, recursive=True))
 
     repo_file_paths = []
+    log_progress('listing ManiSkill files from Hugging Face repo tree')
     for entry in with_429_retry('ManiSkill file listing', iter_tree):
         entry_type = getattr(entry, 'type', None)
         rel_path = getattr(entry, 'path', '')
@@ -598,6 +612,7 @@ def get_repo_file_paths():
         if not rel_path or rel_path.endswith('/'):
             continue
         repo_file_paths.append(rel_path)
+    log_progress(f'ManiSkill repo tree listing finished: {len(repo_file_paths)} files discovered')
     return repo_file_paths
 
 
@@ -637,10 +652,16 @@ def resolve_paths(allow_patterns):
 
 
 def download_files(allow_patterns, local_dir, label):
-    for rel_path in resolve_paths(allow_patterns):
+    resolved_paths = resolve_paths(allow_patterns)
+    log_progress(f'{label}: matched {len(resolved_paths)} files')
+    for index, rel_path in enumerate(resolved_paths, start=1):
         target_path = local_dir / rel_path
         if target_path.is_file():
+            if index == 1 or index % 50 == 0 or index == len(resolved_paths):
+                log_progress(f'{label}: {index}/{len(resolved_paths)} already present ({rel_path})')
             continue
+        if index == 1 or index % 50 == 0 or index == len(resolved_paths):
+            log_progress(f'{label}: downloading {index}/{len(resolved_paths)} ({rel_path})')
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
         def run_download():

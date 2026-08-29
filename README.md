@@ -1115,7 +1115,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 ## 3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 
-VLASelect can support various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning), and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
+VLASelect can integrate various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning), and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
 
 We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, EdgeVLA. They differ in the network architecture, as shown in the table below.
 
@@ -1236,7 +1236,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 #### 3.1.2 Integrating Different Scaling Strategies<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-Based on the example in Section 3.1.1, you can support VLA-Adapter with 10 other scaling strategies as listed below:
+Based on the example in Section 3.1.1, you can integrate VLA-Adapter with 10 other scaling strategies as listed below:
 
 - **Knowledge Distillation (6 techniques)**
   1. **Logit Distillation**: Distill the large model's output logits to the small model. To use this method, you can set the online RL function `run_training()`'s third argument to `LogitDistillationScaling()`:
@@ -1329,7 +1329,7 @@ After the integration, you can use VLASelect to train the model with the integra
 
 #### 3.1.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-Based on the example in Section 3.1.1, you can support VLA-Adapter at different knowledge exchange strategies as listed below:
+Based on the example in Section 3.1.1, you can integrate VLA-Adapter at different knowledge exchange strategies as listed below:
 
 - **Block**: To perform block-grained knowledge exchange, you can set the online RL function `run_training()`'s third argument to `BlockKnowledgeExchange()`:
     ```python
@@ -1472,39 +1472,39 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 #### 3.2.2 Integrating Different Scaling Strategies<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-Based on the example in Section 3.2.1, you can support TinyVLA with 10 other scaling strategies. 
+Based on the example in Section 3.2.1, you can integrate TinyVLA with 10 other scaling strategies. 
 
 The process is similar to the one in Section 3.1.2, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `LogitDistillationScaling()`).
 
 ```python
-# 1. support knowledge distillation: logit distillation
+# 1. integrate knowledge distillation: logit distillation
 run_training(model_impl, parse_args(), LogitDistillationScaling())
 
-# 2. support knowledge distillation: feature distillation
+# 2. integrate knowledge distillation: feature distillation
 run_training(model_impl, parse_args(), FeatureDistillationScaling())
 
-# 3. support knowledge distillation: attention distillation
+# 3. integrate knowledge distillation: attention distillation
 run_training(model_impl, parse_args(), AttentionDistillationScaling())
 
-# 4. support knowledge distillation: data distillation
+# 4. integrate knowledge distillation: data distillation
 run_training(model_impl, parse_args(), DataDistillationScaling())
 
-# 5. support knowledge distillation: MiniLLM
+# 5. integrate knowledge distillation: MiniLLM
 run_training(model_impl, parse_args(), MiniLLMScaling())
 
-# 6. support knowledge distillation: DistiLLM distillation
+# 6. integrate knowledge distillation: DistiLLM distillation
 run_training(model_impl, parse_args(), DistiLLMScaling())
 
-# 7. support dynamic pruning: LLM in a Flash
+# 7. integrate dynamic pruning: LLM in a Flash
 run_training(model_impl, parse_args(), LLMInAFlashScaling())
 
-# 8. support dynamic pruning: PowerInfer
+# 8. integrate dynamic pruning: PowerInfer
 run_training(model_impl, parse_args(), PowerInferScaling())
 
-# 9. support dynamic pruning: LLM-Pruner
+# 9. integrate dynamic pruning: LLM-Pruner
 run_training(model_impl, parse_args(), LLMPrunerScaling())
 
-# 10. support dynamic pruning: EdgeTA
+# 10. integrate dynamic pruning: EdgeTA
 run_training(model_impl, parse_args(), EdgeTAScaling())
 ```
 
@@ -1554,21 +1554,21 @@ After the integration, you can use VLASelect to train the model with the integra
 
 #### 3.2.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-Based on the example in Section 3.2.1, you can support TinyVLA with other knowledge exchange granularities. 
+Based on the example in Section 3.2.1, you can integrate TinyVLA with other knowledge exchange granularities. 
 
 The process is similar to the one in Section 3.1.3, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `BlockKnowledgeExchange()`).
 
 ```python
-# 1. support block granularity
+# 1. integrate block granularity
 run_training(model_impl, parse_args(), BlockKnowledgeExchange())
 
-# 2. support layer granularity
+# 2. integrate layer granularity
 run_training(model_impl, parse_args(), LayerKnowledgeExchange())
 
-# 3. support attention head granularity
+# 3. integrate attention head granularity
 run_training(model_impl, parse_args(), AttentionHeadKnowledgeExchange())
 
-# 4. support channel/neuron granularity
+# 4. integrate channel/neuron granularity
 run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 ```
 
@@ -1698,39 +1698,39 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 #### 3.3.2 Integrating Different Scaling Strategies<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-Based on the example in Section 3.3.1, you can support EdgeVLA with 10 other scaling strategies. 
+Based on the example in Section 3.3.1, you can integrate EdgeVLA with 10 other scaling strategies. 
 
 The process is similar to the one in Section 3.1.2, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `LogitDistillationScaling()`).
 
 ```python
-# 1. support knowledge distillation: logit distillation
+# 1. integrate knowledge distillation: logit distillation
 run_training(model_impl, parse_args(), LogitDistillationScaling())
 
-# 2. support knowledge distillation: feature distillation
+# 2. integrate knowledge distillation: feature distillation
 run_training(model_impl, parse_args(), FeatureDistillationScaling())
 
-# 3. support knowledge distillation: attention distillation
+# 3. integrate knowledge distillation: attention distillation
 run_training(model_impl, parse_args(), AttentionDistillationScaling())
 
-# 4. support knowledge distillation: data distillation
+# 4. integrate knowledge distillation: data distillation
 run_training(model_impl, parse_args(), DataDistillationScaling())
 
-# 5. support knowledge distillation: MiniLLM
+# 5. integrate knowledge distillation: MiniLLM
 run_training(model_impl, parse_args(), MiniLLMScaling())
 
-# 6. support knowledge distillation: DistiLLM distillation
+# 6. integrate knowledge distillation: DistiLLM distillation
 run_training(model_impl, parse_args(), DistiLLMScaling())
 
-# 7. support dynamic pruning: LLM in a Flash
+# 7. integrate dynamic pruning: LLM in a Flash
 run_training(model_impl, parse_args(), LLMInAFlashScaling())
 
-# 8. support dynamic pruning: PowerInfer
+# 8. integrate dynamic pruning: PowerInfer
 run_training(model_impl, parse_args(), PowerInferScaling())
 
-# 9. support dynamic pruning: LLM-Pruner
+# 9. integrate dynamic pruning: LLM-Pruner
 run_training(model_impl, parse_args(), LLMPrunerScaling())
 
-# 10. support dynamic pruning: EdgeTA
+# 10. integrate dynamic pruning: EdgeTA
 run_training(model_impl, parse_args(), EdgeTAScaling())
 ```
 
@@ -1780,21 +1780,21 @@ After the integration, you can use VLASelect to train the model with the integra
 
 #### 3.3.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-Based on the example in Section 3.3.1, you can support EdgeVLA with other knowledge exchange granularities. 
+Based on the example in Section 3.3.1, you can integrate EdgeVLA with other knowledge exchange granularities. 
 
 The process is similar to the one in Section 3.1.3, which sets the online RL function `run_training()`'s third argument to the specific interface (e.g. `BlockKnowledgeExchange()`).
 
 ```python
-# 1. support block granularity
+# 1. integrate block granularity
 run_training(model_impl, parse_args(), BlockKnowledgeExchange())
 
-# 2. support layer granularity
+# 2. integrate layer granularity
 run_training(model_impl, parse_args(), LayerKnowledgeExchange())
 
-# 3. support attention head granularity
+# 3. integrate attention head granularity
 run_training(model_impl, parse_args(), AttentionHeadKnowledgeExchange())
 
-# 4. support channel/neuron granularity
+# 4. integrate channel/neuron granularity
 run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 ```
 

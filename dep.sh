@@ -34,6 +34,8 @@ CONTAINER_PARTNET_DATA_DIR=${CONTAINER_PARTNET_DATA_DIR:-}
 HF_HUB_DOWNLOAD_TIMEOUT=${HF_HUB_DOWNLOAD_TIMEOUT:-120}
 HF_HUB_MAX_WORKERS=${HF_HUB_MAX_WORKERS:-8}
 HF_HUB_HTTP_MAX_RETRIES=${HF_HUB_HTTP_MAX_RETRIES:-6}
+HF_HUB_RETRY_BASE_SECONDS=${HF_HUB_RETRY_BASE_SECONDS:-15}
+HF_HUB_FILE_DELAY_SECONDS=${HF_HUB_FILE_DELAY_SECONDS:-0.2}
 DEEPSPEED_VERSION=0.15.0
 
 log() {
@@ -362,7 +364,7 @@ download_hf_checkpoints() {
     fi
 
     require_hf_downloader
-    export HF_HUB_DOWNLOAD_TIMEOUT HF_HUB_MAX_WORKERS HF_HUB_HTTP_MAX_RETRIES
+    export HF_HUB_DOWNLOAD_TIMEOUT HF_HUB_MAX_WORKERS HF_HUB_HTTP_MAX_RETRIES HF_HUB_RETRY_BASE_SECONDS HF_HUB_FILE_DELAY_SECONDS
 
     log "downloading checkpoints from Hugging Face repo: $HF_CKPT_REPO"
     if [[ -n "$HF_CKPT_LIST" ]]; then
@@ -393,16 +395,18 @@ download_hf_checkpoints() {
     HF_CKPT_REVISION="$HF_CKPT_REVISION" \
     HF_CKPT_LOCAL_DIR="$HOST_REPO_DIR" \
     HF_CKPT_PATTERNS_JSON="$patterns_json" \
-    HF_HUB_MAX_WORKERS="$HF_HUB_MAX_WORKERS" \
     HF_HUB_HTTP_MAX_RETRIES="$HF_HUB_HTTP_MAX_RETRIES" \
+    HF_HUB_RETRY_BASE_SECONDS="$HF_HUB_RETRY_BASE_SECONDS" \
+    HF_HUB_FILE_DELAY_SECONDS="$HF_HUB_FILE_DELAY_SECONDS" \
     HF_TOKEN="${HF_TOKEN:-}" \
     python3 - <<'PY'
+import fnmatch
 import json
 import os
 import time
 from pathlib import Path
 
-from huggingface_hub import snapshot_download
+from huggingface_hub import HfApi, hf_hub_download
 from requests.exceptions import HTTPError
 
 repo_id = os.environ['HF_CKPT_REPO']
@@ -410,34 +414,82 @@ repo_type = os.environ['HF_CKPT_REPO_TYPE']
 revision = os.environ['HF_CKPT_REVISION']
 local_dir = Path(os.environ['HF_CKPT_LOCAL_DIR'])
 patterns = json.loads(os.environ['HF_CKPT_PATTERNS_JSON'])
-max_workers = max(1, int(os.environ.get('HF_HUB_MAX_WORKERS', '8')))
 max_retries = max(1, int(os.environ.get('HF_HUB_HTTP_MAX_RETRIES', '6')))
+retry_base_seconds = max(1.0, float(os.environ.get('HF_HUB_RETRY_BASE_SECONDS', '15')))
+file_delay_seconds = max(0.0, float(os.environ.get('HF_HUB_FILE_DELAY_SECONDS', '0.2')))
 token = os.environ.get('HF_TOKEN') or None
+api = HfApi(token=token)
 
-workers = max_workers
-for attempt in range(1, max_retries + 1):
-    try:
-        snapshot_download(
+
+def with_429_retry(label, action):
+    for attempt in range(1, max_retries + 1):
+        try:
+            return action()
+        except HTTPError as exc:
+            status_code = getattr(getattr(exc, 'response', None), 'status_code', None)
+            if status_code != 429 or attempt >= max_retries:
+                raise
+            wait_seconds = min(300.0, retry_base_seconds * (2 ** (attempt - 1)))
+            print(
+                f'[dep.sh] Hugging Face returned 429 while downloading {label}; retrying in {wait_seconds:.1f}s',
+                flush=True,
+            )
+            time.sleep(wait_seconds)
+
+
+def resolve_paths():
+    wildcard_patterns = [pattern for pattern in patterns if any(ch in pattern for ch in '*?[')]
+    exact_paths = [pattern for pattern in patterns if pattern not in wildcard_patterns]
+    resolved_paths = []
+    seen = set()
+
+    for rel_path in exact_paths:
+        if rel_path not in seen:
+            resolved_paths.append(rel_path)
+            seen.add(rel_path)
+
+    if not wildcard_patterns:
+        return resolved_paths
+
+    def iter_tree():
+        return list(api.list_repo_tree(repo_id=repo_id, repo_type=repo_type, revision=revision, recursive=True))
+
+    for entry in with_429_retry('checkpoint file listing', iter_tree):
+        entry_type = getattr(entry, 'type', None)
+        rel_path = getattr(entry, 'path', '')
+        if entry_type not in (None, 'file'):
+            continue
+        if not rel_path or rel_path.endswith('/'):
+            continue
+        if any(fnmatch.fnmatch(rel_path, pattern) for pattern in wildcard_patterns) and rel_path not in seen:
+            resolved_paths.append(rel_path)
+            seen.add(rel_path)
+    return resolved_paths
+
+
+def download_file(rel_path):
+    target_path = local_dir / rel_path
+    if target_path.is_file():
+        return
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def run_download():
+        return hf_hub_download(
             repo_id=repo_id,
             repo_type=repo_type,
             revision=revision,
+            filename=rel_path,
             local_dir=local_dir,
-            allow_patterns=patterns,
             token=token,
-            max_workers=workers,
         )
-        break
-    except HTTPError as exc:
-        status_code = getattr(getattr(exc, 'response', None), 'status_code', None)
-        if status_code != 429 or attempt >= max_retries:
-            raise
-        wait_seconds = min(60, 5 * (2 ** (attempt - 1)))
-        print(
-            f'[dep.sh] Hugging Face returned 429 for checkpoints; retrying in {wait_seconds}s with max_workers={workers}',
-            flush=True,
-        )
-        time.sleep(wait_seconds)
-        workers = max(1, workers // 2)
+
+    with_429_retry(rel_path, run_download)
+    if file_delay_seconds > 0:
+        time.sleep(file_delay_seconds)
+
+
+for rel_path in resolve_paths():
+    download_file(rel_path)
 PY
 }
 
@@ -484,14 +536,15 @@ download_hf_maniskill_data() {
             log "ManiSkill data list: built into dep.sh"
         fi
 
-        docker exec             -e HF_MANISKILL_DATA_REPO="$HF_MANISKILL_DATA_REPO"             -e HF_MANISKILL_DATA_REPO_TYPE="$HF_MANISKILL_DATA_REPO_TYPE"             -e HF_MANISKILL_DATA_REVISION="$HF_MANISKILL_DATA_REVISION"             -e HF_MANISKILL_DATA_LOCAL_DIR="$CONTAINER_MANISKILL_DATA_DIR"             -e HF_MANISKILL_PARTNET_LOCAL_DIR="$CONTAINER_PARTNET_DATA_DIR"             -e HF_MANISKILL_DATA_PATTERNS_JSON="$patterns_json"             -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT"             -e HF_HUB_MAX_WORKERS="$HF_HUB_MAX_WORKERS"             -e HF_HUB_HTTP_MAX_RETRIES="$HF_HUB_HTTP_MAX_RETRIES"             -e HF_TOKEN             -e HTTP_PROXY             -e HTTPS_PROXY             -e ALL_PROXY             -e NO_PROXY             "$CONTAINER_NAME"             bash -lc "python - <<'PY_HF_DATA'
+        docker exec             -e HF_MANISKILL_DATA_REPO="$HF_MANISKILL_DATA_REPO"             -e HF_MANISKILL_DATA_REPO_TYPE="$HF_MANISKILL_DATA_REPO_TYPE"             -e HF_MANISKILL_DATA_REVISION="$HF_MANISKILL_DATA_REVISION"             -e HF_MANISKILL_DATA_LOCAL_DIR="$CONTAINER_MANISKILL_DATA_DIR"             -e HF_MANISKILL_PARTNET_LOCAL_DIR="$CONTAINER_PARTNET_DATA_DIR"             -e HF_MANISKILL_DATA_PATTERNS_JSON="$patterns_json"             -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT"             -e HF_HUB_HTTP_MAX_RETRIES="$HF_HUB_HTTP_MAX_RETRIES"             -e HF_HUB_RETRY_BASE_SECONDS="$HF_HUB_RETRY_BASE_SECONDS"             -e HF_HUB_FILE_DELAY_SECONDS="$HF_HUB_FILE_DELAY_SECONDS"             -e HF_TOKEN             -e HTTP_PROXY             -e HTTPS_PROXY             -e ALL_PROXY             -e NO_PROXY             "$CONTAINER_NAME"             bash -lc "python - <<'PY_HF_DATA'
+import fnmatch
 import json
 import os
 import time
 from pathlib import Path
 import zipfile
 
-from huggingface_hub import snapshot_download
+from huggingface_hub import HfApi, hf_hub_download
 from requests.exceptions import HTTPError
 
 repo_id = os.environ['HF_MANISKILL_DATA_REPO']
@@ -500,38 +553,82 @@ revision = os.environ['HF_MANISKILL_DATA_REVISION']
 regular_local_dir = Path(os.environ['HF_MANISKILL_DATA_LOCAL_DIR'])
 partnet_local_dir = Path(os.environ['HF_MANISKILL_PARTNET_LOCAL_DIR'])
 patterns = json.loads(os.environ['HF_MANISKILL_DATA_PATTERNS_JSON'])
-max_workers = max(1, int(os.environ.get('HF_HUB_MAX_WORKERS', '8')))
 max_retries = max(1, int(os.environ.get('HF_HUB_HTTP_MAX_RETRIES', '6')))
+retry_base_seconds = max(1.0, float(os.environ.get('HF_HUB_RETRY_BASE_SECONDS', '15')))
+file_delay_seconds = max(0.0, float(os.environ.get('HF_HUB_FILE_DELAY_SECONDS', '0.2')))
 token = os.environ.get('HF_TOKEN') or None
+api = HfApi(token=token)
 
 
-def snapshot_with_patterns(allow_patterns, local_dir, label):
-    if not allow_patterns:
-        return
-    workers = max_workers
+def with_429_retry(label, action):
     for attempt in range(1, max_retries + 1):
         try:
-            snapshot_download(
-                repo_id=repo_id,
-                repo_type=repo_type,
-                revision=revision,
-                local_dir=local_dir,
-                allow_patterns=allow_patterns,
-                token=token,
-                max_workers=workers,
-            )
-            return
+            return action()
         except HTTPError as exc:
             status_code = getattr(getattr(exc, 'response', None), 'status_code', None)
             if status_code != 429 or attempt >= max_retries:
                 raise
-            wait_seconds = min(60, 5 * (2 ** (attempt - 1)))
+            wait_seconds = min(300.0, retry_base_seconds * (2 ** (attempt - 1)))
             print(
-                f'[dep.sh] Hugging Face returned 429 while downloading {label}; retrying in {wait_seconds}s with max_workers={workers}',
+                f'[dep.sh] Hugging Face returned 429 while downloading {label}; retrying in {wait_seconds:.1f}s',
                 flush=True,
             )
             time.sleep(wait_seconds)
-            workers = max(1, workers // 2)
+
+
+def resolve_paths(allow_patterns):
+    if not allow_patterns:
+        return []
+
+    wildcard_patterns = [pattern for pattern in allow_patterns if any(ch in pattern for ch in '*?[')]
+    exact_paths = [pattern for pattern in allow_patterns if pattern not in wildcard_patterns]
+    resolved_paths = []
+    seen = set()
+
+    for rel_path in exact_paths:
+        if rel_path not in seen:
+            resolved_paths.append(rel_path)
+            seen.add(rel_path)
+
+    if not wildcard_patterns:
+        return resolved_paths
+
+    def iter_tree():
+        return list(api.list_repo_tree(repo_id=repo_id, repo_type=repo_type, revision=revision, recursive=True))
+
+    for entry in with_429_retry('ManiSkill file listing', iter_tree):
+        entry_type = getattr(entry, 'type', None)
+        rel_path = getattr(entry, 'path', '')
+        if entry_type not in (None, 'file'):
+            continue
+        if not rel_path or rel_path.endswith('/'):
+            continue
+        if any(fnmatch.fnmatch(rel_path, pattern) for pattern in wildcard_patterns) and rel_path not in seen:
+            resolved_paths.append(rel_path)
+            seen.add(rel_path)
+    return resolved_paths
+
+
+def download_files(allow_patterns, local_dir, label):
+    for rel_path in resolve_paths(allow_patterns):
+        target_path = local_dir / rel_path
+        if target_path.is_file():
+            continue
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+
+        def run_download():
+            return hf_hub_download(
+                repo_id=repo_id,
+                repo_type=repo_type,
+                revision=revision,
+                filename=rel_path,
+                local_dir=local_dir,
+                token=token,
+            )
+
+        with_429_retry(f'{label}: {rel_path}', run_download)
+        if file_delay_seconds > 0:
+            time.sleep(file_delay_seconds)
 
 
 partnet_patterns = [pattern for pattern in patterns if pattern == 'partnet_mobility' or pattern.startswith('partnet_mobility/')]
@@ -541,10 +638,10 @@ partnet_regular_patterns = [pattern for pattern in partnet_patterns if not patte
 archive_patterns = [pattern for pattern in regular_patterns if pattern.lower().endswith('.zip')]
 regular_patterns = [pattern for pattern in regular_patterns if not pattern.lower().endswith('.zip')]
 
-snapshot_with_patterns(regular_patterns, regular_local_dir, 'regular ManiSkill assets')
-snapshot_with_patterns(archive_patterns, regular_local_dir, 'regular ManiSkill archives')
-snapshot_with_patterns(partnet_regular_patterns, partnet_local_dir, 'PartNet-Mobility assets')
-snapshot_with_patterns(partnet_archive_patterns, partnet_local_dir, 'PartNet-Mobility archives')
+download_files(regular_patterns, regular_local_dir, 'regular ManiSkill assets')
+download_files(archive_patterns, regular_local_dir, 'regular ManiSkill archives')
+download_files(partnet_regular_patterns, partnet_local_dir, 'PartNet-Mobility assets')
+download_files(partnet_archive_patterns, partnet_local_dir, 'PartNet-Mobility archives')
 
 
 def safe_extract_zip(zip_path: Path, target_dir: Path) -> None:

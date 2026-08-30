@@ -48,6 +48,10 @@ tmp-get-model-size-*.model
 **/log/
 **/nohup_out/
 **/launch_logs/
+**/results/
+**/outputs/
+**/*_table/
+**/cl_suite/
 eval/train/*/self_improv/outputs/
 eval/train/*/vla_rft/outputs/
 eval/train/*/world_env/outputs/
@@ -56,6 +60,25 @@ eval/train/edgevla/cl_suite/smoke-edgevla-check/
 eval/train/edgevla/cl_suite/20*/
 eval/overhead/overhead_same_acc_table/20*/
 eval/acc_comparison/acc_task_env_from_same_acc_table/20*/
+eval/train/**/results/
+eval/train/**/outputs/
+eval/train/**/launch_logs/
+eval/train/**/cl_suite/
+eval/acc_comparison/**/results/
+eval/acc_comparison/**/outputs/
+eval/acc_comparison/**/launch_logs/
+eval/acc_comparison/**/cl_suite/
+eval/overhead/**/results/
+eval/overhead/**/outputs/
+eval/overhead/**/launch_logs/
+eval/overhead/**/cl_suite/
+eval/discussion/**/results/
+eval/discussion/**/outputs/
+eval/discussion/**/launch_logs/
+eval/discussion/**/cl_suite/
+api/**/results/
+api/**/outputs/
+api/**/launch_logs/
 
 # Large local-only artifacts
 ckpt/

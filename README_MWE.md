@@ -390,7 +390,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   - Initializing RL environments based on the physical simulation engine
   - Evaluating each method's accuracy periodically
 
-#### 2.2.1 (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.1 Claim 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
@@ -453,7 +453,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.2 (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.2 Claim 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum running examples on three representative methods:
 
@@ -518,7 +518,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.3 (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.3 Claim 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
@@ -579,7 +579,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.4 (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.4 Claim 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum running examples on all methods:
 
@@ -628,9 +628,7 @@ cd overhead
 </table>
 
 
-#### 
-
-#### 2.2.5 (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.5 Claim 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
@@ -690,7 +688,7 @@ cd overhead
   </table>
 
 
-#### 2.2.6 (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.6 Claim 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for minimum running examples:
   ```bash
@@ -721,7 +719,7 @@ cd overhead
 
 
 
-#### 2.2.7 (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.7 Claim 7: (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for run:
 
@@ -768,7 +766,7 @@ cd overhead
 
 
 
-#### 2.2.8 (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.8 Claim 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for minimum running examples:
   ```bash
@@ -796,7 +794,7 @@ cd overhead
     </tbody>
   </table>
 
-#### 2.2.9 (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.9 Claim 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for run:
 
@@ -824,7 +822,7 @@ cd overhead
     </tbody>
   </table>
 
-#### 2.2.10 (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.10 Claim 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for minimum running examples:
   ```bash
@@ -853,7 +851,7 @@ cd overhead
   </table>
 
 
-#### 2.2.11 (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.11 Claim 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - **Option 1:** Commands for minimum running examples on three representative methods:
   ```bash
@@ -894,7 +892,7 @@ cd overhead
   </table>
 
 
-#### 2.2.12 (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.12 Claim 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
   - Commands for minimum running examples:
     ```bash
@@ -921,7 +919,7 @@ cd overhead
       </tbody>
     </table>
 
-#### 2.2.13 (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.13 Claim 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
   - Commands for minimum running examples:
     ```bash
@@ -949,7 +947,7 @@ cd overhead
       </tbody>
     </table>
 
-#### 2.2.14 (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.14 Claim 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
   - Commands for minimum running examples:
     ```bash

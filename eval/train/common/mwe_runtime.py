@@ -45,3 +45,4 @@ class ActiveRuntimeTracker:
 
     def current_hours(self, extra_active_seconds: float = 0.0) -> float:
         return self.current_seconds(extra_active_seconds=extra_active_seconds) / 3600.0
+

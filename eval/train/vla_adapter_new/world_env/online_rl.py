@@ -141,7 +141,30 @@ def parse_args() -> Args:
             parser.add_argument(arg_name, type=arg_type, default=None)
         else:
             parser.add_argument(arg_name, type=type(default), default=default)
-    return Args(**vars(parser.parse_args()))
+    args = Args(**vars(parser.parse_args()))
+    if os.environ.get("MWE", "0") == "1":
+        os.environ.setdefault("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "1")
+        args.num_envs = 32
+        args.num_eval_envs = 1
+        args.num_steps = 16
+        args.update_epochs = 1
+        args.num_minibatches = 2
+        args.rollout_micro_batch_size = 4
+        args.eval_micro_batch_size = 4
+        args.update_micro_batch_size = 2
+        args.small_model_feedback_schedule = "once"
+        args.small_model_regeneration_schedule = "once"
+        args.total_timesteps = max(args.total_timesteps, 10**12)
+        mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
+        if mwe_runtime_minutes <= 0:
+            raise ValueError("MWE_MAX_RUNTIME_MINUTES must be positive")
+        if hasattr(args, "max_runtime_hours"):
+            args.max_runtime_hours = mwe_runtime_minutes / 60.0
+        if hasattr(args, "max_time"):
+            args.max_time = mwe_runtime_minutes
+        if hasattr(args, "early_stop_zero_success_minutes"):
+            args.early_stop_zero_success_minutes = max(args.early_stop_zero_success_minutes, 5.0)
+    return args
 
 
 @dataclass

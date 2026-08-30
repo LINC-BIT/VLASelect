@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import shutil
 import sys
 from dataclasses import asdict
@@ -102,6 +104,9 @@ def configure_human_defaults() -> None:
 def main() -> None:
     configure_human_defaults()
     args = algo.parse_args()
+    if os.environ.get("MWE", "0") == "1":
+        args.num_envs = 256
+        args.num_steps = 16
     if args.mode != 'train':
         raise ValueError('World-Env online RL currently supports only `--mode train`')
     algo.train(args)

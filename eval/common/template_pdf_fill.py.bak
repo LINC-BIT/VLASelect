@@ -451,31 +451,20 @@ def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[di
                 ')',
             ]
         else:
-            main_text = f'{baseline_text} / {ours_text} ({improvement_text}%'
-            arrow_index = None
-            close_index = None
-            for op_index in op_indices:
-                operands, _ = content.operations[op_index]
-                if ''.join(item for item in operands[0] if isinstance(item, str)) == ')':
-                    close_index = op_index
-                font_index = op_index - 1
-                while font_index >= 0 and content.operations[font_index][1] != b'Tf':
-                    font_index -= 1
-                if font_index >= 0:
-                    font_operands, _ = content.operations[font_index]
-                    if font_operands and font_operands[0] == '/F2':
-                        arrow_index = op_index
-            set_tj(op_indices[0], main_text)
-            for op_index in op_indices[1:]:
-                if op_index in {arrow_index, close_index}:
-                    continue
-                set_tj(op_index, '')
-            return
+            values = [
+                f'{baseline_text} / {ours_text} ({improvement_text}%)',
+            ]
 
-        for op_index, value in zip(op_indices, values):
-            set_tj(op_index, value)
-        for op_index in op_indices[len(values):]:
-            set_tj(op_index, '')
+        if panel_key == 'd':
+            for op_index, value in zip(op_indices[:-1], values):
+                set_tj(op_index, value)
+            for op_index in op_indices[len(values):-1]:
+                set_tj(op_index, '')
+        else:
+            for op_index, value in zip(op_indices, values):
+                set_tj(op_index, value)
+            for op_index in op_indices[len(values):]:
+                set_tj(op_index, '')
 
     for key, stats in zip(['a', 'b', 'c', 'd'], summary_stats):
         rewrite_panel(key, stats if isinstance(stats, dict) else {})

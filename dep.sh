@@ -144,8 +144,8 @@ resolve_container_paths() {
     fi
 
     if [[ -z "$CONTAINER_PARTNET_DATA_DIR" ]]; then
-        # Keep only PartNet-Mobility in the repository's shared dataset path.
-        CONTAINER_PARTNET_DATA_DIR="$CONTAINER_REPO_DIR/eval/datasets/data"
+        # Align PartNet-Mobility with ManiSkill default runtime asset lookup.
+        CONTAINER_PARTNET_DATA_DIR="$CONTAINER_MS_ASSET_DIR/data"
     fi
 }
 

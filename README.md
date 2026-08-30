@@ -381,6 +381,10 @@ Docker Image: <br>
       <td>Check the network connection and make sure your machine can access GitHub, Docker Hub, and Hugging Face.</td>
     </tr>
     <tr>
+      <td><strong>Missing dependencies</strong>: You see errors like <code>ModuleNotFoundError: No module named 'xxx'</code> when running the reproduction script.</td>
+      <td>Rerun <code>dep.sh</code> to download all required dependencies.</td>
+    </tr>
+    <tr>
       <td><strong>Lack of model checkpoints</strong>: You see errors like <code>FileNotFoundError: [Errno 2] No such file or directory: 'xxx.pt'</code> when running the reproduction script.</td>
       <td>Rerun <code>dep.sh</code> to download all required model checkpoints.</td>
     </tr>
@@ -392,6 +396,8 @@ Docker Image: <br>
     
   </tbody>
 </table>
+
+For other unusual behaviors, we will provide remote tech support and send fixes by the **hotfixing mechanism** (i.e. updating dependencies/scripts by only one automatic command: `docker pull` or `git pull`).
 
 
 ## 2. Evaluation Reproduction
@@ -491,6 +497,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -498,16 +505,19 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>Create file eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
         <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>Create file eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>Create file eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-run">Link</a></td>
       </tr>
     </tbody>
@@ -576,6 +586,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -583,16 +594,19 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>Create file eval/acc_comparison/FIG_ACC_RESOURCE.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example-1">Link</a></td>
       </tr>
       <tr>
         <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>Create file eval/acc_comparison/FIG_ACC_RESOURCE.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#minimal-working-example-1">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>Create file eval/acc_comparison/FIG_ACC_RESOURCE.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_acc.md#full-run-1">Link</a></td>
       </tr>
     </tbody>
@@ -655,6 +669,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -662,16 +677,19 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>Create files eval/overhead/FIG_MEMORY_FOOTPOINT.pdf, eval/overhead/TAB_OVERHEAD.csv, and eval/overhead/overhead_breakdown_table/TAB_ENERGY.csv</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
         <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>Create files eval/overhead/FIG_MEMORY_FOOTPOINT.pdf, eval/overhead/TAB_OVERHEAD.csv, and eval/overhead/overhead_breakdown_table/TAB_ENERGY.csv</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>Create files eval/overhead/FIG_MEMORY_FOOTPOINT.pdf, eval/overhead/TAB_OVERHEAD.csv, and eval/overhead/overhead_breakdown_table/TAB_ENERGY.csv</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-run">Link</a></td>
       </tr>
     </tbody>
@@ -691,12 +709,14 @@ And you can run the following commands to reproduce each figure/table in our eva
     <thead>
       <tr>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>40 minutes<br>60GB memory<br>30GB disk space</td>
+        <td>Create file eval/overhead_breakdown/overhead_breakdown.png</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-1">Link</a></td>
       </tr>
     </tbody>
@@ -758,6 +778,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -765,16 +786,19 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>Create file eval/overhead/FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-2">Link</a></td>
       </tr>
       <tr>
         <td>Small running example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>Create file eval/overhead/FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#minimal-working-example-2">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>Create file eval/overhead/FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_overhead.md#full-run-2">Link</a></td>
       </tr>
     </tbody>
@@ -803,6 +827,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -810,11 +835,13 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example</td>
         <td>1 hours<br>20GB memory<br>30GB disk space</td>
+        <td>Create file eval/ablation/FIG_ABLATION.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>40 hours<br>60GB memory<br>30GB disk space</td>
+        <td>Create file eval/ablation/FIG_ABLATION.pdf</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/ablation_results.md#full-run">Link</a></td>
       </tr>
     </tbody>
@@ -885,6 +912,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -892,11 +920,13 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example</td>
         <td>10 minutes<br>20GB memory<br>8GB disk space</td>
+        <td>Create file eval/ckpt/discussion/icl/&lt;STAMP&gt;/icl_accuracy.png</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#minimal-working-example">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>7 hours<br>60GB memory<br>8GB disk space</td>
+        <td>Create file eval/ckpt/discussion/icl/&lt;STAMP&gt;/icl_accuracy.png</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-2-icl-in-context-learning">Link</a></td>
       </tr>
     </tbody>
@@ -913,12 +943,14 @@ And you can run the following commands to reproduce each figure/table in our eva
     <thead>
       <tr>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Experiment Results</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>1 hours<br>32GB memory<br>3GB disk space</td>
+        <td>Create file eval/discussion/results/model_size_limit_&lt;STAMP&gt;/summary.csv</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-3-maximum-supported-model-size">Link</a></td>
       </tr>
     </tbody>
@@ -943,6 +975,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -950,11 +983,13 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example</td>
         <td>20 minutes<br>20GB memory<br>1GB disk space</td>
+        <td>Create file eval/discussion/results/multi_agent/&lt;STAMP&gt;/accuracy_vs_time.png</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#minimal-working-example-1">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>7 hours<br>60GB memory<br>1GB disk space</td>
+        <td>Create file eval/discussion/results/multi_agent/&lt;STAMP&gt;/accuracy_vs_time.png</td>
         <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#discussion-4-applicability-to-multi-agent-scenarios">Link</a></td>
       </tr>
     </tbody>
@@ -985,6 +1020,7 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <th></th>
         <th>Resource Requirements</th>
+        <th>Side-Effects</th>
         <th>Example Running Outputs</th>
       </tr>
     </thead>
@@ -992,16 +1028,19 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum running example on three representative methods</td>
         <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-        <td><a href="">Link</a></td>
+        <td>Create file api/results/vla_adapter/scaling_methods_only_4/training_accuracy_curve.png</td>
+        <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#2211-discussion-5-in-section-55-comparison-with-alternative-knowledge-exchange-techniques">Link</a></td>
       </tr>
       <tr>
         <td>Small running example on all methods</td>
         <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-        <td><a href="">Link</a></td>
+        <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
+        <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#2211-discussion-5-in-section-55-comparison-with-alternative-knowledge-exchange-techniques">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
         <td>40 hours<br>60GB memory<br>30GB disk space</td>
+        <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
         <td>-</td>
       </tr>
     </tbody>
@@ -1025,6 +1064,7 @@ And you can run the following commands to reproduce each figure/table in our eva
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1032,11 +1072,13 @@ And you can run the following commands to reproduce each figure/table in our eva
         <tr>
           <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
-          <td><a href="">Link</a></td>
+          <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
+          <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#2212-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>15 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1059,6 +1101,7 @@ And you can run the following commands to reproduce each figure/table in our eva
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1066,11 +1109,13 @@ And you can run the following commands to reproduce each figure/table in our eva
         <tr>
           <td>Minimum running example</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-          <td><a href="">Link</a></td>
+          <td>Create files eval/forgetting/results/&lt;timestamp&gt;/forgetting_summary.{json,csv} and forgetting_accuracy.{png,pdf,svg}</td>
+          <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#2213-discussion-7-in-section-55-forgetting-on-previously-learned-environmentstasks">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>13 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create files eval/forgetting/results/&lt;timestamp&gt;/forgetting_summary.{json,csv} and forgetting_accuracy.{png,pdf,svg}</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1095,6 +1140,7 @@ And you can run the following commands to reproduce each figure/table in our eva
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1102,11 +1148,13 @@ And you can run the following commands to reproduce each figure/table in our eva
         <tr>
           <td>Minimum running example</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-          <td><a href="">Link</a></td>
+          <td>Create files api/model_type/CNN-ACC.png, api/model_type/MLP-ACC.png, and api/model_type/MLP-CNN-ACC-COMPARE.png</td>
+          <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/results_discussion.md#2214-discussion-8-in-section-55-applicability-to-mlpcnn-models">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>13 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create files api/model_type/CNN-ACC.png, api/model_type/MLP-ACC.png, and api/model_type/MLP-CNN-ACC-COMPARE.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1216,6 +1264,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1223,11 +1272,13 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
         <tr>
           <td>Minimum running example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/vla_model_interface_examples/outputs/vla_adapter_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#311-supporting-the-vla-adapter">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>3 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/vla_model_interface_examples/outputs/vla_adapter_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1304,6 +1355,7 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1311,16 +1363,19 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <td>Minimum running example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/vla_adapter/scaling_methods_only_4/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Small running example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#312-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>40 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1365,6 +1420,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1372,11 +1428,13 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#313-supporting-different-knowledge-exchange-granularities">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>15 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1453,6 +1511,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1460,11 +1519,13 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum running example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/vla_model_interface_examples/outputs/tinyvla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#321-supporting-the-tinyvla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>3 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/vla_model_interface_examples/outputs/tinyvla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1529,6 +1590,7 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1536,16 +1598,19 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <td>Minimum running example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/tinyvla/scaling_methods_only_4/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Small running example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/tinyvla/scaling_methods/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#322-supporting-different-scaling-strategies">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>40 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/results/tinyvla/scaling_methods/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1589,6 +1654,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1596,11 +1662,13 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/tinyvla/knowledge_exchange/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#323-supporting-different-knowledge-exchange-granularities">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>15 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/results/tinyvla/knowledge_exchange/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1679,6 +1747,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1686,11 +1755,13 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum running example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/vla_model_interface_examples/outputs/edgevla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#331-supporting-for-the-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>3 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/vla_model_interface_examples/outputs/edgevla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1755,6 +1826,7 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1762,16 +1834,19 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <td>Minimum running example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/edgevla/scaling_methods_only_4/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Small running example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/edgevla/scaling_methods/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#332-baseline-comparison-on-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>40 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/results/edgevla/scaling_methods/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>
@@ -1815,6 +1890,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <th></th>
           <th>Resource Requirements</th>
+          <th>Side-Effects</th>
           <th>Example Running Outputs</th>
         </tr>
       </thead>
@@ -1822,11 +1898,13 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum running example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>Create file api/results/edgevla/knowledge_exchange/training_accuracy_curve.png</td>
           <td><a href="https://github.com/LINC-BIT/VLASelect/blob/main/model_support.md#333-swapping-granularity-ablation-on-edgevla">Link</a></td>
         </tr>
         <tr>
           <td>Full run</td>
           <td>15 hours<br>60GB memory<br>30GB disk space</td>
+          <td>Create file api/results/edgevla/knowledge_exchange/training_accuracy_curve.png</td>
           <td>-</td>
         </tr>
       </tbody>

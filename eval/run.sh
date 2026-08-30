@@ -20,6 +20,7 @@ RUN_OVERHEAD_SAME_ACC="${RUN_OVERHEAD_SAME_ACC:-1}"
 RUN_BREAKDOWN_ALL="${RUN_BREAKDOWN_ALL:-1}"
 RUN_BREAKDOWN_MODULES="${RUN_BREAKDOWN_MODULES:-1}"
 RUN_ABLATION="${RUN_ABLATION:-1}"
+METHODS="${METHODS:-${RUN_METHODS:-}}"
 RUN_DISCUSSION_ICL="${RUN_DISCUSSION_ICL:-1}"
 RUN_DISCUSSION_MODEL_SIZE="${RUN_DISCUSSION_MODEL_SIZE:-1}"
 RUN_DISCUSSION_MULTI_AGENT="${RUN_DISCUSSION_MULTI_AGENT:-1}"
@@ -43,28 +44,28 @@ run_step() {
 }
 
 if [[ "$RUN_ACC_TASK_ENV" == "1" ]]; then
-    run_step "Figure 7: task/environment accuracy" env MWE="$MWE" bash acc_comparison/run_acc_task_env_change.sh
+    run_step "Figure 7: task/environment accuracy" env MWE="$MWE" METHODS="$METHODS" bash acc_comparison/run_acc_task_env_change.sh
     if [[ "$AUTO_POSTPROCESS" == "1" ]]; then
         run_step "Figure 7 postprocess" python acc_comparison/plot_acc_task_env.py
     fi
 fi
 
 if [[ "$RUN_ACC_RES_CHANGE" == "1" ]]; then
-    run_step "Figure 8: resource-change accuracy" env MWE="$MWE" bash acc_comparison/run_acc_res_change.sh
+    run_step "Figure 8: resource-change accuracy" env MWE="$MWE" METHODS="$METHODS" bash acc_comparison/run_acc_res_change.sh
     if [[ "$AUTO_POSTPROCESS" == "1" ]]; then
         run_step "Figure 8 postprocess" python acc_comparison/plot_acc_res_change.py
     fi
 fi
 
 if [[ "$RUN_OVERHEAD_SAME_ACC" == "1" ]]; then
-    run_step "Figure 9 and Tables 2-3: same-accuracy overhead" env MWE="$MWE" bash overhead/overhead_same_acc.sh
+    run_step "Figure 9 and Tables 2-3: same-accuracy overhead" env MWE="$MWE" METHODS="$METHODS" bash overhead/overhead_same_acc.sh
     if [[ "$AUTO_POSTPROCESS" == "1" ]]; then
         run_step "Figure 9 postprocess" python overhead/plot_overhead.py
     fi
 fi
 
 if [[ "$RUN_BREAKDOWN_ALL" == "1" ]]; then
-    run_step "Figure 10: breakdown for all methods" env MWE="$MWE" bash overhead_breakdown.sh
+    run_step "Figure 10: breakdown for all methods" env MWE="$MWE" METHODS="$METHODS" bash overhead_breakdown.sh
     if [[ "$AUTO_POSTPROCESS" == "1" ]]; then
         run_step "Figure 10 postprocess" python overhead_breakdown/benchmark.py
     fi
@@ -125,6 +126,7 @@ cat <<'MSG'
 [run.sh] Notes:
 [run.sh] - The postprocess scripts now generate panel images first and then stitch them into final figures close to the paper layout.
 [run.sh] - Each experiment entry script performs its own preflight sanity check before launch.
+[run.sh] - Set `METHODS=self_improv,vla_rft,world_env,vlaselect` to restrict the main multi-method experiments (Figures 7-10 except the VLASelect-only module breakdown); ablation and discussion ignore this filter.
 [run.sh] - Main experiment figures are written under `eval/acc_comparison/`, `eval/overhead/`, and `eval/ablation/`, including `FIG_ACC_TASK_ENV.*`, `FIG_ACC_RESOURCE.*`, `FIG_MEMORY_FOOTPOINT.*`, `FIG_BREAKDOWN_ALL_METHODS.*`, `FIG_BREAKDOWN_MODULES.*`, and `FIG_ABLATION.*`.
 [run.sh] - Discussion outputs are written under `eval/discussion/results/` plus fixed summary plots such as `eval/discussion/FIG_VLA_APPLICABILITY.*`; model-scaling discussion outputs are under `api/results/vla_adapter/`; MLP/CNN applicability outputs are under `api/model_type/`.
 [run.sh] - Raw checkpoints, metrics histories, and intermediate manifests remain under `eval/ckpt/`, `eval/overhead/*table/`, `eval/ablation/ablation_table/`, `eval/forgetting/results/`, and `eval/discussion/results/`.

@@ -997,7 +997,7 @@ def benchmark_octo(args: argparse.Namespace, device: torch.device) -> Dict[str, 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path(__file__).with_name("overhead_breakdown.json"))
-    parser.add_argument("--plot", type=Path, default=Path(__file__).with_name("overhead_breakdown.png"))
+    parser.add_argument("--plot", type=Path, default=Path(__file__).with_name("overhead_breakdown.pdf"))
     parser.add_argument("--device", default=os.environ.get("CUDA_VISIBLE_DEVICES", "0"))
     parser.add_argument("--batch", type=int, default=int(os.environ.get("OVERHEAD_BATCH_SIZE", "1")))
     parser.add_argument("--warmup", type=int, default=int(os.environ.get("OVERHEAD_WARMUP", "1")))

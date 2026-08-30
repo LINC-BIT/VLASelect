@@ -1797,7 +1797,7 @@ def load_agent():
     if is_mlp_model():
         from mlp_model import MLPAgent
 
-        state_max, state_min = torch.load(args.state_norm_stats_path, map_location="cpu")
+        state_max, state_min = torch.load(args.state_norm_stats_path, map_location=device)
         agent = MLPAgent(
             state_dim=42,
             action_dim=4,
@@ -1859,7 +1859,7 @@ def load_agent():
     # # actor.decoder = nn.Identity()
     # print(f'load bc pretrained fbs model from {args.bc_pretrained_fbs_model_path}')
 
-    state_max, state_min = torch.load(args.state_norm_stats_path, map_location="cpu")
+    state_max, state_min = torch.load(args.state_norm_stats_path, map_location=device)
     if args.enable_ricl_injection:
         agent = RiclInjectedAgent(
             actor,

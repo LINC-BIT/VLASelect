@@ -49,6 +49,16 @@ def summarize_episode_metric_tensors(
             merged = merged[-max_num_values:]
         # Keep the metric naming contract shared by training and plotting.
         summary[f"train_{key}"] = merged.mean().item()
+    # MWE train-success-only mode predates the train_* naming contract in some
+    # Octo entrypoints. Keep the explicit train_* keys for plotting, and also
+    # expose the legacy success_* aliases so existing consumers continue to work.
+    for source_key, target_key in (
+        ("train_success_once", "success_once"),
+        ("train_success_at_end", "success_at_end"),
+        ("train_success", "success"),
+    ):
+        if source_key in summary and target_key not in summary:
+            summary[target_key] = summary[source_key]
     return summary
 
 

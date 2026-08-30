@@ -6,7 +6,7 @@ from typing import Iterable
 
 from PIL import Image, ImageDraw, ImageFont
 from pypdf import PdfReader, PdfWriter, Transformation
-from pypdf.generic import ArrayObject, ContentStream, DecodedStreamObject, NameObject, NumberObject, TextStringObject
+from pypdf.generic import ArrayObject, ByteStringObject, ContentStream, DecodedStreamObject, NameObject, NumberObject, TextStringObject
 
 
 EVAL_ROOT = Path(__file__).resolve().parents[1]
@@ -395,10 +395,28 @@ def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[di
             return 'nan', 'nan', 'nan'
         return f'{baseline:.2f}', f'{ours:.2f}', f'{improvement:.2f}'
 
-    def set_tj(op_index: int, text_value: str) -> None:
-        content.operations[op_index] = ([ArrayObject([TextStringObject(text_value)])], b'TJ')
+    def set_tj(op_index: int, text_value: str | bytes | ByteStringObject | list[object] | tuple[object, ...]) -> None:
+        if isinstance(text_value, (list, tuple)):
+            payload_items = []
+            for item in text_value:
+                if isinstance(item, ByteStringObject):
+                    payload_items.append(item)
+                elif isinstance(item, bytes):
+                    payload_items.append(ByteStringObject(item))
+                else:
+                    payload_items.append(TextStringObject(str(item)))
+            payload = ArrayObject(payload_items)
+            content.operations[op_index] = ([payload], b'TJ')
+            return
+        if isinstance(text_value, ByteStringObject):
+            payload = text_value
+        elif isinstance(text_value, bytes):
+            payload = ByteStringObject(text_value)
+        else:
+            payload = TextStringObject(text_value)
+        content.operations[op_index] = ([ArrayObject([payload])], b'TJ')
 
-    arrow_token = ';'
+    arrow_token = ByteStringObject(b'\x01;')
 
     def rewrite_panel(panel_key: str, stats: dict[str, float | None]) -> None:
         op_indices = panel_ops.get(panel_key, [])
@@ -406,12 +424,52 @@ def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[di
             return
         baseline_text, ours_text, improvement_text = value_text(stats)
         if panel_key == 'a':
-            prefix = f'Baselines / VLASelect avg. memory (GB): {baseline_text} / {ours_text} ({improvement_text}%' + arrow_token + ')'
+            values: list[str | ByteStringObject] = [
+                'Baselines',
+                '/',
+                'VLASelect',
+                f'avg. memory (GB): {baseline_text} /',
+                f'{ours_text} ({improvement_text}%',
+                arrow_token,
+                ')',
+            ]
+        elif panel_key == 'b':
+            ours_head = ours_text[:-1] if len(ours_text) > 1 else ours_text
+            ours_tail = ours_text[-1] if ours_text else ''
+            values = [
+                f'{baseline_text} /',
+                ours_head,
+                ours_tail,
+                f'({improvement_text}%',
+                arrow_token,
+                ')',
+            ]
+        elif panel_key == 'c':
+            values = [
+                f'{baseline_text} / {ours_text} ({improvement_text}%',
+                arrow_token,
+                ')',
+            ]
         else:
-            prefix = f'{baseline_text} / {ours_text} ({improvement_text}%' + arrow_token + ')'
-        set_tj(op_indices[0], prefix)
-        for op_index in op_indices[1:]:
-            set_tj(op_index, '')
+            baseline_head = baseline_text[:-1] if len(baseline_text) > 1 else baseline_text
+            baseline_tail = baseline_text[-1] if baseline_text else ''
+            values = [
+                baseline_head,
+                baseline_tail,
+                f'/ {ours_text} ({improvement_text}%',
+                arrow_token,
+            ]
+
+        if panel_key == 'd':
+            for op_index, value in zip(op_indices[:-1], values):
+                set_tj(op_index, value)
+            for op_index in op_indices[len(values):-1]:
+                set_tj(op_index, '')
+        else:
+            for op_index, value in zip(op_indices, values):
+                set_tj(op_index, value)
+            for op_index in op_indices[len(values):]:
+                set_tj(op_index, '')
 
     for key, stats in zip(['a', 'b', 'c', 'd'], summary_stats):
         rewrite_panel(key, stats if isinstance(stats, dict) else {})

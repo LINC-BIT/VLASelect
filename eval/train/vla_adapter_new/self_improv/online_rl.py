@@ -139,9 +139,10 @@ def parse_args() -> Args:
     args = Args(**vars(parser.parse_args()))
     if os.environ.get("MWE", "0") == "1":
         os.environ.setdefault("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "1")
-        args.num_envs = 32
+        args.num_envs = 16
         args.num_eval_envs = 1
         args.num_steps = 16
+        args.max_episode_steps = 10
         args.update_epochs = 1
         args.num_minibatches = 2
         args.rollout_micro_batch_size = 4

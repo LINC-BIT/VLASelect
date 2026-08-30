@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/tmp_manifests/task_env_upto_20260827.json",
-    "suite_manifest": "ckpt/cl_suite/20260826-121034/manifest.json"
+    "top_manifest": "",
+    "suite_manifest": ""
   },
   "render_config": {
     "smoothing": 0.7,
@@ -33,7 +33,7 @@
   },
   "plots": {
     "success_once": {
-      "tag": "eval_success_once",
+      "tag": "eval/success_once",
       "output_stem": "a_octo",
       "xlabel": "Time (minutes)",
       "ylabel": "Success Rate",

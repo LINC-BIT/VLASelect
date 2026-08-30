@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/tmp_manifests/task_env_upto_20260827.json",
-    "suite_manifest": "train/edgevla/cl_suite/20260827-200958/manifest.json"
+    "top_manifest": "",
+    "suite_manifest": ""
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        2.0999790000000003
+        301.0
       ],
       "ylim": [
         0.0,
@@ -48,56 +48,11 @@
       "grid_alpha": 0.3,
       "summary": {
         "others_average": null,
-        "ours_average": 0.95,
+        "ours_average": null,
         "absolute_improvement_percent": null
       },
-      "series": [
-        {
-          "name": "ours",
-          "display_name": "Ours",
-          "label": "Ours",
-          "raw_average": 0.95,
-          "style": {
-            "color": "#C44E52",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            1.2296982018894966,
-            2.0999790000000003
-          ],
-          "y": [
-            0.95,
-            0.95,
-            0.95
-          ],
-          "x_full": [
-            0.0,
-            0.048283441460879956,
-            0.07046724394863538,
-            0.11040843318853977,
-            1.1711411446566633,
-            1.7702231587879762,
-            1.8253081204817185,
-            1.8803878308544775,
-            1.940278029422098,
-            1.99998
-          ],
-          "point_count": 3
-        }
-      ],
-      "legend_entries": [
-        {
-          "name": "ours",
-          "label": "Ours",
-          "style": {
-            "color": "#C44E52",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        }
-      ]
+      "series": [],
+      "legend_entries": []
     }
   }
 }

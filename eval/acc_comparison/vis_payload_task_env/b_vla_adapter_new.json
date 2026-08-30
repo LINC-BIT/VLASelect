@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/tmp_manifests/task_env_upto_20260827.json",
-    "suite_manifest": "ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json"
+    "top_manifest": "",
+    "suite_manifest": ""
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        2.0999790000000003
+        300.0
       ],
       "ylim": [
         0.0,
@@ -47,161 +47,12 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 0.3758333333333333,
-        "ours_average": 0.7305555555555556,
-        "absolute_improvement_percent": 35.472222222222236
+        "others_average": null,
+        "ours_average": null,
+        "absolute_improvement_percent": null
       },
-      "series": [
-        {
-          "name": "self_improv",
-          "display_name": "Self-Improv",
-          "label": "Self-Improv",
-          "raw_average": 0.25,
-          "style": {
-            "color": "#9A9A9A",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            2.0999790000000003
-          ],
-          "y": [
-            0.0,
-            0.15000000000000002
-          ],
-          "x_full": [
-            0.06511902391435453,
-            1.99998
-          ],
-          "point_count": 2
-        },
-        {
-          "name": "vla_rft",
-          "display_name": "VLA-RFT",
-          "label": "VLA-RFT",
-          "raw_average": 0.39,
-          "style": {
-            "color": "#59A14F",
-            "linestyle": "--",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            1.1654934884325194,
-            2.0999790000000003
-          ],
-          "y": [
-            0.0,
-            0.255,
-            0.32445
-          ],
-          "x_full": [
-            0.20655418410789436,
-            0.3916167643138786,
-            1.2019099045265402,
-            1.8040462674679871,
-            1.99998
-          ],
-          "point_count": 3
-        },
-        {
-          "name": "world_env",
-          "display_name": "WorldEnv",
-          "label": "WorldEnv",
-          "raw_average": 0.4875,
-          "style": {
-            "color": "#4D4D4D",
-            "linestyle": "--",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            1.7300009297223577,
-            2.0999790000000003
-          ],
-          "y": [
-            0.0,
-            0.39,
-            0.423
-          ],
-          "x_full": [
-            0.16823166827334568,
-            0.3342986840789037,
-            1.6772592904088477,
-            1.99998
-          ],
-          "point_count": 3
-        },
-        {
-          "name": "ours",
-          "display_name": "VLASelect",
-          "label": "VLASelect",
-          "raw_average": 0.730556,
-          "style": {
-            "color": "#C44E52",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            0.4429024412233367,
-            2.0999790000000003
-          ],
-          "y": [
-            0.3333333333333333,
-            0.6478333333333333,
-            0.6993568333333333
-          ],
-          "x_full": [
-            0.2095019353341618,
-            0.43205006487700903,
-            0.5871281429283021,
-            0.9212312001146703,
-            1.471736252041549,
-            1.99998
-          ],
-          "point_count": 3
-        }
-      ],
-      "legend_entries": [
-        {
-          "name": "self_improv",
-          "label": "Self-Improv",
-          "style": {
-            "color": "#9A9A9A",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "vla_rft",
-          "label": "VLA-RFT",
-          "style": {
-            "color": "#59A14F",
-            "linestyle": "--",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "world_env",
-          "label": "WorldEnv",
-          "style": {
-            "color": "#4D4D4D",
-            "linestyle": "--",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "ours",
-          "label": "VLASelect",
-          "style": {
-            "color": "#C44E52",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        }
-      ]
+      "series": [],
+      "legend_entries": []
     }
   }
 }

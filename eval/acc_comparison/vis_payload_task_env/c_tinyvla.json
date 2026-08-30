@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/tmp_manifests/task_env_upto_20260827.json",
-    "suite_manifest": "ckpt/tinyvla/cl_suite/20260827-043445/manifest.json"
+    "top_manifest": "",
+    "suite_manifest": ""
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        2.0999790000000003
+        300.0
       ],
       "ylim": [
         0.0,
@@ -47,149 +47,12 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 0.9499999999999998,
-        "ours_average": 0.7749999999999999,
-        "absolute_improvement_percent": -17.499999999999993
+        "others_average": null,
+        "ours_average": null,
+        "absolute_improvement_percent": null
       },
-      "series": [
-        {
-          "name": "self_improv",
-          "display_name": "Self-Improv",
-          "label": "Self-Improv",
-          "raw_average": 0.95,
-          "style": {
-            "color": "#9A9A9A",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            2.0999790000000003
-          ],
-          "y": [
-            0.95,
-            0.95
-          ],
-          "x_full": [
-            1.99998
-          ],
-          "point_count": 1
-        },
-        {
-          "name": "vla_rft",
-          "display_name": "VLA-RFT",
-          "label": "VLA-RFT",
-          "raw_average": 0.95,
-          "style": {
-            "color": "#59A14F",
-            "linestyle": "--",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            2.0999790000000003
-          ],
-          "y": [
-            0.95,
-            0.95
-          ],
-          "x_full": [
-            1.002093077942214,
-            1.99998
-          ],
-          "point_count": 2
-        },
-        {
-          "name": "world_env",
-          "display_name": "WorldEnv",
-          "label": "WorldEnv",
-          "raw_average": 0.95,
-          "style": {
-            "color": "#4D4D4D",
-            "linestyle": "--",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            2.0999790000000003
-          ],
-          "y": [
-            0.95,
-            0.95
-          ],
-          "x_full": [
-            1.001621327413369,
-            1.99998
-          ],
-          "point_count": 2
-        },
-        {
-          "name": "ours",
-          "display_name": "Ours",
-          "label": "Ours",
-          "raw_average": 0.775,
-          "style": {
-            "color": "#C44E52",
-            "linestyle": "-",
-            "linewidth": 3.6
-          },
-          "x": [
-            0.0,
-            1.9603770820339579,
-            2.0999790000000003
-          ],
-          "y": [
-            0.25,
-            0.607,
-            0.7099
-          ],
-          "x_full": [
-            0.0,
-            0.6571076859088859,
-            1.8670257924132927,
-            1.9999799999999999
-          ],
-          "point_count": 3
-        }
-      ],
-      "legend_entries": [
-        {
-          "name": "self_improv",
-          "label": "Self-Improv",
-          "style": {
-            "color": "#9A9A9A",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "vla_rft",
-          "label": "VLA-RFT",
-          "style": {
-            "color": "#59A14F",
-            "linestyle": "--",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "world_env",
-          "label": "WorldEnv",
-          "style": {
-            "color": "#4D4D4D",
-            "linestyle": "--",
-            "linewidth": 3.6
-          }
-        },
-        {
-          "name": "ours",
-          "label": "Ours",
-          "style": {
-            "color": "#C44E52",
-            "linestyle": "-",
-            "linewidth": 3.6
-          }
-        }
-      ]
+      "series": [],
+      "legend_entries": []
     }
   }
 }

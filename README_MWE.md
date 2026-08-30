@@ -1,9 +1,11 @@
 
 ![](vlaselect-intro1.png)
 
-# VLASelect Artifacts Evaluation
+# VLASelect Artifacts Evaluation (Minimal Working Examples)
 
 This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"**, which has been conditionally accepted by EuroSys'27.
+
+> This guide covers only Minimal Working Examples (MWE). For comprehensive documentation or troubleshooting, please check the main [README](./README.md).
 
 ## Downloads
 
@@ -101,7 +103,7 @@ Docker Image: <br>
 
 #### 1.2.1 Hardware Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- Minimum hardware requirements for running minimal working examples**:
+- **Minimum hardware requirements for running minimal working examples**:
 
   <table align="center">
     <thead>
@@ -161,7 +163,7 @@ Docker Image: <br>
 
 #### 1.2.2 Software Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- Minimum software requirements for running minimal working examples**:
+- **Minimum software requirements for running minimal working examples**:
 
   <table align="center">
     <thead>
@@ -349,7 +351,6 @@ Docker Image: <br>
       <td>1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>2. Run the minimum running example.</td>
     </tr>
 
-​    
   </tbody>
 </table>
 
@@ -897,7 +898,7 @@ cd overhead
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
-    ``` 
+    ```
   - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -924,7 +925,7 @@ cd overhead
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash forgetting/measure_forgetting.sh
-    ```  
+    ```
     
   - The two options' resource requirements and outputs are listed below:
 
@@ -953,7 +954,7 @@ cd overhead
     ```bash
     cd api/model_type
     MWE=1 bash run.sh
-    ```  
+    ```
   - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1067,7 +1068,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
-    ```  
+    ```
   - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1148,7 +1149,7 @@ After the integration, you can use VLASelect to train the model with the integra
   - **Option 2:** Commands for small running examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
-    ```  
+    ```
   - The three options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1203,7 +1204,7 @@ After the integration, you can use VLASelect to train the model at the integrate
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
-    ``` 
+    ```
   - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1284,7 +1285,7 @@ After the integration, you can use VLASelect to train the model at the integrate
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
-    ```  
+    ```
   - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1353,7 +1354,7 @@ After the integration, you can use VLASelect to train the model with the integra
   - **Option 2:** Commands for small running examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
-    ```  
+    ```
   - The three options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1407,7 +1408,7 @@ After the integration, you can use VLASelect to train the model at the integrate
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
-    ``` 
+    ```
   - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1490,7 +1491,7 @@ After the integration, you can use VLASelect to train the model at the integrate
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
-    ``` 
+    ```
     
   - The two options' resource requirements and outputs are listed below:
 
@@ -1560,8 +1561,8 @@ After the integration, you can use VLASelect to train the model with the integra
   - **Option 2:** Commands for small running examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
-    ``` 
-  
+    ```
+
   - The three options' resource requirements and outputs are listed below:
 
     <table align="center">
@@ -1615,7 +1616,7 @@ After the integration, you can use VLASelect to train the model at the integrate
   - Commands for minimum running examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
-    ```  
+    ```
     - The two options' resource requirements and outputs are listed below:
 
     <table align="center">

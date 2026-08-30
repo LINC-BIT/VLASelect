@@ -6,7 +6,7 @@ from typing import Iterable
 
 from PIL import Image, ImageDraw, ImageFont
 from pypdf import PdfReader, PdfWriter, Transformation
-from pypdf.generic import ArrayObject, ContentStream, DecodedStreamObject, NameObject, NumberObject, TextStringObject
+from pypdf.generic import ArrayObject, ByteStringObject, ContentStream, DecodedStreamObject, NameObject, NumberObject, TextStringObject
 
 
 EVAL_ROOT = Path(__file__).resolve().parents[1]
@@ -302,6 +302,61 @@ def _remove_memory_annotations(page, reader: PdfReader) -> None:
     page[NameObject('/Contents')] = stream
 
 
+def _remove_ours_overhead_labels(page, reader: PdfReader) -> None:
+    content = ContentStream(page.get_contents(), reader)
+    filtered = []
+    changed = False
+    last_tm = None
+    index = 0
+    ops = content.operations
+    while index < len(ops):
+        operands, op = ops[index]
+        if op == b'Tm':
+            last_tm = operands
+            filtered.append((operands, op))
+            index += 1
+            continue
+        if op in {b'Tj', b'TJ'} and last_tm is not None:
+            try:
+                y_value = float(last_tm[5])
+            except Exception:
+                y_value = None
+            if y_value is not None and 300.0 <= y_value <= 410.0:
+                changed = True
+                index += 1
+                continue
+        if op == b're' and len(operands) == 4:
+            try:
+                x_value = float(operands[0])
+                y_value = float(operands[1])
+                w_value = float(operands[2])
+                h_value = float(operands[3])
+            except Exception:
+                x_value = y_value = w_value = h_value = None
+            if (
+                x_value is not None
+                and y_value is not None
+                and w_value is not None
+                and h_value is not None
+                and abs(x_value) < 1.0
+                and 300.0 <= y_value <= 410.0
+                and 220.0 <= w_value <= 240.0
+                and 20.0 <= h_value <= 26.0
+            ):
+                changed = True
+                index += 1
+                if index < len(ops) and ops[index][1] in {b'f', b'f*', b'B', b'B*', b'b', b'b*'}:
+                    index += 1
+                continue
+        filtered.append((operands, op))
+        index += 1
+    if changed:
+        content.operations = filtered
+        stream = DecodedStreamObject()
+        stream.set_data(content.get_data())
+        page[NameObject('/Contents')] = stream
+
+
 def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[dict[str, float | None]] | None) -> None:
     if not summary_stats:
         return
@@ -340,54 +395,135 @@ def _rewrite_memory_summary_text(page, reader: PdfReader, summary_stats: list[di
             return 'nan', 'nan', 'nan'
         return f'{baseline:.2f}', f'{ours:.2f}', f'{improvement:.2f}'
 
-    def set_tj(op_index: int, text_value: str) -> None:
-        content.operations[op_index] = ([ArrayObject([TextStringObject(text_value)])], b'TJ')
+    def set_tj(op_index: int, text_value: str | bytes | ByteStringObject | list[object] | tuple[object, ...]) -> None:
+        if isinstance(text_value, (list, tuple)):
+            payload_items = []
+            for item in text_value:
+                if isinstance(item, ByteStringObject):
+                    payload_items.append(item)
+                elif isinstance(item, bytes):
+                    payload_items.append(ByteStringObject(item))
+                else:
+                    payload_items.append(TextStringObject(str(item)))
+            payload = ArrayObject(payload_items)
+            content.operations[op_index] = ([payload], b'TJ')
+            return
+        if isinstance(text_value, ByteStringObject):
+            payload = text_value
+        elif isinstance(text_value, bytes):
+            payload = ByteStringObject(text_value)
+        else:
+            payload = TextStringObject(text_value)
+        content.operations[op_index] = ([ArrayObject([payload])], b'TJ')
 
-    if panel_ops['a']:
-        stats = summary_stats[0] if len(summary_stats) > 0 else {}
+    arrow_token = ByteStringObject(b'\x01;')
+
+    def rewrite_panel(panel_key: str, stats: dict[str, float | None]) -> None:
+        op_indices = panel_ops.get(panel_key, [])
+        if not op_indices:
+            return
         baseline_text, ours_text, improvement_text = value_text(stats)
-        replacement = f'Baselines / VLASelect avg. memory (GB): {baseline_text} / {ours_text} ({improvement_text}%↓)'
-        set_tj(panel_ops['a'][0], replacement)
-        for op_index in panel_ops['a'][1:]:
-            set_tj(op_index, '')
+        if panel_key == 'a':
+            values: list[str | ByteStringObject] = [
+                'Baselines',
+                '/',
+                'VLASelect',
+                f'avg. memory (GB): {baseline_text} /',
+                f'{ours_text} ({improvement_text}%',
+                arrow_token,
+                ')',
+            ]
+        elif panel_key == 'b':
+            ours_head = ours_text[:-1] if len(ours_text) > 1 else ours_text
+            ours_tail = ours_text[-1] if ours_text else ''
+            values = [
+                f'{baseline_text} /',
+                ours_head,
+                ours_tail,
+                f'({improvement_text}%',
+                arrow_token,
+                ')',
+            ]
+        elif panel_key == 'c':
+            values = [
+                f'{baseline_text} / {ours_text} ({improvement_text}%',
+                arrow_token,
+                ')',
+            ]
+        else:
+            baseline_head = baseline_text[:-1] if len(baseline_text) > 1 else baseline_text
+            baseline_tail = baseline_text[-1] if baseline_text else ''
+            values = [
+                baseline_head,
+                baseline_tail,
+                f'/ {ours_text} ({improvement_text}%',
+                arrow_token,
+            ]
 
-    stats_by_panel = {}
+        if panel_key == 'd':
+            for op_index, value in zip(op_indices[:-1], values):
+                set_tj(op_index, value)
+            for op_index in op_indices[len(values):-1]:
+                set_tj(op_index, '')
+        else:
+            for op_index, value in zip(op_indices, values):
+                set_tj(op_index, value)
+            for op_index in op_indices[len(values):]:
+                set_tj(op_index, '')
+
     for key, stats in zip(['a', 'b', 'c', 'd'], summary_stats):
-        baseline_text, ours_text, improvement_text = value_text(stats if isinstance(stats, dict) else {})
-        stats_by_panel[key] = (baseline_text, ours_text, improvement_text)
-
-    if len(panel_ops['b']) >= 6:
-        op_indices = panel_ops['b']
-        baseline_text, ours_text, improvement_text = stats_by_panel.get('b', ('nan', 'nan', 'nan'))
-        ours_head = ours_text[:-1] if len(ours_text) > 1 else ours_text
-        ours_tail = ours_text[-1] if ours_text else ''
-        set_tj(op_indices[0], f'{baseline_text} /')
-        set_tj(op_indices[1], ours_head)
-        set_tj(op_indices[2], ours_tail)
-        set_tj(op_indices[3], f'({improvement_text}%')
-        set_tj(op_indices[4], ';')
-        set_tj(op_indices[5], ')')
-    if len(panel_ops['c']) >= 3:
-        op_indices = panel_ops['c']
-        baseline_text, ours_text, improvement_text = stats_by_panel.get('c', ('nan', 'nan', 'nan'))
-        set_tj(op_indices[0], f'{baseline_text} / {ours_text} ({improvement_text}%')
-        set_tj(op_indices[1], ';')
-        set_tj(op_indices[2], ')')
-    if len(panel_ops['d']) >= 4:
-        op_indices = panel_ops['d']
-        baseline_text, ours_text, improvement_text = stats_by_panel.get('d', ('nan', 'nan', 'nan'))
-        baseline_head = baseline_text[:-1] if len(baseline_text) > 1 else baseline_text
-        baseline_tail = baseline_text[-1] if baseline_text else ''
-        set_tj(op_indices[0], baseline_head)
-        set_tj(op_indices[1], baseline_tail)
-        set_tj(op_indices[2], f'/ {ours_text} ({improvement_text}%')
-        set_tj(op_indices[3], ';)')
-        if len(op_indices) >= 5:
-            set_tj(op_indices[4], '')
+        rewrite_panel(key, stats if isinstance(stats, dict) else {})
 
     stream = DecodedStreamObject()
     stream.set_data(content.get_data())
     page[NameObject('/Contents')] = stream
+
+def fill_ours_overhead_template(output_pdf_path: Path, figure_image_path: Path) -> None:
+    _replace_template_figures(
+        TEMPLATE_ROOT / "OursOverheadBreakdown.pdf",
+        output_pdf_path,
+        [(figure_image_path, (80.88, 262.8, 427.08, 171.0))],
+        rewrite_hook=_rewrite_ours_overhead_page,
+    )
+
+
+def fill_memory_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None, legend_image_path: Path | None = None, legend_rows: int = 1) -> None:
+    boxes = [
+        (0.0, 273.72, 960.0, 200.04),
+        (0.0, 55.92, 319.8, 199.8),
+        (320.52, 55.92, 319.68, 199.8),
+        (639.96, 55.92, 319.8, 199.8),
+    ]
+    if len(panel_paths) == 1:
+        placements: list[tuple[Path | Image.Image, tuple[float, float, float, float]]] = [(panel_paths[0], _union(*boxes))]
+    else:
+        placements = list(zip(panel_paths, boxes))
+    if legend_image_path is not None and legend_image_path.exists():
+        legend_y = 478.0 if legend_rows >= 2 else 470.0
+        placements.append((legend_image_path, (92.0, legend_y, 736.0, 42.0)))
+
+    def rewrite(page, reader):
+        _expand_memory_page(page, extra_top=14.0)
+        _remove_memory_annotations(page, reader)
+        _rewrite_memory_summary_text(page, reader, summary_stats)
+
+    _replace_template_figures(
+        TEMPLATE_ROOT / "Memory.pdf",
+        output_pdf_path,
+        placements,
+        rewrite_hook=rewrite,
+    )
+
+
+def fill_ablation_template(output_pdf_path: Path, figure_image_path: Path) -> None:
+    _replace_template_figures(
+        TEMPLATE_ROOT / "AbStudy.pdf",
+        output_pdf_path,
+        [(figure_image_path, (14.0, 144.0, 400.0, 378.0))],
+        align='right',
+        preserve_xobject_names={'/Image18', '/Image19'},
+    )
+
 def _rewrite_accuracy_summary_text(page, reader: PdfReader, summary_stats: list[dict[str, float | None]] | None) -> None:
     if not summary_stats:
         return
@@ -638,103 +774,3 @@ def fill_sampling_training_template(output_pdf_path: Path, panel_paths: list[Pat
         preserve_xobject_names={'/Image55'},
     )
 
-def _remove_ours_overhead_labels(page, reader: PdfReader) -> None:
-    content = ContentStream(page.get_contents(), reader)
-    filtered = []
-    changed = False
-    last_tm = None
-    index = 0
-    ops = content.operations
-    while index < len(ops):
-        operands, op = ops[index]
-        if op == b'Tm':
-            last_tm = operands
-            filtered.append((operands, op))
-            index += 1
-            continue
-        if op in {b'Tj', b'TJ'} and last_tm is not None:
-            try:
-                y_value = float(last_tm[5])
-            except Exception:
-                y_value = None
-            if y_value is not None and 300.0 <= y_value <= 410.0:
-                changed = True
-                index += 1
-                continue
-        if op == b're' and len(operands) == 4:
-            try:
-                x_value = float(operands[0])
-                y_value = float(operands[1])
-                w_value = float(operands[2])
-                h_value = float(operands[3])
-            except Exception:
-                x_value = y_value = w_value = h_value = None
-            if (
-                x_value is not None
-                and y_value is not None
-                and w_value is not None
-                and h_value is not None
-                and abs(x_value) < 1.0
-                and 300.0 <= y_value <= 410.0
-                and 220.0 <= w_value <= 240.0
-                and 20.0 <= h_value <= 26.0
-            ):
-                changed = True
-                index += 1
-                if index < len(ops) and ops[index][1] in {b'f', b'f*', b'B', b'B*', b'b', b'b*'}:
-                    index += 1
-                continue
-        filtered.append((operands, op))
-        index += 1
-    if changed:
-        content.operations = filtered
-        stream = DecodedStreamObject()
-        stream.set_data(content.get_data())
-        page[NameObject('/Contents')] = stream
-
-
-def fill_ours_overhead_template(output_pdf_path: Path, figure_image_path: Path) -> None:
-    _replace_template_figures(
-        TEMPLATE_ROOT / "OursOverheadBreakdown.pdf",
-        output_pdf_path,
-        [(figure_image_path, (80.88, 262.8, 427.08, 171.0))],
-        rewrite_hook=_rewrite_ours_overhead_page,
-    )
-
-
-def fill_memory_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None, legend_image_path: Path | None = None, legend_rows: int = 1) -> None:
-    boxes = [
-        (0.0, 273.72, 960.0, 200.04),
-        (0.0, 55.92, 319.8, 199.8),
-        (320.52, 55.92, 319.68, 199.8),
-        (639.96, 55.92, 319.8, 199.8),
-    ]
-    if len(panel_paths) == 1:
-        placements: list[tuple[Path | Image.Image, tuple[float, float, float, float]]] = [(panel_paths[0], _union(*boxes))]
-    else:
-        placements = list(zip(panel_paths, boxes))
-    if legend_image_path is not None and legend_image_path.exists():
-        legend_y = 478.0 if legend_rows >= 2 else 470.0
-        placements.append((legend_image_path, (92.0, legend_y, 736.0, 42.0)))
-
-    def rewrite(page, reader):
-        _expand_memory_page(page, extra_top=14.0)
-        _remove_memory_annotations(page, reader)
-        _rewrite_memory_summary_text(page, reader, summary_stats)
-
-    _replace_template_figures(
-        TEMPLATE_ROOT / "Memory.pdf",
-        output_pdf_path,
-        placements,
-        rewrite_hook=rewrite,
-    )
-
-
-def fill_ablation_template(output_pdf_path: Path, figure_image_path: Path) -> None:
-    _replace_template_figures(
-        TEMPLATE_ROOT / "AbStudy.pdf",
-        output_pdf_path,
-        [(figure_image_path, (14.0, 144.0, 400.0, 378.0))],
-        align='right',
-        preserve_xobject_names={'/Image18', '/Image19'},
-    )

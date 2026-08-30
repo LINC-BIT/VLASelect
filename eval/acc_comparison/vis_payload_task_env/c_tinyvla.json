@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "",
-    "suite_manifest": ""
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260828-070838/manifest.json",
+    "suite_manifest": "ckpt/tinyvla/cl_suite/20260828-070838/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        300.0
+        2.0999790000000003
       ],
       "ylim": [
         0.0,
@@ -47,12 +47,149 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": null,
-        "ours_average": null,
-        "absolute_improvement_percent": null
+        "others_average": 0.5453125,
+        "ours_average": 0.9499999999999998,
+        "absolute_improvement_percent": 40.468749999999986
       },
-      "series": [],
-      "legend_entries": []
+      "series": [
+        {
+          "name": "self_improv",
+          "display_name": "Self-Improv",
+          "label": "Self-Improv",
+          "raw_average": 0.545312,
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            2.0999790000000003
+          ],
+          "y": [
+            0.140625,
+            0.38343750000000004
+          ],
+          "x_full": [
+            0.0,
+            1.9999800000000003
+          ],
+          "point_count": 2
+        },
+        {
+          "name": "vla_rft",
+          "display_name": "VLA-RFT",
+          "label": "VLA-RFT",
+          "raw_average": 0.545312,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            2.0999790000000003
+          ],
+          "y": [
+            0.140625,
+            0.38343750000000004
+          ],
+          "x_full": [
+            0.0,
+            1.99998
+          ],
+          "point_count": 2
+        },
+        {
+          "name": "world_env",
+          "display_name": "WorldEnv",
+          "label": "WorldEnv",
+          "raw_average": 0.545312,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            2.0999790000000003
+          ],
+          "y": [
+            0.140625,
+            0.38343750000000004
+          ],
+          "x_full": [
+            0.0,
+            1.9999800000000003
+          ],
+          "point_count": 2
+        },
+        {
+          "name": "ours",
+          "display_name": "Ours",
+          "label": "Ours",
+          "raw_average": 0.95,
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            1.908642640397334,
+            2.0999790000000003
+          ],
+          "y": [
+            0.95,
+            0.95,
+            0.95
+          ],
+          "x_full": [
+            0.3038447272194721,
+            1.8454392410269334,
+            1.99998
+          ],
+          "point_count": 3
+        }
+      ],
+      "legend_entries": [
+        {
+          "name": "self_improv",
+          "label": "Self-Improv",
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "vla_rft",
+          "label": "VLA-RFT",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "world_env",
+          "label": "WorldEnv",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ours",
+          "label": "Ours",
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        }
+      ]
     }
   }
 }

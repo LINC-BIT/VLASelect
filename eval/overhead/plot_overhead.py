@@ -1342,13 +1342,63 @@ def write_table_csvs(table2_rows, table3_rows):
 MEMORY_PANEL_FIGURE_SIZES = {'a': (38.4, 8.0), 'b': (12.8, 8.0), 'c': (12.8, 8.0), 'd': (12.8, 8.0)}
 
 
-def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]:
+def _canonical_legend_method_name(method_name: str) -> str:
+    name = str(method_name).strip()
+    if name == 'ours_single_agent':
+        return 'ours'
+    if name == 'self_improvement':
+        return 'self_improv'
+    return name
+
+
+def _canonical_legend_label(method_name: str, label: str) -> str:
+    canonical_name = _canonical_legend_method_name(method_name)
+    if canonical_name == 'ours':
+        return 'VLASelect'
+    return str(label).strip() or canonical_name
+
+
+def build_shared_legend_entries(series_groups: list[list[dict[str, Any]]]) -> list[tuple[str, dict[str, Any]]]:
+    grouped: dict[str, tuple[str, dict[str, Any]]] = {}
+    for entries in series_groups:
+        for entry in entries:
+            raw_name = str(entry.get('name', '')).strip()
+            if not raw_name:
+                continue
+            canonical_name = _canonical_legend_method_name(raw_name)
+            if canonical_name in grouped:
+                continue
+            grouped[canonical_name] = (
+                _canonical_legend_label(raw_name, str(entry.get('label', raw_name))),
+                dict(entry.get('style', {})),
+            )
+
+    ordered: list[tuple[str, dict[str, Any]]] = []
+    for method_name in LEGEND_ORDER:
+        canonical_name = _canonical_legend_method_name(method_name)
+        if canonical_name == 'ours':
+            continue
+        item = grouped.pop(canonical_name, None)
+        if item is not None:
+            ordered.append(item)
+
+    trailing_item = grouped.pop('ours', None)
+    for canonical_name in sorted(grouped.keys()):
+        ordered.append(grouped[canonical_name])
+    if trailing_item is not None:
+        ordered.append(trailing_item)
+    return ordered
+
+
+def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]], list[dict[str, Any]]]:
     panel_label = panel['panel_label']
     PANEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=MEMORY_PANEL_FIGURE_SIZES.get(panel_label, (12.8, 8.0)))
 
     suite_manifest_raw = panel.get('suite_manifest')
     summary_rows: list[dict[str, Any]] = []
+    legend_entries: list[dict[str, Any]] = []
+    seen_legend_names: set[str] = set()
     if not suite_manifest_raw:
         ax.set_xlim(0.0, 1.0)
         ax.set_ylim(0.0, 1.0)
@@ -1395,6 +1445,14 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
                     ys.append(0.0)
                 style = METHOD_STYLES.get(internal_name, {})
                 ax.plot(xs, ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
+                canonical_name = _canonical_legend_method_name(internal_name)
+                if canonical_name not in seen_legend_names:
+                    legend_entries.append({
+                        'name': internal_name,
+                        'label': _canonical_legend_label(internal_name, paper_name),
+                        'style': dict(style),
+                    })
+                    seen_legend_names.add(canonical_name)
                 max_x = max(max_x, metrics['reach_hours'])
                 plotted += 1
             if plotted == 0:
@@ -1420,13 +1478,23 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]]]
     fig.savefig(png_path, dpi=220)
     fig.savefig(svg_path)
     plt.close(fig)
-    return png_path, summary_rows
+    return png_path, summary_rows, legend_entries
 
 
-def compose_memory_preview(panel_paths: list[Path]) -> None:
+def compose_memory_preview(panel_paths: list[Path], legend_path: Path | None = None, legend_y_shift: float = 0.0) -> None:
     fig = plt.figure(figsize=FIGURE_SIZE)
-    grid = fig.add_gridspec(2, 3, height_ratios=[1.18, 0.92], hspace=0.42, wspace=0.24)
-    axes = [fig.add_subplot(grid[0, :]), fig.add_subplot(grid[1, 0]), fig.add_subplot(grid[1, 1]), fig.add_subplot(grid[1, 2])]
+    if legend_path is not None and legend_path.exists():
+        grid = fig.add_gridspec(3, 3, height_ratios=[0.22, 1.18, 0.92], hspace=0.20, wspace=0.24)
+        legend_ax = fig.add_subplot(grid[0, :])
+        legend_ax.axis('off')
+        legend_ax.imshow(plt.imread(legend_path))
+        legend_ax.set_aspect('auto')
+        pos = legend_ax.get_position()
+        legend_ax.set_position([pos.x0, pos.y0 - 0.024 + legend_y_shift, pos.width, pos.height])
+        axes = [fig.add_subplot(grid[1, :]), fig.add_subplot(grid[2, 0]), fig.add_subplot(grid[2, 1]), fig.add_subplot(grid[2, 2])]
+    else:
+        grid = fig.add_gridspec(2, 3, height_ratios=[1.18, 0.92], hspace=0.42, wspace=0.24)
+        axes = [fig.add_subplot(grid[0, :]), fig.add_subplot(grid[1, 0]), fig.add_subplot(grid[1, 1]), fig.add_subplot(grid[1, 2])]
     for axis, panel_path in zip(axes, panel_paths):
         axis.axis('off')
         axis.imshow(plt.imread(panel_path))
@@ -1444,13 +1512,15 @@ def draw_figure(top_manifest, smoothing=0.2):
     table3_energy_by_family = {}
     summary_stats: list[dict[str, float | None]] = []
     panel_paths: list[Path] = []
+    legend_entry_groups: list[list[dict[str, Any]]] = []
     for panel in panels:
         panel_metrics, _ = collect_panel_metrics(panel, smoothing=smoothing)
         metrics_by_family[panel['family']] = panel_metrics
         table3_energy_by_family[panel['family']] = collect_panel_table3_energy(panel, smoothing=smoothing)
-        panel_path, panel_rows = draw_memory_panel(panel, panel_metrics)
+        panel_path, panel_rows, panel_legend_entries = draw_memory_panel(panel, panel_metrics)
         panel_paths.append(panel_path)
         summary_rows.extend(panel_rows)
+        legend_entry_groups.append(panel_legend_entries)
         baseline_values = [metrics['memory_gb'] for name, metrics in panel_metrics.items() if name != 'VLASelect' and metrics['memory_gb'] > 0.0]
         ours = panel_metrics.get('VLASelect', make_empty_metrics())['memory_gb']
         if baseline_values and ours > 0.0:
@@ -1464,11 +1534,27 @@ def draw_figure(top_manifest, smoothing=0.2):
     table3_rows = build_table3_rows(panels, table3_energy_by_family, table3_method_order)
     write_table_csvs(table2_rows, table3_rows)
     BREAKDOWN_ROOT.mkdir(parents=True, exist_ok=True)
+    legend_path = None
+    shared_legend_entries = build_shared_legend_entries(legend_entry_groups)
+    legend_ncol = min(5, max(1, len(shared_legend_entries))) if shared_legend_entries else 1
+    legend_rows = ((len(shared_legend_entries) + legend_ncol - 1) // legend_ncol) if shared_legend_entries else 0
+    legend_y_shift = 0.012 if legend_rows >= 2 else 0.0
+    if shared_legend_entries:
+        legend_path = PANEL_OUTPUT_DIR / 'memory_footpoint_legend.png'
+        render_legend_image(
+            shared_legend_entries,
+            legend_path,
+            ncol=legend_ncol,
+            fontsize=26,
+            linewidth=3.6,
+            handlelength=3.0,
+            dpi=200,
+        )
     try:
-        fill_memory_template(FIGURE_PATH, panel_paths, summary_stats)
+        fill_memory_template(FIGURE_PATH, panel_paths, summary_stats, legend_image_path=legend_path, legend_rows=legend_rows)
     except Exception as exc:
         print(f'[template] failed to fill memory template: {exc}')
-    compose_memory_preview(panel_paths)
+    compose_memory_preview(panel_paths, legend_path=legend_path, legend_y_shift=legend_y_shift)
     return summary_rows
 
 def write_summary(rows): SUMMARY_JSON_PATH.write_text(json.dumps(rows, indent=2), encoding='utf-8')

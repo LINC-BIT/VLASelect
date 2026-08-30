@@ -741,12 +741,15 @@ def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
 
     legend_path = None
     shared_legend_entries = build_shared_legend_entries(legend_entry_groups)
+    legend_ncol = min(5, max(1, len(shared_legend_entries))) if shared_legend_entries else 1
+    legend_rows = ((len(shared_legend_entries) + legend_ncol - 1) // legend_ncol) if shared_legend_entries else 0
+    legend_y_shift = 0.012 if legend_rows >= 2 else 0.0
     if shared_legend_entries:
         legend_path = PANEL_OUTPUT_DIR / f'{FIGURE_STEM}_legend.png'
         render_legend_image(
             shared_legend_entries,
             legend_path,
-            ncol=min(5, max(1, len(shared_legend_entries))),
+            ncol=legend_ncol,
             fontsize=22,
             linewidth=3.6,
             handlelength=3.0,
@@ -761,9 +764,17 @@ def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
         legend_path=legend_path,
         legend_position='top',
         legend_height_ratio=0.22,
+        legend_y_shift=legend_y_shift,
         dpi=200,
     )
-    fill_accuracy_template(FIGURE_PATH, panel_paths, summary_stats_list, visible_method_names=visible_method_names, legend_image_path=legend_path)
+    fill_accuracy_template(
+        FIGURE_PATH,
+        panel_paths,
+        summary_stats_list,
+        visible_method_names=visible_method_names,
+        legend_image_path=legend_path,
+        legend_rows=legend_rows,
+    )
     return summary_rows
 
 

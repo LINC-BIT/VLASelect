@@ -63,6 +63,7 @@ def compose_grid_figure(
     legend_path: Path | None = None,
     legend_height_ratio: float = 0.12,
     legend_position: str = 'bottom',
+    legend_y_shift: float = 0.0,
     wspace: float = 0.02,
     hspace: float = 0.02,
     dpi: int = 200,
@@ -94,6 +95,9 @@ def compose_grid_figure(
         image = mpimg.imread(legend_path)
         ax.imshow(image)
         ax.set_aspect('auto')
+        if legend_y_shift != 0.0:
+            pos = ax.get_position()
+            ax.set_position([pos.x0, pos.y0 + legend_y_shift, pos.width, pos.height])
 
     fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01)
     for output_path in output_paths:

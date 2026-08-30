@@ -246,10 +246,26 @@ def _rewrite_sampling_training_legend_sampling_marker(page, reader: PdfReader) -
         _write_content_stream(page, content)
 
 
+def _expand_memory_page(page, extra_top: float = 14.0) -> None:
+    try:
+        left = float(page.mediabox.left)
+        bottom = float(page.mediabox.bottom)
+        right = float(page.mediabox.right)
+        top = float(page.mediabox.top)
+        page.mediabox.lower_left = (left, bottom)
+        page.mediabox.upper_right = (right, top + extra_top)
+        if hasattr(page, 'cropbox') and page.cropbox is not None:
+            page.cropbox.lower_left = (left, bottom)
+            page.cropbox.upper_right = (right, top + extra_top)
+    except Exception:
+        pass
+
+
 def _remove_memory_annotations(page, reader: PdfReader) -> None:
     content = ContentStream(page.get_contents(), reader)
     filtered = []
     skip_depth = 0
+    last_tm = None
     for operands, op in content.operations:
         if skip_depth > 0:
             if op == b'BDC':
@@ -261,11 +277,23 @@ def _remove_memory_annotations(page, reader: PdfReader) -> None:
             meta = operands[1]
             mcid = None
             try:
-                mcid = meta.get('/MCID')
+                raw_mcid = meta.get('/MCID')
+                mcid = int(raw_mcid) if raw_mcid is not None else None
             except Exception:
                 mcid = None
-            if mcid in {35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51}:
+            if mcid is not None and 35 <= mcid <= 89:
                 skip_depth = 1
+                continue
+        if op == b'Tm':
+            last_tm = operands
+            filtered.append((operands, op))
+            continue
+        if op in {b'TJ', b'Tj'} and last_tm is not None:
+            try:
+                y_value = float(last_tm[5])
+            except Exception:
+                y_value = None
+            if y_value is not None and y_value >= 460.0:
                 continue
         filtered.append((operands, op))
     content.operations = filtered
@@ -434,7 +462,7 @@ def _rewrite_accuracy_summary_text(page, reader: PdfReader, summary_stats: list[
     page[NameObject('/Contents')] = stream
 
 
-def fill_accuracy_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None, visible_method_names: set[str] | None = None, legend_image_path: Path | None = None) -> None:
+def fill_accuracy_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None, visible_method_names: set[str] | None = None, legend_image_path: Path | None = None, legend_rows: int = 1) -> None:
     boxes = [
         (8.52, 272.4, 242.04, 195.6),
         (237.96, 272.4, 242.04, 195.6),
@@ -443,7 +471,8 @@ def fill_accuracy_template(output_pdf_path: Path, panel_paths: list[Path], summa
     ]
     placements: list[tuple[Path | Image.Image, tuple[float, float, float, float]]] = list(zip(panel_paths, boxes))
     if legend_image_path is not None and legend_image_path.exists():
-        placements.append((legend_image_path, (92.0, 458.0, 720.0, 52.0)))
+        legend_y = 468.0 if legend_rows >= 2 else 458.0
+        placements.append((legend_image_path, (92.0, legend_y, 720.0, 52.0)))
     _replace_template_figures(
         TEMPLATE_ROOT / "Accuracy.pdf",
         output_pdf_path,
@@ -673,7 +702,7 @@ def fill_ours_overhead_template(output_pdf_path: Path, figure_image_path: Path) 
     )
 
 
-def fill_memory_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None) -> None:
+def fill_memory_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None, legend_image_path: Path | None = None, legend_rows: int = 1) -> None:
     boxes = [
         (0.0, 273.72, 960.0, 200.04),
         (0.0, 55.92, 319.8, 199.8),
@@ -681,14 +710,23 @@ def fill_memory_template(output_pdf_path: Path, panel_paths: list[Path], summary
         (639.96, 55.92, 319.8, 199.8),
     ]
     if len(panel_paths) == 1:
-        placements = [(panel_paths[0], _union(*boxes))]
+        placements: list[tuple[Path | Image.Image, tuple[float, float, float, float]]] = [(panel_paths[0], _union(*boxes))]
     else:
         placements = list(zip(panel_paths, boxes))
+    if legend_image_path is not None and legend_image_path.exists():
+        legend_y = 478.0 if legend_rows >= 2 else 470.0
+        placements.append((legend_image_path, (92.0, legend_y, 736.0, 42.0)))
+
+    def rewrite(page, reader):
+        _expand_memory_page(page, extra_top=14.0)
+        _remove_memory_annotations(page, reader)
+        _rewrite_memory_summary_text(page, reader, summary_stats)
+
     _replace_template_figures(
         TEMPLATE_ROOT / "Memory.pdf",
         output_pdf_path,
         placements,
-        rewrite_hook=(lambda page, reader: (_remove_memory_annotations(page, reader), _rewrite_memory_summary_text(page, reader, summary_stats))),
+        rewrite_hook=rewrite,
     )
 
 

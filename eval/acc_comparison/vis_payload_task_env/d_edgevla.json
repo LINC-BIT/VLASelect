@@ -1,7 +1,7 @@
 {
   "source": {
-    "top_manifest": "",
-    "suite_manifest": ""
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260828-185246/manifest.json",
+    "suite_manifest": "train/edgevla/cl_suite/20260828-185246/manifest.json"
   },
   "render_config": {
     "smoothing": 0.7,
@@ -39,7 +39,7 @@
       "ylabel": "Success Rate",
       "xlim": [
         0.0,
-        301.0
+        2.0999790000000003
       ],
       "ylim": [
         0.0,
@@ -47,12 +47,155 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": null,
-        "ours_average": null,
-        "absolute_improvement_percent": null
+        "others_average": 0.19815678149461746,
+        "ours_average": 0.9238095257017347,
+        "absolute_improvement_percent": 72.56527442071172
       },
-      "series": [],
-      "legend_entries": []
+      "series": [
+        {
+          "name": "self_improv",
+          "display_name": "Self-Improv",
+          "label": "Self-Improv",
+          "raw_average": 0.198157,
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            2.0999790000000003
+          ],
+          "y": [
+            0.22053231298923492,
+            0.20710699409246444
+          ],
+          "x_full": [
+            0.0,
+            1.99998
+          ],
+          "point_count": 2
+        },
+        {
+          "name": "vla_rft",
+          "display_name": "VLA-RFT",
+          "label": "VLA-RFT",
+          "raw_average": 0.198157,
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            2.0999790000000003
+          ],
+          "y": [
+            0.22053231298923492,
+            0.20710699409246444
+          ],
+          "x_full": [
+            0.0,
+            1.99998
+          ],
+          "point_count": 2
+        },
+        {
+          "name": "world_env",
+          "display_name": "WorldEnv",
+          "label": "WorldEnv",
+          "raw_average": 0.198157,
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            2.0999790000000003
+          ],
+          "y": [
+            0.22053231298923492,
+            0.20710699409246444
+          ],
+          "x_full": [
+            0.0,
+            1.99998
+          ],
+          "point_count": 2
+        },
+        {
+          "name": "ours",
+          "display_name": "Ours",
+          "label": "Ours",
+          "raw_average": 0.92381,
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          },
+          "x": [
+            0.0,
+            1.2761768296985463,
+            2.0999790000000003
+          ],
+          "y": [
+            0.7142857313156128,
+            0.8934050040888786,
+            0.9364115414817398
+          ],
+          "x_full": [
+            0.0,
+            0.20047172906967742,
+            0.23257500597159314,
+            0.26468389106394247,
+            1.215406504474806,
+            1.851955425579841,
+            1.9016041386196039,
+            1.9505201414330853,
+            1.99998
+          ],
+          "point_count": 3
+        }
+      ],
+      "legend_entries": [
+        {
+          "name": "self_improv",
+          "label": "Self-Improv",
+          "style": {
+            "color": "#9A9A9A",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "vla_rft",
+          "label": "VLA-RFT",
+          "style": {
+            "color": "#59A14F",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "world_env",
+          "label": "WorldEnv",
+          "style": {
+            "color": "#4D4D4D",
+            "linestyle": "--",
+            "linewidth": 3.6
+          }
+        },
+        {
+          "name": "ours",
+          "label": "Ours",
+          "style": {
+            "color": "#C44E52",
+            "linestyle": "-",
+            "linewidth": 3.6
+          }
+        }
+      ]
     }
   }
 }

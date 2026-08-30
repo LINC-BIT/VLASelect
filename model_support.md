@@ -10,17 +10,18 @@
 
 <img src="./imgs/3.1.1.png" alt="VLA-adapter" style="zoom:33%;" />
 
+<br><br>
+
 ### 3.1.2 Supporting different scaling strategies
 
 > **Key observation:** VLASelect integrates VLA-Adapter and outperforms knowledge distillation and dynamic pruning in selective model scaling.
 
-### Minimum working example on three representative methods
+| | Results |
+| :--- | :--- |
+| **Minimum working example on three representative methods** | <img src="./imgs/3.1.2.png" alt="Scaling strategies" style="zoom:33%;" /> |
+| **Minimum working example on all methods** | <img src="./imgs/3.1.2-mwe.png" alt="Scaling strategies on all methods" style="zoom:33%;" /> |
 
-<img src="./imgs/3.1.2.png" alt="Scaling strategies" style="zoom:33%;" />
-
-### Minimum working example on all methods
-
-<img src="./imgs/3.1.2-mwe.png" alt="Scaling strategies on all methods" style="zoom:33%;" />
+<br><br>
 
 ### 3.1.3 Supporting different knowledge exchange granularities
 
@@ -30,7 +31,7 @@
 
 <img src="./imgs/3.1.3.png" alt="Knowledge exchange granularities" style="zoom:33%;" />
 
----
+<br><br>
 
 ## 3.2 TinyVLA Model Evaluation
 
@@ -42,17 +43,16 @@
 
 <img src="./imgs/3.2.1.png" alt="TinyVLA" style="zoom:33%;" />
 
+<br><br>
+
 ### 3.2.2 Supporting different scaling strategies
 
 > **Key observation:** After integrating TinyVLA, VLASelect also combines with knowledge distillation and dynamic pruning, and its selective model scaling still achieves the best results.
 
-### Minimum working example on three representative methods
-
-<img src="./imgs/3.2.2.png" alt="Scaling strategies" style="zoom:33%;" />
-
-### Minimum working example on all methods
-
-<img src="./imgs/3.2.2-mwe.png" alt="Scaling strategies on all methods" style="zoom:33%;" />
+| | Results |
+| :--- | :--- |
+| **Minimum working example on three representative methods** | <img src="./imgs/3.2.2.png" alt="Scaling strategies" style="zoom:33%;" /> |
+| **Minimum working example on all methods** | <img src="./imgs/3.2.2-mwe.png" alt="Scaling strategies on all methods" style="zoom:33%;" /> |
 
 ### 3.2.3 Supporting different knowledge exchange granularities
 
@@ -62,7 +62,7 @@
 
 <img src="./imgs/3.2.3.png" alt="Knowledge exchange granularities" style="zoom:33%;" />
 
----
+<br><br>
 
 ## 3.3 EdgeVLA Model Evaluation
 
@@ -74,6 +74,8 @@
 
 <img src="./imgs/3.3.1.png" alt="EdgeVLA" style="zoom:33%;" />
 
+<br><br>
+
 ### 3.3.2 Baseline Comparison on EdgeVLA
 
 ### Minimum working example
@@ -81,6 +83,8 @@
 > **Key observation:** Similarly on EdgeVLA, VLASelect outperforms knowledge distillation and dynamic pruning with its selective model scaling approach (only evaluated on constrained testbed).
 
 <img src="./imgs/3.3.2.png" alt="Baseline Comparison" style="zoom:33%;" />
+
+<br><br>
 
 ### 3.3.3 Swapping Granularity Ablation on EdgeVLA
 
@@ -90,3 +94,4 @@
 
 <img src="./imgs/3.3.3.png" alt="Swapping Granularity Ablation" style="zoom:33%;" />
 
+<br><br>

@@ -1,6 +1,6 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260826-160837/manifest.json",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/tmp_manifests/task_env_upto_20260827.json",
     "suite_manifest": "ckpt/vla_adapter_new/cl_suite/20260826-160837/manifest.json"
   },
   "render_config": {
@@ -47,16 +47,16 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 0.14809178453163055,
+        "others_average": 0.3758333333333333,
         "ours_average": 0.7305555555555556,
-        "absolute_improvement_percent": 58.24637710239251
+        "absolute_improvement_percent": 35.472222222222236
       },
       "series": [
         {
           "name": "self_improv",
           "display_name": "Self-Improv",
           "label": "Self-Improv",
-          "raw_average": 0.095573,
+          "raw_average": 0.25,
           "style": {
             "color": "#9A9A9A",
             "linestyle": "-",
@@ -68,7 +68,7 @@
           ],
           "y": [
             0.0,
-            0.05734367857923312
+            0.15000000000000002
           ],
           "x_full": [
             0.06511902391435453,
@@ -80,7 +80,7 @@
           "name": "vla_rft",
           "display_name": "VLA-RFT",
           "label": "VLA-RFT",
-          "raw_average": 0.138746,
+          "raw_average": 0.39,
           "style": {
             "color": "#59A14F",
             "linestyle": "--",
@@ -93,8 +93,8 @@
           ],
           "y": [
             0.0,
-            0.10116535718120752,
-            0.11193356949635674
+            0.255,
+            0.32445
           ],
           "x_full": [
             0.20655418410789436,
@@ -109,7 +109,7 @@
           "name": "world_env",
           "display_name": "WorldEnv",
           "label": "WorldEnv",
-          "raw_average": 0.209956,
+          "raw_average": 0.4875,
           "style": {
             "color": "#4D4D4D",
             "linestyle": "--",
@@ -122,8 +122,8 @@
           ],
           "y": [
             0.0,
-            0.18108943598985927,
-            0.1769489957621127
+            0.39,
+            0.423
           ],
           "x_full": [
             0.16823166827334568,

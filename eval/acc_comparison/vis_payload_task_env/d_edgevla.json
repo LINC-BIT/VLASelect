@@ -1,6 +1,6 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260827-200958/manifest.json",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/tmp_manifests/task_env_upto_20260827.json",
     "suite_manifest": "train/edgevla/cl_suite/20260827-200958/manifest.json"
   },
   "render_config": {

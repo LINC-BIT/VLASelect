@@ -62,27 +62,34 @@ def compose_grid_figure(
     figsize: tuple[float, float],
     legend_path: Path | None = None,
     legend_height_ratio: float = 0.12,
+    legend_position: str = 'bottom',
     wspace: float = 0.02,
     hspace: float = 0.02,
     dpi: int = 200,
 ) -> None:
-    total_rows = rows + (1 if legend_path else 0)
-    height_ratios = [1.0] * rows + ([legend_height_ratio * rows] if legend_path else [])
+    has_legend = bool(legend_path and legend_path.exists())
+    total_rows = rows + (1 if has_legend else 0)
+    if has_legend and legend_position == 'top':
+        height_ratios = [legend_height_ratio * rows] + [1.0] * rows
+    else:
+        height_ratios = [1.0] * rows + ([legend_height_ratio * rows] if has_legend else [])
     fig = plt.figure(figsize=figsize, facecolor='white')
     grid = fig.add_gridspec(total_rows, cols, height_ratios=height_ratios, hspace=hspace, wspace=wspace)
 
+    panel_row_offset = 1 if has_legend and legend_position == 'top' else 0
     for index in range(rows * cols):
         r = index // cols
         c = index % cols
-        ax = fig.add_subplot(grid[r, c])
+        ax = fig.add_subplot(grid[r + panel_row_offset, c])
         ax.axis('off')
         if index < len(panel_paths) and panel_paths[index].exists():
             image = mpimg.imread(panel_paths[index])
             ax.imshow(image)
             ax.set_aspect('auto')
 
-    if legend_path and legend_path.exists():
-        ax = fig.add_subplot(grid[rows, :])
+    if has_legend:
+        legend_row = 0 if legend_position == 'top' else rows
+        ax = fig.add_subplot(grid[legend_row, :])
         ax.axis('off')
         image = mpimg.imread(legend_path)
         ax.imshow(image)

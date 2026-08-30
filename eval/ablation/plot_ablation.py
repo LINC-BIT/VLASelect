@@ -525,6 +525,7 @@ def write_summary(rows: list[dict[str, Any]], manifest: dict[str, Any], manifest
                 "points",
                 "last_value",
                 "max_value",
+                "mean_value",
                 "changed_options",
             ],
         )
@@ -553,6 +554,7 @@ def build_ablation_rows(manifest: dict[str, Any]) -> list[dict[str, Any]]:
             series = collect_series(curve)
             last_value = series[-1][1] if series else 0.0
             max_value = max((item[1] for item in series), default=0.0)
+            mean_value = (sum(item[1] for item in series) / len(series)) if series else 0.0
             rows.append(
                 {
                     "panel_label": panel["panel_label"],
@@ -563,6 +565,7 @@ def build_ablation_rows(manifest: dict[str, Any]) -> list[dict[str, Any]]:
                     "points": len(series),
                     "last_value": f"{last_value:.6f}",
                     "max_value": f"{max_value:.6f}",
+                    "mean_value": f"{mean_value:.6f}",
                     "changed_options": curve.get("changed_options", []),
                 }
             )
@@ -576,7 +579,7 @@ def build_vis_data(manifest: dict[str, Any], rows: list[dict[str, Any]]) -> dict
         group_data: dict[str, tuple[float, bool]] = {}
         for slot_name, panel_id, curve_id in group_spec["slots"]:
             row = row_map.get((panel_id, curve_id), {})
-            value = float(row.get('last_value', 0.0) or 0.0)
+            value = float(row.get('mean_value', row.get('last_value', 0.0)) or 0.0)
             is_placeholder = int(row.get('points', 0) or 0) == 0
             group_data[slot_name] = (value, is_placeholder)
         ordered[group_spec["group_name"]] = group_data

@@ -1,6 +1,6 @@
 {
   "source": {
-    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/acc_task_env_from_same_acc_table/20260827-043445/manifest.json",
+    "top_manifest": "/home/zcr/vlaselect/eval/acc_comparison/tmp_manifests/task_env_upto_20260827.json",
     "suite_manifest": "ckpt/tinyvla/cl_suite/20260827-043445/manifest.json"
   },
   "render_config": {
@@ -47,16 +47,16 @@
       ],
       "grid_alpha": 0.3,
       "summary": {
-        "others_average": 0.39736776619946385,
+        "others_average": 0.9499999999999998,
         "ours_average": 0.7749999999999999,
-        "absolute_improvement_percent": 37.76322338005361
+        "absolute_improvement_percent": -17.499999999999993
       },
       "series": [
         {
           "name": "self_improv",
           "display_name": "Self-Improv",
           "label": "Self-Improv",
-          "raw_average": 0.457508,
+          "raw_average": 0.95,
           "style": {
             "color": "#9A9A9A",
             "linestyle": "-",
@@ -67,8 +67,8 @@
             2.0999790000000003
           ],
           "y": [
-            0.4575078138796026,
-            0.4575078138796026
+            0.95,
+            0.95
           ],
           "x_full": [
             1.99998
@@ -79,7 +79,7 @@
           "name": "vla_rft",
           "display_name": "VLA-RFT",
           "label": "VLA-RFT",
-          "raw_average": 0.368474,
+          "raw_average": 0.95,
           "style": {
             "color": "#59A14F",
             "linestyle": "--",
@@ -90,8 +90,8 @@
             2.0999790000000003
           ],
           "y": [
-            0.37885612683079606,
-            0.3726269088355561
+            0.95,
+            0.95
           ],
           "x_full": [
             1.002093077942214,
@@ -103,7 +103,7 @@
           "name": "world_env",
           "display_name": "WorldEnv",
           "label": "WorldEnv",
-          "raw_average": 0.366121,
+          "raw_average": 0.95,
           "style": {
             "color": "#4D4D4D",
             "linestyle": "--",
@@ -114,8 +114,8 @@
             2.0999790000000003
           ],
           "y": [
-            0.3845866646429741,
-            0.37350749858522536
+            0.95,
+            0.95
           ],
           "x_full": [
             1.001621327413369,

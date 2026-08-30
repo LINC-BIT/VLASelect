@@ -17,7 +17,7 @@ EVAL_ROOT = SCRIPT_DIR.parent
 if str(EVAL_ROOT) not in sys.path:
     sys.path.insert(0, str(EVAL_ROOT))
 
-from common.figure_compose import compose_grid_figure
+from common.figure_compose import compose_grid_figure, render_legend_image
 from common.template_pdf_fill import fill_accuracy_template
 from common.vis_line_draw import apply_matplotlib_style, draw_plot
 
@@ -441,6 +441,89 @@ def expand_single_point_series_to_horizontal_lines(
             series['y'] = [ys[-1], ys[-1]]
 
 
+def _canonical_legend_method_name(method_name: str) -> str:
+    name = str(method_name).strip()
+    if name == 'ours_single_agent':
+        return 'ours'
+    if name == 'self_improvement':
+        return 'self_improv'
+    return name
+
+
+def _canonical_legend_label(method_name: str, label: str) -> str:
+    canonical_name = _canonical_legend_method_name(method_name)
+    if canonical_name == 'ours':
+        return 'VLASelect'
+    return str(label).strip() or canonical_name
+
+
+def build_shared_legend_entries(series_groups: list[list[dict[str, Any]]]) -> list[tuple[str, dict[str, Any]]]:
+    grouped: dict[str, tuple[str, dict[str, Any]]] = {}
+    for entries in series_groups:
+        for entry in entries:
+            raw_name = str(entry.get('name', '')).strip()
+            if not raw_name:
+                continue
+            canonical_name = _canonical_legend_method_name(raw_name)
+            if canonical_name in grouped:
+                continue
+            grouped[canonical_name] = (
+                _canonical_legend_label(raw_name, str(entry.get('label', raw_name))),
+                dict(entry.get('style', {})),
+            )
+
+    ordered: list[tuple[str, dict[str, Any]]] = []
+    for method_name in LEGEND_ORDER:
+        canonical_name = _canonical_legend_method_name(method_name)
+        if canonical_name == 'ours':
+            continue
+        item = grouped.pop(canonical_name, None)
+        if item is not None:
+            ordered.append(item)
+
+    trailing_item = grouped.pop('ours', None)
+    for canonical_name in sorted(grouped.keys()):
+        ordered.append(grouped[canonical_name])
+    if trailing_item is not None:
+        ordered.append(trailing_item)
+    return ordered
+
+
+def build_visible_legend_entries(
+    series_payload: list[dict[str, Any]],
+    xlim: list[float],
+    ylim: list[float],
+) -> list[dict[str, Any]]:
+    x_min, x_max = float(xlim[0]), float(xlim[1])
+    y_min, y_max = float(ylim[0]), float(ylim[1])
+    legend_entries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for series in series_payload:
+        name = str(series.get('name', '')).strip()
+        if not name or name in seen:
+            continue
+        visible = False
+        xs = series.get('x', [])
+        ys = series.get('y', [])
+        for raw_x, raw_y in zip(xs, ys):
+            x_value = finite_float(raw_x)
+            y_value = finite_float(raw_y)
+            if x_value is None or y_value is None:
+                continue
+            if x_min <= x_value <= x_max and y_min <= y_value <= y_max:
+                visible = True
+                break
+        if not visible:
+            continue
+        legend_entries.append({
+            'name': name,
+            'label': str(series.get('display_name') or series.get('label') or name),
+            'style': series.get('style') or {'color': '#000000', 'linestyle': '-', 'linewidth': 3.6},
+        })
+        seen.add(name)
+    return legend_entries
+
+
 def select_evenly_spaced_point_indices(num_points: int, target_points: int) -> list[int]:
     if num_points <= 0 or target_points <= 0:
         return []
@@ -543,7 +626,6 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
     series_payload = []
     others_avg: list[float] = []
     ours_avg: list[float] = []
-    legend_entries = []
 
     suite_manifest_raw = str(panel.get('suite_manifest', ''))
     suite_manifest_path = resolve_path(suite_manifest_raw) if suite_manifest_raw else None
@@ -592,7 +674,6 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 'x_full': xs_full,
                 'point_count': len(xs),
             })
-            legend_entries.append({'name': method['name'], 'label': display_name, 'style': style})
             if method['name'] in {'ours', 'ours_single_agent'}:
                 ours_avg.append(average)
             else:
@@ -634,6 +715,7 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
             span = last_x - first_x
             series['x'] = [((x - first_x) / span) * x_axis_right for x in xs]
     expand_single_point_series_to_horizontal_lines(series_payload, xlim)
+    legend_entries = build_visible_legend_entries(series_payload, xlim, [0.0, 1.0])
 
     payload = {
         'source': {
@@ -679,6 +761,8 @@ def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
     panel_paths: list[Path] = []
     summary_rows: list[dict[str, Any]] = []
     summary_stats_list: list[dict[str, float | None]] = []
+    visible_method_names: set[str] = set()
+    legend_entry_groups: list[list[dict[str, Any]]] = []
     VIS_PAYLOAD_DIR.mkdir(parents=True, exist_ok=True)
     PANEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -691,19 +775,41 @@ def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
         payload_path = VIS_PAYLOAD_DIR / f"{panel['panel_label']}_{panel['family']}.json"
         payload_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
         plot_data = payload['plots']['success_once']
+        panel_legend_entries = list(plot_data.get('legend_entries', []))
+        legend_entry_groups.append(panel_legend_entries)
+        visible_method_names.update(
+            str(entry.get('name', '')).strip()
+            for entry in panel_legend_entries
+            if str(entry.get('name', '')).strip()
+        )
         png_path, _ = draw_plot(plot_data, RENDER_CONFIG, PANEL_OUTPUT_DIR)
         panel_paths.append(png_path)
 
+    legend_path = None
+    shared_legend_entries = build_shared_legend_entries(legend_entry_groups)
+    if shared_legend_entries:
+        legend_path = PANEL_OUTPUT_DIR / f'{FIGURE_STEM}_legend.png'
+        render_legend_image(
+            shared_legend_entries,
+            legend_path,
+            ncol=min(5, max(1, len(shared_legend_entries))),
+            fontsize=22,
+            linewidth=3.6,
+            handlelength=3.0,
+            dpi=200,
+        )
     compose_grid_figure(
         panel_paths,
         output_paths=[FIGURE_PNG_PATH, FIGURE_SVG_PATH],
         rows=1,
         cols=4,
-        figsize=(20.0, 5.0),
-        legend_path=None,
+        figsize=(20.0, 6.2),
+        legend_path=legend_path,
+        legend_position='top',
+        legend_height_ratio=0.22,
         dpi=200,
     )
-    fill_accuracy_template(FIGURE_PATH, panel_paths, summary_stats_list)
+    fill_accuracy_template(FIGURE_PATH, panel_paths, summary_stats_list, visible_method_names=visible_method_names, legend_image_path=legend_path)
     return summary_rows
 
 

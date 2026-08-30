@@ -12,7 +12,7 @@ from contextlib import nullcontext
 from dataclasses import asdict, dataclass
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
+from typing import Any, Dict, List, Optional, Tuple, Union, get_args, get_origin
 
 THIS_DIR = Path(__file__).resolve().parent
 if str(THIS_DIR) not in sys.path:
@@ -495,13 +495,11 @@ def extract_vla_proprio_from_obs(obs: Dict[str, Any]) -> np.ndarray:
     ).astype(np.float32)
 
 
-def extract_rgb_batch_from_obs(obs: Dict[str, Any]) -> np.ndarray:
+def extract_rgb_batch_from_obs(obs: Dict[str, Any]) -> torch.Tensor:
     rgb = obs["sensor_data"]["base_camera"]["rgb"]
     if isinstance(rgb, torch.Tensor):
-        rgb = rgb[..., :3].detach().cpu().numpy()
-    else:
-        rgb = np.asarray(rgb)[..., :3]
-    return rgb.astype(np.uint8)
+        return rgb[..., :3].detach().to(device="cpu", dtype=torch.uint8).contiguous()
+    return torch.from_numpy(np.asarray(rgb)[..., :3].astype(np.uint8, copy=False)).contiguous()
 
 
 def extract_vla_proprio_batch_from_obs(obs: Dict[str, Any]) -> np.ndarray:
@@ -667,6 +665,9 @@ class VLAAdapterActorCritic(nn.Module):
         if fallback_bundle is None:
             self.processor = AutoProcessor.from_pretrained(str(model_dir), trust_remote_code=True)
             self.action_tokenizer = ActionTokenizer(self.processor.tokenizer)
+            prompt_tokens = self.processor.tokenizer(self.prompt, return_tensors="pt")
+            self.register_buffer("prompt_input_ids", prompt_tokens["input_ids"], persistent=False)
+            self.register_buffer("prompt_attention_mask", prompt_tokens["attention_mask"], persistent=False)
             self.tokenizer_vocab_size = int(self.processor.tokenizer.vocab_size)
             self.action_vocab_size = int(self.action_tokenizer.vocab_size)
             ensure_package("local_vla_pkg", model_dir)
@@ -695,6 +696,8 @@ class VLAAdapterActorCritic(nn.Module):
         else:
             self.processor = fallback_bundle["processor"]
             self.action_tokenizer = ActionTokenizer(self.processor.tokenizer)
+            self.register_buffer("prompt_input_ids", fallback_bundle["prompt_tokens"]["input_ids"], persistent=False)
+            self.register_buffer("prompt_attention_mask", fallback_bundle["prompt_tokens"]["attention_mask"], persistent=False)
             self.tokenizer_vocab_size = int(self.processor.tokenizer.vocab_size)
             self.action_vocab_size = int(self.action_tokenizer.vocab_size)
             self.ignore_index = int(fallback_bundle["ignore_index"])
@@ -761,8 +764,13 @@ class VLAAdapterActorCritic(nn.Module):
         return summary
 
     @staticmethod
-    def _prepare_image(rgb: np.ndarray) -> Image.Image:
-        image = Image.fromarray(rgb.astype(np.uint8)).convert("RGB")
+    def _prepare_image(rgb: Union[np.ndarray, torch.Tensor]) -> Image.Image:
+        if isinstance(rgb, torch.Tensor):
+            if rgb.device.type != "cpu" or rgb.dtype != torch.uint8 or not rgb.is_contiguous():
+                rgb = rgb.detach().to(device="cpu", dtype=torch.uint8).contiguous()
+            image = Image.fromarray(rgb.numpy(), mode="RGB").convert("RGB")
+        else:
+            image = Image.fromarray(np.asarray(rgb, dtype=np.uint8), mode="RGB").convert("RGB")
         original_w, original_h = image.size
         crop_scale = math.sqrt(0.9)
         crop_w = max(1, int(original_w * crop_scale))
@@ -772,14 +780,21 @@ class VLAAdapterActorCritic(nn.Module):
         image = image.crop((left, top, left + crop_w, top + crop_h))
         return image.resize((original_w, original_h), Image.Resampling.BILINEAR)
 
-    def _prepare_policy_inputs(self, rgbs: np.ndarray) -> Dict[str, torch.Tensor]:
-        images = [self._prepare_image(rgb[..., :3]) for rgb in np.asarray(rgbs)]
-        prompts = [self.prompt] * len(images)
-        processor_outputs = self.processor(text=prompts, images=images, padding=True, return_tensors="pt")
+    def _prepare_policy_inputs(self, rgbs: Union[np.ndarray, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        if isinstance(rgbs, torch.Tensor):
+            rgb_batch = rgbs[..., :3].detach()
+            if rgb_batch.device.type != "cpu" or rgb_batch.dtype != torch.uint8 or not rgb_batch.is_contiguous():
+                rgb_batch = rgb_batch.to(device="cpu", dtype=torch.uint8).contiguous()
+        else:
+            rgb_batch = torch.from_numpy(np.asarray(rgbs)[..., :3].astype(np.uint8, copy=False)).contiguous()
+
+        images = [self._prepare_image(rgb) for rgb in rgb_batch]
+        batch_size = len(images)
+        pixel_values = self.processor.image_processor(images=images, return_tensors="pt")["pixel_values"]
         return {
-            "input_ids": processor_outputs["input_ids"].to(self.device),
-            "attention_mask": processor_outputs["attention_mask"].to(self.device),
-            "pixel_values": processor_outputs["pixel_values"].to(self.device, dtype=torch.bfloat16),
+            "input_ids": self.prompt_input_ids.expand(batch_size, -1),
+            "attention_mask": self.prompt_attention_mask.expand(batch_size, -1),
+            "pixel_values": pixel_values.to(self.device, dtype=torch.bfloat16, non_blocking=True),
         }
 
     def _unnormalize_selected_actions_torch(self, normalized_actions: torch.Tensor) -> torch.Tensor:
@@ -793,7 +808,7 @@ class VLAAdapterActorCritic(nn.Module):
         )
         return actions
 
-    def _forward_token_policy(self, rgbs: np.ndarray) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _forward_token_policy(self, rgbs: Union[np.ndarray, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         model_inputs = self._prepare_policy_inputs(rgbs)
         input_ids = model_inputs["input_ids"]
         attention_mask = model_inputs["attention_mask"]
@@ -1626,7 +1641,7 @@ def train(args: Args) -> None:
                 )
         raw_policy.train()
         final_values.zero_()
-        rollout_rgbs: List[np.ndarray] = []
+        rollout_rgbs: List[torch.Tensor] = []
         rollout_proprio: List[np.ndarray] = []
         train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
@@ -1636,7 +1651,7 @@ def train(args: Args) -> None:
             global_step += args.num_envs
             step_rgbs = extract_rgb_batch_from_obs(next_obs)
             step_proprio = extract_vla_proprio_batch_from_obs(next_obs)
-            rollout_rgbs.append(step_rgbs.copy())
+            rollout_rgbs.append(step_rgbs.clone())
             rollout_proprio.append(step_proprio.copy())
             dones_buf[step] = next_done
             action, logprob, _, value, action_tokens = batched_get_action_and_value_no_grad(
@@ -1715,7 +1730,7 @@ def train(args: Args) -> None:
                 advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * next_nonterminal * lastgaelam
             returns = advantages + values_buf
 
-        b_rgbs = np.concatenate(rollout_rgbs, axis=0)
+        b_rgbs = torch.cat(rollout_rgbs, dim=0)
         b_proprio = np.concatenate(rollout_proprio, axis=0)
         b_action_tokens = action_tokens_buf.reshape(-1, 4)
         b_logprobs = logprobs_buf.reshape(-1)

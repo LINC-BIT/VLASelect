@@ -8,7 +8,7 @@ import time
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
+from typing import Any, Dict, List, Optional, Tuple, Union, get_args, get_origin
 
 THIS_DIR = Path(__file__).resolve().parent
 if str(THIS_DIR) not in sys.path:
@@ -72,13 +72,11 @@ def get_attention_implementation() -> str:
     return requested
 
 
-def extract_rgb_batch_from_obs(obs: Dict[str, Any]) -> np.ndarray:
+def extract_rgb_batch_from_obs(obs: Dict[str, Any]) -> torch.Tensor:
     rgb = obs["sensor_data"]["base_camera"]["rgb"]
     if isinstance(rgb, torch.Tensor):
-        rgb = rgb[..., :3].detach().cpu().numpy()
-    else:
-        rgb = np.asarray(rgb)[..., :3]
-    return rgb.astype(np.uint8)
+        return rgb[..., :3].detach().to(device="cpu", dtype=torch.uint8).contiguous()
+    return torch.from_numpy(np.asarray(rgb)[..., :3].astype(np.uint8, copy=False)).contiguous()
 
 
 def _to_numpy(value: Any) -> np.ndarray:
@@ -291,6 +289,9 @@ class HandVLAAdapterActorCritic(nn.Module):
         if fallback_bundle is None:
             self.processor = AutoProcessor.from_pretrained(str(model_dir), trust_remote_code=True)
             self.action_tokenizer = ActionTokenizer(self.processor.tokenizer)
+            prompt_tokens = self.processor.tokenizer(self.prompt, return_tensors="pt")
+            self.register_buffer("prompt_input_ids", prompt_tokens["input_ids"], persistent=False)
+            self.register_buffer("prompt_attention_mask", prompt_tokens["attention_mask"], persistent=False)
             ensure_package("local_hand_vla_pkg", model_dir)
             config_mod = load_module_from_path(
                 "local_hand_vla_pkg.configuration_prismatic",
@@ -315,6 +316,8 @@ class HandVLAAdapterActorCritic(nn.Module):
         else:
             self.processor = fallback_bundle["processor"]
             self.action_tokenizer = ActionTokenizer(self.processor.tokenizer)
+            self.register_buffer("prompt_input_ids", fallback_bundle["prompt_tokens"]["input_ids"], persistent=False)
+            self.register_buffer("prompt_attention_mask", fallback_bundle["prompt_tokens"]["attention_mask"], persistent=False)
             self.ignore_index = int(fallback_bundle["ignore_index"])
             self.num_tokens = int(fallback_bundle["num_tokens"])
             self.vla = fallback_bundle["vla"]
@@ -387,17 +390,28 @@ class HandVLAAdapterActorCritic(nn.Module):
         return summary
 
     @staticmethod
-    def _prepare_image(rgb: np.ndarray) -> Image.Image:
-        return Image.fromarray(np.asarray(rgb, dtype=np.uint8)).convert("RGB")
+    def _prepare_image(rgb: Union[np.ndarray, torch.Tensor]) -> Image.Image:
+        if isinstance(rgb, torch.Tensor):
+            if rgb.device.type != "cpu" or rgb.dtype != torch.uint8 or not rgb.is_contiguous():
+                rgb = rgb.detach().to(device="cpu", dtype=torch.uint8).contiguous()
+            return Image.fromarray(rgb.numpy(), mode="RGB").convert("RGB")
+        return Image.fromarray(np.asarray(rgb, dtype=np.uint8), mode="RGB").convert("RGB")
 
-    def _prepare_policy_inputs(self, rgbs: np.ndarray) -> Dict[str, torch.Tensor]:
-        images = [self._prepare_image(rgb[..., :3]) for rgb in np.asarray(rgbs)]
-        prompts = [self.prompt] * len(images)
-        processor_outputs = self.processor(text=prompts, images=images, padding=True, return_tensors="pt")
+    def _prepare_policy_inputs(self, rgbs: Union[np.ndarray, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        if isinstance(rgbs, torch.Tensor):
+            rgb_batch = rgbs[..., :3].detach()
+            if rgb_batch.device.type != "cpu" or rgb_batch.dtype != torch.uint8 or not rgb_batch.is_contiguous():
+                rgb_batch = rgb_batch.to(device="cpu", dtype=torch.uint8).contiguous()
+        else:
+            rgb_batch = torch.from_numpy(np.asarray(rgbs)[..., :3].astype(np.uint8, copy=False)).contiguous()
+
+        images = [self._prepare_image(rgb) for rgb in rgb_batch]
+        batch_size = len(images)
+        pixel_values = self.processor.image_processor(images=images, return_tensors="pt")["pixel_values"]
         return {
-            "input_ids": processor_outputs["input_ids"].to(self.device),
-            "attention_mask": processor_outputs["attention_mask"].to(self.device),
-            "pixel_values": processor_outputs["pixel_values"].to(self.device, dtype=torch.bfloat16),
+            "input_ids": self.prompt_input_ids.expand(batch_size, -1),
+            "attention_mask": self.prompt_attention_mask.expand(batch_size, -1),
+            "pixel_values": pixel_values.to(self.device, dtype=torch.bfloat16, non_blocking=True),
         }
 
     def _action_bins_to_token_ids(self, action_bins: torch.Tensor) -> torch.Tensor:
@@ -765,11 +779,11 @@ class HandVLAAdapterActorCritic(nn.Module):
             return self.forward_policy(rgbs=rgbs, states=states)
         raise ValueError(f"Unsupported forward mode: {mode}")
 
-    def predict_action(self, rgb: np.ndarray, state: np.ndarray) -> np.ndarray:
+    def predict_action(self, rgb: Union[np.ndarray, torch.Tensor], state: np.ndarray) -> np.ndarray:
         self.eval()
         with torch.no_grad():
             action, _, _, _, _ = self.get_action_and_value(
-                rgbs=np.expand_dims(rgb, axis=0),
+                rgbs=rgb.unsqueeze(0) if isinstance(rgb, torch.Tensor) else np.expand_dims(rgb, axis=0),
                 states=np.expand_dims(state, axis=0),
                 deterministic=True,
             )
@@ -1302,7 +1316,7 @@ def train(args: Args) -> None:
 
         raw_policy.eval()
         final_values.zero_()
-        rollout_rgbs: List[np.ndarray] = []
+        rollout_rgbs: List[torch.Tensor] = []
         rollout_states: List[np.ndarray] = []
         train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
@@ -1312,7 +1326,7 @@ def train(args: Args) -> None:
             global_step += args.num_envs
             step_rgbs = extract_rgb_batch_from_obs(next_obs)
             step_states = extract_hand_state_batch_from_obs(next_obs)
-            rollout_rgbs.append(step_rgbs.copy())
+            rollout_rgbs.append(step_rgbs.clone())
             rollout_states.append(step_states.copy())
             dones_buf[step] = next_done
 
@@ -1395,7 +1409,7 @@ def train(args: Args) -> None:
                 advantages[t] = lastgaelam = delta + args.gamma * args.gae_lambda * next_nonterminal * lastgaelam
             returns = advantages + values_buf
 
-        b_rgbs = np.concatenate(rollout_rgbs, axis=0)
+        b_rgbs = torch.cat(rollout_rgbs, dim=0)
         b_states = np.concatenate(rollout_states, axis=0)
         b_action_bins = action_bins_buf.reshape(-1, args.action_dim)
         b_logprobs = logprobs_buf.reshape(-1)

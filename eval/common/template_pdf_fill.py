@@ -434,7 +434,7 @@ def _rewrite_accuracy_summary_text(page, reader: PdfReader, summary_stats: list[
     page[NameObject('/Contents')] = stream
 
 
-def fill_accuracy_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None) -> None:
+def fill_accuracy_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None, visible_method_names: set[str] | None = None, legend_image_path: Path | None = None) -> None:
     boxes = [
         (8.52, 272.4, 242.04, 195.6),
         (237.96, 272.4, 242.04, 195.6),
@@ -442,6 +442,8 @@ def fill_accuracy_template(output_pdf_path: Path, panel_paths: list[Path], summa
         (696.84, 272.4, 242.16, 195.6),
     ]
     placements: list[tuple[Path | Image.Image, tuple[float, float, float, float]]] = list(zip(panel_paths, boxes))
+    if legend_image_path is not None and legend_image_path.exists():
+        placements.append((legend_image_path, (92.0, 458.0, 720.0, 52.0)))
     _replace_template_figures(
         TEMPLATE_ROOT / "Accuracy.pdf",
         output_pdf_path,
@@ -508,7 +510,7 @@ def _rewrite_resource_summary_text(page, reader: PdfReader, summary_stats: list[
     _write_content_stream(page, content)
 
 
-def fill_resource_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None) -> None:
+def fill_resource_template(output_pdf_path: Path, panel_paths: list[Path], summary_stats: list[dict[str, float | None]] | None = None, visible_method_names: set[str] | None = None, legend_image_path: Path | None = None) -> None:
     boxes = [
         (10.8, 279.36, 242.04, 195.6),
         (240.36, 279.36, 242.04, 195.6),
@@ -520,6 +522,8 @@ def fill_resource_template(output_pdf_path: Path, panel_paths: list[Path], summa
         (707.76, 29.64, 242.16, 195.6),
     ]
     placements: list[tuple[Path | Image.Image, tuple[float, float, float, float]]] = list(zip(panel_paths, boxes))
+    if legend_image_path is not None and legend_image_path.exists():
+        placements.append((legend_image_path, (92.0, 484.0, 736.0, 56.0)))
     _replace_template_figures(
         TEMPLATE_ROOT / "AccuracyUnderResourceChange.pdf",
         output_pdf_path,

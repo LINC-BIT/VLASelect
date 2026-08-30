@@ -795,6 +795,7 @@ def train(
         final_values.zero_()
         rollout_rgbs: List[torch.Tensor] = []
         rollout_states: List[np.ndarray] = []
+        train_episode_metrics = defaultdict(list)
         partial_reward_means: List[float] = []
         logged_partial_reward_means: List[float] = []
 

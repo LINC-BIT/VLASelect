@@ -47,7 +47,9 @@ def summarize_episode_metric_tensors(
         merged = torch.cat(flattened)
         if max_num_values is not None and max_num_values > 0 and merged.numel() > max_num_values:
             merged = merged[-max_num_values:]
-        summary[key] = merged.mean().item()
+        # Training metrics use the same ``train_*`` names as the legacy
+        # summarizer and the plotting/early-stop consumers.
+        summary[f"train_{key}"] = merged.mean().item()
     return summary
 
 

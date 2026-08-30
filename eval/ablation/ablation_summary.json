@@ -1,6 +1,6 @@
 {
-  "suite_stamp": "20260829-021900",
-  "manifest_path": "eval/ablation/ablation_table/20260829-021900/manifest.json",
+  "suite_stamp": "20260829-ablation-mwe-noeval-rerun",
+  "manifest_path": "/home/zcr/vlaselect/eval/ablation/ablation_table/20260829-ablation-mwe-noeval-rerun/manifest.json",
   "figure_output": "ablation/FIG_ABLATION.pdf",
   "summary_csv": "ablation/ablation_summary.csv",
   "rows": [
@@ -9,10 +9,10 @@
       "panel_id": "scaling_law_function",
       "curve_id": "without_scaling_law",
       "curve_label": "Without scaling law",
-      "run_dir": "ckpt/ablation/20260829-021900/scaling_law_function/without_scaling_law/[agent]",
-      "points": 0,
-      "last_value": "0.000000",
-      "max_value": "0.000000",
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/scaling_law_function/without_scaling_law/[agent]",
+      "points": 155,
+      "last_value": "1.000000",
+      "max_value": "1.000000",
       "changed_options": [
         "small_model_generation_strategy"
       ]
@@ -22,10 +22,10 @@
       "panel_id": "scaling_law_function",
       "curve_id": "with_scaling_law",
       "curve_label": "With scaling law",
-      "run_dir": "ckpt/ablation/20260829-021900/scaling_law_function/with_scaling_law/[agent]",
-      "points": 0,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/scaling_law_function/with_scaling_law/[agent]",
+      "points": 193,
       "last_value": "0.000000",
-      "max_value": "0.000000",
+      "max_value": "1.000000",
       "changed_options": []
     },
     {
@@ -33,8 +33,8 @@
       "panel_id": "neuron_grained_scaling_up",
       "curve_id": "random",
       "curve_label": "Random",
-      "run_dir": "ckpt/ablation/20260829-021900/neuron_grained_scaling_up/random/[agent]",
-      "points": 0,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/neuron_grained_scaling_up/random/[agent]",
+      "points": 43,
       "last_value": "0.000000",
       "max_value": "0.000000",
       "changed_options": [
@@ -46,10 +46,10 @@
       "panel_id": "neuron_grained_scaling_up",
       "curve_id": "inverse",
       "curve_label": "Most accuracy-unrelated",
-      "run_dir": "ckpt/ablation/20260829-021900/neuron_grained_scaling_up/inverse/[agent]",
-      "points": 0,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/neuron_grained_scaling_up/inverse/[agent]",
+      "points": 204,
       "last_value": "0.000000",
-      "max_value": "0.000000",
+      "max_value": "1.000000",
       "changed_options": [
         "small_model_ab_strategy"
       ]
@@ -59,10 +59,10 @@
       "panel_id": "neuron_grained_scaling_up",
       "curve_id": "neuron_grained",
       "curve_label": "Most accuracy-related",
-      "run_dir": "ckpt/ablation/20260829-021900/neuron_grained_scaling_up/neuron_grained/[agent]",
-      "points": 0,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/neuron_grained_scaling_up/neuron_grained/[agent]",
+      "points": 177,
       "last_value": "0.000000",
-      "max_value": "0.000000",
+      "max_value": "1.000000",
       "changed_options": []
     },
     {
@@ -70,8 +70,8 @@
       "panel_id": "scaling_down_freezing_vs_pruning",
       "curve_id": "pruning",
       "curve_label": "Pruning",
-      "run_dir": "ckpt/ablation/20260829-021900/scaling_down_freezing_vs_pruning/pruning/[agent]",
-      "points": 0,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/scaling_down_freezing_vs_pruning/pruning/[agent]",
+      "points": 47,
       "last_value": "0.000000",
       "max_value": "0.000000",
       "changed_options": [
@@ -83,10 +83,10 @@
       "panel_id": "scaling_down_freezing_vs_pruning",
       "curve_id": "freezing",
       "curve_label": "Freezing",
-      "run_dir": "ckpt/ablation/20260829-021900/scaling_down_freezing_vs_pruning/freezing/[agent]",
-      "points": 0,
-      "last_value": "0.000000",
-      "max_value": "0.000000",
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/scaling_down_freezing_vs_pruning/freezing/[agent]",
+      "points": 201,
+      "last_value": "1.000000",
+      "max_value": "1.000000",
       "changed_options": []
     },
     {
@@ -94,10 +94,10 @@
       "panel_id": "neuron_swapping",
       "curve_id": "random_swapping",
       "curve_label": "Random swapping",
-      "run_dir": "ckpt/ablation/20260829-021900/neuron_swapping/random_swapping/[agent]",
-      "points": 0,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/neuron_swapping/random_swapping/[agent]",
+      "points": 133,
       "last_value": "0.000000",
-      "max_value": "0.000000",
+      "max_value": "1.000000",
       "changed_options": [
         "small_model_regeneration_ab_strategy"
       ]
@@ -107,10 +107,10 @@
       "panel_id": "neuron_swapping",
       "curve_id": "with_swapping",
       "curve_label": "With swapping",
-      "run_dir": "ckpt/ablation/20260829-021900/neuron_swapping/with_swapping/[agent]",
-      "points": 0,
-      "last_value": "0.000000",
-      "max_value": "0.000000",
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/neuron_swapping/with_swapping/[agent]",
+      "points": 175,
+      "last_value": "1.000000",
+      "max_value": "1.000000",
       "changed_options": []
     },
     {
@@ -118,8 +118,8 @@
       "panel_id": "knowledge_accumulation",
       "curve_id": "no_accumulation",
       "curve_label": "No accumulation",
-      "run_dir": "ckpt/ablation/20260829-021900/knowledge_accumulation/no_accumulation/[agent]",
-      "points": 13,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/knowledge_accumulation/no_accumulation/[agent]",
+      "points": 124,
       "last_value": "0.000000",
       "max_value": "1.000000",
       "changed_options": [
@@ -131,9 +131,9 @@
       "panel_id": "knowledge_accumulation",
       "curve_id": "accumulate_every_rollout",
       "curve_label": "Every-rollout accumulation",
-      "run_dir": "ckpt/ablation/20260829-021900/knowledge_accumulation/accumulate_every_rollout/[agent]",
-      "points": 21,
-      "last_value": "1.000000",
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/knowledge_accumulation/accumulate_every_rollout/[agent]",
+      "points": 174,
+      "last_value": "0.000000",
       "max_value": "1.000000",
       "changed_options": [
         "small_model_feedback_schedule"
@@ -144,8 +144,8 @@
       "panel_id": "knowledge_accumulation",
       "curve_id": "selective_accumulation",
       "curve_label": "Selective accumulation",
-      "run_dir": "ckpt/ablation/20260829-021900/knowledge_accumulation/selective_accumulation/[agent]",
-      "points": 111,
+      "run_dir": "ckpt/ablation/20260829-ablation-mwe-noeval-rerun/knowledge_accumulation/selective_accumulation/[agent]",
+      "points": 171,
       "last_value": "1.000000",
       "max_value": "1.000000",
       "changed_options": []

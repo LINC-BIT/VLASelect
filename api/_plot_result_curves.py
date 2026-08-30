@@ -133,9 +133,9 @@ def _single_run_label(run_dir: Path) -> str:
 def _metric_value(metric: Dict[str, Any], requested: str) -> Optional[float]:
     candidates = [requested]
     if requested == "train_success_once":
-        candidates.append("train_success_at_end")
+        candidates.extend(("train_success_at_end", "success_once", "success_at_end"))
     elif requested == "train_success_at_end":
-        candidates.append("train_success_once")
+        candidates.extend(("train_success_once", "success_at_end", "success_once"))
     for key in candidates:
         value = metric.get(key)
         if value is not None:

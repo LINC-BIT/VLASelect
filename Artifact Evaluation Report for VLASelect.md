@@ -1,10 +1,10 @@
-# Artifact Evaluation Report: VLASelect<img src="./heading-divider.svg" alt="" width="100%" height="1">
+# Artifact Evaluation Report (Small Machine): VLASelect<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 ## 1. Hardware and Software Specifications<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 <p align="center"><strong>Table 1: Hardware and Software Configuration Comparison</strong></p>
 
-| Subsystem | Platform for Paper (Full Run) | Platform for MWE |
+| Subsystem | Paper Platform (Full Scale) | Small Machine (Minimal Working Example) |
 | :---: | :---: | :---: |
 | Operating System | Ubuntu 20.04/22.04 LTS (Kernel 5.4/5.15) | Ubuntu 22.04.4 LTS (Kernel 6.8) |
 | CPU Architecture | 2 × Intel Xeon Gold 6430 (64C) | Intel Xeon E5-2698 v4 (16C) |
@@ -12,6 +12,7 @@
 | GPU & VRAM | NVIDIA A100 80GB (+ Edge AGX) | NVIDIA Tesla V100 (32 GB) |
 | CUDA Toolchain | Driver 550.144.03, CUDA 12.4 | Driver 550.127.05, CUDA 12.4 |
 
+<br><br>
 
 ## 2. Evaluation Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
@@ -21,77 +22,96 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 
 #### 2.2.1 (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-To evaluate the accuracy under varying task and environment conditions, we tested VLASelect across four distinct workloads; both full and minimal runs (as shown in Figure 7 and Figure 7 (Minimal Working Example)) **<span style="color:#0070C0">achieved the best overall accuracy</span>**. The minimal test evaluated a subset of models with shorter runtime, while the full test required longer execution, and both confirmed our method’s superior performance.
-
 **Key observation:** VLASelect consistently achieves the **<span style="color:#0070C0">highest average accuracy</span>** under tasks and environment changes.
 
-> For experiments in this paper, the runtime is approximately **140 hours**, and the peak VRAM footprint is **60 GB**. \
-> For the Minimal Working Example, the runtime is approximately **1 hour**, and the peak VRAM footprint is **20 GB**.
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td> <strong>Time:</strong> 140 h<br> <strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.1.1.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td> <strong>Time:</strong> 1 h<br> <strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.1.1-mwe.jpg" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
 
-<div align="center">
-<img src="imgs/2.2.1.1.png" alt="Figure 7: Full-Scale Example for Accuracy Under Task and Environment Changes" />
-</div>
-
-<p align="center"><strong>Figure 7: Full-scale experiment for Accuracy Under Tasks/Environment Changes</strong></p>
-
-
-<div align="center">
-<img src="imgs/2.2.1.1-mwe.jpg" alt="Figure 7 (Minimal Working Example): Accuracy Under Task and Environment Changes" />
-</div>
-
-<p align="center"><strong>Figure 7 (Minimal Working Example): Minimal working example for Accuracy Under Tasks/Environment Changes</strong></p>
+<br><br>
 
 #### 2.2.2 (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-To evaluate VLASelect's performance under fluctuating resource availability, this section employs the same contrastive configuration as described above; results illustrate that **<span style="color:#0070C0">VLASelect consistently performs best under these conditions</span>**. The full run (Figure 8) and the minimized run (Figure 8 (Minimal Working Example)) both confirm the model’s superior overall accuracy.
-
 **Key observation:** VLASelect consistently achieves the **<span style="color:#0070C0">highest overall accuracy</span>** under fluctuating resource availability.
 
-> For experiments in this paper, the runtime is approximately **140 hours**, and the peak VRAM footprint is **60 GB**. \
-> For the Minimal Working Example, the runtime is approximately **1 hour**, and the peak VRAM footprint is **20 GB**.
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 140 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.1.2.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.1.2-mwe.jpg" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
 
-<div align="center">
-<img src="imgs/2.2.1.2.png" alt="Figure 8: Full-Scale Example for Accuracy Under Available Resource Changes" />
-</div>
-
-<p align="center"><strong>Figure 8: Full-scale experiment for Accuracy Under Available Resource Changes</strong></p>
-
-<div align="center">
-<img src="imgs/2.2.1.2-mwe.jpg" alt="Figure 8 (Minimal Working Example): Accuracy Under Available Resource Changes" />
-</div>
-
-<p align="center"><strong>Figure 8 (Minimal Working Example): Minimal working example for Accuracy Under Available Resource Changes</strong></p>
+<br><br>
 
 #### 2.2.3 (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-Across the full-scale and Minimal Working Example configurations, VLASelect consistently achieves the target accuracy with the shortest execution time and the most reduced resource consumption compared to all baseline methods.
 
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>**  and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
 
-> For experiments in this paper, the runtime is approximately **140 hours**, and the peak VRAM footprint is **60 GB**. \
-> For the Minimal Working Example, the runtime is approximately **1 hour**, and the peak VRAM footprint is **20 GB**.
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 140 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.2.1.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.1-mwe.jpg" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
 
-<div align="center">
-<img src="imgs/2.2.2.1.png" alt="Figure 9: Full-Scale Example for Memory Footprint Comparison in a New Task" width="1000" />
-</div>
+<br><br>
 
-<p align="center"><strong>Figure 9: Full-scale experiment for Overheads Under The Same Accuracy: Memory Footprint Comparison in a New Task</strong></p>
-
-<div align="center">
-<img src="imgs/2.2.2.1-mwe.jpg" alt="Figure 9 (Minimal Working Example): Memory Footprint" />
-</div>
-
-<p align="center"><strong>Figure 9 (Minimal Working Example): Minimal working example for Overheads Under The Same Accuracy: Memory Footprint Comparison in a New Task</strong></p>
-
-#### Energy Consumption Analysis
-
-Tables 2a and 2b compare the average energy consumption (kJ) across baseline methods under the full-scale and minimized experimental settings. VLASelect consistently **<span style="color:#0070C0">incurs the lowest energy consumption</span>** across the evaluated workloads.
+**Energy Consumption Analysis**
 
 **Key observation:** VLASelect achieves the highest operational efficiency by **<span style="color:#0070C0">maintaining the lowest energy consumption</span>** across diverse workloads and experimental settings.
 
 > For experiments in this paper, this table was generated concurrently with the previous step.
 
-<p align="center"><strong>Table 2a: Full-scale experiment for Energy Consumption Analysis: Average Energy Consumption (kJ) in Each New Task</strong></p>
+<p align="center"><strong>Table 2(Full Run): Energy Consumption Analysis: Average Energy Consumption (kJ) in Each New Task</strong></p>
 
 | Method | Single-Arm Robot | Dexterous Hand | Mobile Manipulator | Humanoid Robot |
 | :---: | :---: | :---: | :---: | :---: |
@@ -106,7 +126,9 @@ Tables 2a and 2b compare the average energy consumption (kJ) across baseline met
 | ConvertNet | 608.37 / 454.23 | 456.51 / 327.35 | 451.61 / 378.12 | 536.37 / 451.6 |
 | VLASelect | 46.06 / 44.24 | 35.41 / 25.63 | 39.46 / 25.57 | 64.71 / 45.18 |
 
-<p align="center"><strong>Table 2b: Minimal working example for Energy Consumption Analysis: Average Energy Consumption (kJ) in Each New Task</strong></p>
+<br><br>
+
+<p align="center"><strong>Table 2(Minimal Working Example):  Energy Consumption Analysis: Average Energy Consumption (kJ) in Each New Task</strong></p>
 
 | Method | Single-Arm Robot | Dexterous Hand | Mobile Manipulator | Humanoid Robot |
 | :---: | :---: | :---: | :---: | :---: |
@@ -115,15 +137,15 @@ Tables 2a and 2b compare the average energy consumption (kJ) across baseline met
 | World-Env | 12.98 | 23.96 | 33.92 | 33.03 |
 | VLASelect | 0.68 | 11.37 | 12.28 | 2.58 |
 
-#### Overhead comparison under the same learning accuracy
+<br><br>
 
-Across both the full-scale (Table 3a) and Minimal Working Example (Table 3b) settings, VLASelect consistently achieves the target accuracy with the shortest execution time and the most reduced resource consumption compared to all baseline methods.
+**Overhead comparison under the same learning accuracy**
 
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution</span>** time and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
 
 > For experiments in this paper, this table was generated concurrently with the previous step.
 
-<p align="center"><strong>Table 3a: Full-scale experiment for Overhead Comparison Under the Same Learning Accuracy</strong></p>
+<p align="center"><strong>Table 3 (Full Run): Overhead Comparison Under the Same Learning Accuracy</strong></p>
 
 <table align="center" style="text-align:center">
 <thead>
@@ -144,7 +166,9 @@ Across both the full-scale (Table 3a) and Minimal Working Example (Table 3b) set
 </tbody>
 </table>
 
-<p align="center"><strong>Table 3b: Minimal working example for Overhead Comparison Under the Same Learning Accuracy</strong></p>
+<br><br>
+
+<p align="center"><strong>Table 3 (Minimal Working Example): Overhead Comparison Under the Same Learning Accuracy</strong></p>
 
 <table align="center" style="text-align:center">
 <thead>
@@ -159,62 +183,89 @@ Across both the full-scale (Table 3a) and Minimal Working Example (Table 3b) set
 </tbody>
 </table>
 
+<br><br>
+
 #### 2.2.4 (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-The execution time of VLASelect core modules is obviously less than the training iteration time.
 
 **Key observation:** The execution time of VLASelect core modules is **<span style="color:#0070C0">obviously less than the training iteration time</span>**.
 
-> For experiments in this paper, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **60 GB**. \
-> For the Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
-
-<div align="center">
-<img src="imgs/2.2.2.2.png" alt="Figure 10: Full-Scale Example of Time Breakdown Experiment" style="zoom:150%;" />
-</div>
-
-<p align="center"><strong>Figure 10: Full-scale experiment for Time Breakdown of VLASelect's Modules</strong></p>
-
-<div align="center">
-<img src="imgs/2.2.2.2-mwe.png" alt="Figure 10 (Minimal Working Example): Time Breakdown Experiment" style="zoom: 25%;" />
-</div>
-
-<p align="center"><strong>Figure 10 (Minimal Working Example): Minimal working example for Time Breakdown of VLASelect's Modules</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.2.2.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.2-mwe.png" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
 
 #### 2.2.5 (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-Under identical workloads, VLASelect achieves shorter runtime while maintaining high accuracy compared with other baselines.
 
 **Key observation:** Under identical workloads, VLASelect achieves **<span style="color:#0070C0">shorter runtime</span>** while maintaining high accuracy compared with other baselines.
 
-> For experiments in this paper, the runtime is approximately **140 hours**, and the peak VRAM footprint is **60 GB**.
-
-<div align="center">
-<img src="imgs/2.2.2.3.png" alt="Figure 11: Full-Scale Example for Time Breakdown of All Models" />
-</div>
-
-<p align="center"><strong>Figure 11: Full-scale experiment for Training Time Breakdown in Each Workload</strong></p>
-
-> For the Minimal Working Example, the runtime is approximately **1 hour**, and the peak VRAM footprint is **20 GB**.
-
-<div align="center">
-<img src="imgs/2.2.2.3-mwe.jpg" alt="Figure 11 (Minimal Working Example): Time Breakdown for All Models" />
-</div>
-
-<p align="center"><strong>Figure 11 (Minimal Working Example): Minimal working example for Training Time Breakdown in Each Workload</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 140 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.2.3.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.3-mwe.jpg" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
 
 #### 2.2.6 (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-To evaluate the individual contribution of each module to overall performance, we conducted an ablation study; under both configurations (Figure 12 and Figure 12 (Minimal Working Example)), all modules consistently **<span style="color:#0070C0">contribute to the final accuracy</span>**.
-
 **Key observation:** All individual modules in VLASelect consistently **<span style="color:#0070C0">contribute to the overall task accuracy</span>** across both configurations.
 
-> For experiments in this paper, the runtime is approximately **40 hours**, and the peak VRAM footprint is **60 GB**. \
-> For the Minimal Working Example, the runtime is approximately **1 hour**, and the peak VRAM footprint is **20 GB**.
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 40 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.3.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.3-mwe.jpg" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
 
-<table><tr>
-<td align="center"><img src="imgs/2.2.3.png" alt="Figure 12: Full-Scale Example for Ablation Experiment" width="400" /><br><strong>Figure 12:</strong><br>Full-scale experiment for Design Choice Validation by Ablation</td>
-<td align="center"><img src="imgs/2.2.3-mwe.jpg" alt="Figure 12 (Minimal Working Example): Ablation Verification" width="400" /><br><strong>Figure 12 (Minimal Working Example):</strong><br>Minimal working example for Design Choice Validation by Ablation</td>
-</tr></table>
+
 
 #### 2.2.7 (Discussion 1 in Section 5.1): Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
@@ -222,7 +273,6 @@ A supplementary video will be provided to compare simulation and real practice, 
 
 #### 2.2.8 (Discussion 2 in Section 5.2): ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-In the Minimal Working Example, RICL struggles to converge because the brief runtime is insufficient for its policy to update, whereas VLASelect rapidly adapts and maintains an average accuracy of 37.2%.
 
 **Key observation:** VLASelect **<span style="color:#0070C0">achieves 37.2% higher accuracy than RICL</span>**.
 
@@ -230,24 +280,24 @@ In the Minimal Working Example, RICL struggles to converge because the brief run
 
 #### 2.2.9 (Discussion 3 in Section 5.3): Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-The supported model size varies by configuration: up to 11.3 GB on Xavier and 24.0 GB on Orin for the full run, and approximately 2.5–24.0 GB on a host with 32 GB VRAM for the Minimal Working Example.
-
 **Key observation:** The full run supports **<span style="color:#0070C0">up to 11.3 GB on Xavier and 24.0 GB on Orin</span>**; the Minimal Working Example supports **<span style="color:#0070C0">approximately 2.5–24.0 GB on a host with 32 GB VRAM</span>**.
 
 > For both experiments in this paper and Minimal Working Example, the runtime is approximately **1 hour**, and the peak VRAM footprint is **32 GB**.
 
 <p align="center"><strong>Table 2.9: Example of Maximum supported model size</strong></p>
 
+<div align="center">
+
 | Test Platform | Maximum Model Size |
 | :---: | :---: |
 | Full Run | 11.3 GB (Xavier), 24.0 GB (Orin) |
 | MWE Run | From 2.5 to 24 GB (V100 32G) |
 
+</div>
+
 #### 2.2.10 (Discussion 4 in Section 5.4): Applicability to multi-agent scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-Under the Minimal Working Example setting, MAPPO achieves lower accuracy due to short runtime being insufficient for policy updates, whereas VLASelect **<span style="color:#0070C0">achieves 60.0% higher accuracy than MAPPO</span>**.
-
-**Key observation:** VLASelect achieves **<span style="color:#0070C0"> 60.0% higher accuracy</span>** than MAPPO.
+**Key observation:** MAPPO achieves lower accuracy due to short runtime being insufficient for policy updates, whereas VLASelect **<span style="color:#0070C0">achieves 60.0% higher accuracy than MAPPO</span>**.
 
 > For experiments in this paper, the runtime is approximately **7 hours**, and the peak VRAM footprint is **60 GB**. \
 > For the Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
@@ -290,48 +340,92 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
 
 #### 3.1.1 Integrating the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-For experiments in this paper, the runtime is approximately 3 hours, and the peak VRAM footprint is 60 GB.
-
-<table><tr>
-<td align="center"><img src="imgs/3.1.1-mwe.png" alt="Figure 3.1.1: Full-scale evaluation for supporting the model" width="400" /><br><strong>Figure 3.1.1:</strong><br>Full-scale evaluation for supporting the model</td>
-<td align="center"><img src="imgs/3.1.1.png" alt="Figure 3.1.1: Minimal working example for supporting the model" width="400" /><br><strong>Figure 3.1.1:</strong><br>Minimal working example for integrating the model</td>
-</tr></table>
-
-> For the Minimal Working Example, the runtime is approximately **3 minutes**, and the peak VRAM footprint is **20 GB**.
-
 **Key observation:** VLASelect adapts models through a unified interface via VLA-Adapter and runs <span style="color:#0070C0"><strong>training successfully</strong></span>.
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 3 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/3.1.1.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 3 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.1.1-mwe.png" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
+<br>
 
 #### 3.1.2 Integrating different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-<table><tr>
-<td align="center"><img src="imgs/3.1.2-mwe.png" alt="Figure 3.1.2: Full-scale evaluation for supporting different scaling strategies" width="400" /><br><strong>Figure 3.1.2:</strong><br>Full-scale evaluation for integrating different scaling strategies</td>
-<td align="center"><img src="imgs/3.1.2.png" alt="Figure 3.1.2: Minimal working example for supporting different scaling strategies" width="400" /><br><strong>Figure 3.1.2:</strong><br>Minimal working example for integrating different scaling strategies</td>
-</tr></table>
-
-> For experiments in this paper, the runtime is approximately **40 hours**, and the peak VRAM footprint is **60 GB**.
-> For the Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
-
 **Key observation:** VLASelect integrates VLA-Adapter in selective model scaling and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> in this evaluation.
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 40 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/3.1.2.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.1.2-mwe.png" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
+<br>
 
 #### 3.1.3 Integrating different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-
-
-<table><tr>
-<td align="center"><img src="imgs/3.1.3-mwe.png" alt="Figure 3.1.3: Full-scale evaluation for supporting different knowledge exchange granularities" width="400" /><br><strong>Figure 3.1.3:</strong><br>Full-scale evaluation for integrating different knowledge exchange granularities</td>
-<td align="center"><img src="imgs/3.1.3.png" alt="Figure 3.1.3: Minimal working example for supporting different knowledge exchange granularities" width="400" /><br><strong>Figure 3.1.3:</strong><br>Minimal working example for integrating different knowledge exchange granularities</td>
-</tr></table>
-
-> For experiments in this paper, the runtime is approximately **15 hours**, and the peak VRAM footprint is **60 GB**.
-> For the Minimal Working Example, the runtime is approximately **30 minutes**, and the peak VRAM footprint is **20 GB**.
-
 **Key observation:** VLASelect with VLA-Adapter integrates multiple knowledge exchange granularities and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> at the channel/neuron level.
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 15 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/3.1.3.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.1.3-mwe.png" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
+<br>
 
 ### 3.2 Example 2: TinyVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 To evaluate the model's performance on the TinyVLA backbone, we conducted experiments on continual learning trajectories and scaling strategies.
 
 #### 3.2.1 Integrating the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+**Key observation:** VLASelect integrates TinyVLA through a unified adapter interface and runs <span style="color:#0070C0"><strong>training successfully</strong></span>(only evaluated on constrained testbed).
 
 <div align="center">
 <img src="imgs/3.2.1.png" alt="Figure 3.2.1 (Minimal Working Example): Online RL Continual Learning Trajectory for TinyVLA" width="800" />
@@ -341,37 +435,67 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
 > For experiments in this paper, the runtime is approximately **3 hours**, and the peak VRAM footprint is **60 GB**.
 > For Minimal Working Example, the runtime is approximately **3 minutes**, and the peak VRAM footprint is **20 GB**.
 
-**Key observation:** VLASelect integrates TinyVLA through a unified adapter interface and runs <span style="color:#0070C0"><strong>training successfully</strong></span>(only evaluated on constrained testbed).
-
 #### 3.2.2 Integrating different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
-
-<table><tr>
-<td align="center"><img src="imgs/3.2.2-mwe.png" alt="Figure 3.2.2: Full-scale evaluation for supporting different scaling strategies" width="400" /><br><strong>Figure 3.2.2:</strong><br>Full-scale evaluation for integrating different scaling strategies</td>
-<td align="center"><img src="imgs/3.2.2.png" alt="Figure 3.2.2: Minimal working example for supporting different scaling strategies" width="400" /><br><strong>Figure 3.2.2:</strong><br>Minimal working example for integrating different scaling strategies</td>
-</tr></table>
-
-> For experiments in this paper, the runtime is approximately **40 hours**, and the peak VRAM footprint is **60 GB**.
-> For Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
 
 **Key observation:** VLASelect combines TinyVLA with selective model scaling and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> in this evaluation.
 
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 40 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/3.2.2-mwe.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.2.2.png" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
+<br>
+
 #### 3.2.3 Integrating different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-<table><tr>
-<td align="center"><img src="imgs/3.2.3-mwe.png" alt="Figure 3.2.3: Full-scale evaluation for supporting different knowledge exchange granularities" width="400" /><br><strong>Figure 3.2.3:</strong><br>Full-scale evaluation for integrating different knowledge exchange granularities</td>
-<td align="center"><img src="imgs/3.2.3.png" alt="Figure 3.2.3: Minimal working example for supporting different knowledge exchange granularities" width="400" /><br><strong>Figure 3.2.3:</strong><br>Minimal working example for integrating different knowledge exchange granularities</td>
-</tr></table>
-
-> For experiments in this paper, the runtime is approximately **15 hours**, and the peak VRAM footprint is **60 GB**.
-> For Minimal Working Example, the runtime is approximately **30 minutes**, and the peak VRAM footprint is **20 GB**.
-
 **Key observation:** For TinyVLA, VLASelect integrates different knowledge exchange granularities and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> with channel/neuron-level exchange.
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 15%;"></th>
+      <th style="width: 17%;">Used Resources</th>
+      <th style="text-align: center;">Result</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Full Run</strong></td>
+      <td><strong>Time:</strong> 15 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/3.2.3-mwe.png" alt="Full-Scale Result" style="max-width: 100%;"></td>
+    </tr>
+    <tr>
+      <td><strong>Minimal Working Example</strong></td>
+      <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.2.3.png" alt="MWE Result" style="max-width: 100%;"></td>
+    </tr>
+  </tbody>
+</table>
+<br>
 
 ### 3.3 Example 3: EdgeVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchange granularities.
 
 #### 3.3.1 Integrating the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+**Key observation:** VLASelect adapts EdgeVLA via the same unified interface and runs <span style="color:#0070C0"><strong>training successfully</strong></span> (only evaluated on constrained testbed).
 
 <div align="center">
 <img src="imgs/3.3.1.png" alt="Figure 3.3.1 (Minimal Working Example): Online RL Continual Learning Trajectory for EdgeVLA" width="800" />
@@ -381,9 +505,9 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
 > For experiments in this paper, the runtime is approximately **3 hours**, and the peak VRAM footprint is **60 GB**.
 > For Minimal Working Example, the runtime is approximately **3 minutes**, and the peak VRAM footprint is **20 GB**.
 
-**Key observation:** VLASelect adapts EdgeVLA via the same unified interface and runs <span style="color:#0070C0"><strong>training successfully</strong></span> (only evaluated on constrained testbed).
-
 #### 3.3.2 Integrating different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+**Key observation:** On EdgeVLA, VLASelect uses selective model scaling and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> in this evaluation (only evaluated on constrained testbed).
 
 <div align="center">
 <img src="imgs/3.3.2.png" alt="Figure 3.3.2 (Minimal Working Example): VLASelect and Baseline Competing Strategies on EdgeVLA" width="800" />
@@ -393,9 +517,9 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
 > For experiments in this paper, the runtime is approximately **40 hours**, and the peak VRAM footprint is **60 GB**.
 > For Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
 
-**Key observation:** On EdgeVLA, VLASelect uses selective model scaling and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> in this evaluation (only evaluated on constrained testbed).
-
 #### 3.3.3 Integrating different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+**Key observation:** On EdgeVLA, VLASelect integrates different knowledge exchange granularities and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> with channel/neuron-level exchange (only evaluated on constrained testbed).
 
 <div align="center">
 <img src="imgs/3.3.3.png" alt="Figure 3.3.3 (Minimal Working Example): Accuracy for Different Knowledge Exchange Granularities on EdgeVLA" width="800" />
@@ -404,5 +528,3 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
 
 >For experiments in this paper, the runtime is approximately **15 hours**, and the peak VRAM footprint is **60 GB**.
 >For Minimal Working Example, the runtime is approximately **30 minutes**, and the peak VRAM footprint is **20 GB**.
-
-**Key observation:** On EdgeVLA, VLASelect integrates different knowledge exchange granularities and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> with channel/neuron-level exchange (only evaluated on constrained testbed).

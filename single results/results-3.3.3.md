@@ -10,4 +10,6 @@
 | :---: | :---: |
 | **Minimum working example** | <img src="../imgs/3.3.3.png" alt="Swapping Granularity Ablation" style="zoom:33%;" /> |
 
+The curves of **Layer** and **Block** overlap completely due to identical performance.
+
 <br><br>

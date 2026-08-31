@@ -9,4 +9,5 @@
 | | Results |
 | :---: | :---: |
 | **Minimum working example on three representative methods** | <img src="../imgs/3.2.2.png" alt="Scaling strategies" style="zoom:33%;" /> |
-| **Small working example on all methods** | <img src="../imgs/3.2.2-mwe.png" alt="Scaling strategies on all methods" style="zoom:33%;" /> |
+
+The curves of **Attention**, **LLM in a Flash**, and **EdgeTA** overlap completely due to identical performance.

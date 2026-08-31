@@ -6,7 +6,7 @@ import argparse
 import json
 import math
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import matplotlib
 
@@ -185,6 +185,7 @@ def plot_category(
     *,
     title: str,
     metric: str = "train_success_once",
+    label_overrides: Optional[Mapping[str, str]] = None,
 ) -> int:
     if not results_dir.is_dir():
         raise FileNotFoundError(f"results directory does not exist: {results_dir}")
@@ -233,7 +234,7 @@ def plot_category(
                 interpolated_xs,
                 _smooth(interpolated_ys),
                 linewidth=2,
-                label=_METHOD_LABELS.get(label, label),
+                label=(label_overrides or {}).get(label, _METHOD_LABELS.get(label, label)),
                 color=_METHOD_COLORS.get(label),
             )
     axis.set_xlabel("Time (minutes)", fontsize=15)
@@ -248,11 +249,23 @@ def plot_category(
     return len(series)
 
 
-def run_cli(default_results_dir: Path, default_output: Path, title: str) -> None:
+def run_cli(
+    default_results_dir: Path,
+    default_output: Path,
+    title: str,
+    *,
+    label_overrides: Optional[Mapping[str, str]] = None,
+) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results-dir", type=Path, default=default_results_dir)
     parser.add_argument("--output", type=Path, default=default_output)
     parser.add_argument("--metric", default="train_success_once")
     args = parser.parse_args()
-    count = plot_category(args.results_dir, args.output, title=title, metric=args.metric)
+    count = plot_category(
+        args.results_dir,
+        args.output,
+        title=title,
+        metric=args.metric,
+        label_overrides=label_overrides,
+    )
     print(f"wrote {args.output} ({count} curves)")

@@ -358,7 +358,7 @@ def resolve_ablation_noise_seed(args: Args) -> int:
 def maybe_load_ablation_checkpoint_payload(checkpoint_path: Path, args: Args):
     resolved_checkpoint_path = checkpoint_path.resolve()
     checkpoint_payload = torch.load(resolved_checkpoint_path, map_location='cpu')
-    curve_key = resolve_ablation_curve_key(args.tag)
+    curve_key = resolve_ablation_curve_key(getattr(args, "tag", None))
     noise_scale = resolve_ablation_noise_scale(curve_key)
     if noise_scale <= 0.0:
         return checkpoint_payload

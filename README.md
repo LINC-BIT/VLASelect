@@ -693,8 +693,8 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
 
 - Commands for full run:
   ```bash
-  cd overhead
-  bash overhead_breakdown/run.sh
+  cd overhead_breakdown
+  bash run.sh
   ```
 - The resource requirements and outputs are listed below:
   <table align="center">
@@ -1157,28 +1157,31 @@ VLASelect can integrate various **VLA models**, **scaling strategies** (e.g. kno
 
 We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, EdgeVLA. They differ in the network architecture, as shown in the table below.
 
-<table align="center">
+<table align="center" style="text-align: center;">
   <thead>
     <tr>
-      <th>Model</th>
-      <th>Network Architecture</th>
-      <th>Paper Link</th>
+      <th style="text-align: center;">Model</th>
+      <th colspan="2" style="text-align: center;">Network Architecture</th>
+      <th style="text-align: center;">Paper Link</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>VLA-Adapter</td>
-      <td>Encoder: Qwen 2.5<br>Stem: Bridge-attention-based Transformer</td>
+      <td><strong>Encoder:</strong> Qwen 2.5<br><strong>Stem:</strong><br>Bridge-attention-based Transformer</td>
+      <td><img src="./imgs/vla-adapter.png" alt="VLA-Adapter architecture"></td>
       <td><a href="https://arxiv.org/abs/2509.09372">Link</a></td>
     </tr>
     <tr>
       <td>TinyVLA</td>
-      <td>Encoder: ViT<br>Stem: Pythia</td>
+      <td><strong>Encoder:</strong> ViT<br><strong>Stem:</strong> Pythia</td>
+      <td><img src="./imgs/tinyvla.png" alt="TinyVLA architecture"></td>
       <td><a href="https://arxiv.org/abs/2409.12514">Link</a></td>
     </tr>
     <tr>
       <td>EdgeVLA</td>
-      <td>Encoder: DINOv2 + SigLIP<br>Stem: Qwen 2</td>
+      <td><strong>Encoder:</strong><br>DINOv2 + SigLIP<br><strong>Stem:</strong> Qwen 2</td>
+      <td><img src="./imgs/edgevla.png" alt="EdgeVLA architecture"></td>
       <td><a href="https://arxiv.org/abs/2507.14049">Link</a></td>
     </tr>
   </tbody>

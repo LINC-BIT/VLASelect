@@ -1,5 +1,7 @@
 # Artifact Evaluation Report (Small Machine): VLASelect<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
+In this report, we reproduce all the experiments in the VLASelect paper following the step-by-step instructions in README. All experiments were conducted on a small machine using the minimal working examples.
+
 ## Outline
 
 - [1. Hardware and Software Specifications](#section-1)
@@ -38,7 +40,7 @@
 
 <p align="center"><strong>Table 1: Hardware and Software Configuration Comparison</strong></p>
 
-| Subsystem | Paper Platform (Full Scale) | Small Machine (Minimal Working Example) |
+| Subsystem | Platform in VLASelect Paper (Full run) | Small Machine (Minimal working example) |
 | :---: | :---: | :---: |
 | Operating System | Ubuntu 20.04/22.04 LTS (Kernel 5.4/5.15) | Ubuntu 22.04.4 LTS (Kernel 6.8) |
 | CPU Architecture | 2 × Intel Xeon Gold 6430 (64C) | Intel Xeon E5-2698 v4 (16C) |
@@ -50,8 +52,6 @@
 
 <a id="section-2"></a>
 ## 2. Evaluation Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
-
-To evaluate the extended deployment capabilities of VLASelect, we performed experiments following the step-by-step instructions in README to complete the tests, evaluating its accuracy, overhead, time breakdown, ablation, discussion metrics, and reusability.
 
 <a id="section-2-2"></a>
 ### 2.2 Step-by-Step Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
@@ -117,8 +117,9 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 <a id="section-2-2-3"></a>
 #### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>**  and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
+ 
+**Experiment 3.1: Memory Footprint Analysis**
 
 <table>
   <thead>
@@ -143,8 +144,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 </table>
 
 <br><br>
-
-**Energy Consumption Analysis**
+**Experiment 3.2: Energy Consumption Analysis**
 
 **Key observation:** VLASelect achieves the highest operational efficiency by **<span style="color:#0070C0">maintaining the lowest energy consumption</span>** across diverse workloads and experimental settings.
 
@@ -178,7 +178,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 
 <br><br>
 
-**Overhead comparison under the same learning accuracy**
+**Experiment 3.3: Overhead comparison under the same learning accuracy**
 
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution</span>** time and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
 
@@ -336,7 +336,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 | Test Platform | Maximum Model Size |
 | :---: | :---: |
 | Full Run | 11.3 GB (Xavier), 24.0 GB (Orin) |
-| MWE Run | From 2.5 to 24 GB (V100 32G) |
+| Minimal Working Example | From 2.5 to 24 GB (V100 32G) |
 
 </div>
 

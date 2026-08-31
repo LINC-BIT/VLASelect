@@ -11,7 +11,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
 [Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
-[Evaluation Report on the Acadmic Cloud (TODO: Link)]()<br>
+[Evaluation Report on the Academic Cloud (TODO: Link)]()<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>
@@ -33,12 +33,12 @@ Docker Image: <br>
 <a href="#2-evaluation-reproduction">2. Evaluation Reproduction</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#21-one-click-reproduction">2.1 One-click Reproduction</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#22-step-by-step-reproduction">2.2 Step-by-Step Reproduction</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes">2.2.1 Experiment 1:(Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#222-experiment-2-figure-8-in-section-522-accuracy-under-available-resource-changes">2.2.2 Experiment 2:(Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy">2.2.3 Experiment 3:(Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#224-experiment-4-figure-10-in-section-532-time-breakdown-of-vlaselects-modules">2.2.4 Experiment 4:(Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#225-experiment-5-figure-11-in-section-532-training-time-breakdown-in-each-workload">2.2.5 Experiment 5:(Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#226-experiment-6-figure-12-in-section-54-design-choice-validation-by-ablation">2.2.6 Experiment 6:(Figure 12 in Section 5.4) Design Choice Validation by Ablation</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes">2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#222-experiment-2-figure-8-in-section-522-accuracy-under-available-resource-changes">2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy">2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#224-experiment-4-figure-10-in-section-532-time-breakdown-of-vlaselects-modules">2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#225-experiment-5-figure-11-in-section-532-training-time-breakdown-in-each-workload">2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#226-experiment-6-figure-12-in-section-54-design-choice-validation-by-ablation">2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#227-experiment-7-discussion-1-in-section-55-sim-to-real-transfer">2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#228-experiment-8-discussion-2-in-section-55-icl-in-context-learning">2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#229-experiment-9-discussion-3-in-section-55-maximum-supported-model-size">2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size</a><br>
@@ -425,7 +425,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   MWE=1 bash run_acc_task_env_change_humanoid_robot.sh
   python3 plot_acc_task_env.py
   ```
-- The three options' resource requirements and outputs are listed below:
+- The two options' resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -440,13 +440,13 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
-        <td>Create file eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</td>
+        <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="./single%20results/results-2.2.1.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
-        <td>Create file eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</td>
+        <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="./single%20results/results-2.2.1.md">Link</a></td>
       </tr>
     </tbody>
@@ -491,7 +491,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   python3 plot_acc_res_change.py
   ```
 
-- The three options' resource requirements and outputs are listed below:
+- The two options' resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -506,13 +506,13 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
-        <td>Create file eval/acc_comparison/FIG_ACC_RESOURCE.pdf</td>
+        <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_RESOURCE.pdf</td>
         <td><a href="./single%20results/results-2.2.2.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
-        <td>Create file eval/acc_comparison/FIG_ACC_RESOURCE.pdf</td>
+        <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_RESOURCE.pdf</td>
         <td><a href="./single%20results/results-2.2.2.md">Link</a></td>
       </tr>
     </tbody>
@@ -552,7 +552,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   bash overhead_same_acc_humanoid_robot.sh
   python3 plot_overhead.py
   ```
-- The three options' resource requirements and outputs are listed below:
+- The two options' resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -567,13 +567,13 @@ And you can run the following commands to reproduce each figure/table in our eva
       <tr>
         <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
-        <td>Create files eval/overhead/FIG_MEMORY_FOOTPOINT.pdf, eval/overhead/TAB_OVERHEAD.csv, and eval/overhead/overhead_breakdown_table/TAB_ENERGY.csv</td>
+        <td>Create files<br>eval/overhead/<br>FIG_MEMORY_FOOTPOINT.pdf,<br>eval/overhead/<br>TAB_OVERHEAD.csv, and<br>eval/overhead/<br>overhead_breakdown_table/<br>TAB_ENERGY.csv</td>
         <td><a href="./single%20results/results-2.2.3.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
-        <td>Create files eval/overhead/FIG_MEMORY_FOOTPOINT.pdf, eval/overhead/TAB_OVERHEAD.csv, and eval/overhead/overhead_breakdown_table/TAB_ENERGY.csv</td>
+        <td>Create files<br>eval/overhead/<br>FIG_MEMORY_FOOTPOINT.pdf,<br>eval/overhead/<br>TAB_OVERHEAD.csv, and<br>eval/overhead/<br>overhead_breakdown_table/<br>TAB_ENERGY.csv</td>
         <td><a href="./single%20results/results-2.2.3.md">Link</a></td>
       </tr>
     </tbody>
@@ -662,7 +662,7 @@ cd overhead
   MWE=1 bash overhead_breakdown_all_methods_humanoid_robot.sh
   python3 plot_breakdown_all_methods.py
   ```
-- The three options' resource requirements and outputs are listed below:
+- The two options' resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -677,13 +677,13 @@ cd overhead
       <tr>
         <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
-        <td>Create file eval/overhead/FIG_BREAKDOWN_ALL_METHODS.pdf</td>
+        <td>Create file<br>eval/overhead/<br>FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="./single%20results/results-2.2.5.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
-        <td>Create file eval/overhead/FIG_BREAKDOWN_ALL_METHODS.pdf</td>
+        <td>Create file<br>eval/overhead/<br>FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="./single%20results/results-2.2.5.md">Link</a></td>
       </tr>
     </tbody>
@@ -698,7 +698,7 @@ cd overhead
   MWE=1 bash run_ablation.sh
   python3 plot_ablation.py
   ```
-- The two options' resource requirements and outputs are listed below:
+- The resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -713,7 +713,7 @@ cd overhead
       <tr>
         <td>Minimum working example</td>
         <td>1 hours<br>20GB memory<br>30GB disk space</td>
-        <td>Create file eval/ablation/FIG_ABLATION.pdf</td>
+        <td>Create file<br>eval/ablation/<br>FIG_ABLATION.pdf</td>
         <td><a href="./single%20results/results-2.2.6.md">Link</a></td>
       </tr>
     </tbody>
@@ -775,7 +775,7 @@ cd overhead
   cd discussion
   MWE=1 bash compare_icl.sh
   ```
-- The two options' resource requirements and outputs are listed below:
+- The resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -790,7 +790,7 @@ cd overhead
       <tr>
         <td>Minimum working example</td>
         <td>10 minutes<br>20GB memory<br>8GB disk space</td>
-        <td>Create file eval/ckpt/discussion/icl/&lt;STAMP&gt;/icl_accuracy.png</td>
+        <td>Create file<br>eval/ckpt/discussion/<br>icl/&lt;STAMP&gt;/<br>icl_accuracy.png</td>
         <td><a href="./single%20results/results-2.2.8.md">Link</a></td>
       </tr>
     </tbody>
@@ -818,7 +818,7 @@ cd overhead
     <tbody>
       <tr>
         <td>1 hours<br>32GB memory<br>3GB disk space</td>
-        <td>Create file eval/discussion/results/model_size_limit_&lt;STAMP&gt;/summary.csv</td>
+        <td>Create file<br>eval/discussion/results/<br>model_size_limit_&lt;STAMP&gt;/<br>summary.csv</td>
         <td><a href="./single%20results/results-2.2.9.md">Link</a></td>
       </tr>
     </tbody>
@@ -831,7 +831,7 @@ cd overhead
   cd discussion
   MWE=1 bash run_multi_agent.sh
   ```
-- The two options' resource requirements and outputs are listed below:
+- The resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -846,7 +846,7 @@ cd overhead
       <tr>
         <td>Minimum working example</td>
         <td>20 minutes<br>20GB memory<br>1GB disk space</td>
-        <td>Create file eval/discussion/results/multi_agent/&lt;STAMP&gt;/accuracy_vs_time.png</td>
+        <td>Create file<br>eval/discussion/results/<br>multi_agent/&lt;STAMP&gt;/<br>accuracy_vs_time.png</td>
         <td><a href="./single%20results/results-2.2.10.md">Link</a></td>
       </tr>
     </tbody>
@@ -866,7 +866,7 @@ cd overhead
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
   ```
   
-- The three options' resource requirements and outputs are listed below:
+- The two options' resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -881,13 +881,13 @@ cd overhead
       <tr>
         <td>Minimum working example on three representative methods</td>
         <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-        <td>Create file api/results/vla_adapter/scaling_methods_only_4/training_accuracy_curve.png</td>
+        <td>Create file<br>api/results/vla_adapter/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
         <td><a href="./single%20results/results-2.2.11.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
         <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-        <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
+        <td>Create file<br>api/results/vla_adapter/<br>scaling_methods/<br>training_accuracy_curve.png</td>
         <td><a href="./single%20results/results-2.2.11.md">Link</a></td>
       </tr>
     </tbody>
@@ -900,7 +900,7 @@ cd overhead
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -915,7 +915,7 @@ cd overhead
         <tr>
           <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-2.2.12.md">Link</a></td>
         </tr>
       </tbody>
@@ -928,7 +928,7 @@ cd overhead
     MWE=1 bash forgetting/measure_forgetting.sh
     ```
     
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -943,7 +943,7 @@ cd overhead
         <tr>
           <td>Minimum working example</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create files eval/forgetting/results/&lt;timestamp&gt;/forgetting_summary.{json,csv} and forgetting_accuracy.{png,pdf,svg}</td>
+          <td>Create files<br>eval/forgetting/results/<br>&lt;timestamp&gt;/<br>forgetting_summary.{json,csv}<br>and forgetting_accuracy.{png,pdf,svg}</td>
           <td><a href="./single%20results/results-2.2.13.md">Link</a></td>
         </tr>
       </tbody>
@@ -956,7 +956,7 @@ cd overhead
     cd api/model_type
     MWE=1 bash run.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -971,7 +971,7 @@ cd overhead
         <tr>
           <td>Minimum working example</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create files api/model_type/CNN-ACC.png, api/model_type/MLP-ACC.png, and api/model_type/MLP-CNN-ACC-COMPARE.png</td>
+          <td>Create files<br>api/model_type/<br>CNN-ACC.png,<br>api/model_type/<br>MLP-ACC.png, and<br>api/model_type/<br>MLP-CNN-ACC-COMPARE.png</td>
           <td><a href="./single%20results/results-2.2.14.md">Link</a></td>
         </tr>
       </tbody>
@@ -1070,7 +1070,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1085,7 +1085,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
         <tr>
           <td>Minimum working example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/vla_model_interface_examples/outputs/vla_adapter_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
+          <td>Create file<br>api/vla_model_interface_examples/<br>outputs/vla_adapter_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.1.md">Link</a></td>
         </tr>
       </tbody>
@@ -1151,7 +1151,7 @@ After the integration, you can use VLASelect to train the model with the integra
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
     ```
-  - The three options' resource requirements and outputs are listed below:
+  - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1166,13 +1166,13 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <td>Minimum working example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/vla_adapter/scaling_methods_only_4/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/vla_adapter/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.2.md">Link</a></td>
         </tr>
         <tr>
         <td>Small working example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/vla_adapter/<br>scaling_methods/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.2.md">Link</a></td>
         </tr>
       </tbody>
@@ -1206,7 +1206,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1221,7 +1221,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.3.md">Link</a></td>
         </tr>
       </tbody>
@@ -1287,7 +1287,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1302,7 +1302,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum working example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/vla_model_interface_examples/outputs/tinyvla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
+          <td>Create file<br>api/vla_model_interface_examples/<br>outputs/tinyvla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.1.md">Link</a></td>
         </tr>
       </tbody>
@@ -1356,7 +1356,7 @@ After the integration, you can use VLASelect to train the model with the integra
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
     ```
-  - The three options' resource requirements and outputs are listed below:
+  - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1371,13 +1371,13 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <td>Minimum working example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/tinyvla/scaling_methods_only_4/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/tinyvla/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.2.md">Link</a></td>
         </tr>
         <tr>
         <td>Small working example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/tinyvla/scaling_methods/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/tinyvla/<br>scaling_methods/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.2.md">Link</a></td>
         </tr>
       </tbody>
@@ -1410,7 +1410,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1425,7 +1425,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/tinyvla/knowledge_exchange/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/tinyvla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.3.md">Link</a></td>
         </tr>
       </tbody>
@@ -1494,7 +1494,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
     ```
     
-  - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1509,7 +1509,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum working example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/vla_model_interface_examples/outputs/edgevla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
+          <td>Create file<br>api/vla_model_interface_examples/<br>outputs/edgevla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.1.md">Link</a></td>
         </tr>
       </tbody>
@@ -1564,7 +1564,7 @@ After the integration, you can use VLASelect to train the model with the integra
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
     ```
 
-  - The three options' resource requirements and outputs are listed below:
+  - The two options' resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1579,13 +1579,13 @@ After the integration, you can use VLASelect to train the model with the integra
         <tr>
           <td>Minimum working example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/edgevla/scaling_methods_only_4/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/edgevla/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.2.md">Link</a></td>
         </tr>
         <tr>
           <td>Small working example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/edgevla/scaling_methods/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/edgevla/<br>scaling_methods/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.2.md">Link</a></td>
         </tr>
       </tbody>
@@ -1618,7 +1618,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
     ```
-    - The two options' resource requirements and outputs are listed below:
+  - The resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1633,7 +1633,7 @@ After the integration, you can use VLASelect to train the model at the integrate
         <tr>
           <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file api/results/edgevla/knowledge_exchange/training_accuracy_curve.png</td>
+          <td>Create file<br>api/results/edgevla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.3.md">Link</a></td>
         </tr>
       </tbody>

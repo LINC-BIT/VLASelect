@@ -1,15 +1,15 @@
 
 ![](vlaselect-intro1.png)
 
-# VLASelect Artifacts Evaluation
+# VLASelect Artifact Evaluation
 
-This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"**, which has been conditionally accepted by EuroSys'27.
+This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"** (conditionally accepted by EuroSys'27).
 
 ## Downloads
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
-[Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
-[Evaluation Report on the Academic Cloud (TODO: Link)]()<br>
+[An Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
+[An Evaluation Report on the Academic Cloud (CloudLab)]()<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>
@@ -66,11 +66,11 @@ Docker Image: <br>
 
 - **Background**: 
 
-  - VLA (Vision-Language-Action) model-based agents such as
+  - **Emboded AI agent**: VLA (Vision-Language-Action) model-based agents such as
   robot arms, dexterous hands and humanoid robots are revolutionizing our lives. 
-  - These agents usually run in **open ended,
+  - **Open environment**: These agents usually run in **open ended,
   interactive environments** where new tasks start, surroundings change, or available resources fluctuate. 
-  - In existing agentic AI systems, the resource-intensive training of deployed
+  - **Resource-constrained on-device training**: In existing agentic AI systems, the resource-intensive training of deployed
   VLA models has become a critical bottleneck. 
 
 - **Method**: 

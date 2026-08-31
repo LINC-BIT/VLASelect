@@ -93,7 +93,7 @@ Docker Image: <br>
 
 #### 1.2.1 Hardware Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1: Recommended hardware for full running of our artifacts**:
+- **Option 1: Hardware requirements for full running of experiments in the paper**:
 
   <table align="center">
     <thead>
@@ -114,7 +114,7 @@ Docker Image: <br>
     </tbody>
   </table>
 
-- **Option 2: Minimum hardware requirements for running minimal working examples**:
+- **Option 2: Six recommended hardware requirements for running minimal working examples**:
 
   <table align="center">
     <thead>
@@ -174,7 +174,7 @@ Docker Image: <br>
 
 #### 1.2.2 Software Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1: Recommended software for fully running our artifacts**:
+- **Option 1: Recommended software for full running of experiments in the paper**:
 
   <table align="center">
     <thead>
@@ -193,7 +193,7 @@ Docker Image: <br>
     </tbody>
   </table>
       
-- **Option 2: Minimum software requirements for running minimal working examples**:
+- **Option 2: Software requirements for running minimal working examples**:
 
   <table align="center">
     <thead>

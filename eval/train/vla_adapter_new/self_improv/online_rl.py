@@ -142,7 +142,7 @@ def parse_args() -> Args:
         args.num_envs = 16
         args.num_eval_envs = 1
         args.num_steps = 16
-        args.max_episode_steps = 10
+        args.max_episode_steps = 26
         args.update_epochs = 1
         args.num_minibatches = 2
         args.rollout_micro_batch_size = 4

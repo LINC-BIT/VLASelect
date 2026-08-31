@@ -89,8 +89,8 @@ This artifact evaluation did not run the one-click reproduction script. All repo
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td> <strong>Time:</strong> 1 h<br> <strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.1.1-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td> <strong>Time:</strong> 1.5 h<br> <strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.1.1-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -118,8 +118,8 @@ This artifact evaluation did not run the one-click reproduction script. All repo
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.1.2-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 1.5 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.1.2-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -147,8 +147,8 @@ This artifact evaluation did not run the one-click reproduction script. All repo
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.2.1-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 1.5 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.1-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -188,16 +188,16 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 
 | Method | Single-Arm Robot | Dexterous Hand | Mobile Manipulator | Humanoid Robot |
 | :---: | :---: | :---: | :---: | :---: |
-| Self-Improvement | 15.82 | 62.99 | 37.17 | 26.22 |
-| VLA-RFT | 13.83 | 27.52 | 26.83 | 24.62 |
-| World-Env | 12.98 | 23.96 | 33.92 | 33.03 |
-| VLASelect | 0.68 | 11.37 | 12.28 | 2.58 |
+| Self-Improvement | 11.80 | 77.33 | 51.31 | 60.69 |
+| VLA-RFT | 10.68 | 88.29 | 53.90 | 63.56 |
+| World-Env | 9.98 | 87.17 | 51.44 | 63.89 |
+| VLASelect | 0.49 | 13.49 | 17.26 | 1.30 |
 
 </div>
 
 <br>
 
-**Experiment 3.3: Overhead comparison under the same learning accuracy**
+**Overhead comparison under the same learning accuracy**
 
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution</span>** time and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
 
@@ -237,10 +237,10 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 <tr><th>Method</th><th>Single-Arm Robot</th><th>Dexterous Hand</th><th>Mobile Manipulator</th><th>Humanoid Robot</th><th>Single-Arm Robot</th><th>Dexterous Hand</th><th>Mobile Manipulator</th><th>Humanoid Robot</th><th>Single-Arm Robot</th><th>Dexterous Hand</th><th>Mobile Manipulator</th><th>Humanoid Robot</th></tr>
 </thead>
 <tbody>
-<tr><td>Self-Improvement</td><td>0.04</td><td>0.17</td><td>0.09</td><td>0.08</td><td>7.32</td><td>13.41</td><td>12.47</td><td>12.94</td><td>15.82</td><td>62.99</td><td>37.17</td><td>25.65</td></tr>
-<tr><td>VLA-RFT</td><td>0.03</td><td>0.08</td><td>0.07</td><td>0.07</td><td>8.48</td><td>13.09</td><td>11.07</td><td>11.21</td><td>13.83</td><td>27.52</td><td>26.83</td><td>25.24</td></tr>
-<tr><td>World-Env</td><td>0.03</td><td>0.07</td><td>0.08</td><td>0.08</td><td>9.77</td><td>13.03</td><td>10.25</td><td>11.12</td><td>12.98</td><td>23.96</td><td>33.92</td><td>33.02</td></tr>
-<tr><td>VLASelect</td><td>0.01</td><td>0.01</td><td>0.03</td><td>0.03</td><td>5.23</td><td>11.97</td><td>10.4</td><td>10.4</td><td>0.58</td><td>2.96</td><td>12.28</td><td>9.91</td></tr>
+<tr><td>Self-Improvement</td><td>0.05</td><td>0.20</td><td>0.20</td><td>0.11</td><td>6.53</td><td>7.49</td><td>10.08</td><td>7.53</td><td>11.80</td><td>77.33</td><td>51.31</td><td>60.69</td></tr>
+<tr><td>VLA-RFT</td><td>0.04</td><td>0.20</td><td>0.22</td><td>0.11</td><td>7.89</td><td>7.52</td><td>8.76</td><td>7.53</td><td>10.68</td><td>88.29</td><td>53.90</td><td>63.56</td></tr>
+<tr><td>World-Env</td><td>0.04</td><td>0.20</td><td>0.22</td><td>0.11</td><td>8.76</td><td>7.48</td><td>9.36</td><td>7.47</td><td>9.98</td><td>87.17</td><td>51.44</td><td>63.89</td></tr>
+<tr><td>VLASelect</td><td>0.01</td><td>0.02</td><td>0.03</td><td>0.01</td><td>4.34</td><td>7.19</td><td>5.75</td><td>5.20</td><td>0.49</td><td>13.49</td><td>17.26</td><td>1.30</td></tr>
 </tbody>
 </table>
 </div>
@@ -269,7 +269,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.2.2-mwe.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/2.2.2.2-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -295,8 +295,8 @@ This artifact evaluation did not run the one-click reproduction script. All repo
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.2.3-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 1.5 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.3-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -323,7 +323,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.3-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/2.2.3-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -389,7 +389,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-11"></a>
 #### 2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves <span style="color:#0070C0"><strong>17.19% higher accuracy</strong></span> compared with the alternative knowledge exchange techniques.
+**Key observation:** VLASelect achieves <span style="color:#0070C0"><strong>80.42% higher accuracy</strong></span> compared with the alternative knowledge exchange techniques.
 
 <br>
 
@@ -407,7 +407,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-12"></a>
 #### 2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves **<span style="color:#0070C0">23.13% higher accuracy</span>** with channel/neuron-level knowledge exchange than with coarser granularities.
+**Key observation:** VLASelect achieves **<span style="color:#0070C0">71.10% higher accuracy</span>** with channel/neuron-level knowledge exchange than with coarser granularities.
 
 <br>
 
@@ -425,7 +425,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-13"></a>
 #### 2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves **<span style="color:#0070C0">33.18% higher accuracy</span>** than the baseline techniques by mitigating interference across previously learned environments and tasks.
+**Key observation:** VLASelect achieves **<span style="color:#0070C0">28.24% higher accuracy</span>** than the baseline techniques by mitigating interference across previously learned environments and tasks.
 
 <br>
 
@@ -436,14 +436,14 @@ A supplementary video will be provided to compare simulation and real practice, 
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Full Run | 13 hours | 60 GB |
-| Minimal Working Example | 20 minutes | 20 GB |
+| Minimal Working Example | 18 minutes | 9 GB |
 
 </div>
 
 <a id="section-2-2-14"></a>
 #### 2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves **<span style="color:#0070C0">33.62% and 34.72% higher accuracy</span>** than ConRFT on MLP and CNN models, respectively.
+**Key observation:** VLASelect achieves **<span style="color:#0070C0">21.72% and 22.15% higher accuracy</span>** than ConRFT on MLP and CNN models, respectively.
 
 <br>
 
@@ -454,7 +454,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Full Run | 13 hours | 60 GB |
-| Minimal Working Example | 20 minutes | 20 GB |
+| Minimal Working Example | 14 minutes | 5 GB |
 
 </div>
 
@@ -483,7 +483,7 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 3 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.1.1.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.1.1-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -506,7 +506,7 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.1.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of EdgeTA and LLM in a Flash <strong>overlap completely</strong> due to identical performance.</td>
+      <td align="center"><img src="imgs/3.1.2-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of EdgeTA and LLM in a Flash <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>
@@ -531,7 +531,7 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.1.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.1.3-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -559,7 +559,7 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 3 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.2.1.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.2.1-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -582,7 +582,7 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.2.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Attention, LLM in a Flash, and EdgeTA <strong>overlap completely</strong> due to identical performance.</td>
+      <td align="center"><img src="imgs/3.2.2-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Attention, LLM in a Flash, and EdgeTA <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>
@@ -607,7 +607,7 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.2.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.2.3-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -635,7 +635,7 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 3 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.3.1.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.3.1-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -658,7 +658,7 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.3.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.3.2-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -681,7 +681,7 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.3.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Layer and Block <strong>overlap completely</strong> due to identical performance.</td>
+      <td align="center"><img src="imgs/3.3.3-mwe-cloud.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Layer and Block <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>

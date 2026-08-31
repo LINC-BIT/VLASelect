@@ -199,7 +199,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 
 <br>
 
-**Experiment 3.3: Overhead comparison under the same learning accuracy**
+**Overhead comparison under the same learning accuracy**
 
 **Key observation:** VLASelect achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>** and the **<span style="color:#0070C0">lowest resource consumption</span>** among the evaluated baseline methods.
 

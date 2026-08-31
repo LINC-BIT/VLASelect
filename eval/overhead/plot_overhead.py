@@ -1282,7 +1282,12 @@ def collect_panel_metrics(panel, smoothing: float = 0.2):
         reduction_pct = ((baseline_avg - vlaselect_memory) / baseline_avg * 100.0) if baseline_avg > 0.0 else 0.0
         return panel_metrics, f'Common-phase baselines / VLASelect avg. memory (GB): {baseline_avg:.2f} / {vlaselect_memory:.2f} ({reduction_pct:.2f}%↓)'
     return panel_metrics, 'Common-phase baselines / VLASelect avg. memory (GB): No data'
-def format_number(value): return '0' if value <= 0.0 else f'{value:.2f}'
+def format_number(value):
+    if value <= 0.0:
+        return '0'
+    if value < 0.01:
+        return '0.01'
+    return f'{value:.2f}'
 def build_table2_rows(panel_entries, metrics_by_family):
     family_by_panel = {panel['panel_label']: panel['family'] for panel in panel_entries}
     rows = [[

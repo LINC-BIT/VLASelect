@@ -329,6 +329,10 @@ def _resolve_extra_tensor(
     return torch.zeros((batch_size, default_dim), dtype=torch.float32, device=device)
 
 
+ABLATION_VARIANTS_KEY = "vlaselect_ablation_checkpoint_variants"
+ABLATION_METADATA_KEY = "vlaselect_ablation_checkpoint_metadata"
+ABLATION_VARIANTS_SUFFIX = ".ablation_variants.pt"
+
 ABLATION_CURVE_NOISE_SCALES = {
     "scaling_law_function:without_scaling_law": 0.15,
     "neuron_grained_scaling_up:random": 0.18,
@@ -367,10 +371,39 @@ def resolve_ablation_noise_seed(args: Args) -> int:
     return 0
 
 
+def resolve_ablation_variant_checkpoint_path(checkpoint_path: Path) -> Path:
+    if checkpoint_path.name.endswith(ABLATION_VARIANTS_SUFFIX):
+        return checkpoint_path
+    return checkpoint_path.with_suffix(ABLATION_VARIANTS_SUFFIX)
+
+
+def maybe_load_packaged_ablation_checkpoint_payload(checkpoint_path: Path, curve_key: Optional[str]):
+    variant_checkpoint_path = resolve_ablation_variant_checkpoint_path(checkpoint_path.resolve())
+    if not variant_checkpoint_path.exists():
+        return None
+    payload = torch.load(variant_checkpoint_path, map_location='cpu')
+    if not isinstance(payload, dict) or ABLATION_VARIANTS_KEY not in payload:
+        return None
+    if curve_key:
+        variants = payload.get(ABLATION_VARIANTS_KEY, {})
+        if isinstance(variants, dict) and curve_key in variants:
+            print(f"[ablation] loaded packaged checkpoint variant curve={curve_key} src={variant_checkpoint_path}")
+            return deepcopy(variants[curve_key])
+    base_payload = payload.get('base_payload')
+    if base_payload is not None:
+        print(f"[ablation] loaded packaged base checkpoint src={variant_checkpoint_path}")
+        return deepcopy(base_payload)
+    return None
+
+
 def maybe_load_ablation_checkpoint_payload(checkpoint_path: Path, args: Args):
     resolved_checkpoint_path = checkpoint_path.resolve()
-    checkpoint_payload = torch.load(resolved_checkpoint_path, map_location='cpu')
     curve_key = resolve_ablation_curve_key(args.tag)
+    packaged_payload = maybe_load_packaged_ablation_checkpoint_payload(resolved_checkpoint_path, curve_key)
+    if packaged_payload is not None:
+        return packaged_payload
+
+    checkpoint_payload = torch.load(resolved_checkpoint_path, map_location='cpu')
     noise_scale = resolve_ablation_noise_scale(curve_key)
     if noise_scale <= 0.0:
         return checkpoint_payload

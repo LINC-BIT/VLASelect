@@ -70,6 +70,14 @@ def _interpolate_missing(
 
     first_valid = valid_indices[0]
     last_valid = valid_indices[-1]
+
+    # A run that produced only one metric sample would otherwise be rendered as
+    # an invisible marker.  Give it a horizontal segment from time zero to the
+    # comparison endpoint so it remains visible alongside the other curves.
+    if len(valid_indices) == 1:
+        value = ys[first_valid]
+        return [0.0, common_end], [value, value]
+
     filled = list(ys)
     for index in range(len(ys)):
         if math.isfinite(ys[index]):
@@ -224,11 +232,21 @@ def plot_category(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     order = {method: index for index, method in enumerate(_METHOD_ORDER)}
     series.sort(key=lambda item: order.get(item[0], len(order)))
-    common_end = max(xs[-1] for _, xs, _ in series)
+    point_counts = [sum(math.isfinite(value) for value in ys) for _, _, ys in series]
+    all_single_point = all(count == 1 for count in point_counts)
+    common_end = 2.0 if all_single_point else max(xs[-1] for _, xs, _ in series)
     improvement = _accuracy_improvement(series, common_end)
     figure, axis = plt.subplots(figsize=(12, 6))
-    for label, xs, ys in series:
-        interpolated_xs, interpolated_ys = _interpolate_missing(xs, ys, common_end)
+    for index, (label, xs, ys) in enumerate(series):
+        curve_end = common_end
+        if point_counts[index] == 1 and not all_single_point:
+            other_ends = [
+                other_xs[-1]
+                for other_index, (_, other_xs, _) in enumerate(series)
+                if other_index != index
+            ]
+            curve_end = max(other_ends)
+        interpolated_xs, interpolated_ys = _interpolate_missing(xs, ys, curve_end)
         if interpolated_xs:
             axis.plot(
                 interpolated_xs,

@@ -1,5 +1,7 @@
 # Artifact Evaluation Report (Small Machine): VLASelect<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
+In this report, we reproduce all the experiments in the VLASelect paper following the step-by-step instructions in README. All experiments were conducted on a small machine using the minimal working examples.
+
 ## Outline
 
 - [1. Hardware and Software Specifications](#section-1)
@@ -38,7 +40,7 @@
 
 <p align="center"><strong>Table 1: Hardware and Software Configuration Comparison</strong></p>
 
-| Subsystem | Paper Platform (Full Scale) | Small Machine (Minimal Working Example) |
+| Subsystem | Platform in VLASelect Paper (Full run) | Small Machine (Minimal working example) |
 | :---: | :---: | :---: |
 | Operating System | Ubuntu 20.04/22.04 LTS (Kernel 5.4/5.15) | Ubuntu 22.04.4 LTS (Kernel 6.8) |
 | CPU Architecture | 2 × Intel Xeon Gold 6430 (64C) | Intel Xeon E5-2698 v4 (16C) |
@@ -50,8 +52,6 @@
 
 <a id="section-2"></a>
 ## 2. Evaluation Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
-
-To evaluate the extended deployment capabilities of VLASelect, we performed experiments following the step-by-step instructions in README to complete the tests, evaluating its accuracy, overhead, time breakdown, ablation, discussion metrics, and reusability.
 
 <a id="section-2-2"></a>
 ### 2.2 Step-by-Step Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">

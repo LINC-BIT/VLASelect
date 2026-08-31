@@ -162,40 +162,64 @@ def _metric_value(metric: Dict[str, Any], requested: str) -> Optional[float]:
     return None
 
 
+def _time_average(xs: List[float], ys: List[float]) -> Optional[float]:
+    if not xs or not ys or len(xs) != len(ys):
+        return None
+    if len(xs) == 1:
+        return ys[0] if math.isfinite(ys[0]) else None
+    total_span = xs[-1] - xs[0]
+    if total_span <= 0.0:
+        return ys[-1] if math.isfinite(ys[-1]) else None
+    area = 0.0
+    for left_x, right_x, left_y, right_y in zip(xs[:-1], xs[1:], ys[:-1], ys[1:]):
+        if not (math.isfinite(left_y) and math.isfinite(right_y)):
+            continue
+        width = right_x - left_x
+        if width <= 0.0:
+            continue
+        area += width * (left_y + right_y) * 0.5
+    return area / total_span
+
+
 def _build_accuracy_summary(
     series: List[Tuple[str, List[float], List[float]]], common_end: float
 ) -> Dict[str, Any]:
-    """Summarize VLASelect's final accuracy against the average baseline.
-
-    All accuracies are stored as fractions in the source histories. The
-    returned summary keeps the raw fractions and also exposes percentage-point
-    and relative-improvement views for direct reporting.
-    """
+    """Summarize VLASelect's time-averaged accuracy against the baseline mean."""
     final_values: Dict[str, float] = {}
+    time_averages: Dict[str, float] = {}
     for label, xs, ys in series:
-        _, interpolated_ys = _interpolate_missing(xs, ys, common_end)
+        interpolated_xs, interpolated_ys = _interpolate_missing(xs, ys, common_end)
         if interpolated_ys and math.isfinite(interpolated_ys[-1]):
             final_values[label] = interpolated_ys[-1]
+        time_avg = _time_average(interpolated_xs, interpolated_ys)
+        if time_avg is not None and math.isfinite(time_avg):
+            time_averages[label] = time_avg
 
-    vlaselect = final_values.get("default")
-    other_values = [value for label, value in final_values.items() if label != "default"]
-    others_mean = (sum(other_values) / len(other_values)) if other_values else None
+    vlaselect_final = final_values.get("default")
+    vlaselect_mean = time_averages.get("default")
+    other_final_values = [value for label, value in final_values.items() if label != "default"]
+    other_time_averages = [value for label, value in time_averages.items() if label != "default"]
+    others_final_mean = (sum(other_final_values) / len(other_final_values)) if other_final_values else None
+    others_time_mean = (sum(other_time_averages) / len(other_time_averages)) if other_time_averages else None
     absolute_gain_fraction = None
     absolute_gain_points = None
     relative_improvement_percent = None
-    if vlaselect is not None and others_mean is not None:
-        absolute_gain_fraction = vlaselect - others_mean
+    if vlaselect_mean is not None and others_time_mean is not None:
+        absolute_gain_fraction = vlaselect_mean - others_time_mean
         absolute_gain_points = absolute_gain_fraction * 100.0
-        if others_mean != 0.0:
-            relative_improvement_percent = absolute_gain_fraction / others_mean * 100.0
+        if others_time_mean != 0.0:
+            relative_improvement_percent = absolute_gain_fraction / others_time_mean * 100.0
 
     return {
-        "vlaselect_final_accuracy": vlaselect,
-        "other_methods_mean_final_accuracy": others_mean,
+        "vlaselect_mean_accuracy": vlaselect_mean,
+        "other_methods_mean_accuracy": others_time_mean,
         "absolute_gain_fraction": absolute_gain_fraction,
         "absolute_gain_points": absolute_gain_points,
         "relative_improvement_percent": relative_improvement_percent,
-        "num_compared_methods": len(other_values),
+        "num_compared_methods": len(other_time_averages),
+        "time_averages": time_averages,
+        "vlaselect_final_accuracy": vlaselect_final,
+        "other_methods_mean_final_accuracy": others_final_mean,
         "final_values": final_values,
     }
 
@@ -287,9 +311,19 @@ def plot_category(
 
     print(f"[comparison] summary={summary_output}")
     print(
-        f"[comparison] vlaselect_mean_final_accuracy={accuracy_summary['vlaselect_final_accuracy']:.4f}"
+        f"[comparison] vlaselect_mean_accuracy={accuracy_summary['vlaselect_mean_accuracy']:.4f}"
+        if accuracy_summary['vlaselect_mean_accuracy'] is not None
+        else "[comparison] vlaselect_mean_accuracy=NA"
+    )
+    print(
+        f"[comparison] other_methods_mean_accuracy={accuracy_summary['other_methods_mean_accuracy']:.4f}"
+        if accuracy_summary['other_methods_mean_accuracy'] is not None
+        else "[comparison] other_methods_mean_accuracy=NA"
+    )
+    print(
+        f"[comparison] vlaselect_final_accuracy={accuracy_summary['vlaselect_final_accuracy']:.4f}"
         if accuracy_summary['vlaselect_final_accuracy'] is not None
-        else "[comparison] vlaselect_mean_final_accuracy=NA"
+        else "[comparison] vlaselect_final_accuracy=NA"
     )
     print(
         f"[comparison] other_methods_mean_final_accuracy={accuracy_summary['other_methods_mean_final_accuracy']:.4f}"

@@ -31,6 +31,10 @@ _METHOD_LABELS = {
     "minillm": "MiniLLM",
     "powerinfer": "PowerInfer",
 }
+# Keep the VLASelect baseline visually consistent across every comparison plot.
+_METHOD_COLORS = {
+    "default": "#C00000",
+}
 _METHOD_ORDER = [
     "logit_distillation",
     "feature_distillation",
@@ -123,10 +127,14 @@ def _single_run_label(run_dir: Path) -> str:
     except (OSError, json.JSONDecodeError):
         payload = {}
     if isinstance(payload, dict):
-        for key in ("scaling_method", "knowledge_exchange_granularity"):
+        selector_keys = ("scaling_method", "knowledge_exchange_granularity")
+        for key in selector_keys:
             value = payload.get(key)
             if value:
                 return str(value)
+        # A run with explicit empty selectors is the VLASelect baseline.
+        if any(key in payload for key in selector_keys):
+            return "default"
     return run_dir.parent.name if run_dir.parent != run_dir else run_dir.name
 
 
@@ -226,6 +234,7 @@ def plot_category(
                 _smooth(interpolated_ys),
                 linewidth=2,
                 label=_METHOD_LABELS.get(label, label),
+                color=_METHOD_COLORS.get(label),
             )
     axis.set_xlabel("Time (minutes)", fontsize=15)
     axis.set_ylabel("Accuracy", fontsize=15)

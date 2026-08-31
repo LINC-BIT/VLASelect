@@ -1,15 +1,15 @@
 
 ![](vlaselect-intro1.png)
 
-# VLASelect Artifacts Evaluation
+# VLASelect Artifact Evaluation
 
-This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"**, which has been conditionally accepted by EuroSys'27.
+This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"** (conditionally accepted by EuroSys'27).
 
 ## Downloads
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
-[Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
-[Evaluation Report on the Academic Cloud (TODO: Link)]()<br>
+[An Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
+[An Evaluation Report on the Academic Cloud (CloudLab)]()<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>
@@ -66,35 +66,26 @@ Docker Image: <br>
 
 - **Background**: 
 
-  - VLA (Vision-Language-Action) model-based agents such as
+  - **Emboded AI agent**: VLA (Vision-Language-Action) model-based agents such as
   robot arms, dexterous hands and humanoid robots are revolutionizing our lives. 
-  - These agents usually run in **open ended,
+  - **Open environment**: These agents usually run in **open ended,
   interactive environments** where new tasks start, surroundings change, or available resources fluctuate. 
-  - In existing agentic AI systems, the resource-intensive training of deployed
+  - **Resource-constrained on-device training**: In existing agentic AI systems, the resource-intensive training of deployed
   VLA models has become a critical bottleneck. 
 
-- **Method**: 
+- **Method: large-small model collaborative learning**: 
 
-  - In this paper,
-  we present VLASelect, a framework that takes the dynamics
-  of agents’ interactive environment into account to enable
-  **large-small model collaborative learning**. 
-  - In online RL, VLASelect employs an agent’s small model to quickly explore the
-  environment, **selectively transfers** its positive knowledge to
-  the agent’s large model, and compensates its learning ability
+  - **Selective knowledge transfer**: In online RL, VLASelect employs an agent’s small model to quickly explore the
+  environment, and selectively transfers its positive knowledge to the agent’s large model, and compensates its learning ability
   by swapping in the large model’s most accuracy-related neurons. 
-  - In doing so, our approach combines the strengths of
-  large models’ high learning capacity and small models’ low
-  training costs via **neuron-grained knowledge exchange**. 
+  - **Neuron-grained knowledge exchange**: In doing so, our approach combines the strengths of large models’ high learning capacity and small models’ low
+  training costs via low-overhead network neuron exchange. 
 
     ![](Method.png)
 
 - **Evaluation**: 
-  - Our experiments compare 9 state-of-the-art VLA
-  learning techniques across 4 embodied AI agents.
-  - VLASelect
-  achieves as much as 40.12% increase in task success rate,
-  25.6% decrease in memory footprint and 11.55x reduction on
+  - **Basic setting**: Our experiments compare 9 state-of-the-art VLA learning techniques across 4 heterogeneous embodied AI agents.
+  - **Major results**: VLASelect achieves as much as 40.12% increase in task success rate, 25.6% decrease in memory footprint and 11.55x reduction on
   energy consumption.
 
 
@@ -102,7 +93,7 @@ Docker Image: <br>
 
 #### 1.2.1 Hardware Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1: Recommended hardware for fully running our artifacts**:
+- **Option 1: Hardware requirements for full running of experiments in the paper**:
 
   <table align="center">
     <thead>
@@ -123,7 +114,7 @@ Docker Image: <br>
     </tbody>
   </table>
 
-- **Option 2: Minimum hardware requirements for running minimal working examples**:
+- **Option 2: Six recommended hardware requirements for running minimal working examples**:
 
   <table align="center">
     <thead>
@@ -183,7 +174,7 @@ Docker Image: <br>
 
 #### 1.2.2 Software Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1: Recommended software for fully running our artifacts**:
+- **Option 1: Recommended software for full running of experiments in the paper**:
 
   <table align="center">
     <thead>
@@ -202,7 +193,7 @@ Docker Image: <br>
     </tbody>
   </table>
       
-- **Option 2: Minimum software requirements for running minimal working examples**:
+- **Option 2: Software requirements for running minimal working examples**:
 
   <table align="center">
     <thead>
@@ -346,7 +337,7 @@ Docker Image: <br>
   ```
   
 
-#### 1.2.6 Install Dependencies for Plotting Scripts<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 1.2.6 Install Dependencies for Figure Plotting Scripts<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Run the command below to install dependencies for plotting scripts:
   ```bash
@@ -391,7 +382,7 @@ Docker Image: <br>
     </tr>
     <tr>
       <td><strong>Out-of-memory error during the reproduction</strong>: You see errors like <code>torch.OutOfMemoryError: CUDA out of memory</code> when running the reproduction script.</td>
-      <td>1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>2. Run the minimum working example.</td>
+      <td>Step 1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>Step 2. Run the minimum working example.</td>
     </tr>
     
     
@@ -405,9 +396,9 @@ For other unusual behaviors, we will provide remote tech support and send fixes 
 
 ### 2.1 One-click Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces resulting figures and tables.
+We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces all resulting figures and tables.
 
-- **(Recommended) Option 1: Minimum working example (completed within 1 day and 20GB memory)**
+- **(Recommended) Option 1: Minimum working examples (completed within 1 day and 20GB memory)**
   ```bash
   cd <VLASelect directory>
   bash start_docker.sh
@@ -428,7 +419,7 @@ The reproducing steps of each experiment are described in Section 2.2.
 
 ### 2.2 Step-by-Step Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-Run the following command at the beginning:
+First of all, run the following command:
 
 ```bash
 cd <VLASelect directory>
@@ -436,12 +427,12 @@ bash start_docker.sh
 cd <VLASelect directory in the container>/eval
 ```
 
-And you can run the following commands to reproduce each figure/table in our evaluation.
+Then, run the following commands to reproduce each figure/table in our evaluation.
 
 **Note:** In minimum working examples, we have limited the training time of each method to less than 5 minutes. However, the total runtime may remain several hours due to:
-  - Loading large model checkpoints (>1GB) for each method
-  - Initializing RL environments based on the physical simulation engine
-  - Evaluating each method's accuracy periodically
+  - Loading large model checkpoints (>1GB) for each method.
+  - Initializing RL environments based on the physical simulation engine.
+  - Evaluating/calculating each method's accuracy periodically.
 
 #### 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
@@ -1164,7 +1155,7 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 ## 3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 
-VLASelect can integrate various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning), and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
+VLASelect can integrate various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning) and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
 
 We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, EdgeVLA. They differ in the network architecture, as shown in the table below.
 
@@ -1201,13 +1192,13 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 - **Detailed integration steps**:
 
-  - **Step 1:** Creating a new file, and creating a class `VLAAdapterImplementation` inherited from `VLAModelInterface`.
+  - **Step 1:** Create a new file and a class `VLAAdapterImplementation` inherited from `VLAModelInterface`.
 
     ```python
     class VLAAdapterImplementation(VLAModelInterface)
     ```
 
-  - **Step 2:** Defining its key properties (e.g. model name and dimensions of state and action).
+  - **Step 2:** Define its key properties (e.g. model name and dimensions of state and action).
 
     ```python
     model_name = "vla_adapter"
@@ -1215,7 +1206,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     action_dim = 16
     ```
 
-  - **Step 3:** Implementing its functions for model initialization, forward operations, and backward operations. 
+  - **Step 3:** Implement its functions for model initialization, forward operations, and backward operations. 
 
     ```python
     # Examples:
@@ -1236,13 +1227,13 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
     All functions to be implemented are listed [here](IMPL_GUIDE.md).
 
-  - **Step 4:** Initializing the implemented class `VLAAdapterImplementation`.
+  - **Step 4:** Initialize the implemented class `VLAAdapterImplementation`.
 
     ```python
     model_impl = VLAAdapterImplementation()
     ```
 
-  - **Step 5:** Passing the initialized model implementation to the function of online RL training, and starting the training.
+  - **Step 5:** Pass the initialized model implementation to the function of online RL training, and starting the training.
 
     ```python
     run_training(model_impl, parse_args())

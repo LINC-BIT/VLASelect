@@ -16,7 +16,7 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
     - [2.2 Step-by-Step Reproduction](#22-step-by-step-reproduction)
       - [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes)
       - [2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes](#222-experiment-2-figure-8-in-section-522-accuracy-under-available-resource-changes)
-      - [2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under the Same Accuracy](#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy)
+      - [2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy](#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy)
       - [2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules](#224-experiment-4-figure-10-in-section-532-time-breakdown-of-vlaselects-modules)
       - [2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload](#225-experiment-5-figure-11-in-section-532-training-time-breakdown-in-each-workload)
       - [2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation](#226-experiment-6-figure-12-in-section-54-design-choice-validation-by-ablation)
@@ -126,13 +126,10 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 <br>
 
 <a id="section-2-2-3"></a>
-#### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under the Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>** and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
 
-<br>
-
-**Experiment 3.1: Memory Footprint Analysis**
+**Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>**  and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -156,9 +153,9 @@ This artifact evaluation did not run the one-click reproduction script. All repo
   </tbody>
 </table>
 
-<br>
+<br><br>
 
-**Experiment 3.2: Energy Consumption Analysis**
+**Energy Consumption Analysis**
 
 **Key observation:** VLASelect achieves the highest operational efficiency by **<span style="color:#0070C0">maintaining the lowest energy consumption</span>** across diverse workloads and experimental settings.
 

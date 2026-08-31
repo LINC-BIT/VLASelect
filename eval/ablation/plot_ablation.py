@@ -572,23 +572,27 @@ def build_ablation_rows(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
-def build_vis_data(manifest: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, dict[str, tuple[float, bool]]]:
+DISPLAY_VALUE_FLOOR = 0.02
+
+
+def display_value_floor(panel_id: str, curve_id: str) -> float:
+    _ = (panel_id, curve_id)
+    return float(DISPLAY_VALUE_FLOOR)
+
+
+def build_vis_data(manifest: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
     row_map = {(row['panel_id'], row['curve_id']): row for row in rows}
-    ordered: dict[str, dict[str, tuple[float, bool]]] = {}
+    ordered: dict[str, dict[str, float]] = {}
     for group_spec in VIS_GROUP_SPECS:
-        group_data: dict[str, tuple[float, bool]] = {}
+        group_data: dict[str, float] = {}
         for slot_name, panel_id, curve_id in group_spec["slots"]:
             row = row_map.get((panel_id, curve_id), {})
             value = float(row.get('mean_value', row.get('last_value', 0.0)) or 0.0)
-            is_placeholder = int(row.get('points', 0) or 0) == 0
-            group_data[slot_name] = (value, is_placeholder)
+            if int(row.get('points', 0) or 0) > 0:
+                value = max(value, display_value_floor(panel_id, curve_id))
+            group_data[slot_name] = value
         ordered[group_spec["group_name"]] = group_data
     return ordered
-
-
-def _bar_floor_value(item_index: int, is_ours: bool) -> float:
-    base = 0.0025 + 0.0005 * (item_index & 1)
-    return base * (2.0 if is_ours else 1.0)
 
 
 def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
@@ -607,20 +611,15 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
     group_gap = 1.5
     cur_offset = 0
     all_x, all_y = [], []
-    floor_marker_needed = False
 
     for _, group_data in data.items():
         x_positions = np.arange(len(group_data)) + cur_offset
         values = []
-        for item_index, (key, (value, is_placeholder)) in enumerate(group_data.items()):
+        for key, value in group_data.items():
             if key == 'ours':
                 values.append(0.0)
                 continue
-            if is_placeholder or value == 0.0:
-                values.append(_bar_floor_value(item_index, False))
-                floor_marker_needed = True
-            else:
-                values.append(value)
+            values.append(value)
         values = values[::-1]
         all_x += list(x_positions)
         all_y += list(values)
@@ -635,15 +634,11 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
     for _, group_data in data.items():
         x_positions = np.arange(len(group_data)) + cur_offset
         values = []
-        for item_index, (key, (value, is_placeholder)) in enumerate(group_data.items()):
+        for key, value in group_data.items():
             if key != 'ours':
                 values.append(0.0)
                 continue
-            if is_placeholder or value == 0.0:
-                values.append(_bar_floor_value(item_index, True))
-                floor_marker_needed = True
-            else:
-                values.append(value)
+            values.append(value)
         values = values[::-1]
         raw_x += list(x_positions)
         all_x += list(x_positions)

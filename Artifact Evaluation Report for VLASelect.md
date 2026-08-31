@@ -117,8 +117,10 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
 <a id="section-2-2-3"></a>
 #### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>**  and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
+
+<br><br>
+**Experiment 3.1: Memory Footprint Analysis**
 
 <table>
   <thead>
@@ -143,8 +145,7 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
 </table>
 
 <br><br>
-
-**Energy Consumption Analysis**
+**Experiment 3.2: Energy Consumption Analysis**
 
 **Key observation:** VLASelect achieves the highest operational efficiency by **<span style="color:#0070C0">maintaining the lowest energy consumption</span>** across diverse workloads and experimental settings.
 
@@ -178,7 +179,7 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
 
 <br><br>
 
-**Overhead comparison under the same learning accuracy**
+**Experiment 3.3: Overhead comparison under the same learning accuracy**
 
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution</span>** time and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
 

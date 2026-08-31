@@ -1,6 +1,6 @@
 # Example Running Outputs<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-## (Figure 9 Tables 2/3 in section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
+## 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 > **Key observation:** VLASelect consistently achieves the target accuracy with **the shortest execution** time and **the most reduced resource consumption** compared to all baseline methods.
 
@@ -55,7 +55,7 @@
 #### Table 2: Minimal Working Example for Average Energy Consumption (kJ) in each new task
 
 | Method | Time (h) - Single-arm | Time (h) - Dexterous | Time (h) - Mobile | Time (h) - Humanoid | Memory (GB) - Single-arm | Memory (GB) - Dexterous | Memory (GB) - Mobile | Memory (GB) - Humanoid | Energy (kJ) - Single-arm | Energy (kJ) - Dexterous | Energy (kJ) - Mobile | Energy (kJ) - Humanoid |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Self-Improvement** | 0.04 | 0.17 | 0.09 | 0.08 | 7.32 | 13.41 | 12.47 | 12.94 | 15.82 | 62.99 | 37.17 | 25.65 |
 | **VLA-RFT** | 0.03 | 0.08 | 0.07 | 0.07 | 8.48 | 13.09 | 11.07 | 11.21 | 13.83 | 27.52 | 26.83 | 25.24 |
 | **World-Env** | 0.03 | 0.07 | 0.08 | 0.08 | 9.77 | 13.03 | 10.25 | 11.12 | 12.98 | 23.96 | 33.92 | 33.02 |
@@ -66,11 +66,10 @@
 #### Table 3: Minimal Working Example for Overhead comparison under the same learning accuracy
 
 | Method | Single-arm robot | Dexterous hand | Mobile manipulator | Humanoid robot |
-| :--- | :---: | :---: | :---: | :---: |
+| :---: | :---: | :---: | :---: | :---: |
 | **Self-Improvement** | 15.82 | 62.99 | 37.17 | 26.22 |
 | **VLA-RFT** | 13.83 | 27.52 | 26.83 | 24.62 |
 | **World-Env** | 12.98 | 23.96 | 33.92 | 33.03 |
 | **VLASelect** | 0.68 | 11.37 | 12.28 | 2.58 |
 
 <br><br>
-

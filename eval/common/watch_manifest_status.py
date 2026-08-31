@@ -110,8 +110,9 @@ class MethodState:
                 self.global_step = int(step_match.group("global_step"))
 
         iter_match = ITER_RE.search(line)
-        if iter_match and self.update is None:
-            self.phase = self.phase or "train"
+        if iter_match:
+            if self.phase in {None, "queue", "launching", "setup"}:
+                self.phase = "train"
             self.update = int(iter_match.group("iter"))
 
         client_iter_match = CLIENT_ITER_RE.search(line)

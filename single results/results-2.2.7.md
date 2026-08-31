@@ -1,6 +1,6 @@
+# Example Running Outputs<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-
-#### 2.2.7 Claim 7: (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+## 2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 - Commands for full run:
   ```bash
@@ -12,9 +12,9 @@
   <table align="center">
     <thead>
       <tr>
-        <th></th>
-        <th>Resource Requirements</th>
-        <th>Example Running Outputs</th>
+        <th align="center"></th>
+        <th align="center">Resource Requirements</th>
+        <th align="center">Example Running Outputs</th>
       </tr>
     </thead>
     <tbody>
@@ -42,6 +42,3 @@
       </tr>
     </tbody>
   </table>
-
-
-

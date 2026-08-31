@@ -36,7 +36,18 @@ HF_HUB_MAX_WORKERS=${HF_HUB_MAX_WORKERS:-8}
 HF_HUB_HTTP_MAX_RETRIES=${HF_HUB_HTTP_MAX_RETRIES:-6}
 HF_HUB_RETRY_BASE_SECONDS=${HF_HUB_RETRY_BASE_SECONDS:-15}
 HF_HUB_FILE_DELAY_SECONDS=${HF_HUB_FILE_DELAY_SECONDS:-0.2}
-DEEPSPEED_VERSION=0.15.0
+TORCH_VERSION=${TORCH_VERSION:-2.4.0}
+TORCHVISION_VERSION=${TORCHVISION_VERSION:-0.19.0}
+TORCHAUDIO_VERSION=${TORCHAUDIO_VERSION:-2.4.0}
+TORCH_INDEX_URL=${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu124}
+TORCH_INDEX_URL_FALLBACKS=${TORCH_INDEX_URL_FALLBACKS:-}
+PIP_INDEX_URL_DEFAULT=${PIP_INDEX_URL_DEFAULT:-https://pypi.org/simple}
+PIP_INDEX_URL_FALLBACKS=${PIP_INDEX_URL_FALLBACKS:-https://pypi.tuna.tsinghua.edu.cn/simple}
+PIP_EXTRA_INDEX_URL_DEFAULT=${PIP_EXTRA_INDEX_URL_DEFAULT:-}
+MANISKILL_VERSION=${MANISKILL_VERSION:-3.0.0b22}
+INSTALL_FLASH_ATTN=${INSTALL_FLASH_ATTN:-0}
+ARM=${ARM:-0}
+DEEPSPEED_VERSION=${DEEPSPEED_VERSION:-0.15.0}
 PYPDF_VERSION=${PYPDF_VERSION:-6.16.2}
 PIN_VERSION=${PIN_VERSION:-2.7.0}
 NOISE_VERSION=${NOISE_VERSION:-1.2.2}
@@ -149,8 +160,17 @@ resolve_container_paths() {
     fi
 }
 
+small_image_bootstrap_signature() {
+    printf '%s' "torch=${TORCH_VERSION}|torchvision=${TORCHVISION_VERSION}|torchaudio=${TORCHAUDIO_VERSION}|torch_index=${TORCH_INDEX_URL}|torch_fallbacks=${TORCH_INDEX_URL_FALLBACKS}|pip_index=${PIP_INDEX_URL_DEFAULT}|pip_fallbacks=${PIP_INDEX_URL_FALLBACKS}|pip_extra=${PIP_EXTRA_INDEX_URL_DEFAULT}|maniskill=${MANISKILL_VERSION}|flash_attn=${INSTALL_FLASH_ATTN}|arm=${ARM}|deepspeed=${DEEPSPEED_VERSION}|pypdf=${PYPDF_VERSION}|pin=${PIN_VERSION}|noise=${NOISE_VERSION}"
+}
+
 container_has_small_image_runtime() {
-    docker exec "$CONTAINER_NAME" bash -lc "[ -f '$SMALL_IMAGE_SENTINEL' ]" >/dev/null 2>&1
+    local expected_signature
+    expected_signature="$(small_image_bootstrap_signature)"
+    docker exec \
+        -e EXPECTED_SMALL_IMAGE_BOOTSTRAP_SIGNATURE="$expected_signature" \
+        "$CONTAINER_NAME" \
+        bash -lc "[ -f '$SMALL_IMAGE_SENTINEL' ] && [[ \"\$(cat '$SMALL_IMAGE_SENTINEL')\" == \"\$EXPECTED_SMALL_IMAGE_BOOTSTRAP_SIGNATURE\" ]]" >/dev/null 2>&1
 }
 
 bootstrap_small_image_environment() {
@@ -166,13 +186,37 @@ bootstrap_small_image_environment() {
     if container_has_small_image_runtime; then
         log "TYPE=$TYPE container runtime is already bootstrapped"
     else
+        local bootstrap_signature
+        bootstrap_signature="$(small_image_bootstrap_signature)"
         log "bootstrapping TYPE=$TYPE container runtime via dep-non-docker.sh"
         docker exec \
             -e VENV_DIR="$CONTAINER_VENV_DIR" \
             -e DOWNLOAD_CKPTS=0 \
             -e INSTALL_SYSTEM_DEPS=0 \
+            -e INSTALL_FLASH_ATTN="$INSTALL_FLASH_ATTN" \
+            -e ARM="$ARM" \
+            -e TORCH_VERSION="$TORCH_VERSION" \
+            -e TORCHVISION_VERSION="$TORCHVISION_VERSION" \
+            -e TORCHAUDIO_VERSION="$TORCHAUDIO_VERSION" \
+            -e TORCH_INDEX_URL="$TORCH_INDEX_URL" \
+            -e TORCH_INDEX_URL_FALLBACKS="$TORCH_INDEX_URL_FALLBACKS" \
+            -e PIP_INDEX_URL_DEFAULT="$PIP_INDEX_URL_DEFAULT" \
+            -e PIP_INDEX_URL_FALLBACKS="$PIP_INDEX_URL_FALLBACKS" \
+            -e PIP_EXTRA_INDEX_URL_DEFAULT="$PIP_EXTRA_INDEX_URL_DEFAULT" \
+            -e MANISKILL_VERSION="$MANISKILL_VERSION" \
             -e DEEPSPEED_VERSION="$DEEPSPEED_VERSION" \
+            -e PYPDF_VERSION="$PYPDF_VERSION" \
+            -e PIN_VERSION="$PIN_VERSION" \
+            -e NOISE_VERSION="$NOISE_VERSION" \
             -e HF_CKPT_REPO= \
+            -e HF_HUB_DOWNLOAD_TIMEOUT="$HF_HUB_DOWNLOAD_TIMEOUT" \
+            -e HF_HUB_HTTP_MAX_RETRIES="$HF_HUB_HTTP_MAX_RETRIES" \
+            -e HF_HUB_RETRY_BASE_SECONDS="$HF_HUB_RETRY_BASE_SECONDS" \
+            -e HF_HUB_FILE_DELAY_SECONDS="$HF_HUB_FILE_DELAY_SECONDS" \
+            -e HTTP_PROXY \
+            -e HTTPS_PROXY \
+            -e ALL_PROXY \
+            -e NO_PROXY \
             "$CONTAINER_NAME" \
             bash -lc "cd '$CONTAINER_REPO_DIR' && bash dep-non-docker.sh" || status=$?
 
@@ -184,7 +228,10 @@ bootstrap_small_image_environment() {
             return "$status"
         fi
 
-        docker exec "$CONTAINER_NAME" bash -lc "mkdir -p '$(dirname "$SMALL_IMAGE_SENTINEL")' && touch '$SMALL_IMAGE_SENTINEL'"
+        docker exec \
+            -e SMALL_IMAGE_BOOTSTRAP_SIGNATURE="$bootstrap_signature" \
+            "$CONTAINER_NAME" \
+            bash -lc "mkdir -p '$(dirname "$SMALL_IMAGE_SENTINEL")' && printf '%s' \"\$SMALL_IMAGE_BOOTSTRAP_SIGNATURE\" > '$SMALL_IMAGE_SENTINEL'"
     fi
 
     if [[ "$started_here" == "1" ]]; then

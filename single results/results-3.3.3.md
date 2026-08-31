@@ -1,10 +1,8 @@
-# Example Running Outputs for Supporting Various VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
+# Example Running Outputs<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-## 3.3 EdgeVLA Model Evaluation
+## 3.3 Example 3: EdgeVLA<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-### 3.3.3 Swapping Granularity Ablation on EdgeVLA
-
-### Minimum working example
+### 3.3.3 Integrating Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 > **Key observation:** On EdgeVLA, channel/neuron-level knowledge exchange again yields the best results, surpassing coarser block, layer, and attention head granularities (only evaluated on constrained testbed).
 

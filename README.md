@@ -993,17 +993,17 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
   cd <VLASelect directory>
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
   ```
-- **Option 2:** Commands for small working examples on all methods:
+- **Option 2:** Commands for small working examples on all methods (60 minutes, 20GB memory, and 30GB disk space):
   ```bash
   cd <VLASelect directory>
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
   ```
-- **Option 3:** Commands for full run:
+- **Option 3:** Commands for full run (40 hours, 60GB memory, and 30GB disk space):
   ```bash
   cd <VLASelect directory>
   bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
   ```
-- The three options' resource requirements and outputs are listed below:
+- The example resource requirements and outputs are listed below:
 
   <table align="center">
     <thead>
@@ -1021,58 +1021,40 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
         <td>Create file<br>api/results/vla_adapter/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
         <td><a href="./single%20results/results-2.2.11.md">Link</a></td>
       </tr>
-      <tr>
-        <td>Small working example on all methods</td>
-        <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-        <td>Create file<br>api/results/vla_adapter/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-        <td><a href="./single%20results/results-2.2.11.md">Link</a></td>
-      </tr>
-      <tr>
-        <td>Full run</td>
-        <td>40 hours<br>60GB memory<br>30GB disk space</td>
-        <td>Create file<br>api/results/vla_adapter/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-        <td>-</td>
-      </tr>
     </tbody>
   </table>
 
 
 #### 2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-  - **Option 1:** Commands for minimum working examples:
-    ```bash
-    MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
-    ```
-  - **Option 2:** Commands for full run:
-    ```bash
-    bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
-    ```
-  - The two options' resource requirements and outputs are listed below:
+- **Option 1:** Commands for minimum working examples:
+  ```bash
+  MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+  ```
+- **Option 2:** Commands for full run (15 hours, 60GB memory, and 30GB disk space):
+  ```bash
+  bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
+  ```
+- The example resource requirements and outputs are listed below:
 
-    <table align="center">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Resource Requirements</th>
-          <th>Side-Effects</th>
-          <th>Example Running Outputs</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Minimum working example</td>
-          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
-          <td><a href="./single%20results/results-2.2.12.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>15 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
-          <td>-</td>
-        </tr>
-      </tbody>
-    </table>
+  <table align="center">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Resource Requirements</th>
+        <th>Side-Effects</th>
+        <th>Example Running Outputs</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Minimum working example</td>
+        <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+        <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
+        <td><a href="./single%20results/results-2.2.12.md">Link</a></td>
+      </tr>
+    </tbody>
+  </table>
 
 #### 2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
@@ -1080,11 +1062,11 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
     ```bash
     MWE=1 bash forgetting/measure_forgetting.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (13 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash forgetting/measure_forgetting.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The example resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1102,12 +1084,6 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
           <td>Create files<br>eval/forgetting/results/<br>&lt;timestamp&gt;/<br>forgetting_summary.{json,csv}<br>and forgetting_accuracy.{png,pdf,svg}</td>
           <td><a href="./single%20results/results-2.2.13.md">Link</a></td>
         </tr>
-        <tr>
-          <td>Full run</td>
-          <td>13 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create files<br>eval/forgetting/results/<br>&lt;timestamp&gt;/<br>forgetting_summary.{json,csv}<br>and forgetting_accuracy.{png,pdf,svg}</td>
-          <td>-</td>
-        </tr>
       </tbody>
     </table>
 
@@ -1118,12 +1094,12 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
     cd api/model_type
     MWE=1 bash run.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (13 hours, 60GB memory, and 30GB disk space):
     ```bash
     cd api/model_type
     MWE=1 bash run.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The example resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1140,12 +1116,6 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create files<br>api/model_type/<br>CNN-ACC.png,<br>api/model_type/<br>MLP-ACC.png, and<br>api/model_type/<br>MLP-CNN-ACC-COMPARE.png</td>
           <td><a href="./single%20results/results-2.2.14.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>13 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create files<br>api/model_type/<br>CNN-ACC.png,<br>api/model_type/<br>MLP-ACC.png, and<br>api/model_type/<br>MLP-CNN-ACC-COMPARE.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>

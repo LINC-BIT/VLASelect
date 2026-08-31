@@ -1,9 +1,0 @@
-目前的小模型生成是**神经元粒度**的，即FBS模块输出的分数对应权重矩阵的每一行/列，生成小模型的时候也是按行和列为单位去提取权重。
-
-现在我希望能够把这部分逻辑提取出来，使VLASelect支持不同的生成粒度（如层粒度、attention head粒度）。总体的实现思路是：继承api/small_model_scaling_interface.py，新建api/knowledge_exchange_granularity_inerface.py，重载其部分函数，来侧重粒度的选择。（不能更改api/small_model_scaling_interface.py，只是继承他进行重载）（应该只需要重载小模型生成的部分就行）。然后，在api/knowledge_exchange_interface_examples中：
-- 层粒度：创建一个layer_grained.py，继承api/small_model_scaling_interface.py。改动只是，统计每个层的平均FBS分数，然后选出分数最高的部分层（比例根据max_sparsity决定）。分数高的部分层，保留全部的神经元，即整层都拷贝到小模型中；其它层则只保留2%的神经元到小模型中（近似这个层被整体移除了）。具体的代码实现，可以基本上去复用现有的实现，区别只是神经元的选择方式。小模型的生成逻辑应该是一样的。
-- 块粒度：创建一个block_grained.py，继承api/small_model_scaling_interface.py。改动只是，将数个连续的层作为一个块（该数量由类的初始化参数决定），统计每个块的平均FBS分数，然后选出分数最高的部分块（比例根据max_sparsity决定）。分数高的部分块，保留其中所有层的全部的神经元，即整层都拷贝到小模型中；其它块中的每个层则只保留2%的神经元到小模型中（近似这个块被整体移除了）。具体的代码实现，可以基本上去复用现有的实现，区别只是神经元的选择方式。小模型的生成逻辑应该是一样的。
-
-然后类似的，仿照api/small_model_scaling_interface_examples，两种粒度都补充一个对应的试运行脚本，也都支持MWE模式。
-
-除此之外，还可以有其它的辅助文件。原则就是，你不能改动除了api文件夹下的其它任何文件！如果需要改动，则将其复制到api文件夹中改动并引用。坚决不能改动api文件夹之外的任何文件！请保证api文件夹下的脚本和程序能够独立运行，不依赖其它文件夹。并且保证你的改动不影响现在的api/vla_model_interface_examples和api/small_model_scaling_interface_examples中脚本的运行。

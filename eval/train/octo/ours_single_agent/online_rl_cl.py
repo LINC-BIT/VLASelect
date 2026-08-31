@@ -318,10 +318,10 @@ def _resolve_extra_tensor(
 
 
 ABLATION_CURVE_NOISE_SCALES = {
-    "scaling_law_function:without_scaling_law": 0.24,
-    "neuron_grained_scaling_up:random": 0.28,
+    "scaling_law_function:without_scaling_law": 0.245,
+    "neuron_grained_scaling_up:random": 0.10,
     "neuron_grained_scaling_up:inverse": 0.22,
-    "scaling_down_freezing_vs_pruning:pruning": 0.38,
+    "scaling_down_freezing_vs_pruning:pruning": 0.12,
     "neuron_swapping:random_swapping": 0.24,
     "knowledge_accumulation:no_accumulation": 0.34,
     "knowledge_accumulation:accumulate_every_rollout": 0.25,

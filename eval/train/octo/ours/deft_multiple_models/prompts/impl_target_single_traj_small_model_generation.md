@@ -1,1 +1,0 @@
-实现train/toy_cnn/ours/deft_multiple_models/online_rl.py中args.small_model_generation_strategy == 'target-single-traj'的逻辑。此条件下，sample_for_gen_small_model中包括一批数据，这一批数据是return最高的一条轨迹所对应的模型输入。例如，如果该轨迹包括20步动作，那么sample_for_gen_small_model中rgb/depth/state的size(0)都应该为20，包括模型生成每一步动作时所对应的模型输入。

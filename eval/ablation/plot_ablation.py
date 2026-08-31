@@ -288,6 +288,11 @@ def default_manifest() -> dict[str, Any]:
     }
 
 
+def all_manifest_paths(table_root: Path = TABLE_ROOT) -> list[Path]:
+    manifest_paths = sorted(table_root.glob("*/manifest.json"))
+    return sorted(manifest_paths, key=lambda path: (path.stat().st_mtime, str(path)))
+
+
 def find_latest_manifest() -> Path | None:
     if LATEST_POINTER.exists():
         stamp = LATEST_POINTER.read_text(encoding="utf-8").strip()
@@ -295,7 +300,7 @@ def find_latest_manifest() -> Path | None:
             candidate = TABLE_ROOT / stamp / "manifest.json"
             if candidate.exists():
                 return candidate
-    manifest_paths = sorted(TABLE_ROOT.glob("*/manifest.json"))
+    manifest_paths = all_manifest_paths(TABLE_ROOT)
     if manifest_paths:
         return manifest_paths[-1]
     return None
@@ -474,7 +479,65 @@ def metric_defaults_for_manifest(manifest: dict[str, Any]) -> tuple[str, list[st
     return "tensorboard", list(DEFAULT_METRIC_KEYS)
 
 
-def normalize_panels(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+def resolve_manifest_table_root(manifest: dict[str, Any], manifest_path: Path | None) -> Path:
+    raw_root = manifest.get("table_root")
+    if isinstance(raw_root, str) and raw_root.strip():
+        try:
+            return resolve_path(raw_root.strip())
+        except Exception:
+            pass
+    if manifest_path is not None:
+        return manifest_path.parent.parent
+    return TABLE_ROOT
+
+
+def collect_latest_curve_overrides(
+    manifest: dict[str, Any],
+    manifest_path: Path | None,
+) -> tuple[dict[tuple[str, str], dict[str, Any]], dict[str, dict[str, Any]]]:
+    table_root = resolve_manifest_table_root(manifest, manifest_path)
+    curve_overrides: dict[tuple[str, str], dict[str, Any]] = {}
+    panel_overrides: dict[str, dict[str, Any]] = {}
+    for candidate_manifest in all_manifest_paths(table_root):
+        try:
+            payload = load_json(candidate_manifest)
+        except Exception:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        for raw_panel in payload.get("panels", []):
+            if not isinstance(raw_panel, dict):
+                continue
+            panel_id = str(raw_panel.get("panel_id") or "").strip()
+            if not panel_id:
+                continue
+            panel_copy = dict(raw_panel)
+            panel_copy["_source_manifest"] = str(candidate_manifest)
+            panel_overrides[panel_id] = panel_copy
+            for raw_curve in raw_panel.get("curves", []):
+                if not isinstance(raw_curve, dict):
+                    continue
+                curve_id = str(raw_curve.get("curve_id") or "").strip()
+                run_dir = str(raw_curve.get("run_dir") or "").strip()
+                if not curve_id or not run_dir:
+                    continue
+                try:
+                    run_dir_path = resolve_path(run_dir)
+                except Exception:
+                    continue
+                if not run_dir_path.exists():
+                    continue
+                curve_copy = dict(raw_curve)
+                curve_copy["_source_manifest"] = str(candidate_manifest)
+                curve_overrides[(panel_id, curve_id)] = curve_copy
+    return curve_overrides, panel_overrides
+
+
+def normalize_panels(
+    manifest: dict[str, Any],
+    curve_overrides: dict[tuple[str, str], dict[str, Any]] | None = None,
+    panel_overrides: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     manifest_panels = manifest.get("panels", [])
     panel_by_id = {
         str(panel.get("panel_id")): panel
@@ -485,6 +548,11 @@ def normalize_panels(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     normalized = []
     for panel_spec in PANEL_SPECS:
         panel = dict(panel_by_id.get(panel_spec["panel_id"], {}))
+        if panel_overrides and panel_spec["panel_id"] in panel_overrides:
+            latest_panel = dict(panel_overrides[panel_spec["panel_id"]])
+            for key, value in latest_panel.items():
+                if key not in {"panel_label", "panel_id", "title", "curves"}:
+                    panel[key] = value
         panel["panel_label"] = panel_spec["panel_label"]
         panel["panel_id"] = panel_spec["panel_id"]
         panel["title"] = panel_spec["title"]
@@ -497,6 +565,12 @@ def normalize_panels(manifest: dict[str, Any]) -> list[dict[str, Any]]:
         curves = []
         for curve_spec in panel_spec["curves"]:
             existing_curve = dict(curve_by_id.get(curve_spec["curve_id"], {}))
+            if curve_overrides:
+                latest_curve = curve_overrides.get((panel_spec["panel_id"], curve_spec["curve_id"]))
+                if latest_curve:
+                    for key, value in latest_curve.items():
+                        if key not in {"curve_id", "label", "color", "linestyle"}:
+                            existing_curve[key] = value
             merged_curve = dict(curve_spec)
             for key, value in existing_curve.items():
                 if key not in {"curve_id", "label", "color", "linestyle"}:
@@ -547,9 +621,10 @@ def write_summary(rows: list[dict[str, Any]], manifest: dict[str, Any], manifest
     )
 
 
-def build_ablation_rows(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+def build_ablation_rows(manifest: dict[str, Any], manifest_path: Path | None) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for panel in normalize_panels(manifest):
+    curve_overrides, panel_overrides = collect_latest_curve_overrides(manifest, manifest_path)
+    for panel in normalize_panels(manifest, curve_overrides=curve_overrides, panel_overrides=panel_overrides):
         for curve in panel["curves"]:
             series = collect_series(curve)
             last_value = series[-1][1] if series else 0.0
@@ -596,7 +671,7 @@ def build_vis_data(manifest: dict[str, Any], rows: list[dict[str, Any]]) -> dict
 
 
 def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
-    rows = build_ablation_rows(manifest)
+    rows = build_ablation_rows(manifest, manifest_path)
     data = build_vis_data(manifest, rows)
 
     original_w = 0.6

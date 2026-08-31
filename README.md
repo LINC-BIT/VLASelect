@@ -337,7 +337,7 @@ Docker Image: <br>
   ```
   
 
-#### 1.2.6 Install Dependencies for Plotting Scripts<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 1.2.6 Install Dependencies for Figure Plotting Scripts<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Run the command below to install dependencies for plotting scripts:
   ```bash
@@ -382,7 +382,7 @@ Docker Image: <br>
     </tr>
     <tr>
       <td><strong>Out-of-memory error during the reproduction</strong>: You see errors like <code>torch.OutOfMemoryError: CUDA out of memory</code> when running the reproduction script.</td>
-      <td>1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>2. Run the minimum working example.</td>
+      <td>Step 1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>Step 2. Run the minimum working example.</td>
     </tr>
     
     
@@ -396,9 +396,9 @@ For other unusual behaviors, we will provide remote tech support and send fixes 
 
 ### 2.1 One-click Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces resulting figures and tables.
+We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces all resulting figures and tables.
 
-- **(Recommended) Option 1: Minimum working example (completed within 1 day and 20GB memory)**
+- **(Recommended) Option 1: Minimum working examples (completed within 1 day and 20GB memory)**
   ```bash
   cd <VLASelect directory>
   bash start_docker.sh
@@ -419,7 +419,7 @@ The reproducing steps of each experiment are described in Section 2.2.
 
 ### 2.2 Step-by-Step Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-Run the following command at the beginning:
+First of all, run the following command:
 
 ```bash
 cd <VLASelect directory>
@@ -427,12 +427,12 @@ bash start_docker.sh
 cd <VLASelect directory in the container>/eval
 ```
 
-And you can run the following commands to reproduce each figure/table in our evaluation.
+Then, run the following commands to reproduce each figure/table in our evaluation.
 
 **Note:** In minimum working examples, we have limited the training time of each method to less than 5 minutes. However, the total runtime may remain several hours due to:
-  - Loading large model checkpoints (>1GB) for each method
-  - Initializing RL environments based on the physical simulation engine
-  - Evaluating each method's accuracy periodically
+  - Loading large model checkpoints (>1GB) for each method.
+  - Initializing RL environments based on the physical simulation engine.
+  - Evaluating/calculating each method's accuracy periodically.
 
 #### 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 

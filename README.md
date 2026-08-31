@@ -73,19 +73,13 @@ Docker Image: <br>
   - **Resource-constrained on-device training**: In existing agentic AI systems, the resource-intensive training of deployed
   VLA models has become a critical bottleneck. 
 
-- **Method**: 
+- **Method: large-small model collaborative learning**: 
 
-  - In this paper,
-  we present VLASelect, a framework that takes the dynamics
-  of agents’ interactive environment into account to enable
-  **large-small model collaborative learning**. 
-  - In online RL, VLASelect employs an agent’s small model to quickly explore the
-  environment, **selectively transfers** its positive knowledge to
-  the agent’s large model, and compensates its learning ability
+  - **Selective knowledge transfer**: In online RL, VLASelect employs an agent’s small model to quickly explore the
+  environment, and selectively transfers its positive knowledge to the agent’s large model, and compensates its learning ability
   by swapping in the large model’s most accuracy-related neurons. 
-  - In doing so, our approach combines the strengths of
-  large models’ high learning capacity and small models’ low
-  training costs via **neuron-grained knowledge exchange**. 
+  - **Neuron-grained knowledge exchange**: In doing so, our approach combines the strengths of large models’ high learning capacity and small models’ low
+  training costs via low-overhead network neuron exchange. 
 
     ![](Method.png)
 

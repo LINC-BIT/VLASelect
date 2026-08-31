@@ -84,11 +84,8 @@ Docker Image: <br>
     ![](Method.png)
 
 - **Evaluation**: 
-  - Our experiments compare 9 state-of-the-art VLA
-  learning techniques across 4 embodied AI agents.
-  - VLASelect
-  achieves as much as 40.12% increase in task success rate,
-  25.6% decrease in memory footprint and 11.55x reduction on
+  - **Basic setting**: Our experiments compare 9 state-of-the-art VLA learning techniques across 4 heterogeneous embodied AI agents.
+  - **Major results**: VLASelect achieves as much as 40.12% increase in task success rate, 25.6% decrease in memory footprint and 11.55x reduction on
   energy consumption.
 
 
@@ -96,7 +93,7 @@ Docker Image: <br>
 
 #### 1.2.1 Hardware Requirements<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1: Recommended hardware for fully running our artifacts**:
+- **Option 1: Recommended hardware for full running of our artifacts**:
 
   <table align="center">
     <thead>

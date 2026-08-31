@@ -336,7 +336,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 | Test Platform | Maximum Model Size |
 | :---: | :---: |
 | Full Run | 11.3 GB (Xavier), 24.0 GB (Orin) |
-| MWE Run | From 2.5 to 24 GB (V100 32G) |
+| Minimal Working Example | From 2.5 to 24 GB (V100 32G) |
 
 </div>
 

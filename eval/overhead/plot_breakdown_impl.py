@@ -12,6 +12,7 @@ from typing import Any
 import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Patch
 from matplotlib.ticker import MaxNLocator
 from tensorboard.backend.event_processing import event_accumulator
 
@@ -737,7 +738,7 @@ def _load_same_acc_vlaselect_times_seconds(top_manifest: dict[str, Any]) -> tupl
     times_by_family: dict[str, float] = {}
     sources: list[str] = []
     for family, panel in _family_panels(top_manifest).items():
-        suite_manifest = _load_suite_manifest(panel)
+        suite_manifest = _load_same_acc_suite_manifest(panel, family)
         if not isinstance(suite_manifest, dict):
             continue
         methods = [method for method in suite_manifest.get("methods", []) if isinstance(method, dict)]
@@ -762,7 +763,7 @@ def _load_same_acc_vlaselect_module_breakdowns(top_manifest: dict[str, Any]) -> 
     module_rows: dict[str, dict[str, Any]] = {}
     sources: list[str] = []
     for family, panel in _family_panels(top_manifest).items():
-        suite_manifest = _load_suite_manifest(panel)
+        suite_manifest = _load_same_acc_suite_manifest(panel, family)
         if not isinstance(suite_manifest, dict):
             continue
         methods = [method for method in suite_manifest.get("methods", []) if isinstance(method, dict)]
@@ -820,6 +821,28 @@ def _entry_same_acc_summary_path(
         if candidate is not None:
             return candidate
     return None
+
+
+def _latest_same_acc_entry_by_family() -> dict[str, dict[str, Any]]:
+    latest: dict[str, tuple[tuple[int, float, str], dict[str, Any]]] = {}
+    for manifest_path, payload, entry in _iter_manifest_panel_entries(SAME_ACC_TABLE_ROOT):
+        family = str(entry.get('family') or '').strip()
+        if family not in FAMILY_ORDER:
+            continue
+        summary_path = _entry_same_acc_summary_path(manifest_path, payload, entry)
+        same_acc_panel = dict(entry)
+        same_acc_panel['_top_manifest'] = _display_path(manifest_path)
+        if summary_path is not None:
+            same_acc_panel['_same_acc_summary_path'] = _display_path(summary_path)
+        same_acc_panel['_same_acc_manifest_path'] = _display_path(manifest_path)
+        suite_manifest_ref = str(same_acc_panel.get('suite_manifest', '')).strip()
+        if not suite_manifest_ref and summary_path is None:
+            continue
+        score = _manifest_sort_key(manifest_path)
+        current = latest.get(family)
+        if current is None or score > current[0]:
+            latest[family] = (score, same_acc_panel)
+    return {family: item[1] for family, item in latest.items()}
 
 
 def _default_top_manifest() -> dict[str, Any]:
@@ -882,6 +905,7 @@ def _merged_top_manifest_from_table_root(table_root: Path) -> dict[str, Any]:
         }
         best_existing: tuple[float, dict[str, Any]] | None = None
         best_missing: tuple[float, dict[str, Any]] | None = None
+        latest_same_acc_by_family = _latest_same_acc_entry_by_family()
         for manifest_path, payload, entry in _iter_manifest_panel_entries(table_root):
             if entry.get('family') != family:
                 continue
@@ -904,6 +928,12 @@ def _merged_top_manifest_from_table_root(table_root: Path) -> dict[str, Any]:
                 if best_missing is None or score >= best_missing[0]:
                     best_missing = (score, candidate)
         chosen = best_existing[1] if best_existing is not None else (best_missing[1] if best_missing is not None else panel_defaults)
+        latest_same_acc = latest_same_acc_by_family.get(family)
+        if latest_same_acc is not None:
+            if latest_same_acc.get('_same_acc_summary_path'):
+                chosen['_same_acc_summary_path'] = latest_same_acc['_same_acc_summary_path']
+            if latest_same_acc.get('_same_acc_manifest_path'):
+                chosen['_same_acc_manifest_path'] = latest_same_acc['_same_acc_manifest_path']
         found_any = found_any or best_existing is not None or best_missing is not None
         resolved_panels.append(chosen)
     if found_any:
@@ -1015,6 +1045,21 @@ def _load_suite_manifest(panel: dict[str, Any]) -> dict[str, Any] | None:
         return None
     payload = _read_json(_resolve_eval_path(str(manifest_ref)))
     return payload if isinstance(payload, dict) else None
+
+
+def _load_same_acc_suite_manifest(panel: dict[str, Any], family: str) -> dict[str, Any] | None:
+    manifest_ref = str(panel.get('_same_acc_manifest_path', '') or panel.get('same_acc_manifest', '') or '').strip()
+    if manifest_ref:
+        payload = _read_json(_resolve_eval_path(manifest_ref))
+        if isinstance(payload, dict):
+            same_acc_panel = _family_panels(payload).get(family)
+            if isinstance(same_acc_panel, dict):
+                suite_manifest_ref = str(same_acc_panel.get('suite_manifest', '') or '').strip()
+                if suite_manifest_ref:
+                    suite_payload = _read_json(_resolve_eval_path(suite_manifest_ref))
+                    if isinstance(suite_payload, dict):
+                        return suite_payload
+    return _load_suite_manifest(panel)
 
 
 def _expected_method_entries(family: str) -> list[dict[str, Any]]:
@@ -1285,80 +1330,128 @@ def plot_all_methods(rows: list[dict[str, Any]]) -> None:
 
 def plot_modules(rows: list[dict[str, Any]]) -> None:
     grouped = {row["family"]: row for row in rows}
-    workloads = [f"Workload {idx + 1}:{WORKLOAD_NAMES[family]}" for idx, family in enumerate(FAMILY_ORDER)]
-    y_positions = np.arange(len(workloads))
+    family_order = tuple(FAMILY_ORDER)
+    workload_labels = [f"Workload {idx + 1}: {WORKLOAD_NAMES[family]}" for idx, family in enumerate(family_order)]
+    metric_names = (
+        "optimal_network_searcher_seconds",
+        "selective_model_enhancer_seconds",
+        "selective_knowledge_accumulation_seconds",
+    )
+    legend_labels = (
+        "Module 1: Optimal network searcher",
+        "Module 2: Selective model enhancer",
+        "Module 3: Selective knowledge accumulator",
+    )
+    colors = ("#4a4a4a", "#bdbdbd", "#ffffff")
+    y_positions = np.arange(len(family_order))
 
     plt.rcParams.update(
         {
             "font.family": "sans-serif",
             "font.sans-serif": available_sans_serif_fonts(),
-            "font.size": 16,
-            "axes.labelsize": 16,
-            "xtick.labelsize": 16,
-            "ytick.labelsize": 16,
             "svg.fonttype": "none",
         }
     )
 
-    values = np.array(
+    values = np.asarray(
         [
-            [_safe_float(grouped.get(family, {}).get(key, 0.0)) for key, _, _, _ in MODULE_FIGURE_SPECS]
-            for family in FAMILY_ORDER
+            [
+                _safe_float(grouped.get(family, {}).get(metric_name, 0.0))
+                for metric_name in metric_names
+            ]
+            for family in family_order
         ],
-        dtype=float,
+        dtype=np.float64,
     )
 
-    fig_height = max(3.35, 0.42 * len(workloads) + 1.2)
-    fig, ax = plt.subplots(figsize=(8.4, fig_height), constrained_layout=False)
-
-    left = np.zeros(len(FAMILY_ORDER), dtype=float)
-    for module_index, (_, label, color, hatch) in enumerate(MODULE_FIGURE_SPECS):
-        ax.barh(
+    figure, axis = plt.subplots(figsize=(13, 5.4))
+    left = np.zeros(len(family_order), dtype=np.float64)
+    for index, (metric_name, color) in enumerate(zip(metric_names, colors)):
+        column = values[:, index]
+        axis.barh(
             y_positions,
-            values[:, module_index],
+            column,
             left=left,
-            height=0.5,
-            label=label,
-            zorder=10,
-            edgecolor='black',
             color=color,
-            hatch=hatch,
-            lw=1,
+            edgecolor="#222222",
+            linewidth=0.8,
+            hatch="/" if index == 2 else None,
+            height=0.62,
         )
-        left += values[:, module_index]
+        left += column
 
-    ax.set_yticks(y_positions)
-    ax.set_yticklabels(workloads, fontsize=18)
-    ax.invert_yaxis()
-    ax.set_xlabel("Time (s)")
-    ax.grid(zorder=-10, axis='x', alpha=0.5)
-    ax.set_axisbelow(True)
-    for spine in ax.spines.values():
-        spine.set_visible(True)
-        spine.set_color('black')
-        spine.set_linewidth(1.0)
-    ax.tick_params(axis='y', length=0)
+    axis.set_yticks(y_positions)
+    axis.set_yticklabels(workload_labels, fontsize=13)
+    axis.invert_yaxis()
+    axis.set_xlabel("Time (s)", fontsize=15)
+    axis.tick_params(axis="x", labelsize=13)
+    axis.tick_params(axis="y", length=0)
+    axis.grid(axis="x", linestyle="--", linewidth=0.6, alpha=0.45)
+    axis.set_axisbelow(True)
+    axis.spines["top"].set_visible(False)
+    axis.spines["right"].set_visible(False)
+    axis.spines["left"].set_visible(False)
+    axis.legend(
+        handles=[
+            Patch(facecolor=color, edgecolor="#222222", hatch="/" if index == 2 else None, label=label)
+            for index, (color, label) in enumerate(zip(colors, legend_labels))
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.14),
+        ncol=3,
+        frameon=False,
+        fontsize=12,
+    )
 
-    if float(np.max(values)) <= 0.0:
-        ax.set_xlim(0.0, 1.0)
-        for idx, family in enumerate(FAMILY_ORDER):
-            row = grouped.get(family)
-            if not row or int(row.get("has_module_data", 0)) != 1:
-                ax.text(0.02, idx, NO_DATA_TEXT, ha='left', va='center', fontsize=9)
-    else:
-        totals = np.sum(values, axis=1)
-        upper = _dynamic_time_axis_upper(totals, margin_ratio=0.12, default_upper=1.0)
-        ax.set_xlim(0.0, upper)
-        for idx, family in enumerate(FAMILY_ORDER):
-            row = grouped.get(family)
-            if not row or int(row.get("has_module_data", 0)) != 1:
-                ax.text(0.02 * upper, idx, NO_DATA_TEXT, ha='left', va='center', fontsize=9)
+    module_values = [tuple(float(grouped.get(family, {}).get(metric_name, 0.0)) for metric_name in metric_names) for family in family_order]
+    runtime_values = [float(_safe_float(grouped.get(family, {}).get("same_acc_runtime_seconds", 0.0))) for family in family_order]
+    bar_totals = left.copy()
+    max_total = max(float(np.max(bar_totals)) if bar_totals.size else 0.0, 1e-6)
+    annotation_offset = max(max_total * 0.018, 0.02)
 
-    fig.tight_layout()
-    fig.savefig(FIG_MODULES, dpi=300, bbox_inches='tight')
-    fig.savefig(FIG_MODULES_SVG, dpi=300, bbox_inches='tight')
-    fig.savefig(FIG_MODULES_PNG, dpi=300, bbox_inches='tight')
-    plt.close(fig)
+    for idx, (family, y, total, modules, runtime_seconds) in enumerate(zip(family_order, y_positions, bar_totals, module_values, runtime_values)):
+        row = grouped.get(family, {})
+        has_module_data = int(row.get("has_module_data", 0) or 0) == 1
+        x = total + annotation_offset
+        if has_module_data and sum(modules) > 0.0:
+            axis.text(
+                x,
+                y - 0.15,
+                f"Module 1/2/3: {modules[0]:.3f} / {modules[1]:.3f} / {modules[2]:.3f} s",
+                va="center",
+                ha="left",
+                fontsize=14,
+                clip_on=False,
+            )
+        else:
+            axis.text(
+                max_total * 0.02,
+                y,
+                NO_DATA_TEXT,
+                va="center",
+                ha="left",
+                fontsize=14,
+                clip_on=False,
+            )
+            continue
+        if runtime_seconds > 0.0:
+            axis.text(
+                x,
+                y + 0.15,
+                f"One training iteration: {runtime_seconds:.2f} s",
+                va="center",
+                ha="left",
+                fontsize=14,
+                clip_on=False,
+            )
+
+    max_annotation = max((total + annotation_offset for total in bar_totals), default=max_total)
+    axis.set_xlim(0.0, max(max_total * 1.60, max_annotation * 1.35))
+    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.90))
+    figure.savefig(FIG_MODULES, dpi=300, bbox_inches='tight')
+    figure.savefig(FIG_MODULES_SVG, dpi=300, bbox_inches='tight')
+    figure.savefig(FIG_MODULES_PNG, dpi=300, bbox_inches='tight')
+    plt.close(figure)
     try:
         fill_ours_overhead_template(FIG_MODULES, FIG_MODULES_PNG)
     except Exception as exc:

@@ -34,7 +34,7 @@ from PIL import Image
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import AutoProcessor
 
-from train.common.env_contract_cache import (
+from eval.train.common.env_contract_cache import (
     build_env_contract_cache_key,
     load_env_contract_from_cache,
     save_env_contract_to_cache,

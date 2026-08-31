@@ -628,7 +628,7 @@ launch_curve() {
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-batch --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_grained_scaling_up:random)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_ab_strategy random --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.6 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_ab_strategy random --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_grained_scaling_up:inverse)
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_ab_strategy inverse --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
@@ -637,7 +637,7 @@ launch_curve() {
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:pruning)
-            cmd+=(--max-sparsity 0.99 --small_model_training_variant pruned --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_training_variant pruned --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:freezing)
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)

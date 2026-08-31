@@ -1,0 +1,10 @@
+,Average energy consumption (kJ) in each new task (first row),and environment change (second row).,,
+Method,Single-arm robot,Dexterous hand,Mobile manipulator,Humanoid robot
+Self-Improvement,11.80,77.33,51.31,60.69
+,0,0,0,0
+VLA-RFT,10.68,88.29,53.90,63.56
+,0,0,0,0
+World-Env,9.98,87.17,51.44,63.89
+,0,0,0,0
+VLASelect,0.49,13.49,17.26,1.30
+,0,0,0,0

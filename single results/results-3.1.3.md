@@ -6,7 +6,8 @@
 
 > **Key observation:** VLASelect with VLA-Adapter supports multiple knowledge exchange granularities, with channel/neuron outperforming coarser block, layer, and attention head levels.
 
-<img src="../imgs/3.1.3.png" alt="Knowledge exchange granularities" style="zoom:33%;" />
+| | Results |
+| :---: | :---: |
+| **Minimum working example** | <img src="../imgs/3.1.3.png" alt="Knowledge exchange granularities" style="zoom:33%;" /> |
 
 <br><br>
-

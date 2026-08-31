@@ -4,7 +4,7 @@
 
 ### Minimal working example
 
-> **Key observation:** RICL fails entirely because the brief runtime is insufficient for its policy to update, whereas VLASelect rapidly adapts and **maintains an average accuracy of 37.2%**.
+> **Key observation:** VLASelect achieves higher accuracy than RICL.
 
 <img src="../imgs/2.5.2.png" alt="alt text" style="zoom:33%;" />
 

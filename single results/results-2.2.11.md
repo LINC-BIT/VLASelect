@@ -4,10 +4,27 @@
 
 ### Minimal working example
 
-| Metric | Value |
-| :---: | :---: |
-| Compared knowledge distillation techniques | Logit distillation; Feature distillation; Attention distillation; Data distillation; MiniLLM; DistiLLM |
-| Compared dynamic pruning techniques | SPDP; ADP; PowerInfer; LLM in a Flash |
-| VLASelect's accuracy improvement than alternative knowledge exchange techniques | **17.19%** |
+> **Key observation:** VLASelect achieves higher accuracy than knowledge distillation and dynamic pruning techniques.
+
+<table align="center">
+  <tbody>
+    <tr>
+      <td align="center">Compared knowledge distillation techniques</td>
+      <td align="center">Logit distillation; Feature distillation; Attention distillation; Data distillation; MiniLLM; DistiLLM</td>
+    </tr>
+    <tr>
+      <td align="center">Compared dynamic pruning techniques</td>
+      <td align="center">SPDP; ADP; PowerInfer; LLM in a Flash</td>
+    </tr>
+    <tr>
+      <td align="center">VLASelect's accuracy improvement than these techniques</td>
+      <td align="center"><strong>57.19%</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<div align="center">
+  <img src="../imgs/3.1.2-mwe.png" alt="Scaling strategies on all methods" style="zoom:33%;" />
+</div>
 
 <br><br>

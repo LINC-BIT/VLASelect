@@ -6,6 +6,8 @@
 
 > **Key observation:** On EdgeVLA, channel/neuron-level knowledge exchange again yields the best results, surpassing coarser block, layer, and attention head granularities (only evaluated on constrained testbed).
 
-<img src="../imgs/3.3.3.png" alt="Swapping Granularity Ablation" style="zoom:33%;" />
+| | Results |
+| :---: | :---: |
+| **Minimum working example** | <img src="../imgs/3.3.3.png" alt="Swapping Granularity Ablation" style="zoom:33%;" /> |
 
 <br><br>

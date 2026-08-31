@@ -4,10 +4,27 @@
 
 ### Minimal working example
 
-| Metric | Value |
-| :---: | :---: |
-| Evaluated knowledge exchange granularities | Block; Layer; Attention head; Channel/neuron |
-| Best-performing granularity | Channel/neuron |
-| Neuron/channel granularity's accuracy improvement than coarser granularties | **23.13%** |
+> **Key observation:** VLASelect at channel/neuron granularity achieves higher accuracy than other coarser granularities.
+
+<table align="center">
+  <tbody>
+    <tr>
+      <td align="center">Evaluated knowledge exchange granularities</td>
+      <td align="center">Block; Layer; Attention head; Channel/neuron</td>
+    </tr>
+    <tr>
+      <td align="center">Best-performing granularity</td>
+      <td align="center">Channel/neuron</td>
+    </tr>
+    <tr>
+      <td align="center">Neuron/channel granularity's accuracy improvement than coarser granularties</td>
+      <td align="center"><strong>23.13%</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<div align="center">
+  <img src="../imgs/3.1.3.png" alt="Knowledge exchange granularities" style="zoom:33%;" />
+</div>
 
 <br><br>

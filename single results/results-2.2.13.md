@@ -4,9 +4,23 @@
 
 ### Minimal working example
 
-| Metric | Value |
-| :---: | :---: |
-| Baseline techniques | VLA-RFT + EWC; World-Env + EWC; Self-Improvement + EWC |
-| VLASelect's accuracy improvement than baseline techniques | **33.18%** |
+> **Key observation:** VLASelect achieves higher accuracy on all learned environments/tasks than existing online RL and forgetting mitigation methods.
+
+<table align="center">
+  <tbody>
+    <tr>
+      <td align="center">Baseline techniques</td>
+      <td align="center">VLA-RFT + EWC<br>World-Env + EWC<br>Self-Improvement + EWC</td>
+    </tr>
+    <tr>
+      <td align="center">VLASelect's accuracy improvement than baseline techniques</td>
+      <td align="center"><strong>33.18%</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<div align="center">
+  <img src="../imgs/2.2.13.png" alt="" style="zoom:33%;" />
+</div>
 
 <br><br>

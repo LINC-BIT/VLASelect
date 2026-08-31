@@ -2,12 +2,7 @@
 
 ## 2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-- Commands for full run:
-  ```bash
-  cd discussion
-  bash run_sim_to_real.sh
-  ```
-- The resource requirements and outputs are listed below:
+> **Key observation:** VLASelect achieves **similar accuracy** in the simulation environment and real robot.
 
   <table align="center">
     <thead>

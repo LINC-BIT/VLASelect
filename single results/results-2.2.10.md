@@ -4,7 +4,7 @@
 
 ### Minimal working example
 
-> **Key observation:** MAPPO completely fails due to the short runtime being insufficient for policy updates, whereas **VLASelect reaches up to 60.0% accuracy**.
+> **Key observation:** VLASelect achieves 33.17% higher accuracy than MAPPO.
 
 <img src="../imgs/2.2.4.5.png" alt="alt text" style="zoom:33%;" />
 

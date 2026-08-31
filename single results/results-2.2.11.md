@@ -14,7 +14,7 @@
     </tr>
     <tr>
       <td align="center">Compared dynamic pruning techniques</td>
-      <td align="center">SPDP; ADP; PowerInfer; LLM in a Flash</td>
+      <td align="center">LLM in a Flash; PowerInfer; LLM Pruner; EdgeTA</td>
     </tr>
     <tr>
       <td align="center">VLASelect's accuracy improvement than these techniques</td>

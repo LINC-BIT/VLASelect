@@ -9,7 +9,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
 [An Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
-[An Evaluation Report on the Academic Cloud (CloudLab)]()<br>
+[An Evaluation Report on the Academic Cloud (CloudLab)](./Artifact%20Evaluation%20Report%20for%20VLASelect%20(CloudLab).md)<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>

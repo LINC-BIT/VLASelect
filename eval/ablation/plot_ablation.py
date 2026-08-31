@@ -191,7 +191,7 @@ BLACK = (60.0 / 255.0, 60.0 / 255.0, 60.0 / 255.0)
 RED = (181.0 / 255.0, 23.0 / 255.0, 0.0 / 255.0)
 
 
-def set_figure_settings(fig_wh_ratio=6.4 / 4.8, std_h=4.8, font_size=24, font_family='Arial'):
+def set_figure_settings(fig_wh_ratio=6.4 / 4.8, std_h=4.8, font_size=24, font_family='sans-serif'):
     fig = plt.figure(figsize=(std_h * fig_wh_ratio, std_h))
     if font_family is not None:
         plt.rc('font', family=font_family)
@@ -677,7 +677,7 @@ def plot_panels(manifest: dict[str, Any], manifest_path: Path | None) -> None:
     original_w = 0.6
     w = original_w * 2 / 3
     set_figure_settings(
-        font_family='Arial',
+        font_family='sans-serif',
         fig_wh_ratio=w,
         std_h=6.4 / original_w,
         font_size=24,

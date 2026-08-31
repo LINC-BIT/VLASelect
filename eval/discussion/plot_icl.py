@@ -8,6 +8,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+
+def mean(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -76,28 +80,71 @@ def collect_series(run_dir: Path, metric: str) -> list[tuple[float, float]]:
     return series
 
 
+def build_gain_summary(
+    metric: str,
+    smoothing: float,
+    vlaselect_series: list[tuple[float, float]],
+    ricl_series: list[tuple[float, float]],
+) -> dict[str, Any]:
+    vlaselect_raw = [value for _, value in vlaselect_series]
+    ricl_raw = [value for _, value in ricl_series]
+    vlaselect_smoothed = smooth_values(vlaselect_raw, smoothing)
+    ricl_smoothed = smooth_values(ricl_raw, smoothing)
+
+    def pack_pair(name: str, lhs: list[float], rhs: list[float]) -> dict[str, Any]:
+        lhs_final = lhs[-1]
+        rhs_final = rhs[-1]
+        lhs_mean = mean(lhs)
+        rhs_mean = mean(rhs)
+        final_gain = lhs_final - rhs_final
+        mean_gain = lhs_mean - rhs_mean
+        final_relative = (final_gain / rhs_final * 100.0) if rhs_final != 0.0 else None
+        mean_relative = (mean_gain / rhs_mean * 100.0) if rhs_mean != 0.0 else None
+        return {
+            'name': name,
+            'vlaselect_final_accuracy': lhs_final,
+            'ricl_final_accuracy': rhs_final,
+            'final_absolute_gain_points': final_gain,
+            'final_relative_gain_percent': final_relative,
+            'vlaselect_mean_accuracy': lhs_mean,
+            'ricl_mean_accuracy': rhs_mean,
+            'mean_absolute_gain_points': mean_gain,
+            'mean_relative_gain_percent': mean_relative,
+            'compared_points': min(len(lhs), len(rhs)),
+        }
+
+    return {
+        'metric': metric,
+        'smoothing': smoothing,
+        'raw': pack_pair('raw', vlaselect_raw, ricl_raw),
+        'smoothed': pack_pair('smoothed', vlaselect_smoothed, ricl_smoothed),
+    }
+
+
 def draw_plot(
     vlaselect_dir: Path,
     ricl_dir: Path,
     output_path: Path,
     metric: str,
     smoothing: float = 0.8,
-) -> None:
+    summary_output: Path | None = None,
+) -> dict[str, Any]:
     curves = [
         ("VLASelect", vlaselect_dir, "#2563eb"),
         ("RICL", ricl_dir, "#ea580c"),
     ]
 
     fig, ax = plt.subplots(figsize=(8.5, 5.5))
-    plotted = 0
     missing: list[str] = []
     all_x: list[float] = []
     all_y: list[float] = []
+    plotted_series: dict[str, list[tuple[float, float]]] = {}
     for label, run_dir, color in curves:
         series = collect_series(run_dir, metric)
         if not series:
             missing.append(label)
             continue
+        plotted_series[label] = series
         xs, ys = zip(*series)
         smoothed_ys = smooth_values(list(ys), smoothing)
         ax.plot(
@@ -111,7 +158,6 @@ def draw_plot(
         )
         all_x.extend(xs)
         all_y.extend(smoothed_ys)
-        plotted += 1
 
     if missing:
         raise ValueError(f"no {metric} data found for: {', '.join(missing)}")
@@ -130,12 +176,19 @@ def draw_plot(
     fig.savefig(output_path, dpi=200)
     plt.close(fig)
 
+    summary = build_gain_summary(metric, smoothing, plotted_series['VLASelect'], plotted_series['RICL'])
+    if summary_output is not None:
+        summary_output.parent.mkdir(parents=True, exist_ok=True)
+        summary_output.write_text(json.dumps(summary, indent=2), encoding='utf-8')
+    return summary
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--vlaselect-run-dir", type=Path, required=True)
     parser.add_argument("--ricl-run-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--summary-output", type=Path, default=None)
     parser.add_argument("--metric", choices=tuple(METRIC_KEYS), default="success_once")
     parser.add_argument("--smoothing", type=float, default=0.8)
     args = parser.parse_args()
@@ -143,16 +196,34 @@ def main() -> int:
         parser.error("--smoothing must be in [0, 1]")
 
     try:
-        draw_plot(
+        summary = draw_plot(
             args.vlaselect_run_dir,
             args.ricl_run_dir,
             args.output,
             args.metric,
             args.smoothing,
+            args.summary_output,
         )
     except (FileNotFoundError, json.JSONDecodeError, ValueError) as exc:
         parser.exit(1, f"[ICL] error: {exc}\n")
     print(f"[ICL] Plot saved to {args.output}")
+    if args.summary_output is not None:
+        print(f"[ICL] Summary saved to {args.summary_output}")
+    raw = summary['raw']
+    print(
+        "[ICL] Final accuracy: "
+        f"VLASelect={raw['vlaselect_final_accuracy']:.2f}% "
+        f"RICL={raw['ricl_final_accuracy']:.2f}% "
+        f"gain={raw['final_absolute_gain_points']:.2f} points "
+        f"relative={raw['final_relative_gain_percent'] if raw['final_relative_gain_percent'] is not None else 'NA'}"
+    )
+    print(
+        "[ICL] Mean accuracy: "
+        f"VLASelect={raw['vlaselect_mean_accuracy']:.2f}% "
+        f"RICL={raw['ricl_mean_accuracy']:.2f}% "
+        f"gain={raw['mean_absolute_gain_points']:.2f} points "
+        f"relative={raw['mean_relative_gain_percent'] if raw['mean_relative_gain_percent'] is not None else 'NA'}"
+    )
     return 0
 
 

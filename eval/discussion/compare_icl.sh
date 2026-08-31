@@ -143,6 +143,7 @@ run_ricl
 VLASELECT_RUN_DIR="${EVAL_ROOT}/ckpt/${VLASELECT_EXP_NAME}/[agent]"
 RICL_RUN_DIR="${EVAL_ROOT}/ckpt/${RICL_EXP_NAME}/[agent]"
 PLOT_PATH="${EVAL_ROOT}/ckpt/discussion/icl/${STAMP}/icl_accuracy.png"
+SUMMARY_PATH="${EVAL_ROOT}/ckpt/discussion/icl/${STAMP}/icl_summary.json"
 
 require_metrics_history() {
     local method_name="$1"
@@ -168,6 +169,8 @@ python "${SCRIPT_DIR}/plot_icl.py" \
     --vlaselect-run-dir "$VLASELECT_RUN_DIR" \
     --ricl-run-dir "$RICL_RUN_DIR" \
     --output "$PLOT_PATH" \
+    --summary-output "$SUMMARY_PATH" \
     --metric "$ICL_PLOT_METRIC" \
     --smoothing "$ICL_PLOT_SMOOTHING"
 echo "[ICL] Comparison plot: ${PLOT_PATH}"
+echo "[ICL] Comparison summary: ${SUMMARY_PATH}"

@@ -158,10 +158,10 @@ install_system_packages() {
 
     if command -v sudo >/dev/null 2>&1; then
         sudo apt-get update
-        sudo apt-get install -y git libvulkan1
+        sudo apt-get install -y git libvulkan1 fontconfig fonts-dejavu-core fonts-liberation
     else
         apt-get update
-        apt-get install -y git libvulkan1
+        apt-get install -y git libvulkan1 fontconfig fonts-dejavu-core fonts-liberation
     fi
 }
 

@@ -23,7 +23,7 @@ from common.figure_compose import compose_grid_figure, render_legend_image
 from common.template_pdf_fill import fill_memory_template
 from plot_breakdown_impl import load_top_manifest_from_table_root
 TABLE_ROOT = SCRIPT_DIR / 'overhead_same_acc_table'
-BREAKDOWN_ROOT = SCRIPT_DIR / 'overhead_breakdown_table'
+BREAKDOWN_ROOT = SCRIPT_DIR
 LATEST_POINTER = TABLE_ROOT / 'latest.txt'
 FIGURE_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.pdf'
 FIGURE_SVG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.svg'
@@ -44,7 +44,7 @@ def configure_output_paths(output_root: Path | None) -> None:
     global BREAKDOWN_ROOT, FIGURE_PATH, FIGURE_SVG_PATH, FIGURE_PNG_PATH
     global TABLE2_CSV_PATH, TABLE3_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR
     output_root = output_root.resolve()
-    BREAKDOWN_ROOT = output_root / 'overhead_breakdown_table'
+    BREAKDOWN_ROOT = output_root
     FIGURE_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.pdf'
     FIGURE_SVG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.svg'
     FIGURE_PNG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.png'
@@ -132,8 +132,8 @@ def load_default_manifest() -> dict[str, Any]:
     manifest, manifest_path = load_top_manifest_from_table_root(TABLE_ROOT, None)
     manifest = dict(manifest) if isinstance(manifest, dict) else default_manifest()
     manifest.setdefault('figure_output', 'overhead/FIG_MEMORY_FOOTPOINT.pdf')
-    manifest.setdefault('table2_output', 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv')
-    manifest.setdefault('table3_output', 'overhead/overhead_breakdown_table/TAB_ENERGY.csv')
+    manifest.setdefault('table2_output', 'overhead/TAB_OVERHEAD.csv')
+    manifest.setdefault('table3_output', 'overhead/TAB_ENERGY.csv')
     manifest['_resolved_manifest_label'] = str(manifest_path) if manifest_path is not None else str(manifest.get('suite_stamp', 'merged-latest'))
     return manifest
 def default_manifest() -> dict[str, Any]:
@@ -141,8 +141,8 @@ def default_manifest() -> dict[str, Any]:
         'suite_stamp': 'no-data',
         'table_root': 'overhead/overhead_same_acc_table',
         'figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf',
-        'table2_output': 'overhead/overhead_breakdown_table/TAB_OVERHEAD.csv',
-        'table3_output': 'overhead/overhead_breakdown_table/TAB_ENERGY.csv',
+        'table2_output': 'overhead/TAB_OVERHEAD.csv',
+        'table3_output': 'overhead/TAB_ENERGY.csv',
         'panels': [dict(panel) for panel in PAPER_PANELS],
         'families': [dict(panel) for panel in PAPER_PANELS],
     }
@@ -1334,7 +1334,8 @@ def build_table3_rows(panel_entries, table3_energy_by_family, method_order):
     return rows
 
 def write_table_csvs(table2_rows, table3_rows):
-    BREAKDOWN_ROOT.mkdir(parents=True, exist_ok=True)
+    TABLE2_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    TABLE3_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
     with TABLE2_CSV_PATH.open('w', encoding='utf-8', newline='') as handle:
         csv.writer(handle).writerows(table2_rows)
     with TABLE3_CSV_PATH.open('w', encoding='utf-8', newline='') as handle:
@@ -1533,7 +1534,6 @@ def draw_figure(top_manifest, smoothing=0.2):
     table3_method_order = resolve_table3_method_order_from_summary_rows(summary_rows)
     table3_rows = build_table3_rows(panels, table3_energy_by_family, table3_method_order)
     write_table_csvs(table2_rows, table3_rows)
-    BREAKDOWN_ROOT.mkdir(parents=True, exist_ok=True)
     legend_path = None
     shared_legend_entries = build_shared_legend_entries(legend_entry_groups)
     legend_ncol = min(5, max(1, len(shared_legend_entries))) if shared_legend_entries else 1

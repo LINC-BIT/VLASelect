@@ -40,10 +40,21 @@ def smooth_values(values: list[float], smoothing: float) -> list[float]:
     return smoothed
 
 
+def resolve_history_path(run_dir: Path) -> Path:
+    direct = run_dir / "metrics_history.json"
+    if direct.is_file():
+        return direct
+    nested_agent = run_dir / "[agent]" / "metrics_history.json"
+    if nested_agent.is_file():
+        return nested_agent
+    nested_candidates = sorted(run_dir.glob("**/metrics_history.json"))
+    if nested_candidates:
+        return nested_candidates[0]
+    raise FileNotFoundError(f"missing metrics history: {direct}")
+
+
 def load_history(run_dir: Path) -> list[dict[str, Any]]:
-    history_path = run_dir / "metrics_history.json"
-    if not history_path.is_file():
-        raise FileNotFoundError(f"missing metrics history: {history_path}")
+    history_path = resolve_history_path(run_dir)
 
     payload = json.loads(history_path.read_text(encoding="utf-8"))
     history = payload.get("history") if isinstance(payload, dict) else payload

@@ -25,6 +25,14 @@ def format_metric(value: Optional[float]) -> str:
     return '-' if value is None else f'{value:.4f}'
 
 
+def metric_from_row(row: Dict[str, Any], *keys: str) -> Optional[float]:
+    for key in keys:
+        value = maybe_float(row.get(key))
+        if value is not None:
+            return value
+    return None
+
+
 def summarize_run(entry: Dict[str, Any]) -> Dict[str, Any]:
     run_dir = Path(entry['run_dir'])
     result_json = entry.get('result_json', '')
@@ -32,17 +40,17 @@ def summarize_run(entry: Dict[str, Any]) -> Dict[str, Any]:
     metrics = load_json(result_path) if result_path and result_path.is_file() else load_json(run_dir / 'metrics.json')
 
     if isinstance(metrics, list):
-        rows = metrics
+        rows = [row for row in metrics if isinstance(row, dict)]
         latest = rows[-1] if rows else {}
-        best = max(rows, key=lambda row: maybe_float(row.get('score')) or float('-inf')) if rows else {}
-        latest_success_once = maybe_float(latest.get('eval_success_once'))
-        latest_success_at_end = maybe_float(latest.get('eval_success_at_end'))
-        best_success_once = maybe_float(best.get('eval_success_once'))
-        best_success_at_end = maybe_float(best.get('eval_success_at_end'))
+        best = max(rows, key=lambda row: metric_from_row(row, 'eval_success_once', 'success_once', 'score') or float('-inf')) if rows else {}
+        latest_success_once = metric_from_row(latest, 'eval_success_once', 'success_once', 'score')
+        latest_success_at_end = metric_from_row(latest, 'eval_success_at_end', 'success_at_end', 'score')
+        best_success_once = metric_from_row(best, 'eval_success_once', 'success_once', 'score')
+        best_success_at_end = metric_from_row(best, 'eval_success_at_end', 'success_at_end', 'score')
         updates = len(rows)
     elif isinstance(metrics, dict):
-        latest_success_once = maybe_float(metrics.get('success_once'))
-        latest_success_at_end = maybe_float(metrics.get('success_at_end'))
+        latest_success_once = metric_from_row(metrics, 'success_once', 'eval_success_once', 'score')
+        latest_success_at_end = metric_from_row(metrics, 'success_at_end', 'eval_success_at_end', 'score')
         best_success_once = latest_success_once
         best_success_at_end = latest_success_at_end
         updates = 0

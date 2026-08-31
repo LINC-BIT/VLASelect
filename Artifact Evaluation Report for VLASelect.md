@@ -5,20 +5,20 @@
 - [1. Hardware and Software Specifications](#section-1)
 - [2. Evaluation Reproduction](#section-2)
   - [2.2 Step-by-Step Reproduction](#section-2-2)
-    - [2.2.1 Claim 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](#section-2-2-1)
-    - [2.2.2 Claim 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes](#section-2-2-2)
-    - [2.2.3 Claim 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy](#section-2-2-3)
-    - [2.2.4 Claim 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules](#section-2-2-4)
-    - [2.2.5 Claim 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload](#section-2-2-5)
-    - [2.2.6 Claim 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation](#section-2-2-6)
-    - [2.2.7 Claim 7: (Discussion 1 in Section 5.1): Sim-to-real transfer](#section-2-2-7)
-    - [2.2.8 Claim 8: (Discussion 2 in Section 5.2): ICL (In-Context Learning)](#section-2-2-8)
-    - [2.2.9 Claim 9: (Discussion 3 in Section 5.3): Maximum Supported Model Size](#section-2-2-9)
-    - [2.2.10 Claim 10: (Discussion 4 in Section 5.4): Applicability to multi-agent scenarios](#section-2-2-10)
-    - [2.2.11 Claim 11: (Discussion 5 in Section 5.5) Comparison with Alternative Knowledge Exchange Techniques](#section-2-2-11)
-    - [2.2.12 Claim 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities](#section-2-2-12)
-    - [2.2.13 Claim 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks](#section-2-2-13)
-    - [2.2.14 Claim 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models](#section-2-2-14)
+    - [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](#section-2-2-1)
+    - [2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes](#section-2-2-2)
+    - [2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy](#section-2-2-3)
+    - [2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules](#section-2-2-4)
+    - [2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload](#section-2-2-5)
+    - [2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation](#section-2-2-6)
+    - [2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer](#section-2-2-7)
+    - [2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)](#section-2-2-8)
+    - [2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size](#section-2-2-9)
+    - [2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios](#section-2-2-10)
+    - [2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques](#section-2-2-11)
+    - [2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities](#section-2-2-12)
+    - [2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks](#section-2-2-13)
+    - [2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models](#section-2-2-14)
 - [3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities](#section-3)
   - [3.1 Example 1: VLA-Adapter](#section-3-1)
     - [3.1.1 Integrating the model](#section-3-1-1)
@@ -57,7 +57,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 ### 2.2 Step-by-Step Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 <a id="section-2-2-1"></a>
-#### 2.2.1 Claim 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** VLASelect consistently achieves the **<span style="color:#0070C0">highest average accuracy</span>** under tasks and environment changes.
 
@@ -86,7 +86,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 <br><br>
 
 <a id="section-2-2-2"></a>
-#### 2.2.2 Claim 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** VLASelect consistently achieves the **<span style="color:#0070C0">highest overall accuracy</span>** under fluctuating resource availability.
 
@@ -115,7 +115,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 <br><br>
 
 <a id="section-2-2-3"></a>
-#### 2.2.3 Claim 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 
 **Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>**  and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
@@ -225,7 +225,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 <br><br>
 
 <a id="section-2-2-4"></a>
-#### 2.2.4 Claim 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 
 **Key observation:** The execution time of VLASelect core modules is **<span style="color:#0070C0">obviously less than the training iteration time</span>**.
@@ -253,7 +253,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 </table>
 
 <a id="section-2-2-5"></a>
-#### 2.2.5 Claim 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 
 **Key observation:** Under identical workloads, VLASelect achieves **<span style="color:#0070C0">shorter runtime</span>** while maintaining high accuracy compared with other baselines.
@@ -281,7 +281,7 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 </table>
 
 <a id="section-2-2-6"></a>
-#### 2.2.6 Claim 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** All individual modules in VLASelect consistently **<span style="color:#0070C0">contribute to the overall task accuracy</span>** across both configurations.
 
@@ -310,12 +310,12 @@ To evaluate the extended deployment capabilities of VLASelect, we performed expe
 
 
 <a id="section-2-2-7"></a>
-#### 2.2.7 Claim 7: (Discussion 1 in Section 5.1): Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 A supplementary video will be provided to compare simulation and real practice, further verifying the method’s consistency and generalization across virtual and real environments.
 
 <a id="section-2-2-8"></a>
-#### 2.2.8 Claim 8: (Discussion 2 in Section 5.2): ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 
 **Key observation:** VLASelect **<span style="color:#0070C0">achieves 37.2% higher accuracy than RICL</span>**.
@@ -323,7 +323,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 > For the Minimal Working Example, the runtime is approximately **10 minutes**, and the peak VRAM footprint is **20 GB**.
 
 <a id="section-2-2-9"></a>
-#### 2.2.9 Claim 9: (Discussion 3 in Section 5.3): Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** The full run supports **<span style="color:#0070C0">up to 11.3 GB on Xavier and 24.0 GB on Orin</span>**; the Minimal Working Example supports **<span style="color:#0070C0">approximately 2.5–24.0 GB on a host with 32 GB VRAM</span>**.
 
@@ -341,7 +341,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 </div>
 
 <a id="section-2-2-10"></a>
-#### 2.2.10 Claim 10: (Discussion 4 in Section 5.4): Applicability to multi-agent scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** MAPPO achieves lower accuracy due to short runtime being insufficient for policy updates, whereas VLASelect **<span style="color:#0070C0">achieves 60.0% higher accuracy than MAPPO</span>**.
 
@@ -349,7 +349,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 > For the Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
 
 <a id="section-2-2-11"></a>
-#### 2.2.11 Claim 11: (Discussion 5 in Section 5.5) Comparison with Alternative Knowledge Exchange Techniques<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** The VLASelect achieves <span style="color:#0070C0"><strong>17.19% higher accuracy</strong></span> compared with the  alternative knowledge exchange techniques.
 
@@ -357,7 +357,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 > For the Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
 
 <a id="section-2-2-12"></a>
-#### 2.2.12 Claim 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** VLASelect achieves **<span style="color:#0070C0">23.13% higher accuracy </span>** with channel/neuron-level knowledge exchange than with coarser granularities.
 
@@ -365,7 +365,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 > For the Minimal Working Example, the runtime is approximately **30 minutes**, and the peak VRAM footprint is **20 GB**.
 
 <a id="section-2-2-13"></a>
-#### 2.2.13 Claim 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 
 **Key observation:** VLASelect achieves **<span style="color:#0070C0">33.18% higher accuracy </span>** than the baseline techniques by mitigating interference across previously learned environments and tasks.
@@ -374,7 +374,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 > For the Minimal Working Example, the runtime is approximately **20 minutes**, and the peak VRAM footprint is **20 GB**.
 
 <a id="section-2-2-14"></a>
-#### 2.2.14 Claim 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 **Key observation:** VLASelect achieves **<span style="color:#0070C0">33.62% and 34.72% higher accuracy </span>** than ConRFT on MLP and CNN models, respectively.
 

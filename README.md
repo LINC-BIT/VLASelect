@@ -1155,7 +1155,7 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
 
 ## 3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities
 
-VLASelect can integrate various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning), and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
+VLASelect can integrate various **VLA models**, **scaling strategies** (e.g. knowledge distillation and dynamic pruning) and **knowledge exchange granularities** (e.g. block, layer, attention head, and channel/neuron).
 
 We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, EdgeVLA. They differ in the network architecture, as shown in the table below.
 
@@ -1192,13 +1192,13 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 - **Detailed integration steps**:
 
-  - **Step 1:** Creating a new file, and creating a class `VLAAdapterImplementation` inherited from `VLAModelInterface`.
+  - **Step 1:** Create a new file and a class `VLAAdapterImplementation` inherited from `VLAModelInterface`.
 
     ```python
     class VLAAdapterImplementation(VLAModelInterface)
     ```
 
-  - **Step 2:** Defining its key properties (e.g. model name and dimensions of state and action).
+  - **Step 2:** Define its key properties (e.g. model name and dimensions of state and action).
 
     ```python
     model_name = "vla_adapter"
@@ -1206,7 +1206,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     action_dim = 16
     ```
 
-  - **Step 3:** Implementing its functions for model initialization, forward operations, and backward operations. 
+  - **Step 3:** Implement its functions for model initialization, forward operations, and backward operations. 
 
     ```python
     # Examples:
@@ -1227,13 +1227,13 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
     All functions to be implemented are listed [here](IMPL_GUIDE.md).
 
-  - **Step 4:** Initializing the implemented class `VLAAdapterImplementation`.
+  - **Step 4:** Initialize the implemented class `VLAAdapterImplementation`.
 
     ```python
     model_impl = VLAAdapterImplementation()
     ```
 
-  - **Step 5:** Passing the initialized model implementation to the function of online RL training, and starting the training.
+  - **Step 5:** Pass the initialized model implementation to the function of online RL training, and starting the training.
 
     ```python
     run_training(model_impl, parse_args())

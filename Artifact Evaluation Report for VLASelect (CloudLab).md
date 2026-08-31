@@ -364,14 +364,14 @@ A supplementary video will be provided to compare simulation and real practice, 
 | | Runtime | Maximum Model Size |
 | :---: | :---: | :---: |
 | Full Run | 1 hour | 11.3 GB (Xavier), 24.0 GB (Orin) |
-| Minimal Working Example | 1 hour | 24.0 GB (V100 GPU) |
+| Minimal Working Example | 12 minutes| 24.0 GB (V100 GPU) |
 
 </div>
 
 <a id="section-2-2-10"></a>
 #### 2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** MAPPO achieves lower accuracy due to short runtime being insufficient for policy updates, whereas VLASelect **<span style="color:#0070C0">achieves 60.0% higher accuracy than MAPPO</span>**.
+**Key observation:** MAPPO achieves lower accuracy due to short runtime being insufficient for policy updates, whereas VLASelect **<span style="color:#0070C0">achieves 50.0% higher accuracy than MAPPO</span>**.
 
 <br>
 

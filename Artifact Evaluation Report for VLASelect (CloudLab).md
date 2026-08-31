@@ -336,7 +336,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-8"></a>
 #### 2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect **<span style="color:#0070C0">achieves 37.2% higher accuracy than RICL</span>**.
+**Key observation:** VLASelect **<span style="color:#0070C0">achieves 56.3% higher accuracy than RICL</span>**.
 
 <br>
 

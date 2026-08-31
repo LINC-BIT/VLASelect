@@ -17,7 +17,6 @@ import time
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
-from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
 
 import gymnasium as gym
 import numpy as np
@@ -538,11 +537,6 @@ def build_agent_from_checkpoint(args: Args, device: torch.device, env_kwargs: di
     checkpoint_path = Path(args.checkpoint)
     if checkpoint_path.exists():
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
-        checkpoint["agent"] = maybe_apply_checkpoint_noise_to_state_dict(
-            checkpoint["agent"],
-            checkpoint_path=checkpoint_path,
-            state_label="agent",
-        )
         print(agent.load_state_dict(checkpoint["agent"], strict=True))
     else:
         print(f"checkpoint not found at {checkpoint_path}; keep current initialization")

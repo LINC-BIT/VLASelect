@@ -44,12 +44,6 @@ from train.vla_adapter_new.model_impl.online_rl import (
     save_metrics_history,
     strip_module_prefix,
 )
-from train.common.checkpoint_noise import (
-    get_baseline_pretrain_ckpt_noise_scale,
-    get_baseline_pretrain_ckpt_noise_seed,
-    is_mwe_checkpoint_noise_enabled,
-    maybe_apply_checkpoint_noise_to_state_dict,
-)
 from train.common.mwe_eval import (
     SUCCESS_METRIC_WINDOW_EPISODES,
     append_episode_metric_batch,
@@ -345,21 +339,10 @@ class ActionBinTrajectoryBuffer:
         }
 
 
-def _materialized_fbs_noise_metadata() -> Dict[str, Any]:
-    enabled = is_mwe_checkpoint_noise_enabled()
-    return {
-        "enabled": enabled,
-        "scale": float(get_baseline_pretrain_ckpt_noise_scale()) if enabled else 0.0,
-        "seed": int(get_baseline_pretrain_ckpt_noise_seed()),
-    }
-
-
-
 def _expected_materialized_fbs_metadata(checkpoint_path: str | Path) -> Dict[str, Any]:
     return {
         "version": MATERIALIZED_FBS_FORMAT_VERSION,
         "checkpoint_path": str(Path(checkpoint_path).resolve()),
-        "noise": _materialized_fbs_noise_metadata(),
     }
 
 
@@ -462,17 +445,9 @@ def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -
         raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     if isinstance(checkpoint, dict) and "policy" in checkpoint:
-        policy_state = maybe_apply_checkpoint_noise_to_state_dict(
-            strip_module_prefix(checkpoint["policy"]),
-            checkpoint_path=checkpoint_path,
-            state_label="policy",
-        )
+        policy_state = strip_module_prefix(checkpoint["policy"])
     else:
-        policy_state = maybe_apply_checkpoint_noise_to_state_dict(
-            strip_module_prefix(checkpoint),
-            checkpoint_path=checkpoint_path,
-            state_label="checkpoint",
-        )
+        policy_state = strip_module_prefix(checkpoint)
     policy.load_state_dict(policy_state, strict=True)
     return checkpoint if isinstance(checkpoint, dict) else {}
 

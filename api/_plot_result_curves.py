@@ -162,15 +162,14 @@ def _metric_value(metric: Dict[str, Any], requested: str) -> Optional[float]:
     return None
 
 
-def _accuracy_improvement(
+def _build_accuracy_summary(
     series: List[Tuple[str, List[float], List[float]]], common_end: float
-) -> float:
-    """Return VLASelect's final absolute improvement over other methods.
+) -> Dict[str, Any]:
+    """Summarize VLASelect's final accuracy against the average baseline.
 
-    Accuracy values are stored as fractions in the result histories.  The
-    returned value is kept as a fraction too and is converted to percentage
-    points only when it is printed.  Curves with different durations are
-    compared at the same endpoint used by the plot.
+    All accuracies are stored as fractions in the source histories. The
+    returned summary keeps the raw fractions and also exposes percentage-point
+    and relative-improvement views for direct reporting.
     """
     final_values: Dict[str, float] = {}
     for label, xs, ys in series:
@@ -180,11 +179,25 @@ def _accuracy_improvement(
 
     vlaselect = final_values.get("default")
     other_values = [value for label, value in final_values.items() if label != "default"]
-    if vlaselect is None or not other_values:
-        # A single-run plot has no baseline to compare against, but the CLI
-        # contract still requires the improvement line to be emitted.
-        return 0.0
-    return vlaselect - (sum(other_values) / len(other_values))
+    others_mean = (sum(other_values) / len(other_values)) if other_values else None
+    absolute_gain_fraction = None
+    absolute_gain_points = None
+    relative_improvement_percent = None
+    if vlaselect is not None and others_mean is not None:
+        absolute_gain_fraction = vlaselect - others_mean
+        absolute_gain_points = absolute_gain_fraction * 100.0
+        if others_mean != 0.0:
+            relative_improvement_percent = absolute_gain_fraction / others_mean * 100.0
+
+    return {
+        "vlaselect_final_accuracy": vlaselect,
+        "other_methods_mean_final_accuracy": others_mean,
+        "absolute_gain_fraction": absolute_gain_fraction,
+        "absolute_gain_points": absolute_gain_points,
+        "relative_improvement_percent": relative_improvement_percent,
+        "num_compared_methods": len(other_values),
+        "final_values": final_values,
+    }
 
 
 def plot_category(
@@ -235,7 +248,7 @@ def plot_category(
     point_counts = [sum(math.isfinite(value) for value in ys) for _, _, ys in series]
     all_single_point = all(count == 1 for count in point_counts)
     common_end = 2.0 if all_single_point else max(xs[-1] for _, xs, _ in series)
-    improvement = _accuracy_improvement(series, common_end)
+    accuracy_summary = _build_accuracy_summary(series, common_end)
     figure, axis = plt.subplots(figsize=(12, 6))
     for index, (label, xs, ys) in enumerate(series):
         curve_end = common_end
@@ -263,7 +276,37 @@ def plot_category(
     figure.subplots_adjust(right=0.76)
     figure.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(figure)
-    print(f"VLASelect accuracy improvement: {improvement * 100:.2f}%")
+
+    summary_output = output_path.with_suffix('.summary.json')
+    summary_output.write_text(json.dumps({
+        'output': str(output_path),
+        'title': title,
+        'metric': metric,
+        **accuracy_summary,
+    }, indent=2), encoding='utf-8')
+
+    print(f"[comparison] summary={summary_output}")
+    print(
+        f"[comparison] vlaselect_mean_final_accuracy={accuracy_summary['vlaselect_final_accuracy']:.4f}"
+        if accuracy_summary['vlaselect_final_accuracy'] is not None
+        else "[comparison] vlaselect_mean_final_accuracy=NA"
+    )
+    print(
+        f"[comparison] other_methods_mean_final_accuracy={accuracy_summary['other_methods_mean_final_accuracy']:.4f}"
+        if accuracy_summary['other_methods_mean_final_accuracy'] is not None
+        else "[comparison] other_methods_mean_final_accuracy=NA"
+    )
+    print(
+        f"[comparison] absolute_gain_points={accuracy_summary['absolute_gain_points']:.2f}"
+        if accuracy_summary['absolute_gain_points'] is not None
+        else "[comparison] absolute_gain_points=NA"
+    )
+    print(
+        f"[comparison] relative_improvement_percent={accuracy_summary['relative_improvement_percent']:.2f}"
+        if accuracy_summary['relative_improvement_percent'] is not None
+        else "[comparison] relative_improvement_percent=NA"
+    )
+    print(f"[comparison] num_compared_methods={accuracy_summary['num_compared_methods']}")
     return len(series)
 
 

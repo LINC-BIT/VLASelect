@@ -1,7 +1,3 @@
-<style>
-table { margin: 0 auto; }
-</style>
-
 # Artifact Evaluation Report (Small Machine): VLASelect<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 In this report, we reproduce all the experiments in the VLASelect paper following the step-by-step instructions in [README](./README.md). All experiments were conducted on a small machine using the minimal working examples.

@@ -318,12 +318,12 @@ This artifact evaluation did not run the one-click reproduction script. All repo
     <tr>
       <td><strong>Full Run</strong></td>
       <td><strong>Time:</strong> 40 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
-      <td align="center"><img src="imgs/2.2.3.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/2.2.3.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 80%; height: auto; margin: 0 auto;"></td>
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.3-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/2.2.3-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 80%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>

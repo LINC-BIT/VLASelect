@@ -1,5 +1,5 @@
 <style>
-table { margin-left: auto; margin-right: auto; }
+table { margin: 0 auto; }
 </style>
 
 # Artifact Evaluation Report (Small Machine): VLASelect<img src="./heading-divider.svg" alt="" width="100%" height="1">
@@ -47,6 +47,8 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
 
 <p align="center"><strong>Table 1: Hardware and Software Configuration Comparison</strong></p>
 
+<div align="center">
+
 | Subsystem | Platform in VLASelect Paper (Full Run) | Small Machine (Minimal Working Example) |
 | :---: | :---: | :---: |
 | Operating System | Ubuntu 20.04/22.04 LTS (Kernel 5.4/5.15) | Ubuntu 22.04.4 LTS (Kernel 6.8) |
@@ -54,6 +56,8 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
 | System Memory | 128 GB DDR5 | 32 GB DDR4 |
 | GPU & VRAM | NVIDIA A100 80GB (+ Edge AGX) | NVIDIA Tesla V100 (32 GB) |
 | CUDA Toolchain | Driver 550.144.03, CUDA 12.4 | Driver 550.127.05, CUDA 12.4 |
+
+</div>
 
 <br>
 
@@ -163,6 +167,8 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 
 <p align="center"><strong>Table 2 (Full Run): Energy Consumption Analysis: Average Energy Consumption (kJ) in Each New Task</strong></p>
 
+<div align="center">
+
 | Method | Single-Arm Robot | Dexterous Hand | Mobile Manipulator | Humanoid Robot |
 | :---: | :---: | :---: | :---: | :---: |
 | ConRFT | 342.37 / 403.51 | 346.31 / 274.05 | 499.84 / 291.68 | 787.19 / 570.22 |
@@ -176,9 +182,13 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 | ConvertNet | 608.37 / 454.23 | 456.51 / 327.35 | 451.61 / 378.12 | 536.37 / 451.6 |
 | VLASelect | 46.06 / 44.24 | 35.41 / 25.63 | 39.46 / 25.57 | 64.71 / 45.18 |
 
+</div>
+
 <br>
 
 <p align="center"><strong>Table 2 (Minimal Working Example): Energy Consumption Analysis: Average Energy Consumption (kJ) in Each New Task</strong></p>
+
+<div align="center">
 
 | Method | Single-Arm Robot | Dexterous Hand | Mobile Manipulator | Humanoid Robot |
 | :---: | :---: | :---: | :---: | :---: |
@@ -186,6 +196,8 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 | VLA-RFT | 13.83 | 27.52 | 26.83 | 24.62 |
 | World-Env | 12.98 | 23.96 | 33.92 | 33.03 |
 | VLASelect | 0.68 | 11.37 | 12.28 | 2.58 |
+
+</div>
 
 <br>
 
@@ -334,9 +346,13 @@ A supplementary video will be provided to compare simulation and real practice, 
 
 <p align="center"><strong>Resource Requirements</strong></p>
 
+<div align="center">
+
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Minimal Working Example | 10 minutes | 20 GB |
+
+</div>
 
 <a id="section-2-2-9"></a>
 #### 2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
@@ -365,10 +381,14 @@ A supplementary video will be provided to compare simulation and real practice, 
 
 <p align="center"><strong>Resource Requirements</strong></p>
 
+<div align="center">
+
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Full Run | 7 hours | 60 GB |
 | Minimal Working Example | 20 minutes | 20 GB |
+
+</div>
 
 <a id="section-2-2-11"></a>
 #### 2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider.svg" alt="" width="100%" height="1">
@@ -379,10 +399,14 @@ A supplementary video will be provided to compare simulation and real practice, 
 
 <p align="center"><strong>Resource Requirements</strong></p>
 
+<div align="center">
+
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Full Run | 40 hours | 60 GB |
 | Minimal Working Example | 20 minutes | 20 GB |
+
+</div>
 
 <a id="section-2-2-12"></a>
 #### 2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
@@ -393,10 +417,14 @@ A supplementary video will be provided to compare simulation and real practice, 
 
 <p align="center"><strong>Resource Requirements</strong></p>
 
+<div align="center">
+
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Full Run | 15 hours | 60 GB |
 | Minimal Working Example | 30 minutes | 20 GB |
+
+</div>
 
 <a id="section-2-2-13"></a>
 #### 2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider.svg" alt="" width="100%" height="1">
@@ -407,10 +435,14 @@ A supplementary video will be provided to compare simulation and real practice, 
 
 <p align="center"><strong>Resource Requirements</strong></p>
 
+<div align="center">
+
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Full Run | 13 hours | 60 GB |
 | Minimal Working Example | 20 minutes | 20 GB |
+
+</div>
 
 <a id="section-2-2-14"></a>
 #### 2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider.svg" alt="" width="100%" height="1">
@@ -421,10 +453,14 @@ A supplementary video will be provided to compare simulation and real practice, 
 
 <p align="center"><strong>Resource Requirements</strong></p>
 
+<div align="center">
+
 |  | Runtime | Peak Memory (VRAM) |
 | :---: | :---: | :---: |
 | Full Run | 13 hours | 60 GB |
 | Minimal Working Example | 20 minutes | 20 GB |
+
+</div>
 
 <a id="section-3"></a>
 ## 3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">

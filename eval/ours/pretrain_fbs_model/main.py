@@ -89,6 +89,7 @@ def add_FBS_into_transformer(model: nn.Module,
             print('kb size: {}MB, proxy model size: {}MB)'.format(get_model_size(model, True), get_model_size(small_model, True)))
             print('FBS verify passed (diff: {}, diff2: {})'.format(diff, diff2))
         else:
+            model_forward_fn(model, example_sample)
             print('[warning] skip FBS output verification for this call')
     # logger.debug(f'after add FBS model: {model}')
 

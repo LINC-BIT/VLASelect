@@ -693,8 +693,8 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
 
 - Commands for full run:
   ```bash
-  cd overhead
-  bash overhead_breakdown/run.sh
+  cd overhead_breakdown
+  bash run.sh
   ```
 - The resource requirements and outputs are listed below:
   <table align="center">
@@ -863,22 +863,20 @@ Then, run the following commands to reproduce each figure/table in our evaluatio
         <td>DOFBOT-SE sim-to-real transfer</td>
         <td>a DOFBOT-SE single-arm robot</td>
         <td>
-          <video
-            src="https://github.com/user-attachments/assets/9f7905c2-c88b-4d91-8b25-9d59a78566af"
-            controls
+          <img
+            src="./videos/dofbot-se.gif"
+            alt="DOFBOT-SE sim-to-real transfer"
             width="400">
-          </video>
         </td>
       </tr>
       <tr>
         <td>AmazingHand sim-to-real transfer</td>
         <td>an AmazingHand dexterous hand</td>
         <td>
-          <video
-            src="https://github.com/user-attachments/assets/c56c4114-c24c-4c35-b272-e9cf03848504"
-            controls
+          <img
+            src="./videos/amazinghand.gif"
+            alt="AmazingHand sim-to-real transfer"
             width="400">
-          </video>
         </td>
       </tr>
     </tbody>
@@ -1159,28 +1157,31 @@ VLASelect can integrate various **VLA models**, **scaling strategies** (e.g. kno
 
 We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, EdgeVLA. They differ in the network architecture, as shown in the table below.
 
-<table align="center">
+<table align="center" style="text-align: center;">
   <thead>
     <tr>
-      <th>Model</th>
-      <th>Network Architecture</th>
-      <th>Paper Link</th>
+      <th style="text-align: center;">Model</th>
+      <th colspan="2" style="text-align: center;">Network Architecture</th>
+      <th style="text-align: center;">Paper Link</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>VLA-Adapter</td>
-      <td>Encoder: Qwen 2.5<br>Stem: Bridge-attention-based Transformer</td>
+      <td><strong>Encoder:</strong> Qwen 2.5<br><strong>Stem:</strong><br>Bridge-attention-based Transformer</td>
+      <td><img src="./imgs/vla-adapter.png" alt="VLA-Adapter architecture"></td>
       <td><a href="https://arxiv.org/abs/2509.09372">Link</a></td>
     </tr>
     <tr>
       <td>TinyVLA</td>
-      <td>Encoder: ViT<br>Stem: Pythia</td>
+      <td><strong>Encoder:</strong> ViT<br><strong>Stem:</strong> Pythia</td>
+      <td><img src="./imgs/tinyvla.png" alt="TinyVLA architecture"></td>
       <td><a href="https://arxiv.org/abs/2409.12514">Link</a></td>
     </tr>
     <tr>
       <td>EdgeVLA</td>
-      <td>Encoder: DINOv2 + SigLIP<br>Stem: Qwen 2</td>
+      <td><strong>Encoder:</strong><br>DINOv2 + SigLIP<br><strong>Stem:</strong> Qwen 2</td>
+      <td><img src="./imgs/edgevla.png" alt="EdgeVLA architecture"></td>
       <td><a href="https://arxiv.org/abs/2507.14049">Link</a></td>
     </tr>
   </tbody>
@@ -1245,11 +1246,11 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (3 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The example resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1266,12 +1267,6 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/vla_model_interface_examples/<br>outputs/vla_adapter_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.1.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>3 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/vla_model_interface_examples/<br>outputs/vla_adapter_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1332,15 +1327,15 @@ After the integration, you can use VLASelect to train the model with the integra
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for small working examples on all methods:
+  - **Option 2:** Commands for small working examples on all methods (60 minutes, 20GB memory, and 30GB disk space):
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
     ```
-  - **Option 3:** Commands for full run:
+  - **Option 3:** Commands for full run (40 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
     ```
-  - The three options' resource requirements and outputs are listed below:
+  - The example resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1357,18 +1352,6 @@ After the integration, you can use VLASelect to train the model with the integra
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/vla_adapter/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.2.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Small working example on all methods</td>
-          <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/vla_adapter/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-          <td><a href="./single%20results/results-3.1.2.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>40 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/vla_adapter/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1401,11 +1384,11 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (15 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The example resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1422,12 +1405,6 @@ After the integration, you can use VLASelect to train the model at the integrate
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.3.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>15 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1492,11 +1469,11 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (3 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
     ```
-  - The two options' resource requirements and outputs are listed below:
+  - The example resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1513,12 +1490,6 @@ After the integration, you can use VLASelect to train the model at the integrate
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/vla_model_interface_examples/<br>outputs/tinyvla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.1.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>3 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/vla_model_interface_examples/<br>outputs/tinyvla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1567,15 +1538,15 @@ After the integration, you can use VLASelect to train the model with the integra
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for small working examples on all methods:
+  - **Option 2:** Commands for small working examples on all methods (60 minutes, 20GB memory, and 30GB disk space):
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
     ```
-  - **Option 3:** Commands for full run:
+  - **Option 3:** Commands for full run (40 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
     ```
-  - The three options' resource requirements and outputs are listed below:
+  - The example resource requirements and outputs are listed below:
 
     <table align="center">
       <thead>
@@ -1592,18 +1563,6 @@ After the integration, you can use VLASelect to train the model with the integra
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/tinyvla/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.2.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Small working example on all methods</td>
-          <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/tinyvla/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-          <td><a href="./single%20results/results-3.2.2.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>40 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/tinyvla/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1635,7 +1594,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (15 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
     ```
@@ -1656,12 +1615,6 @@ After the integration, you can use VLASelect to train the model at the integrate
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/tinyvla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.3.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>15 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/tinyvla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1728,7 +1681,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (3 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/edgevla_impl_verify.sh
     ```
@@ -1749,12 +1702,6 @@ After the integration, you can use VLASelect to train the model at the integrate
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/vla_model_interface_examples/<br>outputs/edgevla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.1.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>3 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/vla_model_interface_examples/<br>outputs/edgevla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1803,11 +1750,11 @@ After the integration, you can use VLASelect to train the model with the integra
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for small working examples on all methods:
+  - **Option 2:** Commands for small working examples on all methods (60 minutes, 20GB memory, and 30GB disk space):
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
     ```
-  - **Option 3:** Commands for full run:
+  - **Option 3:** Commands for full run (40 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
     ```
@@ -1828,18 +1775,6 @@ After the integration, you can use VLASelect to train the model with the integra
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/edgevla/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.2.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Small working example on all methods</td>
-          <td>60 minutes<br>20GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/edgevla/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-          <td><a href="./single%20results/results-3.3.2.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>40 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/edgevla/<br>scaling_methods/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>
@@ -1871,7 +1806,7 @@ After the integration, you can use VLASelect to train the model at the integrate
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
     ```
-  - **Option 2:** Commands for full run:
+  - **Option 2:** Commands for full run (15 hours, 60GB memory, and 30GB disk space):
     ```bash
     bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
     ```
@@ -1892,12 +1827,6 @@ After the integration, you can use VLASelect to train the model at the integrate
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/edgevla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.3.md">Link</a></td>
-        </tr>
-        <tr>
-          <td>Full run</td>
-          <td>15 hours<br>60GB memory<br>30GB disk space</td>
-          <td>Create file<br>api/results/edgevla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
-          <td>-</td>
         </tr>
       </tbody>
     </table>

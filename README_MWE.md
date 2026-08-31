@@ -11,10 +11,11 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
 [Evaluation Report on a Small Machine](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
+[Evaluation Report on the Acadmic Cloud (TODO: Link)]()<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22119671)<br>
 Docker Image: <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version (requiring further dependency installation)](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[33GB version (requiring no further dependency installation)](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[33GB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2) (requiring no further dependency installation)
 
 ## Outline (Evaluation process/workflow and Reusability)
 
@@ -32,20 +33,20 @@ Docker Image: <br>
 <a href="#2-evaluation-reproduction">2. Evaluation Reproduction</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#21-one-click-reproduction">2.1 One-click Reproduction</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#22-step-by-step-reproduction">2.2 Step-by-Step Reproduction</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#221-claim-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes">2.2.1 Claim 1:(Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#222-claim-2-figure-8-in-section-522-accuracy-under-available-resource-changes">2.2.2 Claim 2:(Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#223-claim-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy">2.2.3 Claim 3:(Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#224-claim-4-figure-10-in-section-532-time-breakdown-of-vlaselects-modules">2.2.4 Claim 4:(Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#225-claim-5-figure-11-in-section-532-training-time-breakdown-in-each-workload">2.2.5 Claim 5:(Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#226-claim-6-figure-12-in-section-54-design-choice-validation-by-ablation">2.2.6 Claim 6:(Figure 12 in Section 5.4) Design Choice Validation by Ablation</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#227-claim-7-discussion-1-in-section-55-sim-to-real-transfer">2.2.7 Claim 7: (Discussion 1 in Section 5.5) Sim-to-real transfer</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#228-claim-8-discussion-2-in-section-55-icl-in-context-learning">2.2.8 Claim 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#229-claim-9-discussion-3-in-section-55-maximum-supported-model-size">2.2.9 Claim 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2210-claim-10-discussion-4-in-section-55-applicability-to-multi-agent-scenarios">2.2.10 Claim 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2211-claim-11-discussion-5-in-section-55-comparison-with-alternative-model-scaling-techniques">2.2.11 Claim 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2212-claim-12-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities">2.2.12 Claim 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2213-claim-13-discussion-7-in-section-55-forgetting-on-previously-learned-environmentstasks">2.2.13 Claim 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2214-claim-14-discussion-8-in-section-55-applicability-to-mlpcnn-models">2.2.14 Claim 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes">2.2.1 Experiment 1:(Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#222-experiment-2-figure-8-in-section-522-accuracy-under-available-resource-changes">2.2.2 Experiment 2:(Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy">2.2.3 Experiment 3:(Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#224-experiment-4-figure-10-in-section-532-time-breakdown-of-vlaselects-modules">2.2.4 Experiment 4:(Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#225-experiment-5-figure-11-in-section-532-training-time-breakdown-in-each-workload">2.2.5 Experiment 5:(Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#226-experiment-6-figure-12-in-section-54-design-choice-validation-by-ablation">2.2.6 Experiment 6:(Figure 12 in Section 5.4) Design Choice Validation by Ablation</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#227-experiment-7-discussion-1-in-section-55-sim-to-real-transfer">2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#228-experiment-8-discussion-2-in-section-55-icl-in-context-learning">2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#229-experiment-9-discussion-3-in-section-55-maximum-supported-model-size">2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2210-experiment-10-discussion-4-in-section-55-applicability-to-multi-agent-scenarios">2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2211-experiment-11-discussion-5-in-section-55-comparison-with-alternative-model-scaling-techniques">2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2212-experiment-12-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities">2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2213-experiment-13-discussion-7-in-section-55-forgetting-on-previously-learned-environmentstasks">2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2214-experiment-14-discussion-8-in-section-55-applicability-to-mlpcnn-models">2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models</a><br>
 <a href="#3-reusability-integrating-vlaselect-with-vla-models-scaling-strategies-and-knowledge-exchange-granularities">3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#31-example-1-vla-adapter">3.1 Example 1: VLA-Adapter</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#311-model-integration-interface">3.1.1 Model Integration Interface</a><br>
@@ -348,7 +349,7 @@ Docker Image: <br>
     </tr>
     <tr>
       <td><strong>Out-of-memory error during the reproduction</strong>: You see errors like <code>torch.OutOfMemoryError: CUDA out of memory</code> when running the reproduction script.</td>
-      <td>1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>2. Run the minimum running example.</td>
+      <td>1. Use a hardware that satisfies the <a href="#121-hardware-requirements">minimum requirements</a>.<br>2. Run the minimum working example.</td>
     </tr>
 
   </tbody>
@@ -363,7 +364,7 @@ For other unusual behaviors, we will provide remote tech support and send fixes 
 
 We provide a one-click script `eval/run.sh` that runs all experiments sequentially and produces resulting figures and tables.
 
-- **Minimum running example (completed within 1 day and 20GB memory)**
+- **Minimum working example (completed within 1 day and 20GB memory)**
   ```bash
   cd <VLASelect directory>
   bash start_docker.sh
@@ -386,14 +387,14 @@ cd <VLASelect directory in the container>/eval
 
 And you can run the following commands to reproduce each figure/table in our evaluation.
 
-**Note:** In minimum running examples, we have limited the training time of each method to less than 5 minutes. However, the total runtime may remain several hours due to:
+**Note:** In minimum working examples, we have limited the training time of each method to less than 5 minutes. However, the total runtime may remain several hours due to:
   - Loading large model checkpoints (>1GB) for each method
   - Initializing RL environments based on the physical simulation engine
   - Evaluating each method's accuracy periodically
 
-#### 2.2.1 Claim 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum running examples on three representative methods:
+- **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
   cd acc_comparison
   
@@ -408,7 +409,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash run_acc_task_env_change_humanoid_robot.sh
   python3 plot_acc_task_env.py
   ```
-- **Option 2:** Commands for small running examples on all methods:
+- **Option 2:** Commands for small working examples on all methods:
   
   ```bash
   cd acc_comparison
@@ -437,13 +438,13 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example on three methods</td>
+        <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td>Create file eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="./single%20results/results-2.2.1.md">Link</a></td>
       </tr>
       <tr>
-        <td>Small running example on all methods</td>
+        <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td>Create file eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="./single%20results/results-2.2.1.md">Link</a></td>
@@ -454,9 +455,9 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.2 Claim 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum running examples on three representative methods:
+- **Option 1:** Commands for minimum working examples on three representative methods:
 
   ```bash
   cd acc_comparison
@@ -473,7 +474,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   python3 plot_acc_res_change.py
   ```
 
-- **Option 2:** Commands for small running examples on all methods:
+- **Option 2:** Commands for small working examples on all methods:
 
   ```bash
   cd acc_comparison
@@ -503,13 +504,13 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example on three methods</td>
+        <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td>Create file eval/acc_comparison/FIG_ACC_RESOURCE.pdf</td>
         <td><a href="./single%20results/results-2.2.2.md">Link</a></td>
       </tr>
       <tr>
-        <td>Small running example on all methods</td>
+        <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td>Create file eval/acc_comparison/FIG_ACC_RESOURCE.pdf</td>
         <td><a href="./single%20results/results-2.2.2.md">Link</a></td>
@@ -519,9 +520,9 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.3 Claim 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum running examples on three representative methods:
+- **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
   cd overhead
   
@@ -536,7 +537,7 @@ And you can run the following commands to reproduce each figure/table in our eva
   bash overhead_same_acc_humanoid_robot.sh
   python3 plot_overhead.py
   ```
-- **Option 2:** Commands for small running examples on all methods:
+- **Option 2:** Commands for small working examples on all methods:
   ```bash
   cd overhead
   
@@ -564,13 +565,13 @@ And you can run the following commands to reproduce each figure/table in our eva
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example on three methods</td>
+        <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td>Create files eval/overhead/FIG_MEMORY_FOOTPOINT.pdf, eval/overhead/TAB_OVERHEAD.csv, and eval/overhead/overhead_breakdown_table/TAB_ENERGY.csv</td>
         <td><a href="./single%20results/results-2.2.3.md">Link</a></td>
       </tr>
       <tr>
-        <td>Small running example on all methods</td>
+        <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td>Create files eval/overhead/FIG_MEMORY_FOOTPOINT.pdf, eval/overhead/TAB_OVERHEAD.csv, and eval/overhead/overhead_breakdown_table/TAB_ENERGY.csv</td>
         <td><a href="./single%20results/results-2.2.3.md">Link</a></td>
@@ -580,9 +581,9 @@ And you can run the following commands to reproduce each figure/table in our eva
 
 
 
-#### 2.2.4 Claim 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum running examples on all methods:
+- **Option 1:** Commands for minimum working examples on all methods:
 
 ```bash
 
@@ -593,7 +594,7 @@ cd overhead
   python3 plot_breakdown_all_methods.py
 ```
 
-- **Option 2:** Commands for small running examples on all methods:
+- **Option 2:** Commands for small working examples on all methods:
 
 ```bash
 
@@ -629,9 +630,9 @@ cd overhead
 </table>
 
 
-#### 2.2.5 Claim 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum running examples on three representative methods:
+- **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
   cd overhead
   
@@ -646,7 +647,7 @@ cd overhead
   MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_breakdown_all_methods_humanoid_robot.sh
   python3 plot_breakdown_all_methods.py
   ```
-- **Option 2:** Commands for small running examples on all methods:
+- **Option 2:** Commands for small working examples on all methods:
   ```bash
   cd overhead
   
@@ -674,13 +675,13 @@ cd overhead
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example on three methods</td>
+        <td>Minimum working example on three methods</td>
         <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
         <td>Create file eval/overhead/FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="./single%20results/results-2.2.5.md">Link</a></td>
       </tr>
       <tr>
-        <td>Small running example on all methods</td>
+        <td>Small working example on all methods</td>
         <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
         <td>Create file eval/overhead/FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="./single%20results/results-2.2.5.md">Link</a></td>
@@ -689,9 +690,9 @@ cd overhead
   </table>
 
 
-#### 2.2.6 Claim 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- Commands for minimum running examples:
+- Commands for minimum working examples:
   ```bash
   cd ablation
   MWE=1 bash run_ablation.sh
@@ -710,7 +711,7 @@ cd overhead
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example</td>
+        <td>Minimum working example</td>
         <td>1 hours<br>20GB memory<br>30GB disk space</td>
         <td>Create file eval/ablation/FIG_ABLATION.pdf</td>
         <td><a href="./single%20results/results-2.2.6.md">Link</a></td>
@@ -720,7 +721,7 @@ cd overhead
 
 
 
-#### 2.2.7 Claim 7: (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for run:
 
@@ -767,9 +768,9 @@ cd overhead
 
 
 
-#### 2.2.8 Claim 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- Commands for minimum running examples:
+- Commands for minimum working examples:
   ```bash
   cd discussion
   MWE=1 bash compare_icl.sh
@@ -787,7 +788,7 @@ cd overhead
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example</td>
+        <td>Minimum working example</td>
         <td>10 minutes<br>20GB memory<br>8GB disk space</td>
         <td>Create file eval/ckpt/discussion/icl/&lt;STAMP&gt;/icl_accuracy.png</td>
         <td><a href="./single%20results/results-2.2.8.md">Link</a></td>
@@ -795,7 +796,7 @@ cd overhead
     </tbody>
   </table>
 
-#### 2.2.9 Claim 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
 - Commands for run:
 
@@ -823,9 +824,9 @@ cd overhead
     </tbody>
   </table>
 
-#### 2.2.10 Claim 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- Commands for minimum running examples:
+- Commands for minimum working examples:
   ```bash
   cd discussion
   MWE=1 bash run_multi_agent.sh
@@ -843,7 +844,7 @@ cd overhead
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example</td>
+        <td>Minimum working example</td>
         <td>20 minutes<br>20GB memory<br>1GB disk space</td>
         <td>Create file eval/discussion/results/multi_agent/&lt;STAMP&gt;/accuracy_vs_time.png</td>
         <td><a href="./single%20results/results-2.2.10.md">Link</a></td>
@@ -852,14 +853,14 @@ cd overhead
   </table>
 
 
-#### 2.2.11 Claim 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-- **Option 1:** Commands for minimum running examples on three representative methods:
+- **Option 1:** Commands for minimum working examples on three representative methods:
   ```bash
   cd <VLASelect directory>
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
   ```
-- **Option 2:** Commands for small running examples on all methods:
+- **Option 2:** Commands for small working examples on all methods:
   ```bash
   cd <VLASelect directory>
   MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
@@ -878,13 +879,13 @@ cd overhead
     </thead>
     <tbody>
       <tr>
-        <td>Minimum running example on three representative methods</td>
+        <td>Minimum working example on three representative methods</td>
         <td>20 minutes<br>20GB memory<br>30GB disk space</td>
         <td>Create file api/results/vla_adapter/scaling_methods_only_4/training_accuracy_curve.png</td>
         <td><a href="./single%20results/results-2.2.11.md">Link</a></td>
       </tr>
       <tr>
-        <td>Small running example on all methods</td>
+        <td>Small working example on all methods</td>
         <td>60 minutes<br>20GB memory<br>30GB disk space</td>
         <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
         <td><a href="./single%20results/results-2.2.11.md">Link</a></td>
@@ -893,9 +894,9 @@ cd overhead
   </table>
 
 
-#### 2.2.12 Claim 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
@@ -912,7 +913,7 @@ cd overhead
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-2.2.12.md">Link</a></td>
@@ -920,9 +921,9 @@ cd overhead
       </tbody>
     </table>
 
-#### 2.2.13 Claim 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash forgetting/measure_forgetting.sh
     ```
@@ -940,7 +941,7 @@ cd overhead
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create files eval/forgetting/results/&lt;timestamp&gt;/forgetting_summary.{json,csv} and forgetting_accuracy.{png,pdf,svg}</td>
           <td><a href="./single%20results/results-2.2.13.md">Link</a></td>
@@ -948,9 +949,9 @@ cd overhead
       </tbody>
     </table>
 
-#### 2.2.14 Claim 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+#### 2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     cd api/model_type
     MWE=1 bash run.sh
@@ -968,7 +969,7 @@ cd overhead
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create files api/model_type/CNN-ACC.png, api/model_type/MLP-ACC.png, and api/model_type/MLP-CNN-ACC-COMPARE.png</td>
           <td><a href="./single%20results/results-2.2.14.md">Link</a></td>
@@ -1065,7 +1066,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
 
 - After the integration, you can use VLASelect to train the integrated model:
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify.sh
     ```
@@ -1082,7 +1083,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/vla_model_interface_examples/outputs/vla_adapter_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.1.md">Link</a></td>
@@ -1142,11 +1143,11 @@ Based on the example in Section 3.1.1, you can integrate VLA-Adapter with 10 oth
 
 After the integration, you can use VLASelect to train the model with the integrated scaling strategies:
 
-  - **Option 1:** Commands for minimum running examples on three representative methods:
+  - **Option 1:** Commands for minimum working examples on three representative methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for small running examples on all methods:
+  - **Option 2:** Commands for small working examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_scaling_methods.sh
     ```
@@ -1163,13 +1164,13 @@ After the integration, you can use VLASelect to train the model with the integra
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example on three representative methods</td>
+          <td>Minimum working example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/vla_adapter/scaling_methods_only_4/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.2.md">Link</a></td>
         </tr>
         <tr>
-          <td>Small running example on all methods</td>
+        <td>Small working example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/vla_adapter/scaling_methods/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.2.md">Link</a></td>
@@ -1201,7 +1202,7 @@ Based on the example in Section 3.1.1, you can integrate VLA-Adapter at differen
 
 After the integration, you can use VLASelect to train the model at the integrated knowledge exchange granularities:
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/vla_adapter_impl_verify-all_granularities.sh
     ```
@@ -1218,7 +1219,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/vla_adapter/knowledge_exchange/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.3.md">Link</a></td>
@@ -1282,7 +1283,7 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 - After the integration, you can use VLASelect to train the integrated model:
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify.sh
     ```
@@ -1299,7 +1300,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/vla_model_interface_examples/outputs/tinyvla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.1.md">Link</a></td>
@@ -1347,11 +1348,11 @@ run_training(model_impl, parse_args(), EdgeTAScaling())
 
 After the integration, you can use VLASelect to train the model with the integrated scaling strategies:
 
-  - **Option 1:** Commands for minimum running examples on three representative methods:
+  - **Option 1:** Commands for minimum working examples on three representative methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for small running examples on all methods:
+  - **Option 2:** Commands for small working examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_scaling_methods.sh
     ```
@@ -1368,13 +1369,13 @@ After the integration, you can use VLASelect to train the model with the integra
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example on three representative methods</td>
+          <td>Minimum working example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/tinyvla/scaling_methods_only_4/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.2.md">Link</a></td>
         </tr>
         <tr>
-          <td>Small running example on all methods</td>
+        <td>Small working example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/tinyvla/scaling_methods/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.2.md">Link</a></td>
@@ -1405,7 +1406,7 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 
 After the integration, you can use VLASelect to train the model at the integrated knowledge exchange granularities:
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/tinyvla_impl_verify-all_granularities.sh
     ```
@@ -1422,7 +1423,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/tinyvla/knowledge_exchange/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.3.md">Link</a></td>
@@ -1488,7 +1489,7 @@ After the integration, you can use VLASelect to train the model at the integrate
 
 - After the integration, you can use VLASelect to train the integrated model:
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify.sh
     ```
@@ -1506,7 +1507,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>3 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/vla_model_interface_examples/outputs/edgevla_online_rl_cl/&lt;timestamp&gt;/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.1.md">Link</a></td>
@@ -1554,11 +1555,11 @@ run_training(model_impl, parse_args(), EdgeTAScaling())
 
 After the integration, you can use VLASelect to train the model with the integrated scaling strategies:
 
-  - **Option 1:** Commands for minimum running examples on three representative methods:
+  - **Option 1:** Commands for minimum working examples on three representative methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods-only4.sh
     ```
-  - **Option 2:** Commands for small running examples on all methods:
+  - **Option 2:** Commands for small working examples on all methods:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_scaling_methods.sh
     ```
@@ -1576,13 +1577,13 @@ After the integration, you can use VLASelect to train the model with the integra
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example on three representative methods</td>
+          <td>Minimum working example on three representative methods</td>
           <td>20 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/edgevla/scaling_methods_only_4/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.2.md">Link</a></td>
         </tr>
         <tr>
-          <td>Small running example on all methods</td>
+          <td>Small working example on all methods</td>
           <td>60 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/edgevla/scaling_methods/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.2.md">Link</a></td>
@@ -1613,7 +1614,7 @@ run_training(model_impl, parse_args(), NeuronKnowledgeExchange())
 
 After the integration, you can use VLASelect to train the model at the integrated knowledge exchange granularities:
 
-  - Commands for minimum running examples:
+  - Commands for minimum working examples:
     ```bash
     MWE=1 bash api/vla_model_interface_examples/edgevla_impl_verify-all_granularities.sh
     ```
@@ -1630,7 +1631,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       </thead>
       <tbody>
         <tr>
-          <td>Minimum running example</td>
+          <td>Minimum working example</td>
           <td>30 minutes<br>20GB memory<br>30GB disk space</td>
           <td>Create file api/results/edgevla/knowledge_exchange/training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.3.md">Link</a></td>

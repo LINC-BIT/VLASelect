@@ -510,13 +510,11 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.1.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.1.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of EdgeTA and LLM in a Flash <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>
 <br>
-
-The curves of **EdgeTA** and **LLM in a Flash** overlap completely due to identical performance.
 
 <br>
 
@@ -588,13 +586,11 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.2.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.2.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Attention, LLM in a Flash, and EdgeTA <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>
 <br>
-
-The curves of **Attention**, **LLM in a Flash**, and **EdgeTA** overlap completely due to identical performance.
 
 <br>
 
@@ -689,11 +685,9 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
     <tr>
       <td><strong>Minimal Working Example</strong></td>
       <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.3.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td align="center"><img src="imgs/3.3.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Layer and Block <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>
-
-The curves of **Layer** and **Block** overlap completely due to identical performance.
 
 <br>

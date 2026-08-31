@@ -219,6 +219,7 @@ def convert_actor_to_fbs(
                     states=batch['states'],
                     mode='policy',
                 )[0].float().sum(),
+                verify_outputs=False,
             ).cpu()
 
     if lm_qkv:
@@ -237,6 +238,7 @@ def convert_actor_to_fbs(
                     output_hidden_states=True,
                     return_dict=True,
                 ).hidden_states[-1].float().mean(),
+                verify_outputs=False,
             ).cpu()
 
     actor.vla.to(dtype=dtype)

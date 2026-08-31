@@ -1,10 +1,35 @@
 import torch
 from torch import nn
 import copy
+from functools import partial
 from ours.utils.dl.common.model import get_module, set_module, get_model_device
 from transformers.pytorch_utils import prune_linear_layer
 from ours.libs.train_with_fbs.lib_transformer import StaticFBS
 from ours.utils.common.log import logger
+
+
+def _rebind_intermediate_featurizer_forward(featurizer: nn.Module) -> None:
+    blocks = getattr(featurizer, 'blocks', None)
+    get_intermediate_layers = getattr(featurizer, 'get_intermediate_layers', None)
+    if blocks is None or not callable(get_intermediate_layers):
+        return
+    num_blocks = len(blocks)
+    featurizer.forward = unpack_tuple(partial(featurizer.get_intermediate_layers, n={num_blocks - 2}))
+
+
+def _refresh_copied_featurizer_forward_bindings(module: nn.Module) -> None:
+    for submodule in module.modules():
+        for attr_name in ('featurizer', 'fused_featurizer'):
+            featurizer = getattr(submodule, attr_name, None)
+            if isinstance(featurizer, nn.Module):
+                _rebind_intermediate_featurizer_forward(featurizer)
+
+
+def unpack_tuple(fn):
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        return result[0] if isinstance(result, tuple) else result
+    return wrapper
 
 
 def prune_linear_layer_and_its_after_layer(model, layer_name, after_layer_name, unpruned_neurons_idx, attention_value, sparsity, device, window_merge):
@@ -25,6 +50,7 @@ def prune_linear_layer_and_its_after_layer(model, layer_name, after_layer_name, 
 def generate_small_model(large_model: nn.Module, qkv_layers_name, proj_layers_name, ff1_layers_name, ff2_layers_name, only_add_fbs_in_qkv=False,
                          return_detail=False):
     large_model = copy.deepcopy(large_model)
+    _refresh_copied_featurizer_forward_bindings(large_model)
     device = get_model_device(large_model)
     
     from ..libs.gen_neuron_index import get_fbs_layers
@@ -109,6 +135,7 @@ def generate_small_model(large_model: nn.Module, qkv_layers_name, proj_layers_na
 def generate_small_model_v2(large_model: nn.Module, qkv_layers_name, proj_layers_name, ff1_layers_name, ff2_layers_name, only_add_fbs_in_qkv=False,
                             return_detail=False, model_for_attention_value=None):
     large_model = copy.deepcopy(large_model)
+    _refresh_copied_featurizer_forward_bindings(large_model)
     device = get_model_device(large_model)
 
     if model_for_attention_value is None:

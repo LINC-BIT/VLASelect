@@ -10,9 +10,9 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
   - [2. Evaluation Reproduction](#2-evaluation-reproduction)
     - [2.1 One-click Reproduction](#21-one-click-reproduction)
     - [2.2 Step-by-Step Reproduction](#22-step-by-step-reproduction)
-      - [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes)
+      - [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Task and Environment Changes](#221-experiment-1-figure-7-in-section-521-accuracy-under-task-and-environment-changes)
       - [2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes](#222-experiment-2-figure-8-in-section-522-accuracy-under-available-resource-changes)
-      - [2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy](#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy)
+      - [2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under the Same Accuracy](#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy)
       - [2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules](#224-experiment-4-figure-10-in-section-532-time-breakdown-of-vlaselects-modules)
       - [2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload](#225-experiment-5-figure-11-in-section-532-training-time-breakdown-in-each-workload)
       - [2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation](#226-experiment-6-figure-12-in-section-54-design-choice-validation-by-ablation)
@@ -21,9 +21,9 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
       - [2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size](#229-experiment-9-discussion-3-in-section-55-maximum-supported-model-size)
       - [2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios](#2210-experiment-10-discussion-4-in-section-55-applicability-to-multi-agent-scenarios)
       - [2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques](#2211-experiment-11-discussion-5-in-section-55-comparison-with-alternative-model-scaling-techniques)
-      - [2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities](#2212-experiment-12-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities)
+      - [2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison Between Different Knowledge Exchange Granularities](#2212-experiment-12-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities)
       - [2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks](#2213-experiment-13-discussion-7-in-section-55-forgetting-on-previously-learned-environmentstasks)
-      - [2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models](#2214-experiment-14-discussion-8-in-section-55-applicability-to-mlpcnn-models)
+      - [2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN Models](#2214-experiment-14-discussion-8-in-section-55-applicability-to-mlpcnn-models)
   - [3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities](#3-reusability-integrating-vlaselect-with-vla-models-scaling-strategies-and-knowledge-exchange-granularities)
     - [3.1 Example 1: VLA-Adapter](#31-example-1-vla-adapter)
       - [3.1.1 Integrating the model](#311-integrating-the-model)
@@ -39,6 +39,7 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
       - [3.3.3 Integrating different knowledge exchange granularities](#333-integrating-different-knowledge-exchange-granularities)
 
 <a id="section-1"></a>
+
 ## 1. Hardware and Software Specifications<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 <p align="center"><strong>Table 1: Hardware and Software Configuration Comparison</strong></p>
@@ -61,6 +62,7 @@ In this report, we reproduce all the experiments in the VLASelect paper followin
 ## 2. Evaluation Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 <a id="section-2-1"></a>
+
 ### 2.1 One-click Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 This artifact evaluation did not run the one-click reproduction script. All reported results were reproduced using only the step-by-step procedure in Section 2.2.
@@ -69,9 +71,9 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 ### 2.2 Step-by-Step Reproduction<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 <a id="section-2-2-1"></a>
-#### 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Task and Environment Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect consistently achieves the **<span style="color:#0070C0">highest average accuracy</span>** under tasks and environment changes.
+**Key observation:** VLASelect achieves the **<span style="color:#0070C0">highest average accuracy</span>** across changes in tasks and environments.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -84,13 +86,13 @@ This artifact evaluation did not run the one-click reproduction script. All repo
   <tbody>
     <tr>
       <td><strong>Full Run</strong></td>
-      <td> <strong>Time:</strong> 140 h<br> <strong>Memory (VRAM):</strong> 60 GB</td>
-      <td align="center"><img src="imgs/2.2.1.1.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td> <strong>Time:</strong> 140 hours<br> <strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.1.1.png" alt="Full-run result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td> <strong>Time:</strong> 1 h<br> <strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.1.1-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td> <strong>Time:</strong> 1 hour<br> <strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.1.1-mwe.jpg" alt="Minimal Working Example result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -100,7 +102,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 <a id="section-2-2-2"></a>
 #### 2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect consistently achieves the **<span style="color:#0070C0">highest overall accuracy</span>** under fluctuating resource availability.
+**Key observation:** VLASelect maintains the **<span style="color:#0070C0">highest overall accuracy</span>** under different resource-availability settings.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -113,23 +115,23 @@ This artifact evaluation did not run the one-click reproduction script. All repo
   <tbody>
     <tr>
       <td><strong>Full Run</strong></td>
-      <td><strong>Time:</strong> 140 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
-      <td align="center"><img src="imgs/2.2.1.2.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 140 hours<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.1.2.png" alt="Full-run result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.1.2-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 1 hour<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.1.2-mwe.jpg" alt="Minimal Working Example result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
 <br>
 
 <a id="section-2-2-3"></a>
-#### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under the Same Accuracy<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
 
-**Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>**  and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
+**Key observation:** VLASelect achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>** and the **<span style="color:#0070C0">lowest resource consumption</span>** among the evaluated baseline methods.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -142,13 +144,13 @@ This artifact evaluation did not run the one-click reproduction script. All repo
   <tbody>
     <tr>
       <td><strong>Full Run</strong></td>
-      <td><strong>Time:</strong> 140 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
-      <td align="center"><img src="imgs/2.2.2.1.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 140 hours<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.2.1.png" alt="Full-run result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.2.1-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 1 hour<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.1-mwe.jpg" alt="Minimal Working Example result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -157,7 +159,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 
 **Energy Consumption Analysis**
 
-**Key observation:** VLASelect achieves the highest operational efficiency by **<span style="color:#0070C0">maintaining the lowest energy consumption</span>** across diverse workloads and experimental settings.
+**Key observation:** VLASelect records the **<span style="color:#0070C0">lowest energy consumption</span>** across the evaluated workloads.
 
 > For experiments in this paper, this table was generated concurrently with the previous step.
 
@@ -199,7 +201,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 
 **Experiment 3.3: Overhead comparison under the same learning accuracy**
 
-**Key observation:** VLASelect consistently achieves the target accuracy with the **<span style="color:#0070C0">shortest execution</span>** time and the **<span style="color:#0070C0">most reduced resource consumption</span>** compared to all baseline methods.
+**Key observation:** VLASelect achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>** and the **<span style="color:#0070C0">lowest resource consumption</span>** among the evaluated baseline methods.
 
 > For experiments in this paper, this table was generated concurrently with the previous step.
 
@@ -250,7 +252,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 <a id="section-2-2-4"></a>
 #### 2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** The execution time of VLASelect core modules is **<span style="color:#0070C0">obviously less than the training iteration time</span>**.
+**Key observation:** The execution time of VLASelect's core modules is **<span style="color:#0070C0">lower than the training iteration time</span>**.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -263,13 +265,13 @@ This artifact evaluation did not run the one-click reproduction script. All repo
   <tbody>
     <tr>
       <td><strong>Full Run</strong></td>
-      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 60 GB</td>
-      <td align="center"><img src="imgs/2.2.2.2.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 20 minutes<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.2.2.png" alt="Full-run result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.2.2-mwe.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 20 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.2-mwe.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -277,7 +279,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 <a id="section-2-2-5"></a>
 #### 2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** Under identical workloads, VLASelect achieves **<span style="color:#0070C0">shorter runtime</span>** while maintaining high accuracy compared with other baselines.
+**Key observation:** Across four workloads, VLASelect achieves **<span style="color:#0070C0">shorter runtime</span>** while maintaining the **<span style="color:#0070C0">highest accuracy</span>** among the evaluated baselines.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -290,13 +292,13 @@ This artifact evaluation did not run the one-click reproduction script. All repo
   <tbody>
     <tr>
       <td><strong>Full Run</strong></td>
-      <td><strong>Time:</strong> 140 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
-      <td align="center"><img src="imgs/2.2.2.3.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 140 hours<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.2.3.png" alt="Full-run result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.2.3-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 1 hour<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.2.3-mwe.jpg" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -304,7 +306,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 <a id="section-2-2-6"></a>
 #### 2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** All individual modules in VLASelect consistently **<span style="color:#0070C0">contribute to the overall task accuracy</span>** across both configurations.
+**Key observation:** The ablation results show that each VLASelect module **<span style="color:#0070C0">contributes to overall task accuracy</span>** across both configurations.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -317,13 +319,13 @@ This artifact evaluation did not run the one-click reproduction script. All repo
   <tbody>
     <tr>
       <td><strong>Full Run</strong></td>
-      <td><strong>Time:</strong> 40 h<br><strong>Memory (VRAM):</strong> 60 GB</td>
-      <td align="center"><img src="imgs/2.2.3.png" alt="Full-Scale Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 40 hours<br><strong>Memory (VRAM):</strong> 60 GB</td>
+      <td align="center"><img src="imgs/2.2.3.png" alt="Full-run result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 1 h<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/2.2.3-mwe.jpg" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 1 hour<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/2.2.3-mwe.jpg" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -331,12 +333,12 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 <a id="section-2-2-7"></a>
 #### 2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-Real Transfer<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-A supplementary video will be provided to compare simulation and real practice, further verifying the method’s consistency and generalization across virtual and real environments.
+The Minimal Working Example for Experiment 7 has not yet been tested. See the simulation-to-real demonstration in the [README](./README.md#227-experiment-7-discussion-1-in-section-55-sim-to-real-transfer).
 
 <a id="section-2-2-8"></a>
 #### 2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect **<span style="color:#0070C0">achieves 37.2% higher accuracy than RICL</span>**.
+**Key observation:** VLASelect **<span style="color:#0070C0">achieves a 37.2% relative improvement in accuracy over RICL</span>**.
 
 <br>
 
@@ -353,7 +355,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-9"></a>
 #### 2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** Under different configurations, the platforms support a maximum model size of **<span style="color:#0070C0">up to 24.0 GB</span>**.
+**Key observation:** The evaluated platforms support a maximum model size of **<span style="color:#0070C0">24.0 GB</span>**.
 
 <br>
 
@@ -371,7 +373,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-10"></a>
 #### 2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** MAPPO achieves lower accuracy due to short runtime being insufficient for policy updates, whereas VLASelect **<span style="color:#0070C0">achieves 60.0% higher accuracy than MAPPO</span>**.
+**Key observation:** MAPPO achieves lower accuracy because the tested runtime budget is insufficient for effective policy updates, whereas VLASelect **<span style="color:#0070C0">achieves a 60.0% relative improvement in accuracy over MAPPO</span>**.
 
 <br>
 
@@ -389,7 +391,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-11"></a>
 #### 2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves <span style="color:#0070C0"><strong>17.19% higher accuracy</strong></span> compared with the alternative knowledge exchange techniques.
+**Key observation:** VLASelect achieves a <strong><span style="color:#0070C0">17.19% relative improvement in accuracy</span></strong> compared with the evaluated alternative model-scaling methods.
 
 <br>
 
@@ -405,9 +407,9 @@ A supplementary video will be provided to compare simulation and real practice, 
 </div>
 
 <a id="section-2-2-12"></a>
-#### 2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison Between Different Knowledge Exchange Granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves **<span style="color:#0070C0">23.13% higher accuracy</span>** with channel/neuron-level knowledge exchange than with coarser granularities.
+**Key observation:** VLASelect achieves a **<span style="color:#0070C0">23.13% relative improvement in accuracy</span>** with channel-/neuron-level knowledge exchange compared with coarser granularities.
 
 <br>
 
@@ -425,7 +427,7 @@ A supplementary video will be provided to compare simulation and real practice, 
 <a id="section-2-2-13"></a>
 #### 2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves **<span style="color:#0070C0">33.18% higher accuracy</span>** than the baseline techniques by mitigating interference across previously learned environments and tasks.
+**Key observation:** VLASelect achieves a **<span style="color:#0070C0">33.18% relative improvement in accuracy</span>** over the baseline techniques, while mitigating interference across previously learned environments and tasks.
 
 <br>
 
@@ -441,9 +443,9 @@ A supplementary video will be provided to compare simulation and real practice, 
 </div>
 
 <a id="section-2-2-14"></a>
-#### 2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models<img src="./heading-divider.svg" alt="" width="100%" height="1">
+#### 2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN Models<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect achieves **<span style="color:#0070C0">33.62% and 34.72% higher accuracy</span>** than ConRFT on MLP and CNN models, respectively.
+**Key observation:** VLASelect achieves **<span style="color:#0070C0">33.62% and 34.72% relative improvements in accuracy</span>** over ConRFT on MLP and CNN models, respectively.
 
 <br>
 
@@ -469,7 +471,7 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
 <a id="section-3-1-1"></a>
 #### 3.1.1 Integrating the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect adapts models through a unified interface via VLA-Adapter and runs <span style="color:#0070C0"><strong>training successfully</strong></span>.
+**Key observation:** VLASelect adapts models through a unified interface via VLA-Adapter and runs <strong><span style="color:#0070C0">training successfully</span></strong>.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -482,8 +484,8 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 3 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.1.1.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 3 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.1.1.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -492,7 +494,7 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
 <a id="section-3-1-2"></a>
 #### 3.1.2 Integrating different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect integrates VLA-Adapter in selective model scaling and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> in this evaluation.
+**Key observation:** VLASelect integrates VLA-Adapter in selective model scaling and achieves the <strong><span style="color:#0070C0">highest average accuracy</span></strong> in this evaluation.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -505,8 +507,8 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.1.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of EdgeTA and LLM in a Flash <strong>overlap completely</strong> due to identical performance.</td>
+      <td><strong>Time:</strong> 20 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.1.2.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of EdgeTA and LLM in a Flash <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>
@@ -517,7 +519,7 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
 <a id="section-3-1-3"></a>
 #### 3.1.3 Integrating different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect with VLA-Adapter integrates multiple knowledge exchange granularities and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> at the channel/neuron level.
+**Key observation:** VLASelect with VLA-Adapter integrates multiple knowledge exchange granularities and achieves the <strong><span style="color:#0070C0">highest average accuracy</span></strong> at the channel-/neuron-level granularity.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -530,8 +532,8 @@ VLASelect integrates various VLA models, scaling strategies, and knowledge excha
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.1.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 30 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.1.3.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -545,7 +547,7 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
 <a id="section-3-2-1"></a>
 #### 3.2.1 Integrating the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect integrates TinyVLA through a unified adapter interface and runs <span style="color:#0070C0"><strong>training successfully</strong></span> (only evaluated on constrained testbed).
+**Key observation:** VLASelect integrates TinyVLA through a unified adapter interface and runs <strong><span style="color:#0070C0">training successfully</span></strong> (only evaluated on constrained testbed).
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -558,8 +560,8 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 3 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.2.1.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 3 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.2.1.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -568,7 +570,7 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
 <a id="section-3-2-2"></a>
 #### 3.2.2 Integrating different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect combines TinyVLA with selective model scaling and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> in this evaluation.
+**Key observation:** VLASelect combines TinyVLA with selective model scaling and achieves the <strong><span style="color:#0070C0">highest average accuracy</span></strong> in this evaluation.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -581,8 +583,8 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.2.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Attention, LLM in a Flash, and EdgeTA <strong>overlap completely</strong> due to identical performance.</td>
+      <td><strong>Time:</strong> 20 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.2.2.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Attention, LLM in a Flash, and EdgeTA <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>
@@ -593,7 +595,7 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
 <a id="section-3-2-3"></a>
 #### 3.2.3 Integrating different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** For TinyVLA, VLASelect integrates different knowledge exchange granularities and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> with channel/neuron-level exchange.
+**Key observation:** For TinyVLA, VLASelect integrates different knowledge exchange granularities and achieves the <strong><span style="color:#0070C0">highest average accuracy</span></strong> with channel-/neuron-level exchange.
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -606,8 +608,8 @@ To evaluate the model's performance on the TinyVLA backbone, we conducted experi
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.2.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 30 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.2.3.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -621,7 +623,7 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
 <a id="section-3-3-1"></a>
 #### 3.3.1 Integrating the model<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** VLASelect adapts EdgeVLA via the same unified interface and runs <span style="color:#0070C0"><strong>training successfully</strong></span> (only evaluated on constrained testbed).
+**Key observation:** VLASelect adapts EdgeVLA via the same unified interface and runs <strong><span style="color:#0070C0">training successfully</span></strong> (only evaluated on constrained testbed).
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -634,8 +636,8 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 3 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.3.1.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 3 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.3.1.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -644,7 +646,7 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
 <a id="section-3-3-2"></a>
 #### 3.3.2 Integrating different scaling strategies<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** On EdgeVLA, VLASelect uses selective model scaling and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> in this evaluation (only evaluated on constrained testbed).
+**Key observation:** On EdgeVLA, VLASelect uses selective model scaling and achieves the <strong><span style="color:#0070C0">highest average accuracy</span></strong> in this evaluation (only evaluated on constrained testbed).
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -657,8 +659,8 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 20 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.3.2.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
+      <td><strong>Time:</strong> 20 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.3.2.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"></td>
     </tr>
   </tbody>
 </table>
@@ -667,7 +669,7 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
 <a id="section-3-3-3"></a>
 #### 3.3.3 Integrating different knowledge exchange granularities<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** On EdgeVLA, VLASelect integrates different knowledge exchange granularities and achieves the <span style="color:#0070C0"><strong>highest average accuracy</strong></span> with channel/neuron-level exchange (only evaluated on constrained testbed).
+**Key observation:** On EdgeVLA, VLASelect integrates different knowledge exchange granularities and achieves the <strong><span style="color:#0070C0">highest average accuracy</span></strong> with channel-/neuron-level exchange (only evaluated on constrained testbed).
 
 <table align="center" style="width: 100%; table-layout: fixed;">
   <thead>
@@ -680,8 +682,8 @@ VLASelect integrates the EdgeVLA model, scaling strategies, and knowledge exchan
   <tbody>
     <tr>
       <td><strong>Minimal Working Example</strong></td>
-      <td><strong>Time:</strong> 30 min<br><strong>Memory (VRAM):</strong> 20 GB</td>
-      <td align="center"><img src="imgs/3.3.3.png" alt="MWE Result" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Layer and Block <strong>overlap completely</strong> due to identical performance.</td>
+      <td><strong>Time:</strong> 30 minutes<br><strong>Memory (VRAM):</strong> 20 GB</td>
+      <td align="center"><img src="imgs/3.3.3.png" alt="Minimal Working Example" style="display: block; width: 800px; max-width: 100%; height: auto; margin: 0 auto;"><br>The curves of Layer and Block <strong>overlap completely</strong> due to identical performance.</td>
     </tr>
   </tbody>
 </table>

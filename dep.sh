@@ -10,6 +10,7 @@ DOCKER_IMAGE=${DOCKER_IMAGE:-}
 HOST_REPO_DIR=${HOST_REPO_DIR:-$ROOT_DIR}
 CONTAINER_REPO_DIR=${CONTAINER_REPO_DIR:-$ROOT_DIR}
 START_SCRIPT_PATH=${START_SCRIPT_PATH:-$ROOT_DIR/start_docker.sh}
+GENERATE_START_DOCKER_SH=${GENERATE_START_DOCKER_SH:-0}
 CONTAINER_VENV_DIR=${CONTAINER_VENV_DIR:-/opt/vlaselect-venv}
 SMALL_IMAGE_SENTINEL=${SMALL_IMAGE_SENTINEL:-/opt/vlaselect-venv/.vlaselect-ready}
 SHM_SIZE=${SHM_SIZE:-32g}
@@ -893,6 +894,19 @@ START_EOF
     chmod +x "$START_SCRIPT_PATH"
 }
 
+print_start_script_only_summary() {
+    cat <<MSG
+[dep.sh] generated start_docker.sh only.
+[dep.sh] start script   : $START_SCRIPT_PATH
+[dep.sh] container name : $CONTAINER_NAME
+[dep.sh] repo mount     : $HOST_REPO_DIR -> $CONTAINER_REPO_DIR
+[dep.sh] container venv : $CONTAINER_VENV_DIR
+
+[start_docker.sh] usage:
+  bash start_docker.sh
+MSG
+}
+
 print_summary() {
     cat <<MSG
 [dep.sh] environment preparation is complete.
@@ -915,6 +929,12 @@ print_summary() {
   bash start_docker.sh
 MSG
 }
+
+if [[ "$GENERATE_START_DOCKER_SH" == "1" ]]; then
+    generate_start_script
+    print_start_script_only_summary
+    exit 0
+fi
 
 require_cmd docker "Install Docker Engine first: https://docs.docker.com/engine/install/ubuntu/"
 require_cmd grep "grep is required on the host machine."

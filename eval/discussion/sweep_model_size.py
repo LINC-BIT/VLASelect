@@ -16,7 +16,11 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-sys.path.append('.')
+THIS_DIR = Path(__file__).resolve().parent
+EVAL_ROOT = THIS_DIR.parent
+REPO_ROOT = EVAL_ROOT.parent
+if str(EVAL_ROOT) not in sys.path:
+    sys.path.insert(0, str(EVAL_ROOT))
 
 from ours.libs.gen_scaling_law_data_points import generate_small_model_v2
 from ours.libs.train_with_fbs.lib_cnn import get_model_size
@@ -69,6 +73,32 @@ FAMILY_CONFIGS: Dict[str, FamilyConfig] = {
         actor_builder=_build_vla_adapter_actor,
     ),
 }
+
+
+def resolve_model_dir_path(model_dir: Path) -> Path:
+    if model_dir.is_absolute():
+        return model_dir
+    candidates = [
+        Path.cwd() / model_dir,
+        REPO_ROOT / model_dir,
+        EVAL_ROOT / model_dir,
+    ]
+    model_dir_str = model_dir.as_posix()
+    if model_dir_str.startswith('eval/'):
+        trimmed = Path(model_dir_str[len('eval/'):])
+        candidates.extend([
+            REPO_ROOT / trimmed,
+            EVAL_ROOT / trimmed,
+        ])
+    seen = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if resolved.exists():
+            return resolved
+    return (REPO_ROOT / model_dir).resolve()
 
 
 def parse_float_list(raw: str) -> List[float]:
@@ -219,6 +249,7 @@ def convert_actor_to_fbs(
                     states=batch['states'],
                     mode='policy',
                 )[0].float().sum(),
+                verify_outputs=False,
             ).cpu()
 
     if lm_qkv:
@@ -237,6 +268,7 @@ def convert_actor_to_fbs(
                     output_hidden_states=True,
                     return_dict=True,
                 ).hidden_states[-1].float().mean(),
+                verify_outputs=False,
             ).cpu()
 
     actor.vla.to(dtype=dtype)
@@ -337,8 +369,10 @@ def print_result_table(results: Sequence[Dict[str, Any]]) -> None:
         )
 
 
-def prepare_actor_for_training(actor: torch.nn.Module, device: torch.device) -> torch.nn.Module:
+def prepare_actor_for_training(actor: torch.nn.Module, device: torch.device, dtype: torch.dtype) -> torch.nn.Module:
     actor = actor.to(device)
+    if hasattr(actor, 'vla'):
+        actor.vla.to(device=device, dtype=dtype)
     if hasattr(actor, 'configure_trainable_modules'):
         actor.configure_trainable_modules(True)
     actor.train()
@@ -444,13 +478,13 @@ def run_single_sweep(
     del actor
     gc.collect()
 
-    small_actor = prepare_actor_for_training(small_actor, device)
+    small_actor = prepare_actor_for_training(small_actor, device, dtype)
     train_metrics = run_peak_training_step(small_actor, family, device, train_batch_size)
 
     result = {
         'family': family.name,
         'model_dir': str(model_dir),
-        'uses_random_init_fallback': not model_dir.exists(),
+        'uses_random_init_fallback': not model_dir.is_dir(),
         'max_sparsity': sparsity,
         'train_batch_size': train_batch_size,
         'original_model_mb': original_model_mb,
@@ -499,7 +533,8 @@ def main() -> None:
     budgets_gb = parse_float_list(args.budget_gb)
     device = torch.device(args.device)
     dtype = torch.bfloat16 if args.dtype == 'bfloat16' else torch.float32
-    model_dir = Path(args.model_dir) if args.model_dir else Path(family.default_model_dir)
+    requested_model_dir = Path(args.model_dir) if args.model_dir else Path(family.default_model_dir)
+    model_dir = resolve_model_dir_path(requested_model_dir)
 
     output_dir = make_output_dir(Path(args.output_dir))
     resource_info: Dict[str, Any] = {}

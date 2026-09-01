@@ -2,6 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
+source "$ROOT_DIR/eval/common/resource_summary.sh"
+vlaselect_resource_summary_start "$(basename "${BASH_SOURCE[0]}")"
+trap 'vlaselect_resource_summary_finalize "$?"' EXIT
 MODE=${1:-${MWE:-0}}
 if [[ "$MODE" != "0" && "$MODE" != "1" ]]; then
   echo "usage: $0 [0|1]" >&2

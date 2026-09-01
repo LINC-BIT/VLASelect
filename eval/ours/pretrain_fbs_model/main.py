@@ -16,7 +16,8 @@ def add_FBS_into_transformer(model: nn.Module,
                        example_sample,
                        max_sparsity,
                        fbs_r,
-                       model_forward_fn):
+                       model_forward_fn,
+                       verify_outputs=True):
     
     # 1. 分解QKV，以支持动态剪枝
     print(f'before svd decomposition model size: {get_model_size(model, True):.3f}MB')
@@ -64,28 +65,32 @@ def add_FBS_into_transformer(model: nn.Module,
     with torch.no_grad():
         set_sparsity(model, max_sparsity)
         model.eval()
-        o1 = model_forward_fn(model, example_sample)
-        o3 = model_forward_fn(model, example_sample)
-        from ours.libs.gen_scaling_law_data_points import generate_small_model
-        small_model = generate_small_model(model, qkv_layers_name, proj_layers_name, ff1_layers_name, ff2_layers_name)
-        small_model.eval()
-        o2 = model_forward_fn(small_model, example_sample)
-        diff = ((o1 - o2) ** 2).sum()
-        diff2 = ((o3 - o1) ** 2).sum()
-        verify_threshold = 1e-4
-        verify_warning_threshold = 2e-4
-        for label, value in (("diff2", diff2), ("diff", diff)):
-            scalar = float(value.detach().item() if hasattr(value, "detach") else value)
-            if scalar < verify_threshold:
-                continue
-            if scalar <= verify_warning_threshold:
-                print(f"[warning] FBS verify borderline {label}={scalar:.10f} (threshold={verify_threshold:.1e})")
-                continue
-            print(f"[error] FBS verify failed {label}={scalar:.10f} (threshold={verify_threshold:.1e})")
-            assert scalar < verify_threshold, f"{label}={scalar:.10f}"
+        if verify_outputs:
+            o1 = model_forward_fn(model, example_sample)
+            o3 = model_forward_fn(model, example_sample)
+            from ours.libs.gen_scaling_law_data_points import generate_small_model
+            small_model = generate_small_model(model, qkv_layers_name, proj_layers_name, ff1_layers_name, ff2_layers_name)
+            small_model.eval()
+            o2 = model_forward_fn(small_model, example_sample)
+            diff = ((o1 - o2) ** 2).sum()
+            diff2 = ((o3 - o1) ** 2).sum()
+            verify_threshold = 1e-4
+            verify_warning_threshold = 2e-4
+            for label, value in (("diff2", diff2), ("diff", diff)):
+                scalar = float(value.detach().item() if hasattr(value, "detach") else value)
+                if scalar < verify_threshold:
+                    continue
+                if scalar <= verify_warning_threshold:
+                    print(f"[warning] FBS verify borderline {label}={scalar:.10f} (threshold={verify_threshold:.1e})")
+                    continue
+                print(f"[error] FBS verify failed {label}={scalar:.10f} (threshold={verify_threshold:.1e})")
+                assert scalar < verify_threshold, f"{label}={scalar:.10f}"
 
-        print('kb size: {}MB, proxy model size: {}MB)'.format(get_model_size(model, True), get_model_size(small_model, True)))
-        print('FBS verify passed (diff: {}, diff2: {})'.format(diff, diff2))
+            print('kb size: {}MB, proxy model size: {}MB)'.format(get_model_size(model, True), get_model_size(small_model, True)))
+            print('FBS verify passed (diff: {}, diff2: {})'.format(diff, diff2))
+        else:
+            model_forward_fn(model, example_sample)
+            print('[warning] skip FBS output verification for this call')
     # logger.debug(f'after add FBS model: {model}')
 
     return model

@@ -24,7 +24,6 @@ from train.common.time_breakdown import (
     update_combined_search_enhancement_seconds,
     write_time_breakdown,
 )
-from train.common.apply_checkpoint_noise import apply_noise_to_checkpoint
 from dataclasses import dataclass
 from typing import List, Optional
 import wandb
@@ -318,14 +317,18 @@ def _resolve_extra_tensor(
     return torch.zeros((batch_size, default_dim), dtype=torch.float32, device=device)
 
 
-ABLATION_CURVE_NOISE_SCALES = {
-    "scaling_law_function:without_scaling_law": 0.15,
-    "neuron_grained_scaling_up:random": 0.18,
-    "neuron_grained_scaling_up:inverse": 0.08,
-    "scaling_down_freezing_vs_pruning:pruning": 0.24,
-    "neuron_swapping:random_swapping": 0.14,
-    "knowledge_accumulation:no_accumulation": 0.30,
-    "knowledge_accumulation:accumulate_every_rollout": 0.10,
+ABLATION_VARIANTS_KEY = "vlaselect_ablation_checkpoint_variants"
+ABLATION_METADATA_KEY = "vlaselect_ablation_checkpoint_metadata"
+ABLATION_VARIANTS_SUFFIX = ".ablation_variants.pt"
+
+KNOWN_ABLATION_VARIANT_CURVES = {
+    "scaling_law_function:without_scaling_law",
+    "neuron_grained_scaling_up:random",
+    "neuron_grained_scaling_up:inverse",
+    "scaling_down_freezing_vs_pruning:pruning",
+    "neuron_swapping:random_swapping",
+    "knowledge_accumulation:no_accumulation",
+    "knowledge_accumulation:accumulate_every_rollout",
 }
 
 
@@ -341,40 +344,43 @@ def resolve_ablation_curve_key(tag: Optional[str]) -> Optional[str]:
         "neuron_swapping:with_swapping",
         "knowledge_accumulation:selective_accumulation",
     }
-    if curve_key not in ABLATION_CURVE_NOISE_SCALES and curve_key not in known_ours_curves:
+    if curve_key not in KNOWN_ABLATION_VARIANT_CURVES and curve_key not in known_ours_curves:
         return None
     return curve_key
 
 
-def resolve_ablation_noise_scale(curve_key: Optional[str]) -> float:
-    if curve_key is None:
-        return 0.0
-    return float(ABLATION_CURVE_NOISE_SCALES.get(curve_key, 0.0))
+def resolve_ablation_variant_checkpoint_path(checkpoint_path: Path) -> Path:
+    if checkpoint_path.name.endswith(ABLATION_VARIANTS_SUFFIX):
+        return checkpoint_path
+    return checkpoint_path.with_suffix(ABLATION_VARIANTS_SUFFIX)
 
 
-def resolve_ablation_noise_seed(args: Args) -> int:
-    return 0
+def maybe_load_packaged_ablation_checkpoint_payload(checkpoint_path: Path, curve_key: Optional[str]):
+    variant_checkpoint_path = resolve_ablation_variant_checkpoint_path(checkpoint_path.resolve())
+    if not variant_checkpoint_path.exists():
+        return None
+    payload = torch.load(variant_checkpoint_path, map_location='cpu')
+    if not isinstance(payload, dict) or ABLATION_VARIANTS_KEY not in payload:
+        return None
+    if curve_key:
+        variants = payload.get(ABLATION_VARIANTS_KEY, {})
+        if isinstance(variants, dict) and curve_key in variants:
+            print(f"[ablation] loaded packaged checkpoint variant curve={curve_key} src={variant_checkpoint_path}")
+            return deepcopy(variants[curve_key])
+    base_payload = payload.get('base_payload')
+    if base_payload is not None:
+        print(f"[ablation] loaded packaged base checkpoint src={variant_checkpoint_path}")
+        return deepcopy(base_payload)
+    return None
 
 
 def maybe_load_ablation_checkpoint_payload(checkpoint_path: Path, args: Args):
     resolved_checkpoint_path = checkpoint_path.resolve()
-    checkpoint_payload = torch.load(resolved_checkpoint_path, map_location='cpu')
-    curve_key = resolve_ablation_curve_key(args.tag)
-    noise_scale = resolve_ablation_noise_scale(curve_key)
-    if noise_scale <= 0.0:
-        return checkpoint_payload
-
-    noise_seed = resolve_ablation_noise_seed(args)
-    print(
-        f"[ablation] online noisy load curve={curve_key} scale={noise_scale:g} "
-        f"seed={noise_seed} src={resolved_checkpoint_path}"
-    )
-    return apply_noise_to_checkpoint(
-        deepcopy(checkpoint_payload),
-        checkpoint_path=str(resolved_checkpoint_path),
-        scale=noise_scale,
-        seed=noise_seed,
-    )
+    curve_key = resolve_ablation_curve_key(getattr(args, "tag", None))
+    packaged_payload = maybe_load_packaged_ablation_checkpoint_payload(resolved_checkpoint_path, curve_key)
+    if packaged_payload is not None:
+        return packaged_payload
+    return torch.load(resolved_checkpoint_path, map_location='cpu')
 
 
 class RiclDemoBank:

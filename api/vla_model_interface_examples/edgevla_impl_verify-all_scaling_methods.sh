@@ -3,6 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
+source "$ROOT_DIR/eval/common/resource_summary.sh"
+vlaselect_resource_summary_start "$(basename "${BASH_SOURCE[0]}")"
+trap 'vlaselect_resource_summary_finalize "$?"' EXIT
 VERIFY_SCRIPT="$SCRIPT_DIR/edgevla_impl_verify.sh"
 RESULTS_DIR="$ROOT_DIR/api/results/edgevla/scaling_methods"
 

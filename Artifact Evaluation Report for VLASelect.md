@@ -199,7 +199,7 @@ This artifact evaluation did not run the one-click reproduction script. All repo
 
 <br>
 
-**Experiment 3.3: Overhead comparison under the same learning accuracy**
+**Overhead comparison under the same learning accuracy**
 
 **Key observation:** VLASelect achieves the target accuracy with the **<span style="color:#0070C0">shortest execution time</span>** and the **<span style="color:#0070C0">lowest resource consumption</span>** among the evaluated baseline methods.
 
@@ -373,7 +373,7 @@ The Minimal Working Example for Experiment 7 has not yet been tested. See the si
 <a id="section-2-2-10"></a>
 #### 2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Key observation:** MAPPO achieves lower accuracy because the tested runtime budget is insufficient for effective policy updates, whereas VLASelect **<span style="color:#0070C0">achieves a 60.0% relative improvement in accuracy over MAPPO</span>**.
+**Key observation:** MAPPO achieves lower accuracy because the tested runtime budget is insufficient for effective policy updates, whereas VLASelect **<span style="color:#0070C0">achieves up to a 60.0% relative improvement in accuracy over MAPPO</span>**.
 
 <br>
 

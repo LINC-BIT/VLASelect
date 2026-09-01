@@ -3,6 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
+source "$ROOT_DIR/eval/common/resource_summary.sh"
+vlaselect_resource_summary_start "$(basename "${BASH_SOURCE[0]}")"
+trap 'vlaselect_resource_summary_finalize "$?"' EXIT
 export MS_ASSET_DIR="${MS_ASSET_DIR:-$ROOT_DIR/eval/datasets}"
 VERIFY_SCRIPT="$SCRIPT_DIR/tinyvla_impl_verify.sh"
 RESULTS_DIR="$ROOT_DIR/api/results/tinyvla/scaling_methods"

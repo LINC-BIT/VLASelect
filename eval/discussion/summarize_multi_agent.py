@@ -25,12 +25,22 @@ def format_metric(value: Optional[float]) -> str:
     return '-' if value is None else f'{value:.4f}'
 
 
+def format_percent(value: Optional[float]) -> str:
+    return '-' if value is None else f'{value:.2f}%'
+
+
 def metric_from_row(row: Dict[str, Any], *keys: str) -> Optional[float]:
     for key in keys:
         value = maybe_float(row.get(key))
         if value is not None:
             return value
     return None
+
+
+def relative_improvement(ours: Optional[float], baseline: Optional[float]) -> Optional[float]:
+    if ours is None or baseline is None or baseline <= 0.0:
+        return None
+    return (ours - baseline) / baseline * 100.0
 
 
 def summarize_run(entry: Dict[str, Any]) -> Dict[str, Any]:
@@ -95,16 +105,26 @@ def print_summary(rows: List[Dict[str, Any]]) -> None:
     mappo = next((row for row in rows if row['method'] == 'mappo'), None)
     ours = next((row for row in rows if row['method'] == 'ours'), None)
     if mappo and ours:
-        once_gain = None
-        end_gain = None
+        latest_once_gain = None
+        latest_end_gain = None
+        best_once_gain = None
+        best_end_gain = None
         if mappo['latest_success_once'] is not None and ours['latest_success_once'] is not None:
-            once_gain = ours['latest_success_once'] - mappo['latest_success_once']
+            latest_once_gain = ours['latest_success_once'] - mappo['latest_success_once']
         if mappo['latest_success_at_end'] is not None and ours['latest_success_at_end'] is not None:
-            end_gain = ours['latest_success_at_end'] - mappo['latest_success_at_end']
+            latest_end_gain = ours['latest_success_at_end'] - mappo['latest_success_at_end']
+        if mappo['best_success_once'] is not None and ours['best_success_once'] is not None:
+            best_once_gain = ours['best_success_once'] - mappo['best_success_once']
+        if mappo['best_success_at_end'] is not None and ours['best_success_at_end'] is not None:
+            best_end_gain = ours['best_success_at_end'] - mappo['best_success_at_end']
         print('')
         print('[comparison] ours vs mappo')
-        print(f"[comparison] latest_success_once_gain={format_metric(once_gain)}")
-        print(f"[comparison] latest_success_at_end_gain={format_metric(end_gain)}")
+        print(f"[comparison] latest_success_once_gain={format_metric(latest_once_gain)}")
+        print(f"[comparison] latest_success_at_end_gain={format_metric(latest_end_gain)}")
+        print(f"[comparison] best_success_once_gain={format_metric(best_once_gain)}")
+        print(f"[comparison] best_success_once_relative_improvement={format_percent(relative_improvement(ours['best_success_once'], mappo['best_success_once']))}")
+        print(f"[comparison] best_success_at_end_gain={format_metric(best_end_gain)}")
+        print(f"[comparison] best_success_at_end_relative_improvement={format_percent(relative_improvement(ours['best_success_at_end'], mappo['best_success_at_end']))}")
 
 
 def main() -> None:

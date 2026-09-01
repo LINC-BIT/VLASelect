@@ -11,40 +11,21 @@ import dill
 import torch
 import torch.nn as nn
 
-from train.common.checkpoint_noise import (
-    get_baseline_pretrain_ckpt_noise_scale,
-    get_baseline_pretrain_ckpt_noise_seed,
-    is_mwe_checkpoint_noise_enabled,
-)
-
-
 MATERIALIZED_FBS_POLICY_BYTES_KEY = "materialized_fbs_policy_bytes"
 MATERIALIZED_FBS_METADATA_KEY = "materialized_fbs_policy_metadata"
 MATERIALIZED_FBS_FORMAT_VERSION = 1
 MATERIALIZED_FBS_PICKLE_PROTOCOL = max(4, pickle.HIGHEST_PROTOCOL)
 
 
-def baseline_materialized_fbs_noise_metadata() -> Dict[str, Any]:
-    enabled = is_mwe_checkpoint_noise_enabled()
-    return {
-        "enabled": enabled,
-        "scale": float(get_baseline_pretrain_ckpt_noise_scale()) if enabled else 0.0,
-        "seed": int(get_baseline_pretrain_ckpt_noise_seed()),
-    }
-
-
 def build_materialized_fbs_metadata(
     checkpoint_path: str | Path,
     *,
-    include_baseline_noise: bool = False,
     extra_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     metadata: Dict[str, Any] = {
         "version": MATERIALIZED_FBS_FORMAT_VERSION,
         "checkpoint_path": str(Path(checkpoint_path).resolve()),
     }
-    if include_baseline_noise:
-        metadata["noise"] = baseline_materialized_fbs_noise_metadata()
     if extra_metadata:
         metadata.update(dict(extra_metadata))
     return metadata

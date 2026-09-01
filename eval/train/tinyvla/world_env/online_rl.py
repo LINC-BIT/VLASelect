@@ -38,7 +38,6 @@ from train.vla_adapter_new.model_impl.online_rl import (
     save_metrics_history,
     strip_module_prefix,
 )
-from train.common.checkpoint_noise import maybe_apply_checkpoint_noise_to_state_dict
 from train.common.materialized_fbs_cache import (
     build_materialized_fbs_metadata,
     maybe_load_materialized_fbs_policy_from_checkpoint,
@@ -302,23 +301,11 @@ def build_runtime_envs(
 def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -> Dict[str, Any]:
     checkpoint = torch.load(checkpoint_path, map_location="cpu")
     if isinstance(checkpoint, dict) and "policy" in checkpoint:
-        policy_state = maybe_apply_checkpoint_noise_to_state_dict(
-            strip_module_prefix(checkpoint["policy"]),
-            checkpoint_path=checkpoint_path,
-            state_label="policy",
-        )
+        policy_state = strip_module_prefix(checkpoint["policy"])
     elif isinstance(checkpoint, dict) and "agent" in checkpoint:
-        policy_state = maybe_apply_checkpoint_noise_to_state_dict(
-            strip_module_prefix(checkpoint["agent"]),
-            checkpoint_path=checkpoint_path,
-            state_label="agent",
-        )
+        policy_state = strip_module_prefix(checkpoint["agent"])
     else:
-        policy_state = maybe_apply_checkpoint_noise_to_state_dict(
-            strip_module_prefix(checkpoint),
-            checkpoint_path=checkpoint_path,
-            state_label="checkpoint",
-        )
+        policy_state = strip_module_prefix(checkpoint)
     policy.load_state_dict(policy_state, strict=True)
     return checkpoint if isinstance(checkpoint, dict) else {}
 
@@ -373,7 +360,6 @@ def materialize_fbs_caches(
 def build_static_student_policy(args: Args, device: torch.device) -> reference.EdgeVLAActorCritic:
     materialized_fbs_metadata = build_materialized_fbs_metadata(
         args.static_model_checkpoint,
-        include_baseline_noise=True,
     )
     fbs_policy = maybe_load_materialized_fbs_policy_from_checkpoint(
         args.static_model_checkpoint,

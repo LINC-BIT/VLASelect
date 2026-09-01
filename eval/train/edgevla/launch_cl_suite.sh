@@ -23,19 +23,6 @@ MONITOR_INTERVAL_SECONDS="${MONITOR_INTERVAL_SECONDS:-30}"
 PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-60}"
 QUEUED_PER_GPU="${QUEUED_PER_GPU:-1}"
 vlaselect_install_cleanup_trap
-if [[ -z "${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE+x}" ]]; then
-    if [[ "$SMOKE" == "1" ]]; then
-        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.35"
-    else
-        export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE="0.0"
-    fi
-else
-    export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE
-fi
-export VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED="${VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED:-0}"
-if [[ "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0" && "$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE" != "0.0" ]]; then
-    echo "[edgevla-suite] baseline pretrained checkpoint noise scale=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SCALE seed=$VLASELECT_BASELINE_PRETRAIN_CKPT_NOISE_SEED"
-fi
 GPU_BY_METHOD_OVERRIDE="${GPU_BY_METHOD_OVERRIDE:-}"
 
 FULL_ENVS_ID="['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']"

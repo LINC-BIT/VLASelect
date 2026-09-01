@@ -23,19 +23,12 @@ from common.vis_line_draw import apply_matplotlib_style, draw_plot
 
 DEFAULT_TABLE_ROOT = SCRIPT_DIR / 'acc_comparison_task_env_table'
 FALLBACK_TABLE_ROOT = DEFAULT_TABLE_ROOT
-OVERHEAD_SAME_ACC_TABLE_ROOT = EVAL_ROOT / 'overhead' / 'overhead_same_acc_table'
 PANEL_LOOKUP_TABLE_ROOTS = [DEFAULT_TABLE_ROOT]
 DEFAULT_MANIFEST_OVERRIDE = os.environ.get('PLOT_ACC_MANIFEST', '').strip()
 DEFAULT_FIGURE_STEM = 'FIG_ACC_TASK_ENV'
 DEFAULT_SUMMARY_STEM = 'acc_task_env_summary'
 DEFAULT_VIS_PAYLOAD_SUBDIR = 'vis_payload_task_env'
-SAME_ACC_TABLE_ROOT = SCRIPT_DIR / 'acc_task_env_from_same_acc_table'
-SAME_ACC_FIGURE_STEM = DEFAULT_FIGURE_STEM
-SAME_ACC_SUMMARY_STEM = DEFAULT_SUMMARY_STEM
-SAME_ACC_VIS_PAYLOAD_SUBDIR = DEFAULT_VIS_PAYLOAD_SUBDIR
 
-DEFAULT_RUNTIME_TABLE_ROOT = SAME_ACC_TABLE_ROOT
-DEFAULT_PANEL_LOOKUP_TABLE_ROOTS = [SAME_ACC_TABLE_ROOT, OVERHEAD_SAME_ACC_TABLE_ROOT, DEFAULT_TABLE_ROOT]
 
 TABLE_ROOT = DEFAULT_TABLE_ROOT
 MANIFEST_OVERRIDE = DEFAULT_MANIFEST_OVERRIDE
@@ -118,10 +111,6 @@ RENDER_CONFIG = {
 }
 
 
-def hint_is_same_acc(value: Any) -> bool:
-    return 'from_same_acc' in str(value).strip().lower()
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Plot task-environment accuracy curves.')
     parser.add_argument('--table-root', default=os.environ.get('PLOT_ACC_TABLE_ROOT', '').strip())
@@ -131,8 +120,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--panel-dir', default=os.environ.get('PLOT_ACC_PANEL_DIR', '').strip())
     parser.add_argument('--vis-payload-dir', default=os.environ.get('PLOT_ACC_VIS_PAYLOAD_DIR', '').strip())
     parser.add_argument('--methods', default=os.environ.get('PLOT_ACC_METHODS', '').strip(), help='Comma-separated internal method names to plot, e.g. self_improv,vla_rft,world_env,ours')
-    parser.add_argument('--from-same-acc', action='store_true', default=parse_bool(os.environ.get('PLOT_ACC_FROM_SAME_ACC', '0')))
-    parser.add_argument('--from-task-env-table', action='store_true', default=parse_bool(os.environ.get('PLOT_ACC_FROM_TASK_ENV_TABLE', '0')))
     return parser.parse_args()
 
 
@@ -142,46 +129,17 @@ def configure_runtime(args: argparse.Namespace) -> None:
     global SUMMARY_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR, VIS_PAYLOAD_DIR
     global LIMIT_SERIES_TO_THREE_POINTS, PANEL_LOOKUP_TABLE_ROOTS, SELECTED_METHODS_RAW
 
-    hinted_same_acc = any(
-        hint_is_same_acc(candidate)
-        for candidate in (
-            args.table_root,
-            args.manifest,
-            args.figure_stem,
-            args.summary_stem,
-            args.panel_dir,
-            args.vis_payload_dir,
-        )
-    )
-    if args.from_task_env_table:
-        inferred_same_acc = False
-    elif args.from_same_acc or hinted_same_acc:
-        inferred_same_acc = True
-    else:
-        inferred_same_acc = True
-
-    table_root_raw = args.table_root or (DEFAULT_RUNTIME_TABLE_ROOT if inferred_same_acc else DEFAULT_TABLE_ROOT)
-    table_root = Path(table_root_raw).expanduser().resolve() if str(table_root_raw).strip() else (SAME_ACC_TABLE_ROOT if inferred_same_acc else DEFAULT_TABLE_ROOT)
-    figure_stem = args.figure_stem or (SAME_ACC_FIGURE_STEM if inferred_same_acc else DEFAULT_FIGURE_STEM)
-    summary_stem = args.summary_stem or (SAME_ACC_SUMMARY_STEM if inferred_same_acc else DEFAULT_SUMMARY_STEM)
+    table_root_raw = args.table_root or DEFAULT_TABLE_ROOT
+    table_root = Path(table_root_raw).expanduser().resolve() if str(table_root_raw).strip() else DEFAULT_TABLE_ROOT
+    figure_stem = args.figure_stem or DEFAULT_FIGURE_STEM
+    summary_stem = args.summary_stem or DEFAULT_SUMMARY_STEM
     panel_dir = args.panel_dir or f'{figure_stem}_panels'
-    vis_payload_dir = args.vis_payload_dir or (SAME_ACC_VIS_PAYLOAD_SUBDIR if inferred_same_acc else DEFAULT_VIS_PAYLOAD_SUBDIR)
+    vis_payload_dir = args.vis_payload_dir or DEFAULT_VIS_PAYLOAD_SUBDIR
 
-    lookup_roots: list[Path] = []
-    for candidate in [
-        table_root,
-        SAME_ACC_TABLE_ROOT if inferred_same_acc else None,
-        OVERHEAD_SAME_ACC_TABLE_ROOT if inferred_same_acc else None,
-        FALLBACK_TABLE_ROOT if inferred_same_acc else None,
-    ]:
-        if candidate is None:
-            continue
-        resolved = Path(candidate).expanduser().resolve()
-        if resolved not in lookup_roots:
-            lookup_roots.append(resolved)
+    lookup_roots: list[Path] = [table_root]
 
     TABLE_ROOT = table_root
-    PANEL_LOOKUP_TABLE_ROOTS = lookup_roots or [path.resolve() for path in DEFAULT_PANEL_LOOKUP_TABLE_ROOTS]
+    PANEL_LOOKUP_TABLE_ROOTS = lookup_roots
     MANIFEST_OVERRIDE = str(args.manifest).strip()
     FIGURE_STEM = figure_stem
     SUMMARY_STEM = summary_stem

@@ -1,6 +1,6 @@
-# Pre-configured CloudLab Environment Guide
+# Instructions for Open Access to Our Preconfigured CloudLab Environment
 
-We provide a browser-based CloudLab environment where reviewers can access the VLASelect repository and run the **Minimal Working Example** directly.
+We provide a preconfigured CloudLab environment for artifact evaluation. Reviewers can access this environment and run the **minimum working examples** directly by following the instructions below.
 
 ## 1. Hardware and Software Specifications
 
@@ -33,43 +33,43 @@ We provide a browser-based CloudLab environment where reviewers can access the V
   </table>
 </p>
 
-## 2. Access the CloudLab Environment
+## 2. Access the Environment
 
 Open the following URL in a web browser:
 
 - **URL:** [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080)
 
 <p align="center">
-  <img src="./imgs/step1-cloud.png" alt="CloudLab login page" width="90%" />
+  <img src="./imgs/step1-cloud.png" alt="Login page" width="90%" />
 </p>
 
-After login, JupyterLab opens directly in the pre-configured VLASelect project environment.
+After login, JupyterLab opens directly in the preconfigured VLASelect project environment.
 
 ## 3. Open a Terminal
 
-In the CloudLab JupyterLab launcher, select **Terminal** under **Other**. A terminal will open in the project environment.
+Select **Terminal** from the menu in the upper-left corner. A terminal will open in the project environment.
 
 <p align="center">
-  <img src="./imgs/step2.1-cloud.png" alt="CloudLab launcher" width="90%" />
+  <img src="./imgs/step2.1-cloud.png" alt="Platform home page" width="90%" />
 </p>
 
 <p align="center">
-  <img src="./imgs/step2.2-cloud.png" alt="CloudLab terminal" width="90%" />
+  <img src="./imgs/step2.2-cloud.png" alt="Terminal" width="90%" />
 </p>
 
 ## 4. Start the Docker Container
 
-In the terminal, start the pre-configured Docker container:
+Run the following command to start the Docker container:
 
 ```bash
 bash start_docker.sh
 ```
 
-After the command attaches to the container, run all subsequent evaluation commands in the container shell.
-
 <p align="center">
-  <img src="./imgs/step3-cloud.png" alt="CloudLab Docker container started" width="90%" />
+  <img src="./imgs/step3-cloud.png" alt="VLASelect Docker container started" width="90%" />
 </p>
+
+After the command attaches to the container, run all subsequent evaluation commands in the container shell.
 
 ## 5. Run the Evaluation
 
@@ -77,12 +77,11 @@ After starting the container, follow [Section 2.2: Step-by-Step Reproduction](RE
 
 **Example:**
 
-The following example reproduces **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes** in Minimal Working Example mode.
+The following example reproduces **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes** for the minimum working examples.
 
 ```bash
 cd eval/acc_comparison
-MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
-  bash run_acc_task_env_change.sh
+MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect   bash run_acc_task_env_change.sh
 python3 plot_acc_task_env.py
 ```
 
@@ -103,7 +102,7 @@ python3 plot_acc_task_env.py
       <th>Output</th>
     </tr>
     <tr>
-      <td>Minimal Working Example</td>
+      <td>Minimum working example</td>
       <td>1.5 hours</td>
       <td>20GB memory <br> 32GB disk space</td>
       <td><code>eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</code></td>
@@ -116,5 +115,20 @@ python3 plot_acc_task_env.py
 Use the file manager on the left to inspect outputs.
 
 <p align="center">
-  <img src="./imgs/step5-cloud.png" alt="CloudLab file manager" width="90%" />
+  <img src="./imgs/step5.1-cloud.png" alt=" file manager" width="90%" />
+</p>
+
+<br>
+
+**Example:**
+
+For **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes**, the output can be found at: 
+
+<code>eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</code>
+
+Use File Manager to locate the path and double-click to open the file. The result will display in the right window:
+
+
+<p align="center">
+  <img src="./imgs/step5.2-cloud.png" alt="Example output in the file manager" width="90%" />
 </p>

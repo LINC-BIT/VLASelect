@@ -89,7 +89,7 @@ python3 plot_acc_task_env.py
 **The expected terminal output is shown below:**
 
 <p align="center">
-  <img src="./imgs/exmaple_1.png" alt="Example output for the task and environment change experiment" width="90%" />
+  <img src="./imgs/step4-cloud.png" alt="Example output for the task and environment change experiment" width="90%" />
 </p>
 
 **The resource requirements and output are listed below:**

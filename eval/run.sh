@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-source "$ROOT_DIR/common/resource_summary.sh"
+source "$SCRIPT_DIR/common/resource_summary.sh"
 vlaselect_resource_summary_start "$(basename "${BASH_SOURCE[0]}")"
 trap 'vlaselect_resource_summary_finalize "$?"' EXIT
 cd "$SCRIPT_DIR"

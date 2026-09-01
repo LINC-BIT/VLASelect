@@ -86,6 +86,8 @@ After the command attaches to the container, run all subsequent evaluation comma
 
 After starting the container, follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README to run the evaluation experiments.
 
+<br>
+
 **Example:**
 
 The following example reproduces **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes** for the minimum working examples.
@@ -129,3 +131,19 @@ Use the file manager on the left to inspect outputs.
 <p align="center">
   <img src="./imgs/file_manager.png" alt=" file manager" width="90%" />
 </p>
+
+<br>
+
+**Example:**
+
+For **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes**, the output can be found at: 
+
+<code>eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</code>
+
+Use File Manager to locate the path and double-click to open the file. The result will display in the right window:
+
+
+<p align="center">
+  <img src="./imgs/example_results.png" alt="Example output in the file manager" width="90%" />
+</p>
+

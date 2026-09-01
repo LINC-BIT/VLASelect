@@ -5,7 +5,7 @@
 
 This repository contains the artifacts for the paper **"VLASelect: Selective Large-small Model Co-learning for Self-evolving VLA Agents"** (conditionally accepted by EuroSys'27).
 
-## Downloads
+## Overview and Downloads
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
 [An open access small machine](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_ENVIRONMENT_GUIDE.md) and its

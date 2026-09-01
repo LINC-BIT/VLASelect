@@ -7,8 +7,8 @@ We provide a preconfigured small machine for artifact evaluation. Reviewers can 
 <p align="center">
   <table>
     <tr>
-      <th>Subsystem</th>
-      <th>Specification (Small Machine)</th>
+      <th></th>
+      <th></th>
     </tr>
     <tr>
       <td><b>Operating System</b></td>

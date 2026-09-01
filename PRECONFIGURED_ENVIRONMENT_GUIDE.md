@@ -46,7 +46,11 @@ Enter the password on the login page.
   <img src="./imgs/server_web_login.png" alt="Login page" width="90%" />
 </p>
 
-After login, the platform opens directly in the preconfigured VLASelect project environment.
+After login, the platform opens directly in the preconfigured VLASelect project environment:
+
+<p align="center">
+  <img src="./imgs/web_wellcom_page_1.png" alt="Platform home page" width="90%" />
+</p>
 
 ## 3. Open a Terminal
 
@@ -56,6 +60,11 @@ Select **Terminal** under **Other**. A terminal will open in the project environ
   <img src="./imgs/web_wellcom_page.png" alt="Platform home page" width="90%" />
 </p>
 
+<p align="center">
+  <img src="./imgs/web_terminal_1.png" alt="Platform home page" width="90%" />
+</p>
+
+
 ## 4. Start the Docker Container
 
 Run the following command to start the Docker container:
@@ -64,11 +73,14 @@ Run the following command to start the Docker container:
 bash start_docker.sh
 ```
 
-Run the following commands inside the container.
+<br>
+
 
 <p align="center">
   <img src="./imgs/start_docker.png" alt="VLASelect Docker container started" width="90%" />
 </p>
+
+After the command attaches to the container, run all subsequent evaluation commands in the container shell.
 
 ## 5. Run the Evaluation
 
@@ -110,3 +122,10 @@ python3 plot_acc_task_env.py
   </table>
 </p>
 
+## 6. Check Results
+
+Use the file manager on the left to inspect outputs.
+
+<p align="center">
+  <img src="./imgs/file_manager.png" alt=" file manager" width="90%" />
+</p>

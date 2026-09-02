@@ -113,7 +113,7 @@ Use the file manager on the left to inspect outputs.
 ## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
 
-Once you finished the section 1 to 4 in this guide and have successfully started the Docker environment, you can run **Example Experiment 1** with the following steps.
+Once you finished the **section 1 to 4** in this guide and have successfully started the Docker environment, you can run **Example Experiment 1** with the following steps.
 
 ### Step 1: Find the evaluation script
 

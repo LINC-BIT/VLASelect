@@ -113,13 +113,13 @@ Use the file manager on the left to inspect outputs.
 ## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
 
-After you enter Docker environment, you can run **Example Experiment 1** with the following steps.
+Once you run the procedures in **section 1 to 4**, and have successfully started the Docker environment, you can run **Example Experiment 1** with the following steps.
 
 ### Step 1: Find the evaluation script
 
 You can find the evaluation script for **Example Experiment 1** in the **README** under Section [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
 
-The commands for the minimum working example:
+The commands for running the Minimum Working Example of **Example Experiment 1** are listed below:
 
 ```bash
 cd eval/acc_comparison
@@ -129,7 +129,8 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
 
 python3 plot_acc_task_env.py
 ```
-Resource requirements and expected output:
+
+The resource requirements and expected output of **Example Experiment 1** are also listed below:
 
 |  | Expected runtime | Resource requirements | Output |
 | --- | --- | --- | --- |

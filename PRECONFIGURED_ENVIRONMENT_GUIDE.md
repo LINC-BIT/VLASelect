@@ -88,16 +88,7 @@ After starting the container, follow [Section 2.2: Step-by-Step Reproduction](RE
 
 <br>
 
-**Example:**
 
-The following example reproduces **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes** for the minimum working examples.
-
-```bash
-cd eval/acc_comparison
-MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
-  bash run_acc_task_env_change.sh
-python3 plot_acc_task_env.py
-```
 
 **The expected terminal output is shown below:**
 
@@ -105,24 +96,7 @@ python3 plot_acc_task_env.py
   <img src="./imgs/exmaple_1.png" alt="Example output for the task and environment change experiment" width="90%" />
 </p>
 
-**The resource requirements and output are listed below:**
 
-<p align="center">
-  <table>
-    <tr>
-      <th>Configuration</th>
-      <th>Expected runtime</th>
-      <th>Resource requirements</th>
-      <th>Output</th>
-    </tr>
-    <tr>
-      <td>Minimum working example</td>
-      <td>1.5 hours</td>
-      <td>20GB memory <br> 32GB disk space</td>
-      <td><code>eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</code></td>
-    </tr>
-  </table>
-</p>
 
 ## 6. Check Results
 
@@ -134,16 +108,55 @@ Use the file manager on the left to inspect outputs.
 
 <br>
 
-**Example:**
 
-For **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes**, the output can be found at: 
 
-<code>eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</code>
+## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
-Use File Manager to locate the path and double-click to open the file. The result will display in the right window:
 
+After you enter Docker environment, you can run **Example Experiment 1** with the following steps.
+
+### Step 1: Find the evaluation script
+
+You can find the evaluation script for **Example Experiment 1** in the **README** under Section [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
+
+The commands for the minimum working example:
+
+```bash
+cd eval/acc_comparison
+
+MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
+  bash run_acc_task_env_change.sh
+
+python3 plot_acc_task_env.py
+```
+Resource requirements and expected output:
+
+|  | Expected runtime | Resource requirements | Output |
+| --- | --- | --- | --- |
+| Minimum working example | 1.5 hours | 20 GB memory<br>32 GB disk space | `eval/acc_comparison/FIG_ACC_TASK_ENV.pdf` |
+
+### Step 2: Run the evaluation
+
+Enter the commands above in the terminal and run them:
+
+<p align="center">
+  <img src="./imgs/input_in_terminal.png" alt="Input commands in the terminal" width="90%" />
+</p>
+
+### Step 3: Check the results
+
+After the evaluation finishes, the terminal will print the path of the output file:
+
+<p align="center">
+  <img src="./imgs/output_terminal.png" alt="Output path in the terminal" width="90%" />
+</p>
+
+The output file is:
+
+`eval/acc_comparison/FIG_ACC_TASK_ENV.pdf`
+
+Use the file manager to locate this path and double-click the file. The result will be displayed in the right panel:
 
 <p align="center">
   <img src="./imgs/example_results.png" alt="Example output in the file manager" width="90%" />
 </p>
-

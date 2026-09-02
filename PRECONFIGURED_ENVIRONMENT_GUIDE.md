@@ -109,7 +109,7 @@ Use the file manager on the left side to inspect the results.
 
 ## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
-After completing the procedures in **Sections 1 to 4**, follow the steps below to run **Example Experiment 1**.
+**After completing the procedures in Sections 1 to 4**, follow the steps below to run **Example Experiment 1.
 
 ### Step 1: Find the evaluation script
 
@@ -117,7 +117,7 @@ The evaluation script for **Example Experiment 1** is provided in **README** und
 
 [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
 
-The commands for running the Minimum Working Example of **Example Experiment 1** are listed below:
+The commands for running **Minimum Working Example** of Example Experiment 1 are listed below:
 
 ```bash
 cd eval/acc_comparison
@@ -128,7 +128,7 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
 python3 plot_acc_task_env.py
 ```
 
-The resource requirements and expected output of this experiment are also listed below:
+The **resource requirements** and **expected output** of this experiment are also listed below:
 
 |  | Expected runtime | Resource requirements | Output |
 | --- | --- | --- | --- |
@@ -136,7 +136,7 @@ The resource requirements and expected output of this experiment are also listed
 
 ### Step 2: Run the evaluation
 
-Enter the commands above in the terminal and run them:
+**Enter the commands** above in the terminal and run them:
 
 <p align="center">
   <img src="./imgs/input_in_terminal.png" alt="Input commands in the terminal" width="90%" />
@@ -144,7 +144,7 @@ Enter the commands above in the terminal and run them:
 
 ### Step 3: Check the results
 
-After the evaluation finishes, the terminal will print the path of the output file:
+After the **evaluation script completes**, the terminal will print the path of the output file:
 
 <p align="center">
   <img src="./imgs/output_terminal.png" alt="Output path in the terminal" width="90%" />
@@ -154,7 +154,7 @@ The output file is:
 
 `eval/acc_comparison/FIG_ACC_TASK_ENV.pdf`
 
-Use the file manager to locate this path and double-click the file. The result will be displayed in the right panel:
+Use the **file manager** to locate this path and double-click the file. The result will be displayed in the right panel:
 
 <p align="center">
   <img src="./imgs/example_results.png" alt="Example output in the file manager" width="90%" />

@@ -1,6 +1,6 @@
 # Instructions for Open Access to Our Preconfigured Small Machine
 
-We provide a preconfigured small machine for artifact evaluation. Reviewers can access this machine and run the **minimum working examples** directly by following the instructions below.
+We provide a **preconfigured small machine** for artifact evaluation. Reviewers can access this machine and run the **minimum working examples** directly by following the instructions below.
 
 ## 1. Hardware and Software Specifications
 
@@ -40,13 +40,13 @@ Open the following URL in a web browser:
 - **URL:** [http://js4.blockelite.cn:24158](http://js4.blockelite.cn:24158)
 - **Password:** `Jupyterserver`
 
-Enter the password on the login page.
+Enter the password on the login page:
 
 <p align="center">
   <img src="./imgs/server_web_login.png" alt="Login page" width="90%" />
 </p>
 
-After login, the platform opens directly in the preconfigured VLASelect project environment:
+After login, the platform opens directly in the VLASelect project environment:
 
 <p align="center">
   <img src="./imgs/web_wellcom_page_1.png" alt="Platform home page" width="90%" />
@@ -67,7 +67,7 @@ Select **Terminal** under **Other**. A terminal will open in the project environ
 
 ## 4. Start the Docker Container
 
-Run the following command to start the Docker container:
+Run the following command in the terminalto start the Docker container:
 
 ```bash
 bash start_docker.sh
@@ -80,14 +80,11 @@ bash start_docker.sh
   <img src="./imgs/start_docker.png" alt="VLASelect Docker container started" width="90%" />
 </p>
 
-After the command attaches to the container, run all subsequent evaluation commands in the container shell.
+After the command attaches to the terminal, run all subsequent evaluation commands in the container shell.
 
 ## 5. Run the Evaluation
 
 After starting the container, follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README to run the evaluation experiments.
-
-<br>
-
 
 
 **The expected terminal output is shown below:**
@@ -100,7 +97,7 @@ After starting the container, follow [Section 2.2: Step-by-Step Reproduction](RE
 
 ## 6. Check Results
 
-Use the file manager on the left to inspect outputs.
+Use the file manager on the left side to inspect the results.
 
 <p align="center">
   <img src="./imgs/file_manager.png" alt=" file manager" width="90%" />
@@ -112,12 +109,13 @@ Use the file manager on the left to inspect outputs.
 
 ## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
-
-Once you run the procedures in **section 1 to 4**, and have successfully started the Docker environment, you can run **Example Experiment 1** with the following steps.
+After completing the procedures in **Sections 1 to 4**, follow the steps below to run **Example Experiment 1**.
 
 ### Step 1: Find the evaluation script
 
-You can find the evaluation script for **Example Experiment 1** in the **README** under Section [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
+The evaluation script for **Example Experiment 1** is provided in **README** under the following part:
+
+[2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
 
 The commands for running the Minimum Working Example of **Example Experiment 1** are listed below:
 
@@ -130,7 +128,7 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
 python3 plot_acc_task_env.py
 ```
 
-The resource requirements and expected output of **Example Experiment 1** are also listed below:
+The resource requirements and expected output of this experiment are also listed below:
 
 |  | Expected runtime | Resource requirements | Output |
 | --- | --- | --- | --- |
@@ -162,7 +160,7 @@ Use the file manager to locate this path and double-click the file. The result w
   <img src="./imgs/example_results.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-If you want to download the output file to your local machine, please right-click the file in the file manager and select **Download**.
+To **download** the output file locally, **right-click** the file in the file manager and select **Download**: 
 
 <p align="center">
   <img src="./imgs/download_results.png" alt="Download output file from the file manager" width="90%" />

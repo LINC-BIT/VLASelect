@@ -47,7 +47,7 @@ After login, JupyterLab opens directly in the preconfigured VLASelect project en
 
 ## 3. Open a Terminal
 
-Select **Terminal** from the menu in the upper-left corner. A terminal will open in the project environment.
+Select Terminal from the menu in the upper-left corner. A terminal will open in the project environment.
 
 <p align="center">
   <img src="./imgs/step2.1-cloud.png" alt="Platform home page" width="90%" />
@@ -75,20 +75,11 @@ After the command attaches to the container, run all subsequent evaluation comma
 
 After starting the container, follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README to run the evaluation experiments.
 
-**Example:**
-
-The following example reproduces **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes** for the minimum working examples.
-
-```bash
-cd eval/acc_comparison
-MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect   bash run_acc_task_env_change.sh
-python3 plot_acc_task_env.py
-```
 
 **The expected terminal output is shown below:**
 
 <p align="center">
-  <img src="./imgs/step4-cloud.png" alt="Example output for the task and environment change experiment" width="90%" />
+  <img src="./imgs/step4-cloud.png" alt="Input commands in the terminal" width="90%" />
 </p>
 
 **The resource requirements and output are listed below:**
@@ -112,23 +103,85 @@ python3 plot_acc_task_env.py
 
 ## 6. Check Results
 
-Use the file manager on the left to inspect outputs.
-
-<p align="center">
-  <img src="./imgs/step5.1-cloud.png" alt=" file manager" width="90%" />
-</p>
-
-<br>
-
-**Example:**
-
-For **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes**, the output can be found at: 
-
-<code>eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</code>
-
 Use File Manager to locate the path and double-click to open the file. The result will display in the right window:
 
+<p align="center">
+  <img src="./imgs/step5.1-cloud.png" alt="Output path in the terminal" width="90%" />
+</p>
+
+## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
+
+Once you run the procedures in section 1 to 4, and have successfully started the Docker environment, you can run **Example Experiment 1** with the following steps.
+
+### Step 1: Find the evaluation script
+
+You can find the evaluation script for **Example Experiment 1** in the **README** under Section [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
+
+The commands for the minimum working example:
+
+```bash
+cd eval/acc_comparison
+
+MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
+  bash run_acc_task_env_change.sh
+
+python3 plot_acc_task_env.py
+```
+
+Resource requirements and expected output:
+
+|  | Expected runtime | Resource requirements | Output |
+| --- | --- | --- | --- |
+| Minimum working example | 1.5 hours | 20 GB memory<br>32 GB disk space | `eval/acc_comparison/FIG_ACC_TASK_ENV.pdf` |
+
+### Step 2: Run the evaluation
+
+Enter the commands above in the terminal and run them:
+
+<p align="center">
+  <img src="./imgs/step7.2-cloud.png" alt="Input commands in the terminal" width="90%" />
+</p>
+
+### Step 3: Check the results
+
+After the evaluation finishes, the terminal will print the path of the output file:
+
+<p align="center">
+  <img src="./imgs/step7.3-cloud.png" alt="Output path in the terminal" width="90%" />
+</p>
+
+The output file is:
+
+`eval/acc_comparison/FIG_ACC_TASK_ENV.pdf`
+
+Use File Manager to locate this path and click the file. The result will be displayed in the right panel:
 
 <p align="center">
   <img src="./imgs/step5.2-cloud.png" alt="Example output in the file manager" width="90%" />
 </p>
+
+**Note**: If the image does not display, right-click the file and choose Download from the context menu to view it.
+
+<p align="center">
+  <img src="./imgs/download.png" alt="Example output in the file manager" width="90%" />
+</p>
+
+Alternatively, you can change the browser settings. For Edge browser, enter `edge://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
+
+<p align="center">
+  <img src="./imgs/warn1.png" alt="Example output in the file manager" width="90%" />
+</p>
+
+Then set **Insecure origins treated as secure** to **Enabled**, and enter `http://clgpu015.clemson.cloudlab.us:8080` in the box below.
+
+<p align="center">
+  <img src="./imgs/warn2.png" alt="Example output in the file manager" width="90%" />
+</p>
+
+Finally, click **Restart**.
+
+<p align="center">
+  <img src="./imgs/warn3.png" alt="Example output in the file manager" width="90%" />
+</p>
+
+Open [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080) again to view the images.

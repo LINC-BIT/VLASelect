@@ -154,13 +154,13 @@ The output file is:
 
 `eval/acc_comparison/FIG_ACC_TASK_ENV.pdf`
 
-Use File Manager to locate this path and double-click the file. The result will be displayed in the right panel:
+Use File Manager to locate this path and click the file. The result will be displayed in the right panel:
 
 <p align="center">
   <img src="./imgs/step5.2-cloud.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-Note: If the image does not display, right-click the file and choose Download from the context menu to view it.
+**Note**: If the image does not display, right-click the file and choose Download from the context menu to view it.
 
 <p align="center">
   <img src="./imgs/download.png" alt="Example output in the file manager" width="90%" />

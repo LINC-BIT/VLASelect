@@ -1,33 +1,31 @@
 # Instructions for Open Access to Our Preconfigured Small Machine
 
-We provide a **preconfigured small machine** for artifact evaluation. Reviewers can access this machine and run the **minimum working examples** directly by following the instructions below.
+We provide a **preconfigured small machine** for artifact evaluation. 
+
+Reviewers can access this machine and run the **minimum working examples** directly by following the instructions below.
 
 ## 1. Hardware and Software Specifications
 
 <p align="center">
   <table>
     <tr>
-      <th></th>
-      <th></th>
-    </tr>
-    <tr>
       <td><b>Operating System</b></td>
       <td>Ubuntu 22.04.4 LTS (Kernel 6.8)</td>
     </tr>
     <tr>
-      <td><b>CPU Architecture</b></td>
+      <td><b>CPU</b></td>
       <td>Intel Xeon E5-2698 v4 (16C)</td>
     </tr>
     <tr>
-      <td><b>System Memory</b></td>
+      <td><b>Memory</b></td>
       <td>32 GB DDR4</td>
     </tr>
     <tr>
-      <td><b>GPU & VRAM</b></td>
+      <td><b>GPU</b></td>
       <td>NVIDIA Tesla V100 (32 GB)</td>
     </tr>
     <tr>
-      <td><b>CUDA Toolchain</b></td>
+      <td><b>CUDA</b></td>
       <td>Driver 550.127.05, CUDA 12.4</td>
     </tr>
   </table>
@@ -35,26 +33,23 @@ We provide a **preconfigured small machine** for artifact evaluation. Reviewers 
 
 ## 2. Access the Environment
 
-Open the following URL in a web browser:
+- **Step 1**: Open the URL [http://js4.blockelite.cn:24158](http://js4.blockelite.cn:24158) in a web browser (e.g. Chrome or Microsoft Edge). The login page will appear as below:
 
-- **URL:** [http://js4.blockelite.cn:24158](http://js4.blockelite.cn:24158)
-- **Password:** `Jupyterserver`
+  <p align="center">
+    <img src="./imgs/server_web_login.png" alt="Login page" width="90%" />
+  </p>
 
-Enter the password on the login page:
+- **Step 2**: Input the password `Jupyterserver` and click the "Log in" button;
 
-<p align="center">
-  <img src="./imgs/server_web_login.png" alt="Login page" width="90%" />
-</p>
+- **Step 3**: The page of **preconfigured environment** will appear as below:
 
-After login, the platform opens directly in the VLASelect project environment:
+  <p align="center">
+    <img src="./imgs/web_wellcom_page_1.png" alt="Platform home page" width="90%" />
+  </p>
 
-<p align="center">
-  <img src="./imgs/web_wellcom_page_1.png" alt="Platform home page" width="90%" />
-</p>
+## 3. Launch a Terminal
 
-## 3. Open a Terminal
-
-Select **Terminal** under **Other**. A terminal will open in the project environment.
+Click the **"Terminal" button** under the **"Other" panel** to launch a terminal.
 
 <p align="center">
   <img src="./imgs/web_wellcom_page.png" alt="Platform home page" width="90%" />
@@ -67,27 +62,26 @@ Select **Terminal** under **Other**. A terminal will open in the project environ
 
 ## 4. Start the Docker Container
 
-Run the following command in the terminalto start the Docker container:
+Run the following command in the terminal:
 
 ```bash
 bash start_docker.sh
 ```
 
-<br>
+The expected output is shown as below:
 
 
 <p align="center">
   <img src="./imgs/start_docker.png" alt="VLASelect Docker container started" width="90%" />
 </p>
 
-After the command attaches to the terminal, run all subsequent evaluation commands in the container shell.
+<!-- After the command attaches to the terminal, run all subsequent evaluation commands in the container shell. -->
 
-## 5. Run the Evaluation
+## 5. Run Minimum Working Examples
 
-After starting the container, follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README to run the evaluation experiments.
+Follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README.md to run the minimum working examples.
 
-
-**The expected terminal output is shown below:**
+The expected terminal output is shown below:
 
 <p align="center">
   <img src="./imgs/exmaple_1.png" alt="Example output for the task and environment change experiment" width="90%" />
@@ -97,7 +91,7 @@ After starting the container, follow [Section 2.2: Step-by-Step Reproduction](RE
 
 ## 6. Check Results
 
-Use the file manager on the left side to inspect the results.
+Use the file manager on the left panel to check the results.
 
 <p align="center">
   <img src="./imgs/file_manager.png" alt=" file manager" width="90%" />
@@ -107,17 +101,20 @@ Use the file manager on the left side to inspect the results.
 
 
 
-## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
+## 7. Run Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
-**After completing the procedures in Sections 1 to 4**, follow the steps below to run **Example Experiment 1**.
+<!-- To run **Experiment 1**, first complete the procedures in [Sections 2 to 4](#2-access-the-environment) above, and perform the steps below. -->
 
-### Step 1: Find the evaluation script
+### Step 1: Enter the environment<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-The evaluation script for **Example Experiment 1** is provided in **README** under the following part:
+Complete the procedures in [Sections 2 to 4](#2-access-the-environment) above:
+- [Section 2: Accessing the Environment](#2-access-the-environment)
+- [Section 3: Launching a Terminal](#3-launch-a-terminal)
+- [Section 4: Starting the Docker container](#4-start-the-docker-container)
 
-[2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
+### Step 2: Find the evaluation script<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-The commands for running **Minimum Working Example** of Example Experiment 1 are listed below:
+The **evaluation script** for Experiment 1 is provided in [Section 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes) in the README.md, i.e.:
 
 ```bash
 cd eval/acc_comparison
@@ -128,39 +125,35 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
 python3 plot_acc_task_env.py
 ```
 
-The **resource requirements** and **expected output** of this experiment are also listed below:
+The **resource requirements** and **expected output** of this experiment are also listed in that section, i.e.:
 
 |  | Expected runtime | Resource requirements | Output |
 | --- | --- | --- | --- |
 | Minimum working example | 1.5 hours | 20 GB memory<br>32 GB disk space | `eval/acc_comparison/FIG_ACC_TASK_ENV.pdf` |
 
-### Step 2: Run the evaluation
+### Step 3: Run the evaluation script<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-**Enter the commands** above in the terminal and run them:
+Run the script (found in Step 2) in the terminal, and wait the completion:
 
 <p align="center">
   <img src="./imgs/input_in_terminal.png" alt="Input commands in the terminal" width="90%" />
 </p>
 
-### Step 3: Check the results
+### Step 4: Check the results<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-After the **evaluation script completes**, the terminal will print the path of the output file:
+1. **Obtain the output file's path**. After Step 3 completes, the terminal will print the path of the output file:
 
-<p align="center">
-  <img src="./imgs/output_terminal.png" alt="Output path in the terminal" width="90%" />
-</p>
+  <p align="center">
+    <img src="./imgs/output_terminal.png" alt="Output path in the terminal" width="90%" />
+  </p>
 
-The output file is:
+2. **View the output file**. Use the file manager to locate the file, and double-click the file. The file will be displayed in the right panel:
 
-`eval/acc_comparison/FIG_ACC_TASK_ENV.pdf`
+  <p align="center">
+    <img src="./imgs/example_results.png" alt="Example output in the file manager" width="90%" />
+  </p>
 
-Use the **file manager** to locate this path and double-click the file. The result will be displayed in the right panel:
-
-<p align="center">
-  <img src="./imgs/example_results.png" alt="Example output in the file manager" width="90%" />
-</p>
-
-To **download** the output file locally, **right-click** the file in the file manager and select **Download**: 
+3. **Download the output file**. Right-click the file in the file manager, and click the "Download" button: 
 
 <p align="center">
   <img src="./imgs/download_results.png" alt="Download output file from the file manager" width="90%" />

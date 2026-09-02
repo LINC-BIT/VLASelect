@@ -160,28 +160,32 @@ Use File Manager to locate this path and click the file. The result will be disp
   <img src="./imgs/step5.2-cloud.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-**Note**: If the image does not display, right-click the file and choose Download from the context menu to view it.
+**Note**: If the image does not display, you have two solutions.
 
+
+Solution 1 is to right-click the file and choose **Download** from the context menu. This solution downloads the image to your local machine, and you can view it in the local file explorer.
 <p align="center">
   <img src="./imgs/download.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-Alternatively, you can change the browser settings. For Edge browser, enter `edge://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
+Solution 2 is to change the browser's settings to enable the image display in the browser: 
+
+1. For Edge browser, enter `edge://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
 
 <p align="center">
   <img src="./imgs/warn1.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-Then set **Insecure origins treated as secure** to **Enabled**, and enter `http://clgpu015.clemson.cloudlab.us:8080` in the box below.
+2. Set **Insecure origins treated as secure** to **Enabled**, and enter `http://clgpu015.clemson.cloudlab.us:8080` in the box below.
 
 <p align="center">
   <img src="./imgs/warn2.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-Finally, click **Restart**.
+3. Click **Restart**.
 
 <p align="center">
   <img src="./imgs/warn3.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-Open [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080) again to view the images.
+4. Open [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080) again to view the images.

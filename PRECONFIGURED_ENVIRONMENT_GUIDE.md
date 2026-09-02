@@ -7,7 +7,7 @@ Reviewers can access this machine and run the **minimum working examples** direc
 ## 1. Hardware and Software Specifications
 
 <p align="center">
-  <table>
+  <table align="center">
     <tr>
       <td><b>Operating System</b></td>
       <td>Ubuntu 22.04.4 LTS (Kernel 6.8)</td>

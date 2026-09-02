@@ -111,7 +111,7 @@ Use File Manager to locate the path and double-click to open the file. The resul
 
 ## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
-After you enter the Docker environment, you can run **Example Experiment 1** with the following steps.
+Once you run the procedures in section 1 to 4, and have successfully started the Docker environment, you can run **Example Experiment 1** with the following steps.
 
 ### Step 1: Find the evaluation script
 

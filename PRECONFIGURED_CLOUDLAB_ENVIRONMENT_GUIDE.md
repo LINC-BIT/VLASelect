@@ -75,16 +75,6 @@ After the command attaches to the container, run all subsequent evaluation comma
 
 After starting the container, follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README to run the evaluation experiments.
 
-**Example:**
-
-The following example reproduces **Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes** for the minimum working examples.
-
-```bash
-cd eval/acc_comparison
-MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
-  bash run_acc_task_env_change.sh
-python3 plot_acc_task_env.py
-```
 
 **The expected terminal output is shown below:**
 

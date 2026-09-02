@@ -176,7 +176,7 @@ Note: If the image does not display, right-click the file and choose Download fr
   <img src="./imgs/download.png" alt="Example output in the file manager" width="90%" />
 </p>
 
-Alternatively, you can change the browser settings. For Edge, enter `edge://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
+Alternatively, you can change the browser settings. For Edge browser, enter `edge://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
 
 <p align="center">
   <img src="./imgs/warn1.png" alt="Example output in the file manager" width="90%" />

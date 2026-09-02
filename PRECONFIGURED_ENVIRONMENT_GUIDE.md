@@ -161,3 +161,9 @@ Use the file manager to locate this path and double-click the file. The result w
 <p align="center">
   <img src="./imgs/example_results.png" alt="Example output in the file manager" width="90%" />
 </p>
+
+If you want to download the output file to your local machine, please right-click the file in the file manager and select **Download**.
+
+<p align="center">
+  <img src="./imgs/download_results.png" alt="Download output file from the file manager" width="90%" />
+</p>

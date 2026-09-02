@@ -109,7 +109,7 @@ Use the file manager on the left side to inspect the results.
 
 ## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
-**After completing the procedures in Sections 1 to 4**, follow the steps below to run **Example Experiment 1.
+**After completing the procedures in Sections 1 to 4**, follow the steps below to run **Example Experiment 1**.
 
 ### Step 1: Find the evaluation script
 

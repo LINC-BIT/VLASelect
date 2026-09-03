@@ -1,33 +1,31 @@
 # Instructions for Open Access to Our Preconfigured CloudLab Environment
 
-We provide a preconfigured CloudLab environment for artifact evaluation. Reviewers can access this environment and run the **minimum working examples** directly by following the instructions below.
+We provide a **preconfigured CloudLab environment** for artifact evaluation. 
+
+Reviewers can access this environment and run the **minimum working examples** directly by following the instructions below.
 
 ## 1. Hardware and Software Specifications
 
 <p align="center">
-  <table>
-    <tr>
-      <th></th>
-      <th></th>
-    </tr>
+  <table align="center">
     <tr>
       <td><b>Operating System</b></td>
       <td>Ubuntu 22.04.2 LTS (Kernel 5.15)</td>
     </tr>
     <tr>
-      <td><b>CPU Architecture</b></td>
+      <td><b>CPU</b></td>
       <td>AMD EPYC 7542 (32C)</td>
     </tr>
     <tr>
-      <td><b>System Memory</b></td>
+      <td><b>Memory</b></td>
       <td>512 GB DDR4</td>
     </tr>
     <tr>
-      <td><b>GPU & VRAM</b></td>
+      <td><b>GPU</b></td>
       <td>NVIDIA Tesla V100 (32 GB)</td>
     </tr>
     <tr>
-      <td><b>CUDA Toolchain</b></td>
+      <td><b>CUDA</b></td>
       <td>Driver 580.173.02, CUDA 13.0</td>
     </tr>
   </table>
@@ -35,20 +33,15 @@ We provide a preconfigured CloudLab environment for artifact evaluation. Reviewe
 
 ## 2. Access the Environment
 
-Open the following URL in a web browser:
-
-- **URL:** [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080)
+Open the URL [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080) in a web browser (e.g. Chrome or Microsoft Edge). The page of **preconfigured environment** will appear as below:
 
 <p align="center">
   <img src="./imgs/step1-cloud.png" alt="Login page" width="90%" />
 </p>
 
-After login, JupyterLab opens directly in the preconfigured VLASelect project environment.
+## 3. Launch a Terminal
 
-## 3. Open a Terminal
-
-Select Terminal from the menu in the upper-left corner. A terminal will open in the project environment.
-
+Click the **"New Terminal" button** in the menu to launch a terminal.
 <p align="center">
   <img src="./imgs/step2.1-cloud.png" alt="Platform home page" width="90%" />
 </p>
@@ -59,65 +52,52 @@ Select Terminal from the menu in the upper-left corner. A terminal will open in 
 
 ## 4. Start the Docker Container
 
-Run the following command to start the Docker container:
+Run the following command in the terminal:
 
 ```bash
 bash start_docker.sh
 ```
 
+The expected output is shown as below:
+
 <p align="center">
   <img src="./imgs/step3-cloud.png" alt="VLASelect Docker container started" width="90%" />
 </p>
 
-After the command attaches to the container, run all subsequent evaluation commands in the container shell.
+<!-- After the command attaches to the terminal, run all subsequent evaluation commands in the container shell. -->
 
-## 5. Run the Evaluation
+## 5. Run Minimum Working Examples
 
-After starting the container, follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README to run the evaluation experiments.
+Follow [Section 2.2: Step-by-Step Reproduction](README.md#22-step-by-step-reproduction) in the README.md to run the minimum working examples.
 
-
-**The expected terminal output is shown below:**
+The expected terminal output is shown below:
 
 <p align="center">
   <img src="./imgs/step4-cloud.png" alt="Input commands in the terminal" width="90%" />
 </p>
 
-**The resource requirements and output are listed below:**
-
-<p align="center">
-  <table>
-    <tr>
-      <th>Configuration</th>
-      <th>Expected runtime</th>
-      <th>Resource requirements</th>
-      <th>Output</th>
-    </tr>
-    <tr>
-      <td>Minimum working example</td>
-      <td>1.5 hours</td>
-      <td>20GB memory <br> 32GB disk space</td>
-      <td><code>eval/acc_comparison/FIG_ACC_TASK_ENV.pdf</code></td>
-    </tr>
-  </table>
-</p>
-
 ## 6. Check Results
 
-Use File Manager to locate the path and double-click to open the file. The result will display in the right window:
+Use the file manager on the left panel to check the results.
 
 <p align="center">
   <img src="./imgs/step5.1-cloud.png" alt="Output path in the terminal" width="90%" />
 </p>
 
-## 7. Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
+## 7. Run Example Experiment 1 (Figure 7): Accuracy Under Tasks/Environment Changes
 
-Once you run the procedures in section 1 to 4, and have successfully started the Docker environment, you can run **Example Experiment 1** with the following steps.
+<!-- To run **Experiment 1**, first complete the procedures in [Sections 2 to 4](#2-access-the-environment) above, and perform the steps below. -->
 
-### Step 1: Find the evaluation script
+### Step 1: Enter the environment<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-You can find the evaluation script for **Example Experiment 1** in the **README** under Section [2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes).
+Complete the procedures in [Sections 2 to 4](#2-access-the-environment) above:
+- [Section 2: Accessing the Environment](#2-access-the-environment)
+- [Section 3: Launching a Terminal](#3-launch-a-terminal)
+- [Section 4: Starting the Docker container](#4-start-the-docker-container)
 
-The commands for the minimum working example:
+### Step 2: Find the evaluation script<img src="./heading-divider.svg" alt="" width="100%" height="1">
+
+The **evaluation script** for Experiment 1 is provided in [Section 2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes](README.md#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes) in the README.md, i.e.:
 
 ```bash
 cd eval/acc_comparison
@@ -128,64 +108,65 @@ MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect \
 python3 plot_acc_task_env.py
 ```
 
-Resource requirements and expected output:
+The **resource requirements** and **expected output** of this experiment are also listed in that section, i.e.:
 
 |  | Expected runtime | Resource requirements | Output |
 | --- | --- | --- | --- |
 | Minimum working example | 1.5 hours | 20 GB memory<br>32 GB disk space | `eval/acc_comparison/FIG_ACC_TASK_ENV.pdf` |
 
-### Step 2: Run the evaluation
+### Step 3: Run the evaluation script<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-Enter the commands above in the terminal and run them:
+Run the script (found in Step 2) in the terminal, and wait for completion:
 
 <p align="center">
   <img src="./imgs/step7.2-cloud.png" alt="Input commands in the terminal" width="90%" />
 </p>
 
-### Step 3: Check the results
+### Step 4: Check the results<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-After the evaluation finishes, the terminal will print the path of the output file:
+1. **Obtain the output file's path**. After Step 3 completes, the terminal will print the path of the output file:
 
-<p align="center">
-  <img src="./imgs/step7.3-cloud.png" alt="Output path in the terminal" width="90%" />
-</p>
+  <p align="center">
+    <img src="./imgs/step7.3-cloud.png" alt="Output path in the terminal" width="90%" />
+  </p>
 
-The output file is:
+2. **View the output file**. Use the file manager to locate the file, and double-click the file. The file will be displayed in the right panel:
 
-`eval/acc_comparison/FIG_ACC_TASK_ENV.pdf`
+  <p align="center">
+    <img src="./imgs/step5.2-cloud.png" alt="Example output in the file manager" width="90%" />
+  </p>
 
-Use File Manager to locate this path and click the file. The result will be displayed in the right panel:
-
-<p align="center">
-  <img src="./imgs/step5.2-cloud.png" alt="Example output in the file manager" width="90%" />
-</p>
-
-**Note**: If the image does not display, you have two solutions.
-
-
-Solution 1 is to right-click the file and choose **Download** from the context menu. This solution downloads the image to your local machine, and you can view it in the local file explorer.
-<p align="center">
-  <img src="./imgs/download.png" alt="Example output in the file manager" width="90%" />
-</p>
-
-Solution 2 is to change the browser's settings to enable the image display in the browser: 
-
-1. For Edge browser, enter `edge://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
+3. **Download the output file**. Right-click the file in the file manager, and click the "Download" button:
 
 <p align="center">
-  <img src="./imgs/warn1.png" alt="Example output in the file manager" width="90%" />
+  <img src="./imgs/download.png" alt="Download output file from the file manager" width="90%" />
 </p>
 
-2. Set **Insecure origins treated as secure** to **Enabled**, and enter `http://clgpu015.clemson.cloudlab.us:8080` in the box below.
+## 8. Solve Possible Unusual Behaviors
 
-<p align="center">
-  <img src="./imgs/warn2.png" alt="Example output in the file manager" width="90%" />
-</p>
+### 8.1 Unusual behavior 1: File display is prohibited by the browser<img src="./heading-divider.svg" alt="" width="100%" height="1">
 
-3. Click **Restart**.
 
-<p align="center">
-  <img src="./imgs/warn3.png" alt="Example output in the file manager" width="90%" />
-</p>
+This is due to the browser's default safety restriction strategy. 
 
-4. Open [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080) again to view the images.
+**Solution: Change the browser settings as follows:** 
+
+1. For Microsoft Edge browser, enter `edge://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar. For Chrome browser, enter `chrome://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
+
+  <p align="center">
+    <img src="./imgs/warn1.png" alt="Example output in the file manager" width="90%" />
+  </p>
+
+2. Set **Insecure origins treated as secure** to **Enabled**, and enter `http://clgpu015.clemson.cloudlab.us:8080` in the textarea below.
+
+  <p align="center">
+    <img src="./imgs/warn2.png" alt="Example output in the file manager" width="90%" />
+  </p>
+
+3. Click the **Restart** button.
+
+  <p align="center">
+    <img src="./imgs/warn3.png" alt="Example output in the file manager" width="90%" />
+  </p>
+
+4. Re-open [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080) in the browser to view the files.

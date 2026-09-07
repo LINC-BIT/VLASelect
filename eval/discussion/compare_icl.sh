@@ -17,13 +17,17 @@ TAIL_LOG=${TAIL_LOG:-1}
 STAMP=${ICL_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}
 : "${ICL_NUM_EVAL_STEPS:=50}"
 : "${ICL_MAX_EPISODE_STEPS:=50}"
-: "${PROMPT_FEATURE_SCALE:=10.0}"
-: "${RICL_LEARNING_RATE:=1e-2}"
-: "${RICL_MAX_SPARSITY:=0.95}"
-: "${RICL_ACTOR_LOGSTD:=1.5}"
+: "${PROMPT_FEATURE_SCALE:=0.2}"
+: "${RICL_LEARNING_RATE:=3e-5}"
+: "${RICL_MAX_SPARSITY:=0.8}"
+: "${RICL_ACTOR_LOGSTD:=-0.5}"
 : "${ICL_PLOT_METRIC:=success_once}"
 : "${ICL_PLOT_SMOOTHING:=0.8}"
-ICL_ENV_CHANGE_TIME_POINTS="${ICL_ENV_CHANGE_TIME_POINTS:-[1000000]}"
+: "${ICL_ENV_ID:=PickCubeObjectScaleUp1p2-v1}"
+: "${ICL_ENVS_ID:=['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']}"
+ICL_ENV_CHANGE_TIME_POINTS="${ICL_ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
+MWE_ICL_ENVS_ID="${MWE_ICL_ENVS_ID:-['PickCubeObjectScaleUp1p2-v1']}"
+MWE_ICL_ENV_CHANGE_TIME_POINTS="${MWE_ICL_ENV_CHANGE_TIME_POINTS:-[1000000]}"
 
 : "${MWE_TOTAL_RUNTIME_LIMIT_SECONDS:=240}"
 if [[ -z "${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY+x}" ]]; then
@@ -50,48 +54,28 @@ if [[ "$MWE" == "1" ]]; then
     MWE_PER_METHOD_RUNTIME_MINUTES="$(awk -v sec="$MWE_PER_METHOD_RUNTIME_SECONDS" 'BEGIN { printf "%.6f", sec / 60.0 }')"
 fi
 
+EFFECTIVE_ICL_ENVS_ID="$ICL_ENVS_ID"
 EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS="$ICL_ENV_CHANGE_TIME_POINTS"
 if [[ "$MWE" == "1" ]]; then
-    EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS="$(vlaselect_convert_mwe_schedule_seconds_to_minutes "$ICL_ENV_CHANGE_TIME_POINTS")"
+    EFFECTIVE_ICL_ENVS_ID="$MWE_ICL_ENVS_ID"
+    EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS="$(vlaselect_convert_mwe_schedule_seconds_to_minutes "$MWE_ICL_ENV_CHANGE_TIME_POINTS")"
 fi
 
 VLASELECT_EXP_NAME="discussion/icl/${STAMP}/vlaselect"
 RICL_EXP_NAME="discussion/icl/${STAMP}/ricl"
 
-run_mwe_method() {
-    local method_name="$1"
-    shift
-
-    if ! command -v timeout >/dev/null 2>&1; then
-        echo "[ICL] GNU timeout is required to enforce the MWE wall-clock limit" >&2
-        return 127
-    fi
-
-    local status
-    if timeout -k 10s "${MWE_PER_METHOD_RUNTIME_SECONDS}s" "$@"; then
-        return 0
-    else
-        status=$?
-    fi
-
-    if [[ "$status" -eq 124 || "$status" -eq 137 ]]; then
-        echo "[ICL] ${method_name} reached the ${MWE_PER_METHOD_RUNTIME_SECONDS}s wall-clock limit"
-        return 0
-    fi
-    return "$status"
-}
 
 run_vlaselect() {
     local exp_name="$VLASELECT_EXP_NAME"
     echo "[ICL] Running VLASelect"
     if [[ "$MWE" == "1" ]]; then
-        run_mwe_method "VLASelect" env \
+        env \
             CUDA_DEVICES="$CUDA_DEVICES" \
             EXP_NAME="$exp_name" \
             LAUNCH_DIRECT=1 \
             TAIL_LOG="$TAIL_LOG" \
-            ENV_ID_OVERRIDE=PickCubeObjectScaleUp1p2-v1 \
-            ENVS_ID_OVERRIDE="['PickCubeObjectScaleUp1p2-v1']" \
+            ENV_ID_OVERRIDE="$ICL_ENV_ID" \
+            ENVS_ID_OVERRIDE="$EFFECTIVE_ICL_ENVS_ID" \
             ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS" \
             ENABLE_RICL_INJECTION=0 \
             NUM_ENVS_OVERRIDE=4 \
@@ -100,11 +84,12 @@ run_vlaselect() {
             NUM_EVAL_STEPS_OVERRIDE="$ICL_NUM_EVAL_STEPS" \
             NUM_MINIBATCHES_OVERRIDE=2 \
             UPDATE_EPOCHS_OVERRIDE=1 \
-            MWE_ACTIVE_RUNTIME_ONLY=0 \
+            MWE_ACTIVE_RUNTIME_ONLY=1 \
+            MWE_MAX_RUNTIME_MINUTES="$MWE_PER_METHOD_RUNTIME_MINUTES" \
             MAX_TIME_OVERRIDE="$MWE_PER_METHOD_RUNTIME_MINUTES" \
             bash "${EVAL_ROOT}/train/octo/ours_single_agent/online_rl_ours_single_agent_cl.sh"
     else
-        env             CUDA_DEVICES="$CUDA_DEVICES"             EXP_NAME="$exp_name"             LAUNCH_DIRECT=1             TAIL_LOG="$TAIL_LOG"             ENV_ID_OVERRIDE=PickCubeObjectScaleUp1p2-v1             ENVS_ID_OVERRIDE="['PickCubeObjectScaleUp1p2-v1']"             ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS"             NUM_EVAL_STEPS_OVERRIDE="$ICL_NUM_EVAL_STEPS"             bash "${EVAL_ROOT}/train/octo/ours_single_agent/online_rl_ours_single_agent_cl.sh"
+        env             CUDA_DEVICES="$CUDA_DEVICES"             EXP_NAME="$exp_name"             LAUNCH_DIRECT=1             TAIL_LOG="$TAIL_LOG"             ENV_ID_OVERRIDE="$ICL_ENV_ID"             ENVS_ID_OVERRIDE="$EFFECTIVE_ICL_ENVS_ID"             ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS"             NUM_EVAL_STEPS_OVERRIDE="$ICL_NUM_EVAL_STEPS"             bash "${EVAL_ROOT}/train/octo/ours_single_agent/online_rl_ours_single_agent_cl.sh"
     fi
 }
 
@@ -112,11 +97,14 @@ run_ricl() {
     local exp_name="$RICL_EXP_NAME"
     echo "[ICL] Running RICL"
     if [[ "$MWE" == "1" ]]; then
-        run_mwe_method "RICL" env \
+        env \
             CUDA_DEVICES="$CUDA_DEVICES" \
             EXP_NAME="$exp_name" \
             LAUNCH_DIRECT=1 \
             TAIL_LOG="$TAIL_LOG" \
+            ENV_ID_OVERRIDE="$ICL_ENV_ID" \
+            ENVS_ID_OVERRIDE="$EFFECTIVE_ICL_ENVS_ID" \
+            ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS" \
             RICL_SMOKE=1 \
             ENABLE_RICL_INJECTION=1 \
             PROMPT_FEATURE_SCALE="$PROMPT_FEATURE_SCALE" \
@@ -125,11 +113,12 @@ run_ricl() {
             ACTOR_LOGSTD_OVERRIDE="$RICL_ACTOR_LOGSTD" \
             MAX_EPISODE_STEPS_OVERRIDE="$ICL_MAX_EPISODE_STEPS" \
             TOTAL_STEPS_OVERRIDE=5000000 \
-            MWE_ACTIVE_RUNTIME_ONLY=0 \
+            MWE_ACTIVE_RUNTIME_ONLY=1 \
+            MWE_MAX_RUNTIME_MINUTES="$MWE_PER_METHOD_RUNTIME_MINUTES" \
             MAX_RUNTIME_MINUTES_OVERRIDE="$MWE_PER_METHOD_RUNTIME_MINUTES" \
             bash "${EVAL_ROOT}/train/octo/ricl/online_rl_ricl.sh"
     else
-        env             CUDA_DEVICES="$CUDA_DEVICES"             EXP_NAME="$exp_name"             LAUNCH_DIRECT=1             TAIL_LOG="$TAIL_LOG"             ENABLE_RICL_INJECTION=1             PROMPT_FEATURE_SCALE="$PROMPT_FEATURE_SCALE"             LEARNING_RATE_OVERRIDE="$RICL_LEARNING_RATE"             MAX_SPARSITY_OVERRIDE="$RICL_MAX_SPARSITY"             ACTOR_LOGSTD_OVERRIDE="$RICL_ACTOR_LOGSTD"             MAX_EPISODE_STEPS_OVERRIDE="$ICL_MAX_EPISODE_STEPS"             bash "${EVAL_ROOT}/train/octo/ricl/online_rl_ricl.sh"
+        env             CUDA_DEVICES="$CUDA_DEVICES"             EXP_NAME="$exp_name"             LAUNCH_DIRECT=1             TAIL_LOG="$TAIL_LOG"             ENV_ID_OVERRIDE="$ICL_ENV_ID"             ENVS_ID_OVERRIDE="$EFFECTIVE_ICL_ENVS_ID"             ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ICL_ENV_CHANGE_TIME_POINTS"             ENABLE_RICL_INJECTION=1             PROMPT_FEATURE_SCALE="$PROMPT_FEATURE_SCALE"             LEARNING_RATE_OVERRIDE="$RICL_LEARNING_RATE"             MAX_SPARSITY_OVERRIDE="$RICL_MAX_SPARSITY"             ACTOR_LOGSTD_OVERRIDE="$RICL_ACTOR_LOGSTD"             MAX_EPISODE_STEPS_OVERRIDE="$ICL_MAX_EPISODE_STEPS"             bash "${EVAL_ROOT}/train/octo/ricl/online_rl_ricl.sh"
     fi
 }
 
@@ -152,7 +141,7 @@ require_metrics_history() {
 
     echo "[ICL] error: ${method_name} produced no metrics history: ${history_path}" >&2
     if [[ "$MWE" == "1" ]]; then
-        echo "[ICL] The method reached its wall-clock limit before a success metric was saved." >&2
+        echo "[ICL] The method reached its active training-time limit before a success metric was saved." >&2
         echo "[ICL] Retry with a larger MWE_TOTAL_RUNTIME_LIMIT_SECONDS (current: ${MWE_TOTAL_RUNTIME_LIMIT_SECONDS})." >&2
     fi
     return 1

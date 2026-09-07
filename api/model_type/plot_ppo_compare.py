@@ -110,6 +110,7 @@ def main():
         f"[compare] overall mean absolute improvement="
         f"{overall_improvement:+.4f} ({overall_improvement * 100:+.2f} pp)"
     )
+    print(f'raw measurement dir: {paths}')
 
 
 if __name__ == "__main__":

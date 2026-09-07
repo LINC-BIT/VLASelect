@@ -40,11 +40,11 @@ class Args:
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
     track: bool = False
-    """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "ManiSkill"
-    """the wandb's project name"""
-    wandb_entity: Optional[str] = None
-    """the entity (team) of wandb's project"""
+    """if toggled, this experiment will be tracked with local tracking"""
+    tracking_project_name: str = "ManiSkill"
+    """the tracking's project name"""
+    tracking_entity: Optional[str] = None
+    """the entity (team) of tracking's project"""
     capture_video: bool = True
     """whether to capture videos of the agent performances (check out `videos` folder)"""
     save_model: bool = True
@@ -169,12 +169,12 @@ class Agent(nn.Module):
         return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
 
 class Logger:
-    def __init__(self, log_wandb=False, tensorboard: SummaryWriter = None) -> None:
+    def __init__(self, log_tracking=False, tensorboard: SummaryWriter = None) -> None:
         self.writer = tensorboard
-        self.log_wandb = log_wandb
+        self.log_tracking = log_tracking
     def add_scalar(self, tag, scalar_value, step):
-        if self.log_wandb:
-            wandb.log({tag: scalar_value}, step=step)
+        if self.log_tracking:
+            local_tracking.log({tag: scalar_value}, step=step)
         self.writer.add_scalar(tag, scalar_value, step)
     def close(self):
         self.writer.close()
@@ -226,13 +226,13 @@ if __name__ == "__main__":
     if not args.evaluate:
         print("Running training")
         if args.track:
-            import wandb
+            import local_tracking
             config = vars(args)
             config["env_cfg"] = dict(**env_kwargs, num_envs=args.num_envs, env_id=args.env_id, reward_mode="normalized_dense", env_horizon=max_episode_steps, partial_reset=args.partial_reset)
             config["eval_env_cfg"] = dict(**env_kwargs, num_envs=args.num_eval_envs, env_id=args.env_id, reward_mode="normalized_dense", env_horizon=max_episode_steps, partial_reset=False)
-            wandb.init(
-                project=args.wandb_project_name,
-                entity=args.wandb_entity,
+            local_tracking.init(
+                project=args.tracking_project_name,
+                entity=args.tracking_entity,
                 sync_tensorboard=False,
                 config=config,
                 name=run_name,
@@ -245,7 +245,7 @@ if __name__ == "__main__":
             "hyperparameters",
             "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
         )
-        logger = Logger(log_wandb=args.track, tensorboard=writer)
+        logger = Logger(log_tracking=args.track, tensorboard=writer)
     else:
         print("Running evaluation")
 

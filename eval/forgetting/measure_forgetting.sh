@@ -107,8 +107,6 @@ while IFS= read -r method; do
             EVAL_FREQ_OVERRIDE=4
             SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1
             SUPERVISED_BATCH_SIZE_OVERRIDE=2
-            WANDB_MODE=disabled
-            WANDB_SILENT=true
         )
         if [[ "$method" == "vlaselect" ]]; then
             common_env+=(MWE_MAX_RUNTIME_MINUTES="$MAX_TIME")

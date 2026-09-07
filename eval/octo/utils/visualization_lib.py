@@ -18,7 +18,7 @@ import numpy as np
 import plotly.graph_objects as go
 import tensorflow as tf
 import tqdm
-import wandb
+import local_tracking
 
 from octo.utils.gym_wrappers import (
     HistoryWrapper,
@@ -135,7 +135,7 @@ class Visualizer:
         self.visualized_trajs = False
         self._cached_iterators = {}
 
-    def metrics_for_wandb(
+    def metrics_for_tracking(
         self,
         infos,
         metric_keys=None,
@@ -179,13 +179,13 @@ class Visualizer:
                 )
         return metrics
 
-    def visualize_for_wandb(
+    def visualize_for_tracking(
         self,
         policy_fn,
         max_trajs=1,
         add_images=None,
     ):
-        """Returns a dictionary of visualizations to log to wandb.
+        """Returns a dictionary of visualizations to log to local_tracking.
         Args:
             policy_fn: See `raw_evaluations`
             max_trajs: The maximum number of trajectories to visualize.
@@ -222,7 +222,7 @@ class Visualizer:
                     observation_slice = np.concatenate(
                         images[np.linspace(0, len(images) - 1, 5).astype(int)], 1
                     )
-                    visualizations[f"traj_{n}_{key}"] = wandb.Image(observation_slice)
+                    visualizations[f"traj_{n}_{key}"] = local_tracking.Image(observation_slice)
         self.visualized_trajs = True
         return visualizations
 
@@ -238,7 +238,7 @@ class Visualizer:
                 of shape (batch_size, n_samples, action_dim). (n_samples can be arbitrary)
             max_trajs: The maximum number of trajectories to evaluate on.
         Returns:
-            all_traj_info: A list of dictionaries containing information about each trajectory (pass into `process_for_wandb`)
+            all_traj_info: A list of dictionaries containing information about each trajectory (pass into `process_for_tracking`)
         """
         iterator = self.get_iterator(self.dataset, max_trajs)
 
@@ -373,20 +373,20 @@ class RolloutVisualizer:
                         np.concatenate([task["image_primary"][0], frame], axis=0)
                         for frame in images
                     ]
-                rollout_info[f"rollout_{rollout_idx}_vid"] = wandb.Video(
+                rollout_info[f"rollout_{rollout_idx}_vid"] = local_tracking.Video(
                     np.array(images).transpose(0, 3, 1, 2)[
                         :: self.video_subsample_rate
                     ],
                     fps=self.vis_fps,
                 )
         rollout_info["avg_return"] = np.mean(rollout_info["episode_returns"])
-        rollout_info["episode_returns"] = wandb.Histogram(
+        rollout_info["episode_returns"] = local_tracking.Histogram(
             rollout_info["episode_returns"]
         )
         if rollout_info["episode_metrics"]:
             metrics = listdict2dictlist(rollout_info.pop("episode_metrics"))
             for metric in metrics:
-                rollout_info[metric] = wandb.Histogram(metrics[metric])
+                rollout_info[metric] = local_tracking.Histogram(metrics[metric])
                 rollout_info[f"avg_{metric}"] = np.mean(metrics[metric])
         else:
             rollout_info.pop("episode_metrics")
@@ -536,7 +536,7 @@ def plot_trajectory_actions(
     return fig
 
 
-class WandBFigure:
+class LocalTrackingFigure:
     def __init__(self, save_to=None, **figure_kwargs):
         self.fig = plt.figure(**figure_kwargs)
         self.canvas = FigureCanvas(self.fig)
@@ -559,9 +559,9 @@ def plot_trajectory_overview_mpl(
 ):
     n_act_dims = traj["action"].shape[-1]
     grid_size = int(np.ceil(np.sqrt(n_act_dims + 1)))
-    wandb_figure = WandBFigure(figsize=(grid_size * 5, grid_size * 5))
+    tracking_figure = LocalTrackingFigure(figsize=(grid_size * 5, grid_size * 5))
     gs = gridspec.GridSpec(grid_size, grid_size)
-    with wandb_figure as fig:
+    with tracking_figure as fig:
         ax = fig.add_subplot(gs[0, 0])
         ax.plot(info["mse"].mean(axis=1))
         ax.set_ylabel("MSE")
@@ -587,7 +587,7 @@ def plot_trajectory_overview_mpl(
                     ax.axvline(t, color="red", linestyle="--", alpha=0.2)
             ax.set_ylabel(f"dim {i}")
         fig.suptitle(traj["task"]["language_instruction"][0].decode("utf-8"))
-    return wandb.Image(wandb_figure.image)
+    return local_tracking.Image(tracking_figure.image)
 
 
 #############################################

@@ -22,7 +22,6 @@ api/vla_model_interface_examples/
 log/
 api/results/
 api/vla_model_interface_examples/log/
-eval/wandb/
 
 # Large local assets and checkpoints
 ckpt/
@@ -96,5 +95,4 @@ eval/**/ablation_eval_metrics.jsonl
 eval/**/run-metrics.jsonl
 
 tmp_mask_*.pth 
-wandb/
 eval/forgetting/results

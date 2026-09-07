@@ -14,8 +14,10 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 [Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect%20(CloudLab).md)<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22219539)<br>
 Docker Image: <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh)) (digest: sha256:fa6eb790ae18ba424184db31f30d4a989394b959dd35132ca7f2a05fbf1168f7)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[33GB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2) (requiring no further dependency installation) (digest: sha256:bfbedf8025c694677d0e252cf07afd1285ce477f47f595f6f3253045320e196e)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(digest: sha256:fa6eb790ae18ba424184db31f30d4a989394b959dd35132ca7f2a05fbf1168f7)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[33GB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2) (requiring no further dependency installation)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(digest: sha256:bfbedf8025c694677d0e252cf07afd1285ce477f47f595f6f3253045320e196e)<br>
 [Model Checkpoints](https://huggingface.co/cz22edd/vlaselect_test/tree/main) (commit hash: c6a4bd910ab670a3161c4a505e369f9e8c9de2e6)
 
 ## Outline (Evaluation process/workflow and Reusability)
@@ -532,10 +534,13 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     bash ensure_clean_snapshot.sh
     ```
 
-2. **Explanation of less training time than the documentation's specified time**
+2. **Explanation of execution time**
 
-- In addition to training, the experiment execution involves additional time-consuming processes (e.g. RL environment initialization and accuracy measurements).
-- Therefore, we set less time for training in the scripts (e.g. 240s in [Experiment 8](#228-experiment-8-discussion-2-in-section-55-icl-in-context-learning)), to ensure the experiment’s total time cost is under the documentation's specified time (e.g. 600s in [Experiment 8](#228-experiment-8-discussion-2-in-section-55-icl-in-context-learning)).
+    The execution time of an experiment involves both:
+    - (i) the time for training;
+    - (ii) the time for additional time-consuming processes (e.g. RL environment initialization and accuracy measurements).
+    
+    We list the two parts of time for each experiment.
 
 3. **Explanation of inconsistent results compared to the paper**
 

@@ -48,8 +48,6 @@ if [[ "$SMOKE" == "1" ]]; then
         UPDATE_EPOCHS_OVERRIDE=1
         SUPERVISED_UPDATES_PER_ITER_OVERRIDE=1
         SUPERVISED_BATCH_SIZE_OVERRIDE=2
-        WANDB_MODE=disabled
-        WANDB_SILENT=true
         MWE_ACTIVE_RUNTIME_ONLY=1
     )
 fi

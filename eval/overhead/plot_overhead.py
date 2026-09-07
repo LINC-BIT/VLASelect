@@ -282,6 +282,33 @@ def find_gpu_metrics_csv(run_dir: Path) -> Path | None:
             if candidates: return candidates[0]
     return None
 
+def collect_raw_gpu_memory_plot_points(run_dir: Path) -> list[tuple[float, float]]:
+    csv_path = find_gpu_metrics_csv(run_dir)
+    if csv_path is None:
+        return []
+    try:
+        with csv_path.open('r', encoding='utf-8', newline='') as handle:
+            reader = csv.DictReader(handle)
+            raw_rows = list(reader)
+            fieldnames = reader.fieldnames or []
+    except Exception:
+        return []
+    has_device_memory_column = 'gpu_device_memory_used_mb' in fieldnames
+    has_any_process_found_row = any(parse_bool(row.get('process_found_on_gpu')) for row in raw_rows)
+    points: list[tuple[float, float]] = []
+    for row in raw_rows:
+        elapsed_seconds = finite_float(row.get('elapsed_seconds'))
+        if elapsed_seconds is None:
+            continue
+        memory_mb = raw_gpu_memory_used_mb_for_row(
+            row,
+            has_device_memory_column=has_device_memory_column,
+            has_any_process_found_row=has_any_process_found_row,
+        )
+        points.append((elapsed_seconds / 3600.0, memory_mb / 1024.0))
+    return points
+
+
 def find_memory_accounting_json(run_dir: Path) -> Path | None:
     direct = run_dir / 'analysis' / 'memory_accounting.json'
     if direct.exists():
@@ -1454,12 +1481,31 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                 paper_name = PAPER_METHOD_BY_INTERNAL.get(internal_name)
                 if not paper_name:
                     continue
+                run_dir = resolve_path(method['run_dir'])
+                raw_data_paths.append(str(find_gpu_metrics_csv(run_dir) or run_dir / 'analysis' / 'gpu_metrics.csv'))
+                raw_points = collect_raw_gpu_memory_plot_points(run_dir)
+                style = METHOD_STYLES.get(internal_name, {})
+                if raw_points:
+                    raw_ax.plot(
+                        [point[0] for point in raw_points],
+                        [point[1] for point in raw_points],
+                        linewidth=3.6,
+                        color=style.get('color'),
+                        linestyle=style.get('linestyle', '-'),
+                    )
+                    canonical_name = _canonical_legend_method_name(internal_name)
+                    if canonical_name not in seen_legend_names:
+                        legend_entries.append({
+                            'name': internal_name,
+                            'label': _canonical_legend_label(internal_name, paper_name),
+                            'style': dict(style),
+                        })
+                        seen_legend_names.add(canonical_name)
+
                 metrics = panel_metrics.get(paper_name, make_empty_metrics())
                 if metrics['reach_hours'] <= 0.0:
                     continue
-                run_dir = resolve_path(method['run_dir'])
                 summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
-                raw_data_paths.append(str(run_dir / 'analysis' / 'gpu_metrics.csv'))
                 active_runtime_hours = resolve_method_active_runtime_hours(method, metrics['reach_hours'])
                 memory_footprint_offset_mb = memory_footprint_offset_mb_for_plot(str(panel.get('panel_label', '')), str(method.get('name', '')), paper_name, run_dir)
                 gpu_samples = load_gpu_samples(
@@ -1468,40 +1514,18 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                     memory_footprint_offset_mb=memory_footprint_offset_mb,
                 )
                 points = prepare_memory_plot_points(gpu_samples, metrics['reach_hours'])
-                raw_points = collect_raw_memory_plot_points(gpu_samples, metrics['reach_hours'])
-                if not points and not raw_points:
+                if not points:
                     continue
                 xs = [point[0] for point in points]
                 ys = [point[1] for point in points]
-                if xs and ys:
-                    drop_x = metrics['reach_hours']
-                    stable_y = ys[-1]
-                    if xs[-1] < drop_x:
-                        xs.append(drop_x)
-                        ys.append(stable_y)
+                drop_x = metrics['reach_hours']
+                stable_y = ys[-1]
+                if xs[-1] < drop_x:
                     xs.append(drop_x)
-                    ys.append(0.0)
-                raw_xs = [point[0] for point in raw_points]
-                raw_ys = [point[1] for point in raw_points]
-                if raw_xs and raw_ys:
-                    raw_drop_x = metrics['reach_hours']
-                    raw_stable_y = raw_ys[-1]
-                    if raw_xs[-1] < raw_drop_x:
-                        raw_xs.append(raw_drop_x)
-                        raw_ys.append(raw_stable_y)
-                    raw_xs.append(raw_drop_x)
-                    raw_ys.append(0.0)
-                style = METHOD_STYLES.get(internal_name, {})
+                    ys.append(stable_y)
+                xs.append(drop_x)
+                ys.append(0.0)
                 ax.plot(xs, ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
-                raw_ax.plot(raw_xs, raw_ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
-                canonical_name = _canonical_legend_method_name(internal_name)
-                if canonical_name not in seen_legend_names:
-                    legend_entries.append({
-                        'name': internal_name,
-                        'label': _canonical_legend_label(internal_name, paper_name),
-                        'style': dict(style),
-                    })
-                    seen_legend_names.add(canonical_name)
                 max_x = max(max_x, metrics['reach_hours'])
                 plotted += 1
             if plotted == 0:

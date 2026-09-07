@@ -33,7 +33,14 @@ Reviewers can access this environment and run the **minimum working examples** d
 
 ## 2. Access the Environment
 
-Open the URL [http://clgpu015.clemson.cloudlab.us:8080](http://clgpu015.clemson.cloudlab.us:8080) in a web browser (e.g. Chrome or Microsoft Edge). The page of **preconfigured environment** will appear as below:
+We provide **three isolated clean workspaces** in CloudLab. Evaluators 1-3 can access workspaces 1-3 to **isolate outputs from other evaluators**:
+
+- Workspace 1: http://clgpu015.clemson.cloudlab.us:8080/?folder=/data/VLASelect1
+- Workspace 2: http://clgpu015.clemson.cloudlab.us:8081/?folder=/data/VLASelect2
+- Workspace 3: http://clgpu015.clemson.cloudlab.us:8082/?folder=/data/VLASelect3
+
+
+Access the workspace by opening the URL in a web browser (e.g. Chrome or Microsoft Edge). The page of **preconfigured environment** will appear as below:
 
 <p align="center">
   <img src="./imgs/step1-cloud.png" alt="Login page" width="90%" />

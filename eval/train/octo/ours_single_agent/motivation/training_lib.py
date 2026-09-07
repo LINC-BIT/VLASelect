@@ -458,11 +458,7 @@ def build_logger(
             config["continual_env_change_time_points"] = list(
                 continual_env_schedule.change_time_points
             )
-
-        wandb_api_key = os.environ.get("WANDB_API_KEY", None)
-        if wandb_api_key and len(wandb_api_key) == 40:
-            base.wandb.login(key=wandb_api_key)
-        base.wandb.init(
+        base.local_tracking.init(
             project="EuroSys2026",
             config=config,
             name=run_name,
@@ -476,7 +472,7 @@ def build_logger(
         "|param|value|\n|-|-|\n%s"
         % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
-    return base.Logger(log_wandb=args.track, tensorboard=writer)
+    return base.Logger(log_tracking=args.track, tensorboard=writer)
 
 
 def prepare_args_and_context(

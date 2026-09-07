@@ -59,9 +59,9 @@ class Args:
     torch_deterministic: bool = True
     cuda: bool = True
     track: bool = False
-    wandb_project_name: str = "EuroSys2027"
-    wandb_entity: Optional[str] = None
-    wandb_group: str = "vla_rft"
+    tracking_project_name: str = "EuroSys2027"
+    tracking_entity: Optional[str] = None
+    tracking_group: str = "vla_rft"
     capture_video: bool = True
     save_model: bool = True
     evaluate: bool = False
@@ -147,15 +147,15 @@ class ContinualEnvSchedule:
 
 
 class Logger:
-    def __init__(self, writer: Optional[SummaryWriter], log_wandb: bool = False):
+    def __init__(self, writer: Optional[SummaryWriter], log_tracking: bool = False):
         self.writer = writer
-        self.log_wandb = log_wandb
+        self.log_tracking = log_tracking
 
     def add_scalar(self, tag, scalar_value, step):
-        if self.log_wandb:
-            import wandb
+        if self.log_tracking:
+            import local_tracking
 
-            wandb.log({tag: scalar_value}, step=step)
+            local_tracking.log({tag: scalar_value}, step=step)
         if self.writer is not None:
             self.writer.add_scalar(tag, scalar_value, step)
 
@@ -753,31 +753,27 @@ def main():
     logger = None
     if not args.evaluate:
         if args.track:
-            import wandb
-
-            wandb_api_key = os.environ.get("WANDB_API_KEY")
-            if wandb_api_key:
-                wandb.login(key=wandb_api_key)
+            import local_tracking
             config = vars(args)
             config["env_cfg"] = dict(**env_kwargs, num_envs=args.num_envs, env_id=current_env_id, env_horizon=max_episode_steps)
             config["eval_env_cfg"] = dict(**env_kwargs, num_envs=args.num_eval_envs, env_id=current_env_id, env_horizon=max_episode_steps)
             if continual_env_schedule is not None:
                 config["continual_env_ids"] = list(continual_env_schedule.env_ids)
                 config["continual_env_change_time_points"] = list(continual_env_schedule.change_time_points)
-            wandb.init(
-                project=args.wandb_project_name,
-                entity=args.wandb_entity,
+            local_tracking.init(
+                project=args.tracking_project_name,
+                entity=args.tracking_entity,
                 config=config,
                 name=run_name,
                 save_code=True,
-                group=f"{args.wandb_group}/{current_env_id}",
+                group=f"{args.tracking_group}/{current_env_id}",
             )
         writer = SummaryWriter(f"ckpt/{run_name}/tb")
         writer.add_text(
             "hyperparameters",
             "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
         )
-        logger = Logger(writer=writer, log_wandb=args.track)
+        logger = Logger(writer=writer, log_tracking=args.track)
 
     agent = build_agent_from_checkpoint(args, device, env_kwargs)
     rewarder = WorldModelRewarder(args.world_model_checkpoint, device)

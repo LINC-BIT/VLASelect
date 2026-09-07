@@ -356,6 +356,9 @@ def run_cli(
     parser.add_argument("--output", type=Path, default=default_output)
     parser.add_argument("--metric", default="train_success_once")
     args = parser.parse_args()
+
+    print(f'raw measurement dir: {args.results_dir}')
+
     count = plot_category(
         args.results_dir,
         args.output,

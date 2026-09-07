@@ -9,10 +9,6 @@ export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 export MODEL_TYPE="$MODEL_TYPE_NAME"
 cd "$SCRIPT_DIR"
 
-export WANDB_API_KEY=${WANDB_API_KEY:-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}
-if [[ "${WANDB_AUTO_LOGIN:-0}" == "1" ]]; then
-  wandb login --relogin "$WANDB_API_KEY" || true
-fi
 
 DATE=$(date +%Y%m%d-%H%M%S)
 RUN_NAME=${RUN_NAME_OVERRIDE:-${EXP_NAME_OVERRIDE:-results/$MODEL_TYPE_NAME/$DATE}}

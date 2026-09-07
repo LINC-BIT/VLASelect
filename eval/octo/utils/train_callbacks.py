@@ -248,7 +248,7 @@ class ValidationCallback(Callback):
         self.eval_step = eval_step
 
     def __call__(self, train_state: TrainState, step: int):
-        wandb_metrics = {}
+        tracking_metrics = {}
         for name, val_data_iter in self.val_iterators.items():
             metrics = []
             for _, batch in tqdm.tqdm(
@@ -258,8 +258,8 @@ class ValidationCallback(Callback):
             ):
                 metrics.append(self.eval_step(train_state, batch))
             metrics = jax.tree_map(lambda *xs: np.mean(xs), *metrics)
-            wandb_metrics[f"validation_{name}"] = metrics
-        return wandb_metrics
+            tracking_metrics[f"validation_{name}"] = metrics
+        return tracking_metrics
 
 
 @dataclass
@@ -295,7 +295,7 @@ class VisualizationCallback(Callback):
             )
 
     def __call__(self, train_state: TrainState, step: int):
-        wandb_metrics = {}
+        tracking_metrics = {}
         modal_policy_fns = {
             mode: batched_apply(
                 supply_rng(
@@ -318,14 +318,14 @@ class VisualizationCallback(Callback):
                     raw_infos = visualizer.raw_evaluations(
                         policy_fn, max_trajs=self.trajs_for_metrics
                     )
-                    metrics = visualizer.metrics_for_wandb(raw_infos)
-                    wandb_metrics[f"offline_metrics_{name}/{mode}"] = metrics
+                    metrics = visualizer.metrics_for_tracking(raw_infos)
+                    tracking_metrics[f"offline_metrics_{name}/{mode}"] = metrics
                 if self.trajs_for_viz > 0:
-                    images = visualizer.visualize_for_wandb(
+                    images = visualizer.visualize_for_tracking(
                         policy_fn, max_trajs=self.trajs_for_viz
                     )
-                    wandb_metrics[f"visualizations_{name}/{mode}"] = images
-        return wandb_metrics
+                    tracking_metrics[f"visualizations_{name}/{mode}"] = images
+        return tracking_metrics
 
 
 @dataclass
@@ -353,7 +353,7 @@ class RolloutVisualizationCallback(Callback):
         ]
 
     def __call__(self, train_state: TrainState, step: int):
-        wandb_metrics = {}
+        tracking_metrics = {}
         modal_policy_fns = {
             mode: supply_rng(
                 partial(
@@ -373,8 +373,8 @@ class RolloutVisualizationCallback(Callback):
                 rollout_infos = rollout_visualizer.run_rollouts(
                     policy_fn, train_state, mode, n_rollouts=self.trajs_for_rollouts
                 )
-                wandb_metrics[
+                tracking_metrics[
                     f"rollouts_{rollout_visualizer.name}/{mode}"
                 ] = rollout_infos
 
-        return wandb_metrics
+        return tracking_metrics

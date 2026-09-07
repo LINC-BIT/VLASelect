@@ -132,11 +132,11 @@ class Args:
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
     track: bool = False
-    """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "ManiSkill"
-    """the wandb's project name"""
-    wandb_entity: Optional[str] = None
-    """the entity (team) of wandb's project"""
+    """if toggled, this experiment will be tracked with local tracking"""
+    tracking_project_name: str = "ManiSkill"
+    """the tracking's project name"""
+    tracking_entity: Optional[str] = None
+    """the entity (team) of tracking's project"""
     capture_video: bool = True
     """whether to capture videos of the agent performances (check out `videos` folder)"""
 
@@ -180,7 +180,7 @@ class Args:
     control_mode: str = "pd_joint_delta_pos"
     """the control mode to use for the evaluation environments. Must match the control mode of the demonstration dataset."""
 
-    # additional tags/configs for logging purposes to wandb and shared comparisons with other algorithms
+    # additional tags/configs for logging purposes to tracking and shared comparisons with other algorithms
     demo_type: Optional[str] = None
 
     eval_model_only: Optional[str] = None
@@ -812,12 +812,12 @@ if __name__ == "__main__":
     
 
     if args.track:
-        import wandb
+        import local_tracking
 
         config = vars(args)
         config["eval_env_cfg"] = env_kwargs
-        wandb.tensorboard.patch(root_logdir=f"ckpt/{run_name}/tb")
-        wandb.init(
+        local_tracking.tensorboard.patch(root_logdir=f"ckpt/{run_name}/tb")
+        local_tracking.init(
             project='EuroSys2026',
             sync_tensorboard=True,
             config=config,
@@ -952,8 +952,8 @@ if __name__ == "__main__":
             )
             writer.add_scalar("losses/total_loss", loss.item(), iteration)
             if args.track:
-                wandb.log({'loss': loss.item()}, iteration)
-                wandb.log({'lr': optimizer.param_groups[0]["lr"]}, iteration)
+                local_tracking.log({'loss': loss.item()}, iteration)
+                local_tracking.log({'lr': optimizer.param_groups[0]["lr"]}, iteration)
 
         if iteration % args.eval_freq == 0:
             save_ckpt(run_name, f"last")
@@ -1016,7 +1016,7 @@ if __name__ == "__main__":
                 eval_metrics[k] = np.mean(eval_metrics[k])
                 writer.add_scalar(f"eval/{k}", eval_metrics[k], iteration)
                 if args.track:
-                    wandb.log({f"eval/{k}": eval_metrics[k]}, iteration)
+                    local_tracking.log({f"eval/{k}": eval_metrics[k]}, iteration)
                 print(f"{k}: {eval_metrics[k]:.4f}")
 
             if args.eval_model_only is not None:
@@ -1035,4 +1035,4 @@ if __name__ == "__main__":
         #     save_ckpt(run_name, str(iteration))
     envs.close()
     if args.track:
-        wandb.finish()
+        local_tracking.finish()

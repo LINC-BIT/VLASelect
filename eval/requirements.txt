@@ -229,7 +229,6 @@ tyro==1.0.3
 tzdata==2025.3
 unicorn==2.1.4
 uvicorn==0.40.0
-wandb==0.20.0
 Werkzeug==3.1.4
 wrapt==1.14.2
 xxhash==3.6.0

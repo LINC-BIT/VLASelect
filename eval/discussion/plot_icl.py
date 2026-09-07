@@ -270,6 +270,9 @@ def main() -> int:
     if args.bin_minutes <= 0.0:
         parser.error("--bin-minutes must be positive")
 
+    print(f'VLASelect raw measurement dir: {args.vlaselect_run_dir}')
+    print(f'RICL raw measurement dir: {args.ricl_run_dir}')
+
     try:
         summary = draw_plot(
             args.vlaselect_run_dir,

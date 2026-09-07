@@ -100,8 +100,6 @@ run_vlaselect() {
             NUM_EVAL_STEPS_OVERRIDE="$ICL_NUM_EVAL_STEPS" \
             NUM_MINIBATCHES_OVERRIDE=2 \
             UPDATE_EPOCHS_OVERRIDE=1 \
-            WANDB_MODE=disabled \
-            WANDB_SILENT=true \
             MWE_ACTIVE_RUNTIME_ONLY=0 \
             MAX_TIME_OVERRIDE="$MWE_PER_METHOD_RUNTIME_MINUTES" \
             bash "${EVAL_ROOT}/train/octo/ours_single_agent/online_rl_ours_single_agent_cl.sh"
@@ -127,8 +125,6 @@ run_ricl() {
             ACTOR_LOGSTD_OVERRIDE="$RICL_ACTOR_LOGSTD" \
             MAX_EPISODE_STEPS_OVERRIDE="$ICL_MAX_EPISODE_STEPS" \
             TOTAL_STEPS_OVERRIDE=5000000 \
-            WANDB_MODE=disabled \
-            WANDB_SILENT=true \
             MWE_ACTIVE_RUNTIME_ONLY=0 \
             MAX_RUNTIME_MINUTES_OVERRIDE="$MWE_PER_METHOD_RUNTIME_MINUTES" \
             bash "${EVAL_ROOT}/train/octo/ricl/online_rl_ricl.sh"

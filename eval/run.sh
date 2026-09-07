@@ -67,17 +67,14 @@ if [[ "$RUN_OVERHEAD_SAME_ACC" == "1" ]]; then
     fi
 fi
 
-if [[ "$RUN_BREAKDOWN_ALL" == "1" ]]; then
-    run_step "Figure 10: breakdown for all methods" env MWE="$MWE" METHODS="$METHODS" bash overhead/overhead_breakdown_all_methods.sh
-    if [[ "$AUTO_POSTPROCESS" == "1" ]]; then
-        run_step "Figure 10 postprocess" python overhead_breakdown/benchmark.py
-    fi
+if [[ "$RUN_BREAKDOWN_MODULES" == "1" ]]; then
+    run_step "Figure 10: breakdown for VLASelect modules" env MWE="$MWE" bash overhead_breakdown/run.sh
 fi
 
-if [[ "$RUN_BREAKDOWN_MODULES" == "1" ]]; then
-    run_step "Figure 11: breakdown for VLASelect modules" env MWE="$MWE" bash overhead/overhead_breakdown_modules.sh
+if [[ "$RUN_BREAKDOWN_ALL" == "1" ]]; then
+    run_step "Figure 11: breakdown for all methods" env MWE="$MWE" METHODS="$METHODS" bash overhead/overhead_breakdown_all_methods.sh
     if [[ "$AUTO_POSTPROCESS" == "1" ]]; then
-        run_step "Figure 11 postprocess" python overhead/plot_breakdown_modules.py
+        run_step "Figure 11 postprocess" python overhead/plot_breakdown_all_methods.py
     fi
 fi
 

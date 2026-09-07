@@ -101,7 +101,6 @@ done < <(
         -type d \( \
             -name nohup_out -o \
             -name launch_logs -o \
-            -name wandb -o \
             -name __pycache__ -o \
             -name '*_table' -o \
             -path '*/discussion/results' \
@@ -119,8 +118,6 @@ done < <(
         \) -print0 2>/dev/null
 )
 
-add_candidate "$repo_root/wandb"
-add_candidate "$repo_root/eval/wandb"
 
 if [[ "${#candidates[@]}" -eq 0 ]]; then
     echo "No generated experiment results or caches found."

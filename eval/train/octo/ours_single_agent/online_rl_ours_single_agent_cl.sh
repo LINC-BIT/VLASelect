@@ -1,11 +1,7 @@
 
 
 
-export WANDB_API_KEY=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
 
-if [ "${WANDB_AUTO_LOGIN:-0}" = "1" ]; then
-    wandb login --relogin "$WANDB_API_KEY" || true
-fi
 
 DATE=$(date +"%Y-%m-%d")
 TIME=$(date +"%H-%M-%S")

@@ -2,7 +2,7 @@
 metrics.py
 
 Utility classes defining a Metrics container and multiple Trackers to enable model/stage-specific logging to various
-endpoints (e.g., JSONL local logs, Weights & Biases).
+endpoints (e.g., JSONL local logs, local tracking).
 """
 
 import time
@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional, Protocol, Tuple, Union
 import jsonlines
 import numpy as np
 import torch
-import wandb
+import local_tracking
 
 from prismatic.overwatch import initialize_overwatch
 
@@ -62,16 +62,16 @@ class WeightsBiasesTracker:
         self.run_id, self.run_dir, self.hparams = run_id, run_dir, hparams
 
         # Get W&B-Specific Initialization Parameters
-        self.project, self.entity, self.group, self.wandb_dir = project, entity, group, self.run_dir
+        self.project, self.entity, self.group, self.tracking_dir = project, entity, group, self.run_dir
 
         # Call W&B.init()
         self.initialize()
 
     @overwatch.rank_zero_only
     def initialize(self) -> None:
-        wandb.init(
+        local_tracking.init(
             name=self.run_id,
-            dir=self.wandb_dir,
+            dir=self.tracking_dir,
             config=self.hparams,
             project=self.project,
             entity=self.entity,
@@ -80,20 +80,16 @@ class WeightsBiasesTracker:
 
     @overwatch.rank_zero_only
     def write_hyperparameters(self) -> None:
-        wandb.config = self.hparams
+        local_tracking.config = self.hparams
 
     @overwatch.rank_zero_only
     def write(self, global_step: int, metrics: Dict[str, Union[int, float]]) -> None:
-        wandb.log(metrics, step=global_step)
+        local_tracking.log(metrics, step=global_step)
 
     @staticmethod
     def finalize() -> None:
         if overwatch.is_rank_zero():
-            wandb.finish()
-
-        # A job gets 210 seconds to get its affairs in order
-        time.sleep(210)
-
+            local_tracking.finish()
 
 # === Core Metrics Container :: Initializes Trackers => Compiles/Pushes Metrics ===
 
@@ -106,8 +102,8 @@ class Metrics:
         run_dir: Path,
         hparams: Dict[str, Any],
         stage: str,
-        wandb_project: str = "prismatic",
-        wandb_entity: Optional[str] = None,
+        tracking_project: str = "prismatic",
+        tracking_entity: Optional[str] = None,
         grad_accumulation_steps: int = 1,
         window_size: int = 128,
     ) -> None:
@@ -118,9 +114,9 @@ class Metrics:
         for tracker_type in active_trackers:
             if tracker_type == "jsonl":
                 tracker = JSONLinesTracker(run_id, run_dir, hparams)
-            elif tracker_type == "wandb":
+            elif tracker_type == "tracking":
                 tracker = WeightsBiasesTracker(
-                    run_id, run_dir, hparams, project=wandb_project, entity=wandb_entity, group=self.stage
+                    run_id, run_dir, hparams, project=tracking_project, entity=tracking_entity, group=self.stage
                 )
             else:
                 raise ValueError(f"Tracker with type `{tracker_type} is not supported!")
@@ -212,8 +208,8 @@ class VLAMetrics:
         run_id: str,
         run_dir: Path,
         hparams: Dict[str, Any],
-        wandb_project: str = "openvla",
-        wandb_entity: Optional[str] = "stanford-voltron",
+        tracking_project: str = "openvla",
+        tracking_entity: Optional[str] = "stanford-voltron",
         grad_accumulation_steps: int = 1,
         window_size: int = 1,
         resume_step: Optional[int] = None,
@@ -226,9 +222,9 @@ class VLAMetrics:
         for tracker_type in active_trackers:
             if tracker_type == "jsonl":
                 tracker = JSONLinesTracker(run_id, run_dir, hparams)
-            elif tracker_type == "wandb":
+            elif tracker_type == "tracking":
                 tracker = WeightsBiasesTracker(
-                    run_id, run_dir, hparams, project=wandb_project, entity=wandb_entity, group="vla-train"
+                    run_id, run_dir, hparams, project=tracking_project, entity=tracking_entity, group="vla-train"
                 )
             else:
                 raise ValueError(f"Tracker with type `{tracker_type} is not supported!")

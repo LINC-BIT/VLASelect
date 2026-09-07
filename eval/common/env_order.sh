@@ -72,3 +72,31 @@ PY_HELPER
         printf -v "$primary_env_var_name" '%s' "${helper_lines[2]}"
     fi
 }
+
+vlaselect_take_first_n_envs() {
+    local raw_envs="$1"
+    local keep_count="$2"
+
+    if [[ -z "$raw_envs" ]]; then
+        echo "[env-order] missing env sequence" >&2
+        return 1
+    fi
+    if [[ -z "$keep_count" || ! "$keep_count" =~ ^[0-9]+$ || "$keep_count" -lt 1 ]]; then
+        echo "[env-order] invalid keep count: $keep_count" >&2
+        return 1
+    fi
+
+    python3 - "$raw_envs" "$keep_count" <<'PY_HELPER'
+import ast
+import sys
+
+try:
+    envs = list(ast.literal_eval(sys.argv[1]))
+except (SyntaxError, ValueError) as exc:
+    raise SystemExit(f"failed to parse env sequence literal: {exc}")
+
+keep_count = int(sys.argv[2])
+print(repr(envs[:keep_count]))
+PY_HELPER
+}
+

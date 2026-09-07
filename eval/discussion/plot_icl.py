@@ -91,11 +91,32 @@ def collect_series(run_dir: Path, metric: str) -> list[tuple[float, float]]:
     return series
 
 
+def collect_environment_series(run_dir: Path, metric: str) -> dict[str, list[tuple[float, float]]]:
+    series_by_environment: dict[str, list[tuple[float, float]]] = {}
+    for index, entry in enumerate(load_history(run_dir)):
+        raw_value = next((entry.get(key) for key in METRIC_KEYS[metric] if entry.get(key) is not None), None)
+        if raw_value is None:
+            continue
+        elapsed_hours = entry.get("elapsed_hours")
+        try:
+            elapsed_minutes = float(index) if elapsed_hours is None else float(elapsed_hours) * 60.0
+            value = float(raw_value)
+        except (TypeError, ValueError):
+            continue
+        if not (0.0 <= value <= 1.0):
+            raise ValueError(f"{metric} must be in [0, 1], got {value} in {run_dir}")
+        environment_id = str(entry.get("current_env_id") or "unknown")
+        series_by_environment.setdefault(environment_id, []).append((elapsed_minutes, value * 100.0))
+    return series_by_environment
+
+
 def build_gain_summary(
     metric: str,
     smoothing: float,
     vlaselect_series: list[tuple[float, float]],
     ricl_series: list[tuple[float, float]],
+    vlaselect_environment_series: dict[str, list[tuple[float, float]]],
+    ricl_environment_series: dict[str, list[tuple[float, float]]],
 ) -> dict[str, Any]:
     vlaselect_raw = [value for _, value in vlaselect_series]
     ricl_raw = [value for _, value in ricl_series]
@@ -124,11 +145,31 @@ def build_gain_summary(
             'compared_points': min(len(lhs), len(rhs)),
         }
 
+    environment_order = list(vlaselect_environment_series)
+    environment_order.extend(
+        environment_id for environment_id in ricl_environment_series if environment_id not in vlaselect_environment_series
+    )
+    by_environment = {}
+    for environment_id in environment_order:
+        vlaselect_values = [value for _, value in vlaselect_environment_series.get(environment_id, [])]
+        ricl_values = [value for _, value in ricl_environment_series.get(environment_id, [])]
+        if not vlaselect_values or not ricl_values:
+            continue
+        by_environment[environment_id] = {
+            'raw': pack_pair('raw', vlaselect_values, ricl_values),
+            'smoothed': pack_pair(
+                'smoothed',
+                smooth_values(vlaselect_values, smoothing),
+                smooth_values(ricl_values, smoothing),
+            ),
+        }
+
     return {
         'metric': metric,
         'smoothing': smoothing,
         'raw': pack_pair('raw', vlaselect_raw, ricl_raw),
         'smoothed': pack_pair('smoothed', vlaselect_smoothed, ricl_smoothed),
+        'by_environment': by_environment,
     }
 
 
@@ -187,7 +228,14 @@ def draw_plot(
     fig.savefig(output_path, dpi=200)
     plt.close(fig)
 
-    summary = build_gain_summary(metric, smoothing, plotted_series['VLASelect'], plotted_series['RICL'])
+    summary = build_gain_summary(
+        metric,
+        smoothing,
+        plotted_series['VLASelect'],
+        plotted_series['RICL'],
+        collect_environment_series(vlaselect_dir, metric),
+        collect_environment_series(ricl_dir, metric),
+    )
     if summary_output is not None:
         summary_output.parent.mkdir(parents=True, exist_ok=True)
         summary_output.write_text(json.dumps(summary, indent=2), encoding='utf-8')
@@ -235,6 +283,16 @@ def main() -> int:
         f"gain={raw['mean_absolute_gain_points']:.2f} points "
         f"relative={raw['mean_relative_gain_percent'] if raw['mean_relative_gain_percent'] is not None else 'NA'}"
     )
+    for environment_id, environment_summary in summary['by_environment'].items():
+        environment_raw = environment_summary['raw']
+        relative_gain = environment_raw['final_relative_gain_percent']
+        print(
+            f"[ICL] {environment_id}: "
+            f"VLASelect={environment_raw['vlaselect_final_accuracy']:.2f}% "
+            f"RICL={environment_raw['ricl_final_accuracy']:.2f}% "
+            f"gain={environment_raw['final_absolute_gain_points']:.2f} points "
+            f"relative={relative_gain if relative_gain is not None else 'NA'}"
+        )
     return 0
 
 

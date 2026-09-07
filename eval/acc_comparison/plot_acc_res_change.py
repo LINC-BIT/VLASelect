@@ -37,10 +37,15 @@ VIS_PAYLOAD_SUBDIR = DEFAULT_VIS_PAYLOAD_SUBDIR
 FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.pdf'
 FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.svg'
 FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.png'
+RAW_FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}_RAW.pdf'
+RAW_FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}_RAW.svg'
+RAW_FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}_RAW.png'
 SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
 SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
+RAW_PANEL_OUTPUT_DIR = SCRIPT_DIR / f'{PANEL_OUTPUT_SUBDIR}_raw'
 VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
+RAW_VIS_PAYLOAD_DIR = SCRIPT_DIR / f'{VIS_PAYLOAD_SUBDIR}_raw'
 LIMIT_SERIES_TO_THREE_POINTS = True
 MAX_SERIES_POINTS = 3
 SELECTED_METHODS_RAW: set[str] = set()
@@ -124,7 +129,8 @@ def parse_args() -> argparse.Namespace:
 def configure_runtime(args: argparse.Namespace) -> None:
     global TABLE_ROOT, MANIFEST_OVERRIDE, FIGURE_STEM, SUMMARY_STEM
     global PANEL_OUTPUT_SUBDIR, VIS_PAYLOAD_SUBDIR, FIGURE_PATH, FIGURE_SVG_PATH, FIGURE_PNG_PATH
-    global SUMMARY_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR, VIS_PAYLOAD_DIR
+    global RAW_FIGURE_PATH, RAW_FIGURE_SVG_PATH, RAW_FIGURE_PNG_PATH
+    global SUMMARY_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR, RAW_PANEL_OUTPUT_DIR, VIS_PAYLOAD_DIR, RAW_VIS_PAYLOAD_DIR
     global LIMIT_SERIES_TO_THREE_POINTS, PANEL_LOOKUP_TABLE_ROOTS, SELECTED_METHODS_RAW
 
     table_root_raw = args.table_root or str(DEFAULT_TABLE_ROOT)
@@ -144,10 +150,15 @@ def configure_runtime(args: argparse.Namespace) -> None:
     FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.pdf'
     FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.svg'
     FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}.png'
+    RAW_FIGURE_PATH = SCRIPT_DIR / f'{FIGURE_STEM}_RAW.pdf'
+    RAW_FIGURE_SVG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}_RAW.svg'
+    RAW_FIGURE_PNG_PATH = SCRIPT_DIR / f'{FIGURE_STEM}_RAW.png'
     SUMMARY_CSV_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.csv'
     SUMMARY_JSON_PATH = SCRIPT_DIR / f'{SUMMARY_STEM}.json'
     PANEL_OUTPUT_DIR = SCRIPT_DIR / PANEL_OUTPUT_SUBDIR
+    RAW_PANEL_OUTPUT_DIR = SCRIPT_DIR / f'{PANEL_OUTPUT_SUBDIR}_raw'
     VIS_PAYLOAD_DIR = SCRIPT_DIR / VIS_PAYLOAD_SUBDIR
+    RAW_VIS_PAYLOAD_DIR = SCRIPT_DIR / f'{VIS_PAYLOAD_SUBDIR}_raw'
     SELECTED_METHODS_RAW = parse_method_filter(args.methods)
     LIMIT_SERIES_TO_THREE_POINTS = True
 
@@ -338,6 +349,81 @@ def collect_series(
         method_name=method_name,
     )
 
+
+
+def collect_raw_series_with_source(
+    family: str,
+    run_dir: Path,
+    metric_keys: tuple[str, ...],
+    *,
+    force_history: bool = False,
+) -> tuple[list[tuple[float, float]], Path | None]:
+    config = FAMILY_CONFIGS[family]
+    if config['loader'] == 'tensorboard' and not force_history:
+        tb_dir = find_tb_dir(run_dir)
+        if tb_dir is None:
+            return [], None
+        try:
+            accumulator = event_accumulator.EventAccumulator(str(tb_dir), size_guidance={event_accumulator.SCALARS: 0})
+            accumulator.Reload()
+        except Exception:
+            return [], tb_dir
+        metric_key = config['metric_key']
+        if metric_key not in accumulator.Tags().get('scalars', []):
+            return [], tb_dir
+        events = accumulator.Scalars(metric_key)
+        if not events:
+            return [], tb_dir
+        base_time = events[0].wall_time
+        return [((event.wall_time - base_time) / 60.0, float(event.value)) for event in events], tb_dir
+
+    history_path = run_dir / 'metrics_history.json'
+    series = []
+    for index, metric in enumerate(load_history(run_dir)):
+        y_value = None
+        for key in metric_keys:
+            y_value = finite_float(metric.get(key))
+            if y_value is not None:
+                break
+        if y_value is None:
+            continue
+        elapsed_hours = finite_float(metric.get('elapsed_hours'))
+        x_value = elapsed_hours * 60.0 if elapsed_hours is not None else float(index)
+        series.append((x_value, y_value))
+    return series, history_path if history_path.exists() else None
+
+
+def make_plot_payload(
+    panel: dict[str, Any],
+    metric_tag: str,
+    series_payload: list[dict[str, Any]],
+    summary_stats: dict[str, float | None],
+    xlim: list[float],
+    *,
+    output_stem_suffix: str = '',
+) -> dict[str, Any]:
+    legend_entries = build_visible_legend_entries(series_payload, xlim, [0.0, 1.0])
+    return {
+        'source': {
+            'top_manifest': panel.get('_top_manifest', ''),
+            'suite_manifest': str(panel.get('suite_manifest', '')),
+        },
+        'render_config': RENDER_CONFIG,
+        'plots': {
+            'success_once': {
+                'tag': metric_tag,
+                'output_stem': f"{panel['panel_label']}_{panel['family']}{output_stem_suffix}",
+                'xlabel': 'Time (minutes)',
+                'ylabel': 'Success Rate',
+                'xlim': xlim,
+                'ylim': [0.0, 1.0],
+                'grid_alpha': 0.3,
+                'summary': summary_stats,
+                'series': series_payload,
+                'legend_entries': legend_entries,
+            }
+        }
+    }
 
 def smooth_values(values: list[float], smoothing: float) -> list[float]:
     if not values or smoothing <= 0.0:
@@ -578,6 +664,8 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
     selected_methods = resolve_selected_methods(panel['family'])
     summary_rows: list[dict[str, Any]] = []
     series_payload = []
+    raw_series_payload = []
+    raw_data_paths: set[str] = set()
     others_avg: list[float] = []
     ours_avg: list[float] = []
 
@@ -606,6 +694,14 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 panel_index=panel_index,
                 method_name=method.get('name'),
             )
+            raw_series, raw_data_path = collect_raw_series_with_source(
+                panel['family'],
+                run_dir,
+                metric_keys,
+                force_history=use_train_history_only,
+            )
+            if raw_data_path is not None:
+                raw_data_paths.add(str(raw_data_path))
             if method['name'] in {'ours', 'ours_single_agent'}:
                 series = [(x, y) for x, y in series if y > 0.0]
             if not series:
@@ -628,6 +724,17 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
                 'x_full': xs_full,
                 'point_count': len(xs),
             })
+            if raw_series:
+                raw_series_payload.append({
+                    'name': method['name'],
+                    'display_name': display_name,
+                    'label': display_name,
+                    'style': style,
+                    'x': [point[0] for point in raw_series],
+                    'y': [point[1] for point in raw_series],
+                    'point_count': len(raw_series),
+                    'source_path': str(raw_data_path) if raw_data_path is not None else '',
+                })
             if method['name'] in {'ours', 'ours_single_agent'}:
                 ours_avg.append(average)
             else:
@@ -669,30 +776,20 @@ def build_panel_payload(panel: dict[str, Any], smoothing: float) -> tuple[dict[s
             span = last_x - first_x
             series['x'] = [((x - first_x) / span) * x_axis_right for x in xs]
     expand_single_point_series_to_horizontal_lines(series_payload, xlim)
-    legend_entries = build_visible_legend_entries(series_payload, xlim, [0.0, 1.0])
+    metric_tag = metric_keys[0] if use_train_history_only else config['metric_key']
+    payload = make_plot_payload(panel, metric_tag, series_payload, summary_stats, xlim)
 
-    payload = {
-        'source': {
-            'top_manifest': panel.get('_top_manifest', ''),
-            'suite_manifest': suite_manifest_raw,
-        },
-        'render_config': RENDER_CONFIG,
-        'plots': {
-            'success_once': {
-                'tag': metric_keys[0] if use_train_history_only else config['metric_key'],
-                'output_stem': f"{panel['panel_label']}_{panel['family']}",
-                'xlabel': 'Time (minutes)',
-                'ylabel': 'Success Rate',
-                'xlim': xlim,
-                'ylim': [0.0, 1.0],
-                'grid_alpha': 0.3,
-                'summary': summary_stats,
-                'series': series_payload,
-                'legend_entries': legend_entries,
-            }
-        }
-    }
-    return payload, summary_rows, summary_stats
+    raw_xlim = resolve_dynamic_xlim(raw_series_payload, config['default_xlim'])
+    raw_payload = make_plot_payload(
+        panel,
+        metric_tag,
+        raw_series_payload,
+        summary_stats,
+        raw_xlim,
+        output_stem_suffix='_raw',
+    )
+    raw_payload['source']['raw_data_paths'] = sorted(raw_data_paths)
+    return payload, raw_payload, summary_rows, summary_stats, sorted(raw_data_paths)
 
 
 def log_panel_selection(panel: dict[str, Any], rows: list[dict[str, Any]]) -> None:
@@ -713,21 +810,28 @@ def log_panel_selection(panel: dict[str, Any], rows: list[dict[str, Any]]) -> No
 def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
     apply_matplotlib_style(RENDER_CONFIG['matplotlib'])
     panel_paths: list[Path] = []
+    raw_panel_paths: list[Path] = []
+    raw_data_paths: set[str] = set()
     summary_rows: list[dict[str, Any]] = []
     summary_stats_list: list[dict[str, float | None]] = []
     visible_method_names: set[str] = set()
     legend_entry_groups: list[list[dict[str, Any]]] = []
     VIS_PAYLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_VIS_PAYLOAD_DIR.mkdir(parents=True, exist_ok=True)
     PANEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_PANEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     for panel_defaults in PAPER_PANELS:
         panel = resolve_panel_entry(panel_defaults)
-        payload, rows, summary_stats = build_panel_payload(panel, smoothing)
+        payload, raw_payload, rows, summary_stats, panel_raw_paths = build_panel_payload(panel, smoothing)
         log_panel_selection(panel, rows)
         summary_rows.extend(rows)
         summary_stats_list.append(summary_stats)
+        raw_data_paths.update(panel_raw_paths)
         payload_path = VIS_PAYLOAD_DIR / f"{panel['panel_label']}_{panel['family']}.json"
         payload_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+        raw_payload_path = RAW_VIS_PAYLOAD_DIR / f"{panel['panel_label']}_{panel['family']}_raw.json"
+        raw_payload_path.write_text(json.dumps(raw_payload, indent=2), encoding='utf-8')
         plot_data = payload['plots']['success_once']
         panel_legend_entries = list(plot_data.get('legend_entries', []))
         legend_entry_groups.append(panel_legend_entries)
@@ -738,6 +842,8 @@ def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
         )
         png_path, _ = draw_plot(plot_data, RENDER_CONFIG, PANEL_OUTPUT_DIR)
         panel_paths.append(png_path)
+        raw_png_path, _ = draw_plot(raw_payload['plots']['success_once'], RENDER_CONFIG, RAW_PANEL_OUTPUT_DIR)
+        raw_panel_paths.append(raw_png_path)
 
     legend_path = None
     shared_legend_entries = build_shared_legend_entries(legend_entry_groups)
@@ -775,7 +881,39 @@ def draw_figure(smoothing: float = 0.7) -> list[dict[str, Any]]:
         legend_image_path=legend_path,
         legend_rows=legend_rows,
     )
-    return summary_rows
+    raw_legend_path = None
+    if shared_legend_entries:
+        raw_legend_path = RAW_PANEL_OUTPUT_DIR / f'{FIGURE_STEM}_RAW_legend.png'
+        render_legend_image(
+            shared_legend_entries,
+            raw_legend_path,
+            ncol=legend_ncol,
+            fontsize=22,
+            linewidth=3.6,
+            handlelength=3.0,
+            dpi=200,
+        )
+    compose_grid_figure(
+        raw_panel_paths,
+        output_paths=[RAW_FIGURE_PNG_PATH, RAW_FIGURE_SVG_PATH],
+        rows=1,
+        cols=4,
+        figsize=(20.0, 6.2),
+        legend_path=raw_legend_path,
+        legend_position='top',
+        legend_height_ratio=0.22,
+        legend_y_shift=legend_y_shift,
+        dpi=200,
+    )
+    fill_accuracy_template(
+        RAW_FIGURE_PATH,
+        raw_panel_paths,
+        summary_stats_list,
+        visible_method_names=visible_method_names,
+        legend_image_path=raw_legend_path,
+        legend_rows=legend_rows,
+    )
+    return summary_rows, sorted(raw_data_paths)
 
 
 def write_summary(rows: list[dict[str, Any]]) -> None:
@@ -793,14 +931,21 @@ def write_summary(rows: list[dict[str, Any]]) -> None:
 def main() -> None:
     args = parse_args()
     configure_runtime(args)
-    rows = draw_figure(RENDER_CONFIG['smoothing'])
+    rows, raw_data_paths = draw_figure(RENDER_CONFIG['smoothing'])
     write_summary(rows)
     print(f'table_root: {TABLE_ROOT}')
     print('lookup_table_roots:', ', '.join(str(path) for path in PANEL_LOOKUP_TABLE_ROOTS))
     if MANIFEST_OVERRIDE:
         print(f'manifest: {MANIFEST_OVERRIDE}')
     print(f'figure: {FIGURE_PATH}')
+    print(f'raw_figure: {RAW_FIGURE_PATH}')
     print(f'summary: {SUMMARY_CSV_PATH}')
+    print('raw_data_paths:')
+    if raw_data_paths:
+        for raw_path in raw_data_paths:
+            print(f'  {raw_path}')
+    else:
+        print('  none')
 
 
 if __name__ == '__main__':

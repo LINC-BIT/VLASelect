@@ -28,10 +28,14 @@ LATEST_POINTER = TABLE_ROOT / 'latest.txt'
 FIGURE_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.pdf'
 FIGURE_SVG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.svg'
 FIGURE_PNG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.png'
+RAW_FIGURE_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT_RAW.pdf'
+RAW_FIGURE_SVG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT_RAW.svg'
+RAW_FIGURE_PNG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT_RAW.png'
 TABLE2_CSV_PATH = BREAKDOWN_ROOT / 'TAB_OVERHEAD.csv'
 TABLE3_CSV_PATH = BREAKDOWN_ROOT / 'TAB_ENERGY.csv'
 SUMMARY_JSON_PATH = SCRIPT_DIR / 'overhead_same_acc_summary.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_MEMORY_FOOTPRINT_panels'
+RAW_PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_MEMORY_FOOTPRINT_panels_raw'
 PANEL_FIGURE_SIZE = (5.6, 3.6)
 PLOT_FONT_SIZE = 36
 FIGURE_SIZE = (12.9583, 6.6111)
@@ -42,16 +46,21 @@ def configure_output_paths(output_root: Path | None) -> None:
     if output_root is None:
         return
     global BREAKDOWN_ROOT, FIGURE_PATH, FIGURE_SVG_PATH, FIGURE_PNG_PATH
-    global TABLE2_CSV_PATH, TABLE3_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR
+    global RAW_FIGURE_PATH, RAW_FIGURE_SVG_PATH, RAW_FIGURE_PNG_PATH
+    global TABLE2_CSV_PATH, TABLE3_CSV_PATH, SUMMARY_JSON_PATH, PANEL_OUTPUT_DIR, RAW_PANEL_OUTPUT_DIR
     output_root = output_root.resolve()
     BREAKDOWN_ROOT = output_root
     FIGURE_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.pdf'
     FIGURE_SVG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.svg'
     FIGURE_PNG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT.png'
+    RAW_FIGURE_PATH = output_root / 'FIG_MEMORY_FOOTPOINT_RAW.pdf'
+    RAW_FIGURE_SVG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT_RAW.svg'
+    RAW_FIGURE_PNG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT_RAW.png'
     TABLE2_CSV_PATH = BREAKDOWN_ROOT / 'TAB_OVERHEAD.csv'
     TABLE3_CSV_PATH = BREAKDOWN_ROOT / 'TAB_ENERGY.csv'
     SUMMARY_JSON_PATH = output_root / 'overhead_same_acc_summary.json'
     PANEL_OUTPUT_DIR = output_root / 'FIG_MEMORY_FOOTPRINT_panels'
+    RAW_PANEL_OUTPUT_DIR = output_root / 'FIG_MEMORY_FOOTPRINT_panels_raw'
 PAPER_PANELS = [
     {'panel_label': 'a', 'family': 'octo', 'display_name': 'Octo', 'workload_name': 'Single-arm robot', 'panel_title': '(a) Single-arm robot'},
     {'panel_label': 'b', 'family': 'vla_adapter_new', 'display_name': 'VLA-Adapter', 'workload_name': 'Dexterous hand', 'panel_title': '(b) Dexterous hand'},
@@ -908,6 +917,19 @@ def resolve_same_acc_reach_hours(
     return adjust_same_acc_cutoff_hours(reach_hours)
 
 
+
+
+def collect_raw_memory_plot_points(samples: list[dict[str, Any]], cutoff_hours: float) -> list[tuple[float, float]]:
+    retained = rescaled_samples_for_cutoff(
+        samples,
+        cutoff_hours,
+        include_filter=lambda sample: sample.get('include_in_memory_footprint', True),
+    )
+    if not retained:
+        return []
+    xs = [sample['elapsed_hours'] for sample in retained]
+    ys = [sample['raw_gpu_memory_used_mb'] / 1024.0 for sample in retained]
+    return list(zip(xs, ys))
 def prepare_memory_plot_points(samples: list[dict[str, Any]], cutoff_hours: float) -> list[tuple[float, float]]:
     """Crop memory samples at the method's comparison cutoff and scale x to it.
 
@@ -1396,25 +1418,33 @@ def build_shared_legend_entries(series_groups: list[list[dict[str, Any]]]) -> li
     return ordered
 
 
-def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]], list[dict[str, Any]]]:
+def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, Any]], list[dict[str, Any]], list[str]]:
     panel_label = panel['panel_label']
     PANEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=MEMORY_PANEL_FIGURE_SIZES.get(panel_label, (12.8, 8.0)))
+    raw_fig, raw_ax = plt.subplots(figsize=MEMORY_PANEL_FIGURE_SIZES.get(panel_label, (12.8, 8.0)))
 
     suite_manifest_raw = panel.get('suite_manifest')
     summary_rows: list[dict[str, Any]] = []
     legend_entries: list[dict[str, Any]] = []
     seen_legend_names: set[str] = set()
+    raw_data_paths: list[str] = []
     if not suite_manifest_raw:
         ax.set_xlim(0.0, 1.0)
         ax.set_ylim(0.0, 1.0)
         ax.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax.transAxes)
+        raw_ax.set_xlim(0.0, 1.0)
+        raw_ax.set_ylim(0.0, 1.0)
+        raw_ax.text(0.5, 0.5, 'No data', ha='center', va='center', transform=raw_ax.transAxes)
     else:
         suite_manifest_path = resolve_path(suite_manifest_raw)
         if not suite_manifest_path.exists():
             ax.set_xlim(0.0, 1.0)
             ax.set_ylim(0.0, 1.0)
             ax.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax.transAxes)
+            raw_ax.set_xlim(0.0, 1.0)
+            raw_ax.set_ylim(0.0, 1.0)
+            raw_ax.text(0.5, 0.5, 'No data', ha='center', va='center', transform=raw_ax.transAxes)
         else:
             suite_manifest = load_json(suite_manifest_path)
             max_x = 0.0
@@ -1429,6 +1459,7 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]],
                     continue
                 run_dir = resolve_path(method['run_dir'])
                 summary_rows.append({'panel_label': panel_label, 'workload_name': panel['workload_name'], 'family': panel['family'], 'method': internal_name, 'display_name': paper_name, 'time_h': metrics['time_h'], 'memory_gb': metrics['memory_gb'], 'energy_kj': metrics['energy_kj'], 'target_accuracy': metrics['target_accuracy'], 'reach_hours': metrics['reach_hours'], 'reached_target': metrics.get('reached_target', False), 'used_fallback_cutoff': metrics.get('used_fallback_cutoff', False), 'suite_manifest': str(suite_manifest_path), 'run_dir': str(run_dir)})
+                raw_data_paths.append(str(run_dir / 'analysis' / 'gpu_metrics.csv'))
                 active_runtime_hours = resolve_method_active_runtime_hours(method, metrics['reach_hours'])
                 memory_footprint_offset_mb = memory_footprint_offset_mb_for_plot(str(panel.get('panel_label', '')), str(method.get('name', '')), paper_name, run_dir)
                 gpu_samples = load_gpu_samples(
@@ -1437,7 +1468,8 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]],
                     memory_footprint_offset_mb=memory_footprint_offset_mb,
                 )
                 points = prepare_memory_plot_points(gpu_samples, metrics['reach_hours'])
-                if not points:
+                raw_points = collect_raw_memory_plot_points(gpu_samples, metrics['reach_hours'])
+                if not points and not raw_points:
                     continue
                 xs = [point[0] for point in points]
                 ys = [point[1] for point in points]
@@ -1449,8 +1481,19 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]],
                         ys.append(stable_y)
                     xs.append(drop_x)
                     ys.append(0.0)
+                raw_xs = [point[0] for point in raw_points]
+                raw_ys = [point[1] for point in raw_points]
+                if raw_xs and raw_ys:
+                    raw_drop_x = metrics['reach_hours']
+                    raw_stable_y = raw_ys[-1]
+                    if raw_xs[-1] < raw_drop_x:
+                        raw_xs.append(raw_drop_x)
+                        raw_ys.append(raw_stable_y)
+                    raw_xs.append(raw_drop_x)
+                    raw_ys.append(0.0)
                 style = METHOD_STYLES.get(internal_name, {})
                 ax.plot(xs, ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
+                raw_ax.plot(raw_xs, raw_ys, linewidth=3.6, color=style.get('color'), linestyle=style.get('linestyle', '-'))
                 canonical_name = _canonical_legend_method_name(internal_name)
                 if canonical_name not in seen_legend_names:
                     legend_entries.append({
@@ -1469,25 +1512,32 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, list[dict[str, Any]],
                 ax.set_xlim(0.0, (max_x if max_x > 0.0 else 1.0) * 1.05)
                 ax.set_ylim(bottom=0.0)
 
-    ax.set_xlabel('Time (hours)')
-    ax.set_ylabel('Memory footprint (GB)')
-    ax.grid(True, alpha=0.3)
-    ax.tick_params(axis='both', which='major', length=10, width=2)
-    for spine in ax.spines.values():
-        spine.set_visible(True)
-        spine.set_color('black')
-        spine.set_linewidth(1.6)
+    for current_ax in (ax, raw_ax):
+        current_ax.set_xlabel('Time (hours)')
+        current_ax.set_ylabel('Memory footprint (GB)')
+        current_ax.grid(True, alpha=0.3)
+        current_ax.tick_params(axis='both', which='major', length=10, width=2)
+        for spine in current_ax.spines.values():
+            spine.set_visible(True)
+            spine.set_color('black')
+            spine.set_linewidth(1.6)
 
     fig.tight_layout()
+    raw_fig.tight_layout()
     png_path = PANEL_OUTPUT_DIR / f'memory_panel_{panel_label}.png'
     svg_path = PANEL_OUTPUT_DIR / f'memory_panel_{panel_label}.svg'
+    raw_png_path = RAW_PANEL_OUTPUT_DIR / f'memory_panel_{panel_label}.png'
+    raw_svg_path = RAW_PANEL_OUTPUT_DIR / f'memory_panel_{panel_label}.svg'
     fig.savefig(png_path, dpi=220)
     fig.savefig(svg_path)
+    raw_fig.savefig(raw_png_path, dpi=220)
+    raw_fig.savefig(raw_svg_path)
     plt.close(fig)
-    return png_path, summary_rows, legend_entries
+    plt.close(raw_fig)
+    return png_path, raw_png_path, summary_rows, legend_entries, raw_data_paths
 
 
-def compose_memory_preview(panel_paths: list[Path], legend_path: Path | None = None, legend_y_shift: float = 0.0) -> None:
+def compose_memory_preview(panel_paths: list[Path], legend_path: Path | None = None, legend_y_shift: float = 0.0, *, output_paths: tuple[Path, Path] | None = None) -> None:
     fig = plt.figure(figsize=FIGURE_SIZE)
     if legend_path is not None and legend_path.exists():
         grid = fig.add_gridspec(3, 3, height_ratios=[0.22, 1.18, 0.92], hspace=0.20, wspace=0.24)
@@ -1506,8 +1556,9 @@ def compose_memory_preview(panel_paths: list[Path], legend_path: Path | None = N
         axis.imshow(plt.imread(panel_path))
         axis.set_aspect('auto')
     fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01)
-    fig.savefig(FIGURE_PNG_PATH, dpi=220, bbox_inches='tight', facecolor='white')
-    fig.savefig(FIGURE_SVG_PATH, bbox_inches='tight', facecolor='white')
+    png_output, svg_output = output_paths or (FIGURE_PNG_PATH, FIGURE_SVG_PATH)
+    fig.savefig(png_output, dpi=220, bbox_inches='tight', facecolor='white')
+    fig.savefig(svg_output, bbox_inches='tight', facecolor='white')
     plt.close(fig)
 
 
@@ -1518,13 +1569,17 @@ def draw_figure(top_manifest, smoothing=0.2):
     table3_energy_by_family = {}
     summary_stats: list[dict[str, float | None]] = []
     panel_paths: list[Path] = []
+    raw_panel_paths: list[Path] = []
     legend_entry_groups: list[list[dict[str, Any]]] = []
+    raw_data_paths: list[str] = []
     for panel in panels:
         panel_metrics, _ = collect_panel_metrics(panel, smoothing=smoothing)
         metrics_by_family[panel['family']] = panel_metrics
         table3_energy_by_family[panel['family']] = collect_panel_table3_energy(panel, smoothing=smoothing)
-        panel_path, panel_rows, panel_legend_entries = draw_memory_panel(panel, panel_metrics)
+        panel_path, raw_panel_path, panel_rows, panel_legend_entries, panel_raw_paths = draw_memory_panel(panel, panel_metrics)
         panel_paths.append(panel_path)
+        raw_panel_paths.append(raw_panel_path)
+        raw_data_paths.extend(panel_raw_paths)
         summary_rows.extend(panel_rows)
         legend_entry_groups.append(panel_legend_entries)
         baseline_values = [metrics['memory_gb'] for name, metrics in panel_metrics.items() if name != 'VLASelect' and metrics['memory_gb'] > 0.0]
@@ -1559,8 +1614,21 @@ def draw_figure(top_manifest, smoothing=0.2):
         fill_memory_template(FIGURE_PATH, panel_paths, summary_stats, legend_image_path=legend_path, legend_rows=legend_rows)
     except Exception as exc:
         print(f'[template] failed to fill memory template: {exc}')
+    raw_legend_path = None
+    if shared_legend_entries:
+        raw_legend_path = RAW_PANEL_OUTPUT_DIR / 'memory_footpoint_legend.png'
+        render_legend_image(
+            shared_legend_entries,
+            raw_legend_path,
+            ncol=legend_ncol,
+            fontsize=26,
+            linewidth=3.6,
+            handlelength=3.0,
+            dpi=200,
+        )
     compose_memory_preview(panel_paths, legend_path=legend_path, legend_y_shift=legend_y_shift)
-    return summary_rows
+    compose_memory_preview(raw_panel_paths, legend_path=raw_legend_path, legend_y_shift=legend_y_shift, output_paths=(RAW_FIGURE_PNG_PATH, RAW_FIGURE_SVG_PATH))
+    return summary_rows, raw_data_paths
 
 def write_summary(rows): SUMMARY_JSON_PATH.write_text(json.dumps(rows, indent=2), encoding='utf-8')
 
@@ -1579,9 +1647,13 @@ for family in ('octo', 'vla_adapter_new', 'tinyvla', 'edgevla'):
     source = selected.get(family, '')
     if source:
         print(f'[selected] {family}: {source}')
-rows = draw_figure(top_manifest)
+rows, raw_data_paths = draw_figure(top_manifest)
 write_summary(rows)
 print(f"manifest: {manifest_path or top_manifest.get('_resolved_manifest_label', 'merged-latest')}")
 print(f'figure: {FIGURE_PATH}')
+print(f'raw_figure: {RAW_FIGURE_PATH}')
 print(f'table2: {TABLE2_CSV_PATH}')
 print(f'table3: {TABLE3_CSV_PATH}')
+print('raw_data_paths:')
+for raw_path in raw_data_paths:
+    print(f'  {raw_path}')

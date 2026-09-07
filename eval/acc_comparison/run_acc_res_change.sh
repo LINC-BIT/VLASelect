@@ -31,6 +31,7 @@ MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
+ONE_HOUR="${ONE_HOUR:-0}"
 ACC_RES_METHOD_ACTIVE_RUNTIME_SECONDS="${ACC_RES_METHOD_ACTIVE_RUNTIME_SECONDS:-120}"
 if [[ -z "${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY+x}" ]]; then
     if [[ "$MWE" == "1" ]]; then
@@ -63,6 +64,16 @@ TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1027Default-v1','O
 VLA_ADAPTER_NEW_ENVS_ID="${VLA_ADAPTER_NEW_ENVS_ID:-['HoldWoodBlockInHandObjectScaleDown1p6-v1','HoldHammerInHandObjectScaleDown1p6-v1','HoldWrenchInHandObjectScaleUp1p2-v1','HoldHammerInHandObjectScaleUp1p6-v1','HoldHammerInHandObjectScaleDown1p4-v1','HoldWrenchInHandObjectScaleUp1p6-v1','HoldWrenchInHandObjectScaleUp1p4-v1','HoldHammerInHandObjectScaleDown1p2-v1','HoldHammerInHandObjectScaleUp1p4-v1','HoldWrenchInHandObjectScaleDown1p6-v1']}"
 OCTO_ENVS_ID="${OCTO_ENVS_ID:-['PickCubeColorTempHigher50-v1','PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeObjectScaleDown1p2-v1']}"
 ENV_CHANGE_TIME_POINTS="${ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
+
+if [[ "$ONE_HOUR" == "1" ]]; then
+    ENV_ID_ORDER=""
+    OCTO_ENVS_ID="$(vlaselect_take_first_n_envs "$OCTO_ENVS_ID" 2)"
+    VLA_ADAPTER_NEW_ENVS_ID="$(vlaselect_take_first_n_envs "$VLA_ADAPTER_NEW_ENVS_ID" 2)"
+    TINYVLA_ENVS_ID="$(vlaselect_take_first_n_envs "$TINYVLA_ENVS_ID" 2)"
+    EDGEVLA_ENVS_ID="$(vlaselect_take_first_n_envs "$EDGEVLA_ENVS_ID" 2)"
+    ENV_CHANGE_TIME_POINTS='[1800,3600]'
+    MWE=1
+fi
 
 vlaselect_apply_env_id_order OCTO_ENVS_ID ENV_CHANGE_TIME_POINTS
 vlaselect_apply_env_id_order VLA_ADAPTER_NEW_ENVS_ID ENV_CHANGE_TIME_POINTS
@@ -392,7 +403,10 @@ launch_family_suite() {
     local selected_method_count=10
 
     family_methods="$(resolve_methods_for_family "$family" "$METHODS")"
-    if [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
+    if [[ "$ONE_HOUR" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
+        selected_method_count="$(count_selected_methods "$family_methods")"
+        family_mwe_workload_runtime_limit_seconds=$((selected_method_count * 3600))
+    elif [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
         selected_method_count="$(count_selected_methods "$family_methods")"
         family_mwe_workload_runtime_limit_seconds=$((selected_method_count * ACC_RES_METHOD_ACTIVE_RUNTIME_SECONDS))
     fi
@@ -515,3 +529,6 @@ echo "Top-level manifest: ${MANIFEST_JSON}"
 echo "Output table root: ${RUN_ROOT}"
 echo "Plot script: ${SCRIPT_DIR}/plot_acc_res_change.py"
 echo "Expected figure: ${SCRIPT_DIR}/FIG_ACC_RESOURCE.pdf"
+if [[ "$ONE_HOUR" == "1" ]]; then
+    python common/one_hour_summary.py --manifest "$MANIFEST_JSON" --env-count 2
+fi

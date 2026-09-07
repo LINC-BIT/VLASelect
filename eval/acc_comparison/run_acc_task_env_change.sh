@@ -30,6 +30,7 @@ MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
+ONE_HOUR="${ONE_HOUR:-0}"
 ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS="${ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS:-120}"
 if [[ -z "${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY+x}" ]]; then
     if [[ "$MWE" == "1" ]]; then
@@ -67,10 +68,25 @@ VLA_ADAPTER_NEW_ENV_ID="${VLA_ADAPTER_NEW_ENV_ID:-HoldHammerInHandObjectScaleDow
 OCTO_ENV_ID="${OCTO_ENV_ID:-PickCubeObjectScaleDown1p2-v1}"
 ENV_CHANGE_TIME_POINTS="${ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"
 
+if [[ "$ONE_HOUR" == "1" ]]; then
+    ENV_ID_ORDER=""
+    OCTO_ENVS_ID="$(vlaselect_take_first_n_envs "$OCTO_ENVS_ID" 2)"
+    VLA_ADAPTER_NEW_ENVS_ID="$(vlaselect_take_first_n_envs "$VLA_ADAPTER_NEW_ENVS_ID" 2)"
+    TINYVLA_ENVS_ID="$(vlaselect_take_first_n_envs "$TINYVLA_ENVS_ID" 2)"
+    EDGEVLA_ENVS_ID="$(vlaselect_take_first_n_envs "$EDGEVLA_ENVS_ID" 2)"
+    ENV_CHANGE_TIME_POINTS='[1800,3600]'
+    MWE=1
+fi
+
 vlaselect_apply_env_id_order OCTO_ENVS_ID ENV_CHANGE_TIME_POINTS OCTO_ENV_ID
 vlaselect_apply_env_id_order VLA_ADAPTER_NEW_ENVS_ID ENV_CHANGE_TIME_POINTS VLA_ADAPTER_NEW_ENV_ID
 vlaselect_apply_env_id_order TINYVLA_ENVS_ID ENV_CHANGE_TIME_POINTS TINYVLA_ENV_ID
 vlaselect_apply_env_id_order EDGEVLA_ENVS_ID ENV_CHANGE_TIME_POINTS EDGEVLA_ENV_ID
+
+EFFECTIVE_ENV_CHANGE_TIME_POINTS="$ENV_CHANGE_TIME_POINTS"
+if [[ "$MWE" == "1" ]]; then
+    EFFECTIVE_ENV_CHANGE_TIME_POINTS="$(vlaselect_convert_mwe_schedule_seconds_to_minutes "$ENV_CHANGE_TIME_POINTS")"
+fi
 
 declare -a PAPER_FAMILY_ORDER=(
     octo
@@ -456,7 +472,10 @@ launch_family_suite() {
     local selected_method_count=10
 
     family_methods="$(resolve_methods_for_family "$family" "$METHODS")"
-    if [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
+    if [[ "$ONE_HOUR" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
+        selected_method_count="$(count_selected_methods "$family_methods")"
+        family_mwe_workload_runtime_limit_seconds=$((selected_method_count * 3600))
+    elif [[ "$MWE" == "1" && "$USER_SET_MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS" != "1" ]]; then
         selected_method_count="$(count_selected_methods "$family_methods")"
         family_mwe_workload_runtime_limit_seconds=$((selected_method_count * ACC_TASK_ENV_METHOD_ACTIVE_RUNTIME_SECONDS))
     fi
@@ -480,7 +499,7 @@ launch_family_suite() {
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENV_ID_OVERRIDE="$env_id" \
                 ENVS_ID_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script"
             ;;
         vla_adapter_new)
@@ -496,7 +515,7 @@ launch_family_suite() {
                 ENV_ID_OVERRIDE="$env_id" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script"
             ;;
         tinyvla)
@@ -512,7 +531,7 @@ launch_family_suite() {
                 ENV_ID_OVERRIDE="$env_id" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script"
             ;;
         edgevla)
@@ -528,10 +547,10 @@ launch_family_suite() {
                 MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS="$family_mwe_workload_runtime_limit_seconds" \
                 ENV_ID_OVERRIDE="$env_id" \
                 SUITE_ENVS_ID="$envs_id" \
-                SUITE_ENV_CHANGE_TIME_POINTS="$ENV_CHANGE_TIME_POINTS" \
+                SUITE_ENV_CHANGE_TIME_POINTS="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 ENVS_ID_OVERRIDE="$envs_id" \
                 ENV_IDS_OVERRIDE="$envs_id" \
-                ENV_CHANGE_TIME_POINTS_OVERRIDE="$ENV_CHANGE_TIME_POINTS" \
+                ENV_CHANGE_TIME_POINTS_OVERRIDE="$EFFECTIVE_ENV_CHANGE_TIME_POINTS" \
                 bash "$launch_script"
             ;;
         *)

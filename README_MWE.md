@@ -14,7 +14,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 [Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
 [Open access of an academic cloud machine (CloudLab)](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_CLOUDLAB_ENVIRONMENT_GUIDE.md) and its
 [Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect%20(CloudLab).md)<br>
-[Zenodo for Long-Term Storage](https://zenodo.org/records/22644478)<br>
+[Zenodo for Long-Term Storage](https://zenodo.org/records/22646068)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(digest: sha256:fa6eb790ae18ba424184db31f30d4a989394b959dd35132ca7f2a05fbf1168f7)<br>

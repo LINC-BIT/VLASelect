@@ -9,7 +9,7 @@ We have conducted a self-check and listed the results below.
 <table style="width: 100%; table-layout: fixed;">
 <thead><tr><th width="60%">Checklist Item</th><th width="40%">VLASelect</th></tr></thead>
 <tbody>
-<tr><td>The artifact is available on a <strong>public archive with irrevocable versioning and long-term storage</strong>, such as Zenodo but not GitHub</td><td>✅<br><a href="https://github.com/LINC-BIT/VLASelect">GitHub</a><br><a href="https://zenodo.org/records/22644478">Zenodo</a></td></tr>
+<tr><td>The artifact is available on a <strong>public archive with irrevocable versioning and long-term storage</strong>, such as Zenodo but not GitHub</td><td>✅<br><a href="https://github.com/LINC-BIT/VLASelect">GitHub</a><br><a href="https://zenodo.org/records/22646068">Zenodo</a></td></tr>
 <tr><td>The artifact has a <strong>license that allows comparison and extension</strong>, such as the <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY</a> or <a href="https://opensource.org/license/mit/">MIT</a> licenses</td><td>✅<br><a href="./LICENSE">Apache license</a></td></tr>
 <tr><td>The artifact has a <strong>"read me" file referencing the paper</strong></td><td>✅<br>1. <a href="https://github.com/LINC-BIT/VLASelect#vlaselect-artifacts-evaluation">README.md for full experiment</a><br>2. <a href="https://github.com/LINC-BIT/VLASelect/blob/main/README_MWE.md">README.md for minimum working example</a></td></tr>
 </tbody>

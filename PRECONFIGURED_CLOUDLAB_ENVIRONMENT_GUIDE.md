@@ -78,6 +78,12 @@ The expected terminal output is shown below:
   <img src="./imgs/step4-cloud.png" alt="Input commands in the terminal" width="90%" />
 </p>
 
+To isolate outputs, we also provide a new script “ensure_clean_snapshot.sh” to remove all existing generated/uncommited files and outputs. 
+
+Using this script, **Evaluators can isolate outputs using two steps:**
+(i) running “ensure_clean_snapshot.sh” before running each experiment ([documentation](https://github.com/LINC-BIT/VLASelect#notes-in-the-reproduction));
+(ii) downloading the outputs ([documentation](#step-4-check-the-results)) after running each experiment.
+
 ## 6. Check Results
 
 Use the file manager on the left panel to check the results.

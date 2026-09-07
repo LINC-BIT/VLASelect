@@ -40,6 +40,19 @@ def smooth_values(values: list[float], smoothing: float) -> list[float]:
     return smoothed
 
 
+def aggregate_series(series: list[tuple[float, float]], bin_minutes: float) -> list[tuple[float, float]]:
+    if bin_minutes <= 0.0:
+        return series
+    bins: dict[int, list[float]] = {}
+    for elapsed_minutes, value in series:
+        bin_index = int(elapsed_minutes // bin_minutes)
+        bins.setdefault(bin_index, []).append(value)
+    return [
+        ((bin_index + 0.5) * bin_minutes, mean(values))
+        for bin_index, values in sorted(bins.items())
+    ]
+
+
 def resolve_history_path(run_dir: Path) -> Path:
     direct = run_dir / "metrics_history.json"
     if direct.is_file():
@@ -180,6 +193,7 @@ def draw_plot(
     metric: str,
     smoothing: float = 0.8,
     summary_output: Path | None = None,
+    bin_minutes: float = 0.5,
 ) -> dict[str, Any]:
     curves = [
         ("VLASelect", vlaselect_dir, "#2563eb"),
@@ -197,7 +211,8 @@ def draw_plot(
             missing.append(label)
             continue
         plotted_series[label] = series
-        xs, ys = zip(*series)
+        display_series = aggregate_series(series, bin_minutes)
+        xs, ys = zip(*display_series)
         smoothed_ys = smooth_values(list(ys), smoothing)
         ax.plot(
             xs,
@@ -205,8 +220,6 @@ def draw_plot(
             label=label,
             color=color,
             linewidth=2.4,
-            marker="o",
-            markersize=3.5,
         )
         all_x.extend(xs)
         all_y.extend(smoothed_ys)
@@ -217,7 +230,7 @@ def draw_plot(
     ax.set_xlabel("Time (minutes)")
     ax.set_ylabel("Accuracy / success rate (%)")
     ax.set_title("ICL comparison")
-    ax.set_ylim(min(all_y) - 10.0, 100.0)
+    ax.set_ylim(max(0.0, min(all_y) - 10.0), 100.0)
     if all_x:
         ax.set_xlim(left=0.0, right=max(max(all_x), 1.0))
     ax.grid(True, alpha=0.3)
@@ -250,9 +263,12 @@ def main() -> int:
     parser.add_argument("--summary-output", type=Path, default=None)
     parser.add_argument("--metric", choices=tuple(METRIC_KEYS), default="success_once")
     parser.add_argument("--smoothing", type=float, default=0.8)
+    parser.add_argument("--bin-minutes", type=float, default=0.5)
     args = parser.parse_args()
     if not 0.0 <= args.smoothing <= 1.0:
         parser.error("--smoothing must be in [0, 1]")
+    if args.bin_minutes <= 0.0:
+        parser.error("--bin-minutes must be positive")
 
     try:
         summary = draw_plot(
@@ -262,6 +278,7 @@ def main() -> int:
             args.metric,
             args.smoothing,
             args.summary_output,
+            args.bin_minutes,
         )
     except (FileNotFoundError, json.JSONDecodeError, ValueError) as exc:
         parser.exit(1, f"[ICL] error: {exc}\n")

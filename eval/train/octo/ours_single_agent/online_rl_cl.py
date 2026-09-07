@@ -767,7 +767,7 @@ class RiclInjectedAgent(Agent):
     def _encode_with_ricl(self, obs):
         processed_obs = self.preprocess(obs)
         latent = self.feature_net(processed_obs)
-        if self.training or self.demo_bank is None or self.demo_bank.size == 0 or self.ricl_prompt_feature_scale == 0:
+        if self.demo_bank is None or self.demo_bank.size == 0 or self.ricl_prompt_feature_scale == 0:
             self.last_ricl_mean_distance = 0.0
             return latent
         query_embeddings = self.build_query_embeddings(processed_obs, already_processed=True)

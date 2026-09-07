@@ -9,6 +9,7 @@ cd "$EVAL_ROOT"
 source "${EVAL_ROOT}/common/interrupt_cleanup.sh"
 source "${EVAL_ROOT}/common/sanity_check.sh"
 source "${EVAL_ROOT}/common/env_order.sh"
+source "${EVAL_ROOT}/common/mwe_time.sh"
 source "${EVAL_ROOT}/common/resource_summary.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"

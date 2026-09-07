@@ -2762,7 +2762,9 @@ def apply_mwe_overrides(args: Args) -> Args:
         # verification runs. VLA language-model activations dominate memory during
         # PPO, so MWE prioritizes proving the path is runnable over throughput.
         args.num_envs = 4
-        args.num_eval_envs = 1
+        args.num_eval_envs = int(os.environ.get("MWE_NUM_EVAL_ENVS", "1"))
+        if args.num_eval_envs < 1:
+            raise ValueError("MWE_NUM_EVAL_ENVS must be positive")
         args.num_steps = 4
         args.num_eval_steps = 4
         args.update_epochs = 1

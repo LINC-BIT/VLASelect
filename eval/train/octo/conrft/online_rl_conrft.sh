@@ -75,7 +75,7 @@ if [[ "$AUTO_GENERATE_EXPERT_DEMO" == "1" && ! -f "$EXPERT_DEMO_PATH" ]]; then
         EXPERT_DEMO_MAX_STEPS=${EXPERT_DEMO_MAX_STEPS_MWE:-200}
     fi
     mkdir -p "$(dirname "$EXPERT_DEMO_OUTPUT_PATH")"
-    python -u train/octo/generate_teacher_demo.py         --output-path "$EXPERT_DEMO_OUTPUT_PATH"         --env-config-path "$ENV_CONFIG_PATH"         --state-norm-stats-path "$STATE_NORM_STATS_PATH"         --checkpoint "$CHECKPOINT_PATH"         --target-success-trajectories "$EXPERT_DEMO_TARGET_SUCCESS_TRAJECTORIES"         --num-envs "$EXPERT_DEMO_NUM_ENVS"         --max-steps "$EXPERT_DEMO_MAX_STEPS"         --seed 0         --reuse-if-exists         --log-prefix "$EXPERT_DEMO_LOG_PREFIX"
+    python -u train/octo/generate_teacher_demo.py         --output-path "$EXPERT_DEMO_OUTPUT_PATH"         --env-config-path "$ENV_CONFIG_PATH"         --state-norm-stats-path "$STATE_NORM_STATS_PATH"         --checkpoint "$CHECKPOINT_PATH"         --target-success-trajectories "$EXPERT_DEMO_TARGET_SUCCESS_TRAJECTORIES"         --num-envs "$EXPERT_DEMO_NUM_ENVS"         --max-steps "$EXPERT_DEMO_MAX_STEPS"         --seed 1         --reuse-if-exists         --log-prefix "$EXPERT_DEMO_LOG_PREFIX"
     EXPERT_DEMO_PATH="$EXPERT_DEMO_OUTPUT_PATH"
 fi
 

@@ -605,19 +605,19 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example on three methods</td>
-        <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>32 minutes for training, 58 minutes for initialization and evaluation<br>20GB memory<br>32GB disk space</td>
         <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="./single%20results/results-2.2.1.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
-        <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>80 minutes for training, 130 minutes for initialization and evaluation<br>20GB memory<br>55GB disk space</td>
         <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="./single%20results/results-2.2.1.md">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
-        <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>100 hours for training, 40 hours for initialization and evaluation<br>60GB memory<br>55GB disk space</td>
         <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_TASK_ENV.pdf</td>
         <td><a href="./single%20results/results-2.2.1.md">Link</a></td>
       </tr>
@@ -694,19 +694,19 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example on three methods</td>
-        <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>32 minutes for training, 58 minutes for initialization and evaluation<br>20GB memory<br>32GB disk space</td>
         <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_RESOURCE.pdf</td>
         <td><a href="./single%20results/results-2.2.2.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
-        <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>80 minutes for training, 130 minutes for initialization and evaluation<br>20GB memory<br>55GB disk space</td>
         <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_RESOURCE.pdf</td>
         <td><a href="./single%20results/results-2.2.2.md">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
-        <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>100 hours for training, 40 hours for initialization and evaluation<br>60GB memory<br>55GB disk space</td>
         <td>Create file<br>eval/acc_comparison/<br>FIG_ACC_RESOURCE.pdf</td>
         <td><a href="./single%20results/results-2.2.2.md">Link</a></td>
       </tr>
@@ -777,19 +777,19 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example on three methods</td>
-        <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>32 minutes for training, 58 minutes for initialization and evaluation<br>20GB memory<br>32GB disk space</td>
         <td>Create files<br>eval/overhead/<br>FIG_MEMORY_FOOTPOINT.pdf,<br>eval/overhead/<br>TAB_OVERHEAD.csv, and<br>eval/overhead/<br>overhead_breakdown_table/<br>TAB_ENERGY.csv</td>
         <td><a href="./single%20results/results-2.2.3.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
-        <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>80 minutes for training, 130 minutes for initialization and evaluation<br>20GB memory<br>55GB disk space</td>
         <td>Create files<br>eval/overhead/<br>FIG_MEMORY_FOOTPOINT.pdf,<br>eval/overhead/<br>TAB_OVERHEAD.csv, and<br>eval/overhead/<br>overhead_breakdown_table/<br>TAB_ENERGY.csv</td>
         <td><a href="./single%20results/results-2.2.3.md">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
-        <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>100 hours for training, 40 hours for initialization and evaluation<br>60GB memory<br>55GB disk space</td>
         <td>Create files<br>eval/overhead/<br>FIG_MEMORY_FOOTPOINT.pdf,<br>eval/overhead/<br>TAB_OVERHEAD.csv, and<br>eval/overhead/<br>overhead_breakdown_table/<br>TAB_ENERGY.csv</td>
         <td><a href="./single%20results/results-2.2.3.md">Link</a></td>
       </tr>
@@ -816,7 +816,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     </thead>
     <tbody>
       <tr>
-        <td>40 minutes<br>60GB memory<br>30GB disk space</td>
+        <td>32 minutes for training, 8 minutes for initialization and evaluation<br>60GB memory<br>30GB disk space</td>
         <td>Create file<br>eval/overhead_breakdown/<br>overhead_breakdown.png</td>
         <td><a href="./single%20results/results-2.2.4.md">Link</a></td>
       </tr>
@@ -886,19 +886,19 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example on three methods</td>
-        <td>1.5 hours<br>20GB memory<br>32GB disk space</td>
+        <td>32 minutes for training, 58 minutes for initialization and evaluation<br>20GB memory<br>32GB disk space</td>
         <td>Create file<br>eval/overhead/<br>FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="./single%20results/results-2.2.5.md">Link</a></td>
       </tr>
       <tr>
         <td>Small working example on all methods</td>
-        <td>3.5 hours<br>20GB memory<br>55GB disk space</td>
+        <td>80 minutes for training, 130 minutes for initialization and evaluation<br>20GB memory<br>55GB disk space</td>
         <td>Create file<br>eval/overhead/<br>FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="./single%20results/results-2.2.5.md">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
-        <td>140 hours<br>60GB memory<br>55GB disk space</td>
+        <td>100 hours for training, 40 hours for initialization and evaluation<br>60GB memory<br>55GB disk space</td>
         <td>Create file<br>eval/overhead/<br>FIG_BREAKDOWN_ALL_METHODS.pdf</td>
         <td><a href="./single%20results/results-2.2.5.md">Link</a></td>
       </tr>
@@ -935,13 +935,13 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example</td>
-        <td>1 hours<br>20GB memory<br>30GB disk space</td>
+        <td>24 minutes for training, 36 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
         <td>Create file<br>eval/ablation/<br>FIG_ABLATION.pdf</td>
         <td><a href="./single%20results/results-2.2.6.md">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
-        <td>40 hours<br>60GB memory<br>30GB disk space</td>
+        <td>30 hours for training, 10 hours for initialization and evaluation<br>60GB memory<br>30GB disk space</td>
         <td>Create file<br>eval/ablation/<br>FIG_ABLATION.pdf</td>
         <td><a href="./single%20results/results-2.2.6.md">Link</a></td>
       </tr>
@@ -999,11 +999,12 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
   cd discussion
   MWE=1 bash compare_icl.sh
   ```
-- **Option 2:** Commands for small working examples (1 hour, 20GB memory, and 8GB disk space):
+- **Option 2:** Commands for small working examples (32 minutes for training, 28 minutes for initialization and evaluation, 20GB memory, and 8GB disk space):
   ```bash
   cd discussion
   MWE=1 bash compare_icl_1hour.sh
-- **Option 3:** Commands for full run (7 hours, 60GB memory, and 8GB disk space):
+  ```
+- **Option 3:** Commands for full run (5 hours for training，2 hours for initialization and evaluation, 60GB memory, and 8GB disk space):
   ```bash
   cd discussion
   bash compare_icl.sh
@@ -1022,7 +1023,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example</td>
-        <td>10 minutes<br>20GB memory<br>8GB disk space</td>
+        <td>4 minutes for training, 6 minutes for initialization and evaluation<br>20GB memory<br>8GB disk space</td>
         <td>Create file<br>eval/ckpt/discussion/<br>icl/&lt;STAMP&gt;/<br>icl_accuracy.png</td>
         <td><a href="./single%20results/results-2.2.8.md">Link</a></td>
       </tr>
@@ -1047,7 +1048,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     </thead>
     <tbody>
       <tr>
-        <td>1 hours<br>32GB memory<br>3GB disk space</td>
+        <td>24 minutes for training, 36 minutes for initialization and evaluation<br>32GB memory<br>3GB disk space</td>
         <td>Create file<br>eval/discussion/results/<br>model_size_limit_&lt;STAMP&gt;/<br>summary.csv</td>
         <td><a href="./single%20results/results-2.2.9.md">Link</a></td>
       </tr>
@@ -1080,13 +1081,13 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example</td>
-        <td>20 minutes<br>20GB memory<br>1GB disk space</td>
+        <td>8 minutes for training, 12 minutes for initialization and evaluation<br>20GB memory<br>1GB disk space</td>
         <td>Create file<br>eval/discussion/results/<br>multi_agent/&lt;STAMP&gt;/<br>accuracy_vs_time.png</td>
         <td><a href="./single%20results/results-2.2.10.md">Link</a></td>
       </tr>
       <tr>
         <td>Full run</td>
-        <td>7 hours<br>60GB memory<br>1GB disk space</td>
+        <td>5 hours for training, 2 hours for initialization and evaluation<br>60GB memory<br>1GB disk space</td>
         <td>Create file<br>eval/discussion/results/<br>multi_agent/&lt;STAMP&gt;/<br>accuracy_vs_time.png</td>
         <td><a href="./single%20results/results-2.2.10.md">Link</a></td>
       </tr>
@@ -1125,7 +1126,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example on three representative methods</td>
-        <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+        <td>8 minutes for training, 12 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
         <td>Create file<br>api/results/vla_adapter/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
         <td><a href="./single%20results/results-2.2.11.md">Link</a></td>
       </tr>
@@ -1157,7 +1158,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
     <tbody>
       <tr>
         <td>Minimum working example</td>
-        <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+        <td>8 minutes for training, 22 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
         <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
         <td><a href="./single%20results/results-2.2.12.md">Link</a></td>
       </tr>
@@ -1188,7 +1189,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>12 minutes for training, 8 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create files<br>eval/forgetting/results/<br>&lt;timestamp&gt;/<br>forgetting_summary.{json,csv}<br>and forgetting_accuracy.{png,pdf,svg}</td>
           <td><a href="./single%20results/results-2.2.13.md">Link</a></td>
         </tr>
@@ -1221,7 +1222,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>12 minutes for training, 8 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create files<br>api/model_type/<br>CNN-ACC.png,<br>api/model_type/<br>MLP-ACC.png, and<br>api/model_type/<br>MLP-CNN-ACC-COMPARE.png</td>
           <td><a href="./single%20results/results-2.2.14.md">Link</a></td>
         </tr>
@@ -1342,7 +1343,7 @@ We provide three examples on three different VLA models: VLA-Adapter, TinyVLA, E
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>3 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>2 minutes for training, 1 minute for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/vla_model_interface_examples/<br>outputs/vla_adapter_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.1.md">Link</a></td>
         </tr>
@@ -1427,7 +1428,7 @@ After the integration, you can use VLASelect to train the model with the integra
       <tbody>
         <tr>
           <td>Minimum working example on three representative methods</td>
-          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>8 minutes for training, 12 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/vla_adapter/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.2.md">Link</a></td>
         </tr>
@@ -1480,7 +1481,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>8 minutes for training, 22 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/vla_adapter/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.1.3.md">Link</a></td>
         </tr>
@@ -1565,7 +1566,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>3 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>2 minutes for training, 1 minute for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/vla_model_interface_examples/<br>outputs/tinyvla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.1.md">Link</a></td>
         </tr>
@@ -1638,7 +1639,7 @@ After the integration, you can use VLASelect to train the model with the integra
       <tbody>
         <tr>
           <td>Minimum working example on three representative methods</td>
-          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>8 minutes for training, 12 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/tinyvla/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.2.md">Link</a></td>
         </tr>
@@ -1690,7 +1691,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>8 minutes for training, 22 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/tinyvla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.2.3.md">Link</a></td>
         </tr>
@@ -1777,7 +1778,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>3 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>2 minutes for training, 1 minute for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/vla_model_interface_examples/<br>outputs/edgevla_online_rl_cl/<br>&lt;timestamp&gt;/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.1.md">Link</a></td>
         </tr>
@@ -1850,7 +1851,7 @@ After the integration, you can use VLASelect to train the model with the integra
       <tbody>
         <tr>
           <td>Minimum working example on three representative methods</td>
-          <td>20 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>8 minutes for training, 12 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/edgevla/<br>scaling_methods_only_4/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.2.md">Link</a></td>
         </tr>
@@ -1902,7 +1903,7 @@ After the integration, you can use VLASelect to train the model at the integrate
       <tbody>
         <tr>
           <td>Minimum working example</td>
-          <td>30 minutes<br>20GB memory<br>30GB disk space</td>
+          <td>8 minutes for training, 22 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create file<br>api/results/edgevla/<br>knowledge_exchange/<br>training_accuracy_curve.png</td>
           <td><a href="./single%20results/results-3.3.3.md">Link</a></td>
         </tr>

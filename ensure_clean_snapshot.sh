@@ -4,31 +4,34 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-Usage: bash ensure_clean_snapshot.sh [--force]
+Usage: bash ensure_clean_snapshot.sh [--dry-run]
 
 Remove existing experiment run results while preserving source files,
-pretrained checkpoints, and datasets. The default is a dry run.
+pretrained checkpoints, and datasets. The default deletes the identified results.
 
 The script removes only run directories identified by result markers
 (metrics_history.json, final_eval_metrics.json, latest_metrics.json, or
 time_breakdown.json), plus generated logs, W&B/TensorBoard files, plots, and
-Python bytecode caches. It never deletes a checkpoint directory merely because
-it is named ckpt/.
+Python bytecode caches. It preserves every checkpoint in the bundled runtime
+checkpoint list used by dep.sh and eval/common/sanity_check.sh, even if its
+parent directory contains result markers.
 
 Options:
-  --force     Delete the listed generated run results and caches.
+  --dry-run   List generated run results and caches without deleting them.
+  --force     Compatibility alias; deletion is already the default.
   -h, --help  Show this help text.
 
 Examples:
   bash ensure_clean_snapshot.sh
-  bash ensure_clean_snapshot.sh --force
+  bash ensure_clean_snapshot.sh --dry-run
 EOF
 }
 
-force=0
+dry_run=0
 for argument in "$@"; do
     case "$argument" in
-        --force) force=1 ;;
+        --dry-run) dry_run=1 ;;
+        --force) ;;
         -h|--help)
             usage
             exit 0
@@ -50,6 +53,28 @@ repo_root="$(git -C "$script_dir" rev-parse --show-toplevel 2>/dev/null)" || {
 cd "$repo_root"
 declare -a candidates=()
 declare -A seen=()
+declare -a protected_checkpoint_paths=()
+
+# This is the same bundled checkpoint list used by dep.sh and the runtime
+# sanity check. It contains all checkpoint assets required by the shell entry
+# points, including timestamped directories that cannot be identified safely
+# from their directory names alone.
+source "$repo_root/eval/common/sanity_check.sh"
+while IFS= read -r checkpoint_path; do
+    [[ -n "$checkpoint_path" ]] || continue
+    protected_checkpoint_paths+=("$repo_root/$checkpoint_path")
+done < <(vlaselect_sanity_checkpoint_list "$repo_root")
+
+contains_protected_checkpoint() {
+    local candidate_path="$1"
+    local checkpoint_path
+    for checkpoint_path in "${protected_checkpoint_paths[@]}"; do
+        if [[ "$checkpoint_path" == "$candidate_path"/* ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
 
 add_candidate() {
     local path="$1"
@@ -76,6 +101,10 @@ add_result_run_dir() {
             return 0
             ;;
     esac
+    if contains_protected_checkpoint "$run_dir"; then
+        echo "[clean-snapshot] preserving required checkpoint: ${run_dir#"$repo_root"/}" >&2
+        return 0
+    fi
     add_candidate "$run_dir"
 }
 
@@ -129,8 +158,8 @@ for path in "${candidates[@]}"; do
     printf '  %s\n' "${path#"$repo_root"/}"
 done
 
-if [[ "$force" != "1" ]]; then
-    echo "Dry run only. Re-run with --force to delete these paths."
+if [[ "$dry_run" == "1" ]]; then
+    echo "Dry run only. Re-run without --dry-run to delete these paths."
     exit 0
 fi
 

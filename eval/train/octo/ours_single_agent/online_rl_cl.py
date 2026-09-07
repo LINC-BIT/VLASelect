@@ -767,7 +767,7 @@ class RiclInjectedAgent(Agent):
     def _encode_with_ricl(self, obs):
         processed_obs = self.preprocess(obs)
         latent = self.feature_net(processed_obs)
-        if self.training or self.demo_bank is None or self.demo_bank.size == 0 or self.ricl_prompt_feature_scale == 0:
+        if self.demo_bank is None or self.demo_bank.size == 0 or self.ricl_prompt_feature_scale == 0:
             self.last_ricl_mean_distance = 0.0
             return latent
         query_embeddings = self.build_query_embeddings(processed_obs, already_processed=True)
@@ -2762,7 +2762,9 @@ def apply_mwe_overrides(args: Args) -> Args:
         # verification runs. VLA language-model activations dominate memory during
         # PPO, so MWE prioritizes proving the path is runnable over throughput.
         args.num_envs = 4
-        args.num_eval_envs = 1
+        args.num_eval_envs = int(os.environ.get("MWE_NUM_EVAL_ENVS", "1"))
+        if args.num_eval_envs < 1:
+            raise ValueError("MWE_NUM_EVAL_ENVS must be positive")
         args.num_steps = 4
         args.num_eval_steps = 4
         args.update_epochs = 1

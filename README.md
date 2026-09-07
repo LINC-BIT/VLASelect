@@ -527,12 +527,21 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
 
 #### Notes in the Reproduction<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
 
-1. **A tool for cleaning previous outputs**
+1. **How evaluators can isolate outputs**
 
-    You can run the following command to clean previously generated outputs in the repository:
-    ```bash
-    bash ensure_clean_snapshot.sh
-    ```
+    - **Step 1:** Run the following command before running each experiment to clean previously generated outputs:
+      ```bash
+      bash ensure_clean_snapshot.sh
+      ```
+
+    - **Step 2:** Download the generated outputs after running each experiment: 
+    
+      > Right-click the output file in the file manager, and click the "Download" button: 
+      
+      <p align="center">
+        <img src="./imgs/download_results.png" alt="Download output file from the file manager" width="90%" />
+      </p>
+
 
 2. **Explanation of execution time**
 

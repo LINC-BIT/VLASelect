@@ -87,11 +87,20 @@ The expected terminal output is shown below:
   <img src="./imgs/exmaple_1.png" alt="Example output for the task and environment change experiment" width="90%" />
 </p>
 
-To isolate outputs, we provide a script “ensure_clean_snapshot.sh” to remove all existing generated/uncommited files and outputs. 
+### Note: How evaluators can isolate outputs:
 
-Using this script, **Evaluators can isolate outputs using two steps:**
-(i) running “ensure_clean_snapshot.sh” before running each experiment ([documentation](https://github.com/LINC-BIT/VLASelect#notes-in-the-reproduction));
-(ii) downloading the outputs ([documentation](#step-4-check-the-results)) after running each experiment.
+- **Step 1:** Run the following command before running each experiment to clean previously generated outputs:
+  ```bash
+  bash ensure_clean_snapshot.sh
+  ```
+
+- **Step 2:** Download the generated outputs after running each experiment: 
+
+  > Right-click the output file in the file manager, and click the "Download" button: 
+  
+  <p align="center">
+    <img src="./imgs/download_results.png" alt="Download output file from the file manager" width="90%" />
+  </p>
 
 
 

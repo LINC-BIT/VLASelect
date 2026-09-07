@@ -1009,7 +1009,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
   cd discussion
   MWE=1 bash compare_icl_20min.sh
   ```
-- **Option 3:** Commands for full run (5 hours for training，2 hours for initialization and evaluation, 60GB memory, and 8GB disk space):
+- **Option 3:** Commands for full run (5 hours for training, 2 hours for initialization and evaluation, 60GB memory, and 8GB disk space):
   ```bash
   cd discussion
   bash compare_icl.sh

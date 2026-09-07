@@ -120,6 +120,7 @@ def main() -> None:
     fig.savefig(args.output)
     plt.close(fig)
     print(f"[plot] output={args.output}")
+    print(f'raw measurement dir: {args.run_dir}')
 
 
 if __name__ == "__main__":

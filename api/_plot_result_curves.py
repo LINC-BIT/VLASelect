@@ -301,6 +301,28 @@ def plot_category(
     figure.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(figure)
 
+    # Keep a second figure that shows the loaded points as-is.  In particular,
+    # do not fill gaps, interpolate, extend curves, stretch single-point runs,
+    # or smooth the y-values in this view.
+    raw_output_path = output_path.with_name(f"{output_path.stem}-raw{output_path.suffix}")
+    raw_figure, raw_axis = plt.subplots(figsize=(12, 6))
+    for label, xs, ys in series:
+        raw_axis.plot(
+            xs,
+            ys,
+            linewidth=2,
+            label=(label_overrides or {}).get(label, _METHOD_LABELS.get(label, label)),
+            color=_METHOD_COLORS.get(label),
+        )
+    raw_axis.set_xlabel("Time (minutes)", fontsize=15)
+    raw_axis.set_ylabel("Accuracy", fontsize=15)
+    raw_axis.tick_params(axis="both", labelsize=12)
+    raw_axis.grid(True, alpha=0.3)
+    raw_axis.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0), borderaxespad=0.0, fontsize=13)
+    raw_figure.subplots_adjust(right=0.76)
+    raw_figure.savefig(raw_output_path, dpi=200, bbox_inches="tight")
+    plt.close(raw_figure)
+
     summary_output = output_path.with_suffix('.summary.json')
     summary_output.write_text(json.dumps({
         'output': str(output_path),
@@ -367,3 +389,5 @@ def run_cli(
         label_overrides=label_overrides,
     )
     print(f"wrote {args.output} ({count} curves)")
+    raw_output = args.output.with_name(f"{args.output.stem}-raw{args.output.suffix}")
+    print(f"wrote {raw_output} ({count} curves, without any data transformation)")

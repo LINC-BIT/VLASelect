@@ -270,8 +270,7 @@ def main() -> int:
     if args.bin_minutes <= 0.0:
         parser.error("--bin-minutes must be positive")
 
-    print(f'VLASelect raw measurement dir: {args.vlaselect_run_dir}')
-    print(f'RICL raw measurement dir: {args.ricl_run_dir}')
+    
 
     try:
         summary = draw_plot(
@@ -313,6 +312,10 @@ def main() -> int:
             f"gain={environment_raw['final_absolute_gain_points']:.2f} points "
             f"relative={relative_gain if relative_gain is not None else 'NA'}"
         )
+
+    print(f'VLASelect raw measurement dir: {args.vlaselect_run_dir}')
+    print(f'RICL raw measurement dir: {args.ricl_run_dir}')
+
     return 0
 
 

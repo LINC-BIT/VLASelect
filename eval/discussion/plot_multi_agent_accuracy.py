@@ -98,6 +98,7 @@ def main() -> None:
     fig.savefig(args.output, dpi=200)
     plt.close(fig)
     print(f"[plot] accuracy_plot={args.output}")
+    print(f'raw measurement dir: {args.manifest}')
 
 
 if __name__ == "__main__":

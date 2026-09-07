@@ -428,6 +428,121 @@ cd <VLASelect directory>
 bash start_docker.sh
 cd <VLASelect directory in the container>/eval
 ```
+Next, we summarize exact **per-claim commands**, **seeds**, and **expected raw metrics** in the following table:
+
+<table align="center">
+  <thead>
+    <tr>
+      <th style="text-align: center;">Claim</th>
+      <th style="text-align: center;">Experiment</th>
+      <!-- 在此处限制第三列宽度 (例如 250px 或 30%) -->
+      <th style="text-align: center; width: 250px;">Commands for minimum working examples</th>
+      <th style="text-align: center;">Seeds</th>
+      <th style="text-align: center;">Expected raw metrics</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Claim 1</td>
+      <td><a href="#221-experiment-1-figure-7-in-section-521-accuracy-under-tasksenvironment-changes">2.2.1 Experiment 1: (Figure 7 in Section 5.2.1) Accuracy Under Tasks/Environment Changes</a></td>
+      <!-- 在 td 内部加上 style="word-break: break-all;" 防止长代码强行撑大单元格 -->
+      <td style="word-break: break-all;"><code>cd acc_comparison &&<br>MWE=1<br>METHODS=self_improv,vla_rft,world_env,vlaselect<br>bash run_acc_task_env_change.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. accuracy: around 0.1395<br>VLASelect avg. accuracy: around 0.8248<br>VLASelect's accuracy improvement: around 0.69</td>
+    </tr>
+    <tr>
+      <td>Claim 1</td>
+      <td><a href="#222-experiment-2-figure-8-in-section-522-accuracy-under-available-resource-changes">2.2.2 Experiment 2: (Figure 8 in Section 5.2.2) Accuracy Under Available Resource Changes</a></td>
+      <td style="word-break: break-all;"><code>cd acc_comparison &&<br>MWE=1<br>METHODS=self_improv,vla_rft,world_env,vlaselect<br>bash run_acc_res_change.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. accuracy: around 0.4271<br>VLASelect avg. accuracy: around 0.8453<br>VLASelect's accuracy improvement: around 0.42</td>
+    </tr>
+    <tr>
+      <td>Claim 2</td>
+      <td><a href="#223-experiment-3-figure-9-and-tables-23-in-section-531-overheads-under-the-same-accuracy">2.2.3 Experiment 3: (Figure 9 and Tables 2/3 in Section 5.3.1) Overheads Under The Same Accuracy</a></td>
+      <td style="word-break: break-all;"><code>cd overhead &&<br>bash overhead_same_acc.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>N/A</td>
+    </tr>
+    <tr>
+      <td>Claim 2</td>
+      <td><a href="#224-experiment-4-figure-10-in-section-532-time-breakdown-of-vlaselects-modules">2.2.4 Experiment 4: (Figure 10 in Section 5.3.2) Time Breakdown of VLASelect's Modules</a></td>
+      <td style="word-break: break-all;"><code>cd overhead_breakdown &&<br>bash run.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Module 1: Optimal network searcher (avg. time): 0.0828 s<br>Module 2: Selective model enhancer (avg. time): 3.0110 s<br>Module 3: Selective knowledge accumulator (avg. time): 0.0198 s<br>One training iteration (avg. time): 772.6250 s</td>
+    </tr>
+    <tr>
+      <td>Claim 2</td>
+      <td><a href="#225-experiment-5-figure-11-in-section-532-training-time-breakdown-in-each-workload">2.2.5 Experiment 5: (Figure 11 in Section 5.3.2) Training Time Breakdown in Each Workload</a></td>
+      <td style="word-break: break-all;"><code>cd overhead &&<br>MWE=1<br>METHODS=self_improv,vla_rft,world_env,vlaselect<br>bash overhead_breakdown_all_methods.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. sampling time: around 74.7515 s<br>Baselines avg. training time: around 69.6931 s<br>VLASelect avg. sampling time: around 20.6194 s<br>VLASelect avg. training time: around 24.8441 s</td>
+    </tr>
+    <tr>
+      <td>Claim 3</td>
+      <td><a href="#226-experiment-6-figure-12-in-section-54-design-choice-validation-by-ablation">2.2.6 Experiment 6: (Figure 12 in Section 5.4) Design Choice Validation by Ablation</a></td>
+      <td style="word-break: break-all;"><code>cd ablation &&<br>MWE=1<br>bash run_ablation.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Full method avg. accuracy: around 0.6071<br>Ablation variant avg. accuracy: around 0.3203<br>Full method's accuracy improvement: around 0.29</td>
+    </tr>
+    <tr>
+      <td>Claim 5</td>
+      <td><a href="#227-experiment-7-discussion-1-in-section-55-sim-to-real-transfer">2.2.7 Experiment 7: (Discussion 1 in Section 5.5) Sim-to-real transfer</a></td>
+      <td style="word-break: break-all;"><code>cd discussion &&<br>bash run_sim_to_real.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>N/A</td>
+    </tr>
+    <tr>
+      <td>Claim 4</td>
+      <td><a href="#228-experiment-8-discussion-2-in-section-55-icl-in-context-learning">2.2.8 Experiment 8: (Discussion 2 in Section 5.5) ICL (In-Context Learning)</a></td>
+      <td style="word-break: break-all;"><code>cd discussion &&<br>MWE=1<br>bash compare_icl.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. accuracy: around 0.0000<br>VLASelect avg. accuracy: around 0.5850<br>VLASelect's accuracy improvement: around 0.59</td>
+    </tr>
+    <tr>
+      <td>Claim 5</td>
+      <td><a href="#229-experiment-9-discussion-3-in-section-55-maximum-supported-model-size">2.2.9 Experiment 9: (Discussion 3 in Section 5.5) Maximum Supported Model Size</a></td>
+      <td style="word-break: break-all;"><code>cd discussion &&<br>MODEL_SIZE_LIMIT_FAMILY=tinyvla<br>bash sweep_model_size.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Supported model size: 2.5-24.0 GB</td>
+    </tr>
+    <tr>
+      <td>Claim 5</td>
+      <td><a href="#2210-experiment-10-discussion-4-in-section-55-applicability-to-multi-agent-scenarios">2.2.10 Experiment 10: (Discussion 4 in Section 5.5) Applicability to Multi-Agent Scenarios</a></td>
+      <td style="word-break: break-all;"><code>cd discussion &&<br>MWE=1<br>bash run_multi_agent.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. accuracy: around 0.0000<br>VLASelect avg. accuracy: around 0.3083<br>VLASelect's accuracy improvement: around 0.31</td>
+    </tr>
+    <tr>
+      <td>Claim 4</td>
+      <td><a href="#2211-experiment-11-discussion-5-in-section-55-comparison-with-alternative-model-scaling-techniques">2.2.11 Experiment 11: (Discussion 5 in Section 5.5) Comparison with Alternative Model Scaling Techniques</a></td>
+      <td style="word-break: break-all;"><code>MWE=1 bash<br>api/vla_model_interface_examples/<br>vla_adapter_impl_verify-<br>all_scaling_methods-only4.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. accuracy: around 0.1103<br>VLASelect avg. accuracy: around 0.6822<br>VLASelect's accuracy improvement: around 0.57</td>
+    </tr>
+    <tr>
+      <td>Claim 3</td>
+      <td><a href="#2212-experiment-12-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities">2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities</a></td>
+      <td style="word-break: break-all;"><code>MWE=1 bash<br>api/vla_model_interface_examples/<br>vla_adapter_impl_verify-<br>all_granularities.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. accuracy: around 0.2985<br>VLASelect avg. accuracy: around 0.8278<br>VLASelect's accuracy improvement: around 0.53</td>
+    </tr>
+    <tr>
+      <td>Claim 5</td>
+      <td><a href="#2213-experiment-13-discussion-7-in-section-55-forgetting-on-previously-learned-environmentstasks">2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks</a></td>
+      <td style="word-break: break-all;"><code>MWE=1 bash<br>forgetting/measure_forgetting.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td>Baselines avg. accuracy: around 0.0069<br>VLASelect avg. accuracy: around 0.2778<br>VLASelect's accuracy improvement: around 0.27</td>
+    </tr>
+    <tr>
+      <td>Claim 5</td>
+      <td><a href="#2214-experiment-14-discussion-8-in-section-55-applicability-to-mlpcnn-models">2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models</a></td>
+      <td style="word-break: break-all;"><code>cd api/model_type &&<br>MWE=1<br>bash run.sh</code></td>
+      <td style="text-align: center;">1</td>
+      <td><b>CNN</b><br>Baselines avg. accuracy: around 0.2876<br>VLASelect avg. accuracy: around 0.6348<br>VLASelect's accuracy improvement: around 0.35<br><br><b>MLP</b><br>Baselines avg. accuracy: around 0.0000<br>VLASelect avg. accuracy: around 0.3362<br>VLASelect's accuracy improvement: around 0.34</td>
+    </tr>
+  </tbody>
+</table>
 
 Then, run the following commands to reproduce each figure/table in our evaluation.
 

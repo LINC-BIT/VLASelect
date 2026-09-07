@@ -486,7 +486,7 @@ Next, we summarize exact **per-claim commands**, **seeds**, and **expected raw m
       <td rowspan="2">Claim 4</td>
       <td><a href="#228-experiment-8-discussion-2-in-section-55-icl-in-context-learning">Experiment 8</a></td>
       <td>1</td>
-      <td>Baselines avg. accuracy: around 0.00<br>VLASelect avg. accuracy: around 0.60<br>VLASelect's accuracy improvement: around 60%</td>
+      <td>Baselines avg. accuracy: around 0.05<br>VLASelect avg. accuracy: around 0.50<br>VLASelect's accuracy improvement: around 45%</td>
     </tr>
     <tr>
       <td><a href="#2211-experiment-11-discussion-5-in-section-55-comparison-with-alternative-model-scaling-techniques">Experiment 11</a></td>
@@ -1004,10 +1004,10 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
   cd discussion
   MWE=1 bash compare_icl.sh
   ```
-- **Option 2:** Commands for small working examples (32 minutes for training, 28 minutes for initialization and evaluation, 20GB memory, and 8GB disk space):
+- **Option 2:** Commands for small working examples:
   ```bash
   cd discussion
-  MWE=1 bash compare_icl_1hour.sh
+  MWE=1 bash compare_icl_20min.sh
   ```
 - **Option 3:** Commands for full run (5 hours for training，2 hours for initialization and evaluation, 60GB memory, and 8GB disk space):
   ```bash
@@ -1029,6 +1029,12 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
       <tr>
         <td>Minimum working example</td>
         <td>4 minutes for training, 6 minutes for initialization and evaluation<br>20GB memory<br>8GB disk space</td>
+        <td>Create file<br>eval/ckpt/discussion/<br>icl/&lt;STAMP&gt;/<br>icl_accuracy.png</td>
+        <td><a href="./single%20results/results-2.2.8.md">Link</a></td>
+      </tr>
+      <tr>
+        <td>Small working example</td>
+        <td>14 minutes for training, 6 minutes for initialization and evaluation<br>20GB memory<br>8GB disk space</td>
         <td>Create file<br>eval/ckpt/discussion/<br>icl/&lt;STAMP&gt;/<br>icl_accuracy.png</td>
         <td><a href="./single%20results/results-2.2.8.md">Link</a></td>
       </tr>

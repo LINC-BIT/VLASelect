@@ -35,7 +35,7 @@ if [[ -z "${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY+x}" ]]; then
         export VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY=0
     fi
 fi
-vlaselect_resource_summary_start "compare_icl_1hour.sh"
+vlaselect_resource_summary_start "compare_icl_20min.sh"
 vlaselect_install_cleanup_trap
 
 MWE_PER_METHOD_RUNTIME_SECONDS=""

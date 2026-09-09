@@ -28,7 +28,7 @@ USE_HF_MIRROR=${USE_HF_MIRROR:-1}
 HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
 MODEL_BACKBONE=${MULTI_AGENT_MODEL_BACKBONE:-mixed_tiny_vla_smolvla}
 MODEL_DIR=${MULTI_AGENT_MODEL_DIR:-}
-MAPPO_INIT_AGENT_PATH=${MULTI_AGENT_MAPPO_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt.base}
+MAPPO_INIT_AGENT_PATH=${MULTI_AGENT_MAPPO_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt}
 OURS_INIT_AGENT_PATH=${MULTI_AGENT_OURS_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt}
 NUM_ENVS=${MULTI_AGENT_NUM_ENVS:-128}
 NUM_EVAL_ENVS=${MULTI_AGENT_NUM_EVAL_ENVS:-50}
@@ -145,7 +145,6 @@ run_online_method() {
     local run_dir="$4"
     local log_file="$5"
     local result_json="$6"
-
     require_file "$init_agent_path" "${method} init agent"
     mkdir -p "$run_dir"
 

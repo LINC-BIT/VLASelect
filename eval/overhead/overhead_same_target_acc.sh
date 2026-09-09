@@ -564,7 +564,7 @@ python overhead/plot_overhead_target_acc.py \
     --output-root "$RUN_ROOT" \
     --target-accuracy "$TARGET_ACCURACY"
 echo "[fig9] memory figure saved under: ${RUN_ROOT}/FIG_MEMORY_FOOTPOINT.{pdf,png,svg}"
-echo "[fig9] memory summary saved under: ${RUN_ROOT}/overhead_same_acc_summary.json"
+echo "[fig9] memory summary saved under: ${RUN_ROOT}/overhead_same_target_acc_summary.json"
 
 if [[ "$SAME_ACC_ACCURACY_COMPAT" == "1" ]]; then
     refresh_accuracy_compat_manifest

@@ -22,7 +22,7 @@ if str(EVAL_ROOT) not in sys.path:
 from common.figure_compose import compose_grid_figure, render_legend_image
 from common.template_pdf_fill import fill_memory_template
 from plot_breakdown_impl import load_top_manifest_from_table_root
-TABLE_ROOT = SCRIPT_DIR / 'overhead_same_acc_table'
+TABLE_ROOT = SCRIPT_DIR / 'overhead_same_target_acc_table'
 BREAKDOWN_ROOT = SCRIPT_DIR
 LATEST_POINTER = TABLE_ROOT / 'latest.txt'
 FIGURE_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.pdf'
@@ -33,7 +33,7 @@ RAW_FIGURE_SVG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT_RAW.svg'
 RAW_FIGURE_PNG_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT_RAW.png'
 TABLE2_CSV_PATH = BREAKDOWN_ROOT / 'TAB_OVERHEAD.csv'
 TABLE3_CSV_PATH = BREAKDOWN_ROOT / 'TAB_ENERGY.csv'
-SUMMARY_JSON_PATH = SCRIPT_DIR / 'overhead_same_acc_summary.json'
+SUMMARY_JSON_PATH = SCRIPT_DIR / 'overhead_same_target_acc_summary.json'
 PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_MEMORY_FOOTPRINT_panels'
 RAW_PANEL_OUTPUT_DIR = SCRIPT_DIR / 'FIG_MEMORY_FOOTPRINT_panels_raw'
 PANEL_FIGURE_SIZE = (5.6, 3.6)
@@ -58,7 +58,7 @@ def configure_output_paths(output_root: Path | None) -> None:
     RAW_FIGURE_PNG_PATH = output_root / 'FIG_MEMORY_FOOTPOINT_RAW.png'
     TABLE2_CSV_PATH = BREAKDOWN_ROOT / 'TAB_OVERHEAD.csv'
     TABLE3_CSV_PATH = BREAKDOWN_ROOT / 'TAB_ENERGY.csv'
-    SUMMARY_JSON_PATH = output_root / 'overhead_same_acc_summary.json'
+    SUMMARY_JSON_PATH = output_root / 'overhead_same_target_acc_summary.json'
     PANEL_OUTPUT_DIR = output_root / 'FIG_MEMORY_FOOTPRINT_panels'
     RAW_PANEL_OUTPUT_DIR = output_root / 'FIG_MEMORY_FOOTPRINT_panels_raw'
 PAPER_PANELS = [
@@ -148,7 +148,7 @@ def load_default_manifest() -> dict[str, Any]:
 def default_manifest() -> dict[str, Any]:
     return {
         'suite_stamp': 'no-data',
-        'table_root': 'overhead/overhead_same_acc_table',
+        'table_root': 'overhead/overhead_same_target_acc_table',
         'figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf',
         'table2_output': 'overhead/TAB_OVERHEAD.csv',
         'table3_output': 'overhead/TAB_ENERGY.csv',

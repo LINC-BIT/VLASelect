@@ -79,6 +79,7 @@ def latest(root: Path) -> Path:
 
 
 def main():
+    print('\n\n\n\n')
     parser = argparse.ArgumentParser()
     parser.add_argument("--cnn-vlaselect", type=Path, default=None)
     parser.add_argument("--cnn-RLVLA", type=Path, default=None)

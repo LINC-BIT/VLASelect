@@ -112,6 +112,12 @@ class JsonMetricsLogger:
         self._comparison_pending.append((float(elapsed_minutes), float(value)))
         if len(self._comparison_pending) < 3:
             return
+        self._flush_comparison_pending()
+        self.save_comparison_metrics()
+
+    def _flush_comparison_pending(self) -> None:
+        if not self._comparison_pending:
+            return
         times, accuracies = zip(*self._comparison_pending)
         self.comparison_points.append(
             {
@@ -120,9 +126,9 @@ class JsonMetricsLogger:
             }
         )
         self._comparison_pending.clear()
-        self.save_comparison_metrics()
 
     def save_comparison_metrics(self) -> None:
+        self._flush_comparison_pending()
         accuracies = [point["train_success_once"] for point in self.comparison_points]
         payload: dict[str, Any] = {
             "average_accuracy_for_evaluation_and_comparison": (

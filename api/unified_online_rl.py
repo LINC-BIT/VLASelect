@@ -222,11 +222,9 @@ def parse_args() -> Args:
         args.rollout_micro_batch_size = 4
         args.eval_micro_batch_size = 4
         args.update_micro_batch_size = 2
-        # Initialization still exercises the selected scaling method, while the
-        # repeated regeneration path is outside this minimal run and can require
-        # architecture-specific checkpoint shapes.
-        args.small_model_feedback_schedule = "once"
-        args.small_model_regeneration_schedule = "once"
+        
+        # args.small_model_feedback_schedule = "once"
+        # args.small_model_regeneration_schedule = "once"
         args.total_timesteps = max(args.total_timesteps, 10**12)
         mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
         if mwe_runtime_minutes <= 0:

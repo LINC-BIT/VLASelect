@@ -11,8 +11,10 @@ cd "$ROOT_DIR"
 
 # These task/environment values mirror eval/train/vla_adapter_new/ours/run_online_rl_cl.sh.
 MWE=${MWE:-0}
+LEARNING_RATE=3e-5
 if [[ "$MWE" == "1" ]]; then
   export MWE_MAX_RUNTIME_MINUTES=2
+  # LEARNING_RATE=1e-8
 fi
 RUN_NAME=${RUN_NAME_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}
 ENV_ID=${ENV_ID_OVERRIDE:-HoldCubeInHandObjectScaleDown1p2-v1}
@@ -63,7 +65,7 @@ fi
 
 # Shorter rollouts emit training accuracy/success metrics more frequently.
 LARGE_AGENT_CHECKPOINT="$ROOT_DIR/eval/ckpt/vla_adapter_new/ours/outputs/20260502-112804/best_policy.pt"
-if [[ "$MWE" == "1" && ( -n "$SCALING_METHOD" || -n "$KNOWLEDGE_EXCHANGE_GRANULARITY" ) ]]; then
+if [[ "$MWE" == "1" && ( -n "$SCALING_METHOD" ) ]]; then
   LARGE_AGENT_CHECKPOINT="${LARGE_AGENT_CHECKPOINT}.base"
   [[ -f "$LARGE_AGENT_CHECKPOINT" ]] || {
     echo "missing MWE base checkpoint: $LARGE_AGENT_CHECKPOINT" >&2
@@ -76,7 +78,7 @@ ARGS=(--env-id "$ENV_ID" --output-dir "$OUTPUT_DIR" \
   --control-mode pd_joint_delta_pos --reward-mode normalized_dense --obs-mode rgb+state_dict \
   --model-dir eval/ckpt/vla_adapter_new/LIBERO-Object \
   --num-envs 256 --num-eval-envs 8 --num-steps 10 --num-minibatches 16 --update-epochs 2 \
-  --learning-rate 3e-5 --head-learning-rate 3e-5 --state-learning-rate 3e-5 --value-head-learning-rate 3e-5 --backbone-learning-rate 3e-5 \
+  --learning-rate "$LEARNING_RATE" --head-learning-rate "$LEARNING_RATE" --state-learning-rate "$LEARNING_RATE" --value-head-learning-rate "$LEARNING_RATE" --backbone-learning-rate "$LEARNING_RATE" \
   --weight-decay 1e-6 --gamma 0.8 --gae-lambda 0.9 --clip-coef 0.2 --ent-coef 0.0 --vf-coef 0.5 --max-grad-norm 0.5 --target-kl 0.2 --minibatch-target-kl-factor 1.0 \
   --eval-episodes 50 --eval-every-updates 50 --max-runtime-hours 5.1 --rollout-micro-batch-size 256 --eval-micro-batch-size 256 --update-micro-batch-size 32 \
   --freeze-vla-backbone false --backbone-warmup-updates 0 --save-video false --action-dim 16 --state-dim 105 \

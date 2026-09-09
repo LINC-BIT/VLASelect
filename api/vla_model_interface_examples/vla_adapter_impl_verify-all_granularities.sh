@@ -15,11 +15,15 @@ CUDA_DEVICE=${CUDA_DEVICE_OVERRIDE:-${CUDA_DEVICES:-${CUDA_VISIBLE_DEVICES:-0}}}
 CUDA_DEVICE=${CUDA_DEVICE%%,*}
 RUN_TAG=${RUN_TAG_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}
 
+# KNOWLEDGE_EXCHANGE_GRANULARITIES=(
+#   default
+#   layer
+#   block
+#   attention_head
+# )
 KNOWLEDGE_EXCHANGE_GRANULARITIES=(
-  default
-  layer
-  block
   attention_head
+  default
 )
 
 run_granularity() {

@@ -230,8 +230,8 @@ class Args:
     """optional ablation strategy for small-model channel selection: random, inverse, or default"""
     small_model_regeneration_ab_strategy: Optional[str] = None
     """optional ablation strategy used only during regeneration/swapping; None reuses small_model_ab_strategy"""
-    mwe_scaling_up_count: int = 0
-    """number of scaling-up/regeneration operations during an MWE run"""
+    mwe_regeneration_count: int = 0
+    """number of regeneration operations during an MWE run"""
     mwe_scaling_down_count: int = 0
     """number of scaling-down operations during an MWE run"""
     mwe_knowledge_accumulation_count: int = 0
@@ -2375,7 +2375,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             success_end_at_last_regeneration=success_end_at_last_small_model_regeneration,
             iteration_at_last_regeneration=iteration_at_last_small_model_regeneration,
         )
-        regeneration_count = max(args.mwe_scaling_up_count, args.mwe_scaling_down_count)
+        regeneration_count = max(args.mwe_regeneration_count, args.mwe_scaling_down_count)
         if os.environ.get("MWE", "0") == "1" and regeneration_count > 0:
             regeneration_due = mwe_operation_due(
                 regeneration_count,
@@ -2816,7 +2816,7 @@ def apply_mwe_overrides(args: Args) -> Args:
         )
         args.small_model_regeneration_schedule = (
             "before_per_rollout"
-            if max(args.mwe_scaling_up_count, args.mwe_scaling_down_count) > 0
+            if max(args.mwe_regeneration_count, args.mwe_scaling_down_count) > 0
             else "once"
         )
         args.total_timesteps = max(args.total_timesteps, 10**12)

@@ -1454,6 +1454,7 @@ def build_shared_legend_entries(series_groups: list[list[dict[str, Any]]]) -> li
 def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, Any]], list[dict[str, Any]], list[str]]:
     panel_label = panel['panel_label']
     PANEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_PANEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=MEMORY_PANEL_FIGURE_SIZES.get(panel_label, (12.8, 8.0)))
     raw_fig, raw_ax = plt.subplots(figsize=MEMORY_PANEL_FIGURE_SIZES.get(panel_label, (12.8, 8.0)))
 

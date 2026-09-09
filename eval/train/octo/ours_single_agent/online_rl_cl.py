@@ -2143,6 +2143,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     iteration_at_last_small_model_regeneration = None
     mwe_feedback_count = 0
     mwe_regeneration_count = 0
+    icl_accuracy_avg_enabled = "ICL_ACCURACY_AVG_WINDOW" in os.environ
     icl_accuracy_avg_window = int(os.environ.get("ICL_ACCURACY_AVG_WINDOW", "1"))
     if icl_accuracy_avg_window < 1:
         raise ValueError("ICL_ACCURACY_AVG_WINDOW must be positive")
@@ -2233,10 +2234,14 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 snapshot_elapsed_minutes = elapsed_minutes
                 if snapshot_elapsed_minutes is None:
                     snapshot_elapsed_minutes = runtime_tracker.current_minutes()
-                pending_success_once_samples.append(
-                    (float(avg_success_once), float(snapshot_elapsed_minutes))
-                )
-                if len(pending_success_once_samples) >= icl_accuracy_avg_window:
+                if icl_accuracy_avg_enabled:
+                    pending_success_once_samples.append(
+                        (float(avg_success_once), float(snapshot_elapsed_minutes))
+                    )
+                if not icl_accuracy_avg_enabled:
+                    json_success_once = float(avg_success_once)
+                    json_elapsed_minutes = float(snapshot_elapsed_minutes)
+                elif len(pending_success_once_samples) >= icl_accuracy_avg_window:
                     json_success_once = float(
                         sum(value for value, _ in pending_success_once_samples)
                         / len(pending_success_once_samples)

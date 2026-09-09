@@ -85,6 +85,7 @@ CMD=(
   --feature-selector-topk-trajectories "${FEATURE_SELECTOR_TOPK_TRAJECTORIES}"
 )
 
+
 if [[ "${USE_VLA_LORA}" == "1" ]]; then
   CMD+=(--use-vla-lora --lora-r "${LORA_R}" --lora-alpha "${LORA_ALPHA}" --lora-dropout "${LORA_DROPOUT}")
 fi

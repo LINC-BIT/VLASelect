@@ -961,6 +961,7 @@ def parse_args():
         "--no-communication-replay",
         "--enable-mixed-train-envs",
         "--disable-ag-debug-histograms",
+        "--initial-sft-environment",
     }
 
     cleaned_argv = []

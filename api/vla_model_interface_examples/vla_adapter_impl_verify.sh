@@ -13,8 +13,8 @@ cd "$ROOT_DIR"
 MWE=${MWE:-0}
 LEARNING_RATE=3e-5
 if [[ "$MWE" == "1" ]]; then
-  export MWE_MAX_RUNTIME_MINUTES=2
-  # LEARNING_RATE=1e-8
+  export MWE_MAX_RUNTIME_MINUTES=5
+  LEARNING_RATE=1e-7
 fi
 RUN_NAME=${RUN_NAME_OVERRIDE:-$(date +%Y%m%d-%H%M%S)}
 ENV_ID=${ENV_ID_OVERRIDE:-HoldCubeInHandObjectScaleDown1p2-v1}

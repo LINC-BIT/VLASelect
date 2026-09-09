@@ -44,7 +44,7 @@ class AttentionHeadGrainedSmallModelScalingInterface(GranularitySmallModelScalin
     granularity_name = "attention_head"
     enforce_grouped_channels = True
 
-    def __init__(self, *, low_group_retention: float = 0.02) -> None:
+    def __init__(self, *, low_group_retention: float = 0.05) -> None:
         # Kept for API compatibility with the layer/block implementations.  QKV
         # groups are either fully selected or omitted; this value applies only to
         # non-attention layers.
@@ -197,7 +197,7 @@ class AttentionHeadGrainedSmallModelScalingInterface(GranularitySmallModelScalin
     ) -> List[str]:
         """Keep the higher-scoring half of the heads selected by the base plan."""
         retained_heads = [key for key in retained if key in head_groups]
-        keep_count = int(math.ceil(len(retained_heads) / 2))
+        keep_count = int(math.ceil(len(retained_heads) / 1))
         kept_heads = set(
             sorted(retained_heads, key=lambda key: (-float(scores[key]), key))[:keep_count]
         )

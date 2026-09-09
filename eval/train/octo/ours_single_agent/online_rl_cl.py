@@ -2146,7 +2146,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     icl_accuracy_avg_window = int(os.environ.get("ICL_ACCURACY_AVG_WINDOW", "1"))
     if icl_accuracy_avg_window < 1:
         raise ValueError("ICL_ACCURACY_AVG_WINDOW must be positive")
-    pending_success_once_values = []
+    pending_success_once_samples = []
 
     for iteration in range(start_iter_idx, args.num_iterations + 1):
         switched_env, should_stop_for_schedule, elapsed_minutes = maybe_switch_envs()
@@ -2224,17 +2224,31 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
                 if success_once_values:
                     avg_success_once = float(sum(success_once_values) / len(success_once_values))
-                    pending_success_once_values.append(avg_success_once)
-                    if len(pending_success_once_values) >= icl_accuracy_avg_window:
-                        logger.add_scalar(
-                            "eval/success_once",
-                            float(sum(pending_success_once_values) / len(pending_success_once_values)),
-                            global_step,
-                        )
-                        pending_success_once_values.clear()
                 if success_end_values:
                     avg_success_end = float(sum(success_end_values) / len(success_end_values))
                     logger.add_scalar("eval/success_end", avg_success_end, global_step)
+            json_success_once = None
+            json_elapsed_minutes = None
+            if not skip_metric_snapshot and avg_success_once is not None:
+                snapshot_elapsed_minutes = elapsed_minutes
+                if snapshot_elapsed_minutes is None:
+                    snapshot_elapsed_minutes = runtime_tracker.current_minutes()
+                pending_success_once_samples.append(
+                    (float(avg_success_once), float(snapshot_elapsed_minutes))
+                )
+                if len(pending_success_once_samples) >= icl_accuracy_avg_window:
+                    json_success_once = float(
+                        sum(value for value, _ in pending_success_once_samples)
+                        / len(pending_success_once_samples)
+                    )
+                    json_elapsed_minutes = float(
+                        sum(timestamp for _, timestamp in pending_success_once_samples)
+                        / len(pending_success_once_samples)
+                    )
+                    pending_success_once_samples.clear()
+                    if logger is not None:
+                        logger.add_scalar("eval/success_once", json_success_once, global_step)
+
             if not skip_metric_snapshot:
                 if avg_success_once is not None:
                     print(f"Client {agent_name} {metric_snapshot_source} success_once={avg_success_once:.4f}")
@@ -2251,8 +2265,14 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                     last_eval_metrics["success_once"] = float(avg_success_once)
                 if avg_success_end is not None:
                     last_eval_metrics["success_at_end"] = float(avg_success_end)
-                if last_eval_metrics:
-                    current_elapsed_minutes = elapsed_minutes
+                metric_entry_metrics = dict(last_eval_metrics)
+                if avg_success_once is not None:
+                    if json_success_once is None:
+                        metric_entry_metrics.pop("success_once", None)
+                    else:
+                        metric_entry_metrics["success_once"] = json_success_once
+                if metric_entry_metrics:
+                    current_elapsed_minutes = json_elapsed_minutes
                     if current_elapsed_minutes is None:
                         current_elapsed_minutes = runtime_tracker.current_minutes()
                     metric_entry = build_metric_entry(
@@ -2261,7 +2281,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                         current_env_id=current_env_id,
                         current_env_index=current_env_index,
                         elapsed_minutes=current_elapsed_minutes,
-                        eval_metrics=last_eval_metrics,
+                        eval_metrics=metric_entry_metrics,
                         extras={
                             "best_success_once": best_success_once,
                             "best_success_at_end": best_success_end,

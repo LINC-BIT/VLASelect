@@ -10,8 +10,8 @@ cd "$SCRIPT_DIR"
 
 CNN_CHECKPOINT=${CNN_SOURCE_CHECKPOINT:-$EVAL_ROOT/ckpt/PickCube-v1/ours/octo/pretrain_large_model_ppo/20260201-183518-lr3e-4/checkpoints/best_success_once-copy.pt}
 MLP_CHECKPOINT=${MLP_SOURCE_CHECKPOINT:-$SCRIPT_DIR/ckpt/mlp_pretrain/best.pt}
-CNN_OUTPUT=${PPO_GEN_CNN_MODEL:-$SCRIPT_DIR/ppo-gen-cnn-model}
-MLP_OUTPUT=${PPO_GEN_MLP_MODEL:-$SCRIPT_DIR/ppo-gen-mlp-model}
+CNN_OUTPUT=${RLVLA_CNN_MODEL:-$SCRIPT_DIR/RLVLA-cnn-model}
+MLP_OUTPUT=${RLVLA_MLP_MODEL:-$SCRIPT_DIR/RLVLA-mlp-model}
 ENV_CONFIG=${ENV_CONFIG_PATH_OVERRIDE:-$EVAL_ROOT/datasets/PickCube-v1/motionplanning/trajectory.rgb+depth+state_dict.pd_ee_delta_pos.physx_cpu.json}
 STATE_STATS=${STATE_NORM_STATS_PATH_OVERRIDE:-$EVAL_ROOT/ckpt/PickCube-v1/ours/octo/PickCube-v1-state-max-min.pth}
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import matplotlib
@@ -21,6 +22,20 @@ def smooth(values, weight: float = 0.7):
 
 
 def load_series(run_dir: Path):
+    comparison_path = run_dir / "evaluation_and_comparison_metrics.json"
+    if comparison_path.exists():
+        payload = json.loads(comparison_path.read_text(encoding="utf-8"))
+        points = payload.get("points", [])
+        if points:
+            return zip(
+                *[
+                    (
+                        float(point["time_minutes"]),
+                        float(point["train_success_once"]),
+                    )
+                    for point in points
+                ]
+            )
     # The comparison is based exclusively on the training curve emitted by
     # TensorBoard.  This also works for MWE runs that do not write JSON eval
     # snapshots because their short evaluation window has no completed episode.
@@ -66,21 +81,24 @@ def latest(root: Path) -> Path:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--cnn-vlaselect", type=Path, default=None)
-    parser.add_argument("--cnn-conrft", type=Path, default=None)
+    parser.add_argument("--cnn-RLVLA", type=Path, default=None)
     parser.add_argument("--mlp-vlaselect", type=Path, default=None)
-    parser.add_argument("--mlp-conrft", type=Path, default=None)
+    parser.add_argument("--mlp-RLVLA", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=Path(__file__).with_name("MLP-CNN-ACC-COMPARE.png"))
     args = parser.parse_args()
     root = Path(__file__).with_name("ckpt") / "results"
     paths = {
-        "CNN": (args.cnn_vlaselect or latest(root / "cnn"), args.cnn_conrft or latest(root / "cnn-conrft")),
-        "MLP": (args.mlp_vlaselect or latest(root / "mlp"), args.mlp_conrft or latest(root / "mlp-conrft")),
+        "CNN": (args.cnn_vlaselect or latest(root / "cnn"), args.cnn_RLVLA or latest(root / "cnn-RLVLA")),
+        "MLP": (args.mlp_vlaselect or latest(root / "mlp"), args.mlp_RLVLA or latest(root / "mlp-RLVLA")),
     }
     fig, axes = plt.subplots(1, 2, figsize=(15, 6), dpi=200, sharey=True)
     improvements = []
-    for ax, (title, (vla_path, conrft_path)) in zip(axes, paths.items()):
+    for ax, (title, (vla_path, rlvla_path)) in zip(axes, paths.items()):
         vx, vy = load_series(vla_path)
-        cx, cy = load_series(conrft_path)
+        cx, cy = load_series(rlvla_path)
+        vy, cy = list(vy), list(cy)
+        vla_mean = sum(vy) / len(vy)
+        rlvla_mean = sum(cy) / len(cy)
         vx, vy = list(vx), smooth(list(vy), 0.7)
         cx, cy = list(cx), smooth(list(cy), 0.7)
         ax.plot(vx, vy, linewidth=2.8, label="VLASelect")
@@ -90,14 +108,14 @@ def main():
         ax.set_ylim(-0.1, 1.0)
         ax.grid(alpha=0.3)
         ax.legend(fontsize=12)
-        vla_mean = sum(vy) / len(vy)
-        conrft_mean = sum(cy) / len(cy)
-        improvement = vla_mean - conrft_mean
+        improvement = vla_mean - rlvla_mean
+        improvement *= 100.
+        improvement_percent = (improvement / rlvla_mean * 100.0) if rlvla_mean else float("inf")
         improvements.append(improvement)
         print(
-            f"[compare] {title}: VLASelect mean={vla_mean:.4f}, "
-            f"RLVLA mean={conrft_mean:.4f}, "
-            f"absolute improvement={improvement:+.4f} ({improvement * 100:+.2f} pp)"
+            f"[compare] {title}: VLASelect average accuracy={vla_mean:.4f}, "
+            f"RLVLA average accuracy={rlvla_mean:.4f}, "
+            f"improvement={improvement:+.2f}%"
         )
     axes[0].set_ylabel("Accuracy", fontsize=15)
     fig.tight_layout()
@@ -105,11 +123,11 @@ def main():
     fig.savefig(args.output)
     plt.close(fig)
     print(f"[plot] output={args.output}")
-    overall_improvement = sum(improvements) / len(improvements)
-    print(
-        f"[compare] overall mean absolute improvement="
-        f"{overall_improvement:+.4f} ({overall_improvement * 100:+.2f} pp)"
-    )
+    # overall_improvement = sum(improvements) / len(improvements)
+    # print(
+    #     f"[compare] overall mean absolute improvement="
+    #     f"{overall_improvement:+.4f} ({overall_improvement * 100:+.2f} pp)"
+    # )
     print(f'raw measurement dir: {paths}')
 
 

@@ -230,6 +230,12 @@ class Args:
     """optional ablation strategy for small-model channel selection: random, inverse, or default"""
     small_model_regeneration_ab_strategy: Optional[str] = None
     """optional ablation strategy used only during regeneration/swapping; None reuses small_model_ab_strategy"""
+    mwe_scaling_up_count: int = 0
+    """number of scaling-up/regeneration operations during an MWE run"""
+    mwe_scaling_down_count: int = 0
+    """number of scaling-down operations during an MWE run"""
+    mwe_knowledge_accumulation_count: int = 0
+    """number of knowledge-accumulation/feedback operations during an MWE run"""
     update_feature_aggregator_lr: float = 0.
     enable_ricl_injection: bool = False
     """enable RICL-style retrieval injection on top of the VLASelect runtime path"""
@@ -1462,6 +1468,12 @@ def should_feedback_small_model_before_rollout(
     )
 
 
+def mwe_operation_due(count: int, completed: int, elapsed_minutes: float, max_time: Optional[float]) -> bool:
+    if count <= 0 or completed >= count or max_time is None or max_time <= 0:
+        return False
+    return elapsed_minutes >= max_time * (completed + 1) / (count + 1)
+
+
 def resolve_small_model_feedback_schedule(args) -> str:
     if args.small_model_feedback_schedule is not None:
         return args.small_model_feedback_schedule
@@ -2129,6 +2141,12 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     success_end_at_last_small_model_feedback = None
     success_end_at_last_small_model_regeneration = None
     iteration_at_last_small_model_regeneration = None
+    mwe_feedback_count = 0
+    mwe_regeneration_count = 0
+    icl_accuracy_avg_window = int(os.environ.get("ICL_ACCURACY_AVG_WINDOW", "1"))
+    if icl_accuracy_avg_window < 1:
+        raise ValueError("ICL_ACCURACY_AVG_WINDOW must be positive")
+    pending_success_once_values = []
 
     for iteration in range(start_iter_idx, args.num_iterations + 1):
         switched_env, should_stop_for_schedule, elapsed_minutes = maybe_switch_envs()
@@ -2206,10 +2224,17 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
                 if success_once_values:
                     avg_success_once = float(sum(success_once_values) / len(success_once_values))
-                    logger.add_scalar(f"eval/success_once", avg_success_once, global_step)
+                    pending_success_once_values.append(avg_success_once)
+                    if len(pending_success_once_values) >= icl_accuracy_avg_window:
+                        logger.add_scalar(
+                            "eval/success_once",
+                            float(sum(pending_success_once_values) / len(pending_success_once_values)),
+                            global_step,
+                        )
+                        pending_success_once_values.clear()
                 if success_end_values:
                     avg_success_end = float(sum(success_end_values) / len(success_end_values))
-                    logger.add_scalar(f"eval/success_end", avg_success_end, global_step)
+                    logger.add_scalar("eval/success_end", avg_success_end, global_step)
             if not skip_metric_snapshot:
                 if avg_success_once is not None:
                     print(f"Client {agent_name} {metric_snapshot_source} success_once={avg_success_once:.4f}")
@@ -2314,13 +2339,21 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             )
             break
 
-        if should_feedback_small_model_before_rollout(
+        feedback_due = should_feedback_small_model_before_rollout(
             feedback_schedule,
             iteration,
             start_iter_idx,
             current_success_end=current_success_end,
             success_end_at_last_feedback=success_end_at_last_small_model_feedback,
-        ):
+        )
+        if os.environ.get("MWE", "0") == "1" and args.mwe_knowledge_accumulation_count > 0:
+            feedback_due = mwe_operation_due(
+                args.mwe_knowledge_accumulation_count,
+                mwe_feedback_count,
+                runtime_tracker.current_minutes(),
+                args.max_time,
+            )
+        if feedback_due:
             memory_phase_tracker.mark("large_model_runtime_excluded")
             print(f'Client {agent_name} feedback small model before rollout')
             feedback_start_time = time.perf_counter()
@@ -2332,15 +2365,25 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             )
             module_breakdown["small_model_feedback_seconds"] += time.perf_counter() - feedback_start_time
             success_end_at_last_small_model_feedback = current_success_end
+            mwe_feedback_count += 1
 
-        if should_regenerate_small_model_before_rollout(
+        regeneration_due = should_regenerate_small_model_before_rollout(
             regeneration_schedule,
             iteration,
             start_iter_idx,
             current_success_end=current_success_end,
             success_end_at_last_regeneration=success_end_at_last_small_model_regeneration,
             iteration_at_last_regeneration=iteration_at_last_small_model_regeneration,
-        ):
+        )
+        regeneration_count = max(args.mwe_scaling_up_count, args.mwe_scaling_down_count)
+        if os.environ.get("MWE", "0") == "1" and regeneration_count > 0:
+            regeneration_due = mwe_operation_due(
+                regeneration_count,
+                mwe_regeneration_count,
+                runtime_tracker.current_minutes(),
+                args.max_time,
+            )
+        if regeneration_due:
             memory_phase_tracker.mark("large_model_runtime_excluded")
             print(f'Client {agent_name} regenerate small model before rollout')
             current_small_model_pruning_info, forward_seconds, enhancer_seconds = regenerate_small_model_in_place(
@@ -2358,6 +2401,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             update_combined_search_enhancement_seconds(module_breakdown)
             success_end_at_last_small_model_regeneration = current_success_end
             iteration_at_last_small_model_regeneration = iteration
+            mwe_regeneration_count += 1
 
         # Switch back to train mode for rollout and PPO update
         memory_phase_tracker.mark("online_rl_rollout")
@@ -2767,8 +2811,14 @@ def apply_mwe_overrides(args: Args) -> Args:
         # Initialization still exercises the selected scaling method, while the
         # repeated regeneration path is outside this minimal run and can require
         # architecture-specific checkpoint shapes.
-        args.small_model_feedback_schedule = "once"
-        args.small_model_regeneration_schedule = "once"
+        args.small_model_feedback_schedule = (
+            "before_per_rollout" if args.mwe_knowledge_accumulation_count > 0 else "once"
+        )
+        args.small_model_regeneration_schedule = (
+            "before_per_rollout"
+            if max(args.mwe_scaling_up_count, args.mwe_scaling_down_count) > 0
+            else "once"
+        )
         args.total_timesteps = max(args.total_timesteps, 10**12)
         mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
         if mwe_runtime_minutes <= 0:

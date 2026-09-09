@@ -82,7 +82,9 @@ class JsonMetricsLogger:
         self.output_dir = Path(output_dir)
         self.history_path = self.output_dir / "metrics_history.json"
         self.latest_path = self.output_dir / "latest_metrics.json"
-        self.final_eval_path = self.output_dir / "final_eval_metrics.json"
+        self.comparison_path = self.output_dir / "evaluation_and_comparison_metrics.json"
+        self.comparison_points: list[dict[str, float]] = []
+        self._comparison_pending: list[tuple[float, float]] = []
         self.history: list[dict[str, Any]] = []
         self._load_history()
 
@@ -103,5 +105,29 @@ class JsonMetricsLogger:
         save_json(self.history_path, {"history": self.history})
         write_time_breakdown_from_metrics_history(self.output_dir, self.history)
 
-    def save_final_eval(self, eval_metrics: dict[str, Any] | None) -> None:
-        save_json(self.final_eval_path, _scalar_dict(eval_metrics))
+    def append_comparison_point(self, elapsed_minutes: float, success_once: Any) -> None:
+        value = _coerce_scalar(success_once)
+        if value is None:
+            return
+        self._comparison_pending.append((float(elapsed_minutes), float(value)))
+        if len(self._comparison_pending) < 3:
+            return
+        times, accuracies = zip(*self._comparison_pending)
+        self.comparison_points.append(
+            {
+                "time_minutes": float(sum(times) / len(times)),
+                "train_success_once": float(sum(accuracies) / len(accuracies)),
+            }
+        )
+        self._comparison_pending.clear()
+        self.save_comparison_metrics()
+
+    def save_comparison_metrics(self) -> None:
+        accuracies = [point["train_success_once"] for point in self.comparison_points]
+        payload: dict[str, Any] = {
+            "average_accuracy_for_evaluation_and_comparison": (
+                float(sum(accuracies) / len(accuracies)) if accuracies else None
+            ),
+            "points": self.comparison_points,
+        }
+        save_json(self.comparison_path, payload)

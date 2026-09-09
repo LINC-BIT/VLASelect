@@ -2179,9 +2179,9 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     # feature_aggregator1 = FeatureAggregator(agent1, 'feature_net.decoder', 256 * 3, 256 * 2)
     # feature_aggregator2 = FeatureAggregator(agent2, 'feature_filter', 256 * 2, 256 * 3)
 
-    # Either load a fixed ordinary ConRFT model, or run the VLASelect setup.
+    # Either load a fixed ordinary RLVLA model, or run the VLASelect setup.
     if args.pre_generated_model:
-        print(f"Loading fixed pre-generated ConRFT model: {args.pre_generated_model}")
+        print(f"Loading fixed pre-generated RLVLA model: {args.pre_generated_model}")
         agent = load_pre_generated_model(args.pre_generated_model, device)
         large_agent = agent
         current_small_model_pruning_info = None
@@ -2596,7 +2596,10 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
                 final_info = infos["final_info"]
                 done_mask = infos["_final_info"]
                 for k, v in final_info["episode"].items():
-                    logger.add_scalar(f"train/{k}", v[done_mask].float().mean(), global_step)
+                    metric_value = v[done_mask].float().mean()
+                    logger.add_scalar(f"train/{k}", metric_value, global_step)
+                    if k == "success_once":
+                        json_metrics.append_comparison_point(runtime_tracker.current_minutes(), metric_value)
                 append_episode_metric_batch(train_episode_metrics, final_info["episode"], done_mask)
 
                 for k in infos["final_observation"]:
@@ -2903,8 +2906,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
 
     # 多agent逻辑，暂不需要
     # client.close()
-    if last_eval_metrics is not None:
-        json_metrics.save_final_eval(last_eval_metrics)
+    json_metrics.save_comparison_metrics()
     module_breakdown["online_rl_completion_seconds"] = float(cumulative_times["rollout_time"] + cumulative_times["update_time"])
     write_time_breakdown(
         output_dir,

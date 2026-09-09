@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import warnings
 from pathlib import Path
 
 import matplotlib
@@ -19,10 +20,8 @@ from common.figure_compose import compose_grid_figure
 from common.template_pdf_fill import fill_sampling_training_template
 from plot_breakdown_impl import (
     ALL_METHODS_TABLE_ROOT,
-    SAME_ACC_TABLE_ROOT,
     apply_dynamic_time_axis,
     load_csv_rows,
-    load_summary_aligned_manifest,
     load_top_manifest_from_table_root,
     prepare_breakdown_tables,
 )
@@ -50,10 +49,75 @@ LABEL_MAP = {
 }
 
 
+def load_latest_manifest() -> tuple[dict, Path | None]:
+    latest_path = ALL_METHODS_TABLE_ROOT / 'latest.txt'
+    if latest_path.exists():
+        stamp = latest_path.read_text(encoding='utf-8').strip()
+        candidate = ALL_METHODS_TABLE_ROOT / stamp / 'manifest.json'
+        if stamp and candidate.is_file():
+            return load_top_manifest_from_table_root(ALL_METHODS_TABLE_ROOT, str(candidate))
+        warnings.warn(
+            f'Latest breakdown pointer is invalid: {latest_path} -> {stamp or "<empty>"}. '
+            'Falling back to the most recently modified manifest.',
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    candidates = sorted(
+        ALL_METHODS_TABLE_ROOT.glob('*/manifest.json'),
+        key=lambda path: path.stat().st_mtime,
+    )
+    if candidates:
+        return load_top_manifest_from_table_root(ALL_METHODS_TABLE_ROOT, str(candidates[-1]))
+
+    warnings.warn('No all-methods breakdown manifest was found.', RuntimeWarning, stacklevel=2)
+    return {}, None
+
+
 def load_manifest(manifest_path: str | None) -> tuple[dict, Path | None]:
     if manifest_path:
         return load_top_manifest_from_table_root(ALL_METHODS_TABLE_ROOT, manifest_path)
-    return load_summary_aligned_manifest([SAME_ACC_TABLE_ROOT, ALL_METHODS_TABLE_ROOT], ALL_METHODS_TABLE_ROOT), None
+    return load_latest_manifest()
+
+
+def warn_if_workloads_incomplete(manifest: dict) -> None:
+    panels = manifest.get('panels', manifest.get('families', []))
+    by_family = {
+        str(panel.get('family')): panel
+        for panel in panels
+        if isinstance(panel, dict) and str(panel.get('family')) in DATASET_ORDER
+    }
+    issues: list[str] = []
+    for family in DATASET_ORDER:
+        panel = by_family.get(family)
+        if panel is None:
+            issues.append(f'{family}: missing from manifest')
+            continue
+        suite_manifest_ref = str(panel.get('suite_manifest') or '').strip()
+        if not suite_manifest_ref:
+            issues.append(f'{family}: suite manifest missing')
+            continue
+        suite_manifest_path = Path(suite_manifest_ref)
+        if not suite_manifest_path.is_absolute():
+            suite_manifest_path = EVAL_ROOT / suite_manifest_path
+        if not suite_manifest_path.is_file():
+            issues.append(f'{family}: suite manifest not found ({suite_manifest_ref})')
+            continue
+        try:
+            suite_manifest = json.loads(suite_manifest_path.read_text(encoding='utf-8'))
+        except (OSError, json.JSONDecodeError):
+            issues.append(f'{family}: unreadable suite manifest ({suite_manifest_ref})')
+            continue
+        if suite_manifest.get('suite_state') != 'finished':
+            state = suite_manifest.get('suite_state', 'unknown')
+            issues.append(f'{family}: suite_state={state!r}')
+    if issues:
+        warnings.warn(
+            'Latest all-methods breakdown is incomplete; plotting only its available data. '
+            + '; '.join(issues),
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
 
 def resolve_output_root(manifest: dict, resolved_manifest_path: Path | None) -> Path:
@@ -164,6 +228,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     manifest, resolved_manifest_path = load_manifest(args.manifest)
+    warn_if_workloads_incomplete(manifest)
     output_root = resolve_output_root(manifest, resolved_manifest_path)
     selected = {row.get('family'): row.get('_top_manifest', '') for row in manifest.get('panels', []) if isinstance(row, dict)}
     for family in DATASET_ORDER:

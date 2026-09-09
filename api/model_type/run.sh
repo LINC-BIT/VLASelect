@@ -17,12 +17,12 @@ export RUN_NAME_OVERRIDE="results/cnn/compare-${MODE}"
 bash "$SCRIPT_DIR/cnn.sh"
 export RUN_NAME_OVERRIDE="results/mlp/compare-${MODE}"
 bash "$SCRIPT_DIR/mlp.sh"
-export RUN_NAME_OVERRIDE="results/cnn-conrft/compare-${MODE}"
-bash "$SCRIPT_DIR/cnn-ppo-gen.sh"
-export RUN_NAME_OVERRIDE="results/mlp-conrft/compare-${MODE}"
-bash "$SCRIPT_DIR/mlp-ppo-gen.sh"
+export RUN_NAME_OVERRIDE="results/cnn-RLVLA/compare-${MODE}"
+bash "$SCRIPT_DIR/cnn-RLVLA.sh"
+export RUN_NAME_OVERRIDE="results/mlp-RLVLA/compare-${MODE}"
+bash "$SCRIPT_DIR/mlp-RLVLA.sh"
 python "$SCRIPT_DIR/plot_ppo_compare.py" \
   --cnn-vlaselect "$SCRIPT_DIR/ckpt/results/cnn/compare-${MODE}/[agent]" \
-  --cnn-conrft "$SCRIPT_DIR/ckpt/results/cnn-conrft/compare-${MODE}/[agent]" \
+  --cnn-RLVLA "$SCRIPT_DIR/ckpt/results/cnn-RLVLA/compare-${MODE}/[agent]" \
   --mlp-vlaselect "$SCRIPT_DIR/ckpt/results/mlp/compare-${MODE}/[agent]" \
-  --mlp-conrft "$SCRIPT_DIR/ckpt/results/mlp-conrft/compare-${MODE}/[agent]"
+  --mlp-RLVLA "$SCRIPT_DIR/ckpt/results/mlp-RLVLA/compare-${MODE}/[agent]"

@@ -23,6 +23,8 @@ STAMP=${ICL_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}
 : "${RICL_ACTOR_LOGSTD:=-0.5}"
 : "${ICL_PLOT_METRIC:=success_once}"
 : "${ICL_PLOT_SMOOTHING:=0.8}"
+: "${ICL_ACCURACY_AVG_WINDOW:=3}"
+export ICL_ACCURACY_AVG_WINDOW
 : "${ICL_ENV_ID:=PickCubeObjectScaleUp1p2-v1}"
 : "${ICL_ENVS_ID:=['PickCubeObjectScaleUp1p2-v1','PickCubeLightStronger50-v1','PickCubeObjectScaleUp1p4-v1','PickCubeLightWeaker50-v1','PushCubeLightWeaker50-v1','PushCubeLightStronger50-v1','PushCubeColorTempHigher50-v1','PushCubeColorTempLower50-v1','PickCubeColorTempHigher50-v1','PickCubeObjectScaleDown1p2-v1']}"
 ICL_ENV_CHANGE_TIME_POINTS="${ICL_ENV_CHANGE_TIME_POINTS:-[31,62,96,131,151,163,207,247,271,300]}"

@@ -663,6 +663,30 @@ launch_curve() {
             ;;
     esac
 
+    if [[ "$MWE" == "1" ]]; then
+        case "$panel_id" in
+            scaling_law_function)
+                if [[ "$curve_id" == "without_scaling_law" ]]; then
+                    cmd+=(--mwe-scaling-up-count "${MWE_SCALING_UP_COUNT:-5}")
+                fi
+                ;;
+            neuron_grained_scaling_up)
+                cmd+=(--mwe-scaling-up-count "${MWE_SCALING_UP_COUNT:-5}")
+                ;;
+            scaling_down_freezing_vs_pruning)
+                cmd+=(--mwe-scaling-down-count "${MWE_SCALING_DOWN_COUNT:-5}")
+                ;;
+            knowledge_accumulation)
+                cmd+=(--mwe-knowledge-accumulation-count "${MWE_KNOWLEDGE_ACCUMULATION_COUNT:-5}")
+                ;;
+            neuron_swapping)
+                if [[ "$curve_id" == "random_swapping" ]]; then
+                    cmd+=(--mwe-scaling-up-count "${MWE_SCALING_UP_COUNT:-5}")
+                fi
+                ;;
+        esac
+    fi
+
     log "launching ${panel_id}/${curve_id} on gpu=${gpu}"
     log "launch log: ${log_file}"
     run_curve_command "${panel_id}-${curve_id}" "$log_file" "$gpu" "${cmd[@]}"

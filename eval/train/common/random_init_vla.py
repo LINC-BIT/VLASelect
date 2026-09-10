@@ -99,21 +99,74 @@ class RandomInitVisionBackbone:
         return self._num_images_in_input
 
 
-class RandomInitLanguageModel(nn.Module):
-    def __init__(self, hidden_dim: int, vocab_size: int) -> None:
+class RandomInitSelfAttention(nn.Module):
+    def __init__(self, hidden_dim: int) -> None:
         super().__init__()
-        self.backbone = nn.Sequential(
-            nn.LayerNorm(hidden_dim),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.GELU(),
-            nn.Linear(hidden_dim, hidden_dim),
+        self.q_proj = nn.Linear(hidden_dim, hidden_dim)
+        self.k_proj = nn.Linear(hidden_dim, hidden_dim)
+        self.v_proj = nn.Linear(hidden_dim, hidden_dim)
+        self.o_proj = nn.Linear(hidden_dim, hidden_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.o_proj((self.q_proj(x) + self.k_proj(x) + self.v_proj(x)) / 3.0)
+
+
+class RandomInitMLP(nn.Module):
+    def __init__(self, hidden_dim: int, intermediate_dim: int) -> None:
+        super().__init__()
+        self.gate_proj = nn.Linear(hidden_dim, intermediate_dim)
+        self.up_proj = nn.Linear(hidden_dim, intermediate_dim)
+        self.down_proj = nn.Linear(intermediate_dim, hidden_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.down_proj(torch.nn.functional.gelu(self.gate_proj(x)) * self.up_proj(x))
+
+
+class RandomInitDecoderLayer(nn.Module):
+    def __init__(self, hidden_dim: int, intermediate_dim: int) -> None:
+        super().__init__()
+        self.input_layernorm = nn.LayerNorm(hidden_dim)
+        self.self_attn = RandomInitSelfAttention(hidden_dim)
+        self.post_attention_layernorm = nn.LayerNorm(hidden_dim)
+        self.mlp = RandomInitMLP(hidden_dim, intermediate_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x + self.self_attn(self.input_layernorm(x))
+        x = x + self.mlp(self.post_attention_layernorm(x))
+        return x
+
+
+class RandomInitLanguageBackbone(nn.Module):
+    def __init__(self, hidden_dim: int, intermediate_dim: int, num_layers: int) -> None:
+        super().__init__()
+        self.layers = nn.ModuleList(
+            [RandomInitDecoderLayer(hidden_dim, intermediate_dim) for _ in range(num_layers)]
+        )
+        self.norm = nn.LayerNorm(hidden_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        for layer in self.layers:
+            x = layer(x)
+        return self.norm(x)
+
+
+class RandomInitLanguageModel(nn.Module):
+    def __init__(self, hidden_dim: int, vocab_size: int, num_layers: int = 2) -> None:
+        super().__init__()
+        self.embed_tokens = nn.Embedding(vocab_size, hidden_dim)
+        self.model = RandomInitLanguageBackbone(
+            hidden_dim=hidden_dim,
+            intermediate_dim=hidden_dim * 4,
+            num_layers=num_layers,
         )
         self.lm_head = nn.Linear(hidden_dim, vocab_size)
 
     def forward(self, input_ids=None, attention_mask=None, position_ids=None, past_key_values=None, inputs_embeds=None, labels=None, use_cache=None, output_attentions=False, output_hidden_states=True, return_dict=True):
-        del input_ids, attention_mask, position_ids, past_key_values, labels, use_cache, output_attentions
-        backbone_dtype = next(self.backbone.parameters()).dtype
-        hidden = self.backbone(inputs_embeds.to(backbone_dtype))
+        del attention_mask, position_ids, past_key_values, labels, use_cache, output_attentions
+        if inputs_embeds is None:
+            inputs_embeds = self.embed_tokens(input_ids)
+        backbone_dtype = next(self.model.parameters()).dtype
+        hidden = self.model(inputs_embeds.to(backbone_dtype))
         logits = self.lm_head(hidden.to(self.lm_head.weight.dtype))
         if return_dict:
             return SimpleNamespace(hidden_states=[hidden], logits=logits, past_key_values=None)
@@ -121,14 +174,13 @@ class RandomInitLanguageModel(nn.Module):
 
 
 class RandomInitOpenVLA(nn.Module):
-    def __init__(self, hidden_dim: int = 256, vocab_size: int = 4096, num_patch_tokens: int = 8, num_action_tokens: int = 8, action_stats_dim: int = 7) -> None:
+    def __init__(self, hidden_dim: int = 256, vocab_size: int = 4096, num_patch_tokens: int = 8, num_action_tokens: int = 8, action_stats_dim: int = 7, num_language_layers: int = 2) -> None:
         super().__init__()
         self.llm_dim = int(hidden_dim)
         self.vocab_size = int(vocab_size)
         self.num_action_tokens = int(num_action_tokens)
-        self.embed = nn.Embedding(self.vocab_size, self.llm_dim)
         self.vision_proj = nn.Linear(3, self.llm_dim)
-        self.language_model = RandomInitLanguageModel(self.llm_dim, self.vocab_size)
+        self.language_model = RandomInitLanguageModel(self.llm_dim, self.vocab_size, num_layers=num_language_layers)
         self.action_queries = nn.Embedding(self.num_action_tokens, self.llm_dim)
         self.vision_backbone = RandomInitVisionBackbone(num_patches=num_patch_tokens, num_images_in_input=1)
         self.norm_stats = {
@@ -145,7 +197,7 @@ class RandomInitOpenVLA(nn.Module):
         return None
 
     def get_input_embeddings(self):
-        return self.embed
+        return self.language_model.embed_tokens
 
     def _process_vision_features(self, pixel_values: torch.Tensor, language_embeddings=None, use_film: bool = False):
         del language_embeddings, use_film
@@ -187,13 +239,28 @@ class RandomInitOpenVLA(nn.Module):
         return self.norm_stats['fallback_random_init']
 
 
-def maybe_build_random_init_vla_bundle(model_dir: Path, prompt: str, device: torch.device, num_action_tokens: int, action_stats_dim: int = 7, hidden_dim: int = 256, vocab_size: int = 4096):
+def maybe_build_random_init_vla_bundle(
+    model_dir: Path,
+    prompt: str,
+    device: torch.device,
+    num_action_tokens: int,
+    action_stats_dim: int = 7,
+    hidden_dim: int = 256,
+    vocab_size: int = 4096,
+    num_language_layers: int = 2,
+):
     if model_dir.exists():
         return None
     print(f"[setup] missing pretrained weights at {model_dir}; using randomly initialized VLA fallback")
     processor = RandomInitProcessor(vocab_size=vocab_size)
     prompt_tokens = processor.tokenizer(prompt, return_tensors='pt')
-    vla = RandomInitOpenVLA(hidden_dim=hidden_dim, vocab_size=vocab_size, num_action_tokens=num_action_tokens, action_stats_dim=action_stats_dim).to(device)
+    vla = RandomInitOpenVLA(
+        hidden_dim=hidden_dim,
+        vocab_size=vocab_size,
+        num_action_tokens=num_action_tokens,
+        action_stats_dim=action_stats_dim,
+        num_language_layers=num_language_layers,
+    ).to(device)
     return {
         'processor': processor,
         'prompt_tokens': prompt_tokens,

@@ -32,7 +32,7 @@ MAPPO_INIT_AGENT_PATH=${MULTI_AGENT_MAPPO_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube
 OURS_INIT_AGENT_PATH=${MULTI_AGENT_OURS_INIT_AGENT_PATH:-ckpt/TwoRobotPickCube-v2/sft/pandas_pandas/vla_adapter_smolvla_sft/20260628-151306/best_agent.pt}
 NUM_ENVS=${MULTI_AGENT_NUM_ENVS:-128}
 NUM_EVAL_ENVS=${MULTI_AGENT_NUM_EVAL_ENVS:-50}
-EVAL_EPISODES=${MULTI_AGENT_EVAL_EPISODES:-50}
+EVAL_EPISODES=${MULTI_AGENT_EVAL_EPISODES:-4}
 ROLLOUT_STEPS=${MULTI_AGENT_ROLLOUT_STEPS:-16}
 UPDATE_EPOCHS=${MULTI_AGENT_UPDATE_EPOCHS:-1}
 NUM_MINIBATCH=${MULTI_AGENT_NUM_MINIBATCH:-16}
@@ -61,17 +61,15 @@ ATTN_IMPLEMENTATION=${MULTI_AGENT_ATTN_IMPLEMENTATION:-sdpa}
 POLICY_MODE=${MULTI_AGENT_POLICY_MODE:-native}
 FEATURE_SELECTOR_TOPK_TRAJECTORIES=${MULTI_AGENT_FEATURE_SELECTOR_TOPK_TRAJECTORIES:-4}
 
-: "${MWE_RUNTIME_LIMIT_SECONDS:=900}"
-export MWE_RUNTIME_LIMIT_SECONDS
 if [[ "$MWE" == "1" ]]; then
     EFFECTIVE_ENV_CHANGE_TIME_POINTS="$(vlaselect_convert_mwe_schedule_seconds_to_minutes "$ENV_CHANGE_TIME_POINTS")"
     NUM_ENVS=${MULTI_AGENT_NUM_ENVS:-8}
     NUM_EVAL_ENVS=${MULTI_AGENT_NUM_EVAL_ENVS:-2}
-    EVAL_EPISODES=${MULTI_AGENT_EVAL_EPISODES:-20}
+    EVAL_EPISODES=${MULTI_AGENT_EVAL_EPISODES:-4}
     UPDATE_EPOCHS=${MULTI_AGENT_UPDATE_EPOCHS:-1}
     NUM_MINIBATCH=${MULTI_AGENT_NUM_MINIBATCH:-4}
     SAVE_INTERVAL_PER_ROLLOUT=${MULTI_AGENT_SAVE_INTERVAL_PER_ROLLOUT:-1}
-    MAX_TIME=${MULTI_AGENT_MAX_TIME_MINUTES:-0.5}
+    MAX_TIME=${MULTI_AGENT_MAX_TIME_MINUTES:-1}
 fi
 
 vlaselect_resource_summary_start "run_multi_agent.sh"
@@ -193,14 +191,6 @@ run_online_method() {
     fi
 
     local -a run_cmd=(env "${env_args[@]}" bash "$wrapper_script")
-    if [[ "$MWE" == "1" ]]; then
-        if command -v timeout >/dev/null 2>&1; then
-            run_cmd=(timeout --preserve-status -k 10s "${MWE_RUNTIME_LIMIT_SECONDS}s" "${run_cmd[@]}")
-        else
-            echo "[warn] timeout command not found; MWE runtime for method=${method} is not hard-capped" >&2
-        fi
-    fi
-
     echo "[run] method=${method} output=${run_dir}"
     if [[ "$TAIL_LOG" == "1" ]]; then
         if "${run_cmd[@]}" 2>&1 | tee "$log_file"; then

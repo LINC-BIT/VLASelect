@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from copy import deepcopy
-
+import os
 from ours.utils.dl.common.model import get_model_size, get_module, set_module 
 
 
@@ -111,6 +111,20 @@ def make_divisible(v, divisor=8, min_val=None):
 def svd_decompose_linear(layer: nn.Linear, target_compression_ratio=None):
     device = layer.weight.data.device
     raw_dtype = layer.weight.data.dtype
+
+    if os.getenv('SVD_SIM') is not None:
+        if target_compression_ratio is None:
+            k = (layer.weight.size(0) * layer.weight.size(1)) // (layer.weight.size(0) + layer.weight.size(1))
+            k = make_divisible(k)
+        else:
+            k = (layer.weight.size(0) * layer.weight.size(1) * target_compression_ratio) // (layer.weight.size(0) + layer.weight.size(1))
+            k = max(k, 1)
+            k = int(k)
+        layer1 = nn.Linear(layer.in_features, k, bias=False)
+        layer2 = nn.Linear(k, layer.out_features, bias=layer.bias is not None)
+        return nn.Sequential(layer1, layer2).to(device).to(raw_dtype)
+
+    
 
     U, S, V = torch.svd(layer.weight.T.to(torch.float32))
     

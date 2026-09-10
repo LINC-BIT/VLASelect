@@ -794,6 +794,7 @@ def train(
                     "large_model_acc_after_feedback": policy_accuracy(large_after),
                 }
             )
+
             latest_impact = impact_records[-1]
             print(
                 f"[impact] update={update} "
@@ -802,6 +803,9 @@ def train(
                 f"improvement={latest_impact['large_model_acc_after_feedback'] - latest_impact['large_model_acc_before_feedback']:+.4f}"
             )
             success_end_at_last_small_model_feedback = current_success_end
+
+            if latest_impact['large_model_acc_before_feedback'] > latest_impact['large_model_acc_after_feedback']:
+                large_after = large_before
 
         pause_training_clock()
         try:

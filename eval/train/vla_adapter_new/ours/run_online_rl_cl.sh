@@ -40,6 +40,13 @@ TEST_VIDEO_NUM_ENVS=${TEST_VIDEO_NUM_ENVS_OVERRIDE:-4}
 TEST_VIDEO_EPISODES=${TEST_VIDEO_EPISODES_OVERRIDE:-4}
 EARLY_STOP_ZERO_SUCCESS_MINUTES=${EARLY_STOP_ZERO_SUCCESS_MINUTES_OVERRIDE:-45000}
 
+if [[ "${MWE:-0}" == "1" ]]; then
+    # The Hand VLA environments already have 100-step episodes. Keep PPO
+    # rollouts at four steps, regardless of suite-level smoke defaults.
+    NUM_STEPS=${MWE_NUM_STEPS_OVERRIDE:-4}
+    export MWE_NUM_STEPS="$NUM_STEPS"
+fi
+
 if [ -n "$EXP_NAME" ]; then
     if [[ "$EXP_NAME" == */* ]]; then
         OUTPUT_DIR_BASE="ckpt/${EXP_NAME%/*}"

@@ -90,7 +90,7 @@ def main() -> None:
     ax.set_xlabel("Training time (minutes)")
     ax.set_ylabel("Accuracy (success rate)")
     ax.set_title("Multi-agent accuracy over training time")
-    ax.set_ylim(min(all_scores) - 0.1, 1.05)
+    # ax.set_ylim(min(all_scores) - 0.1, 1.05)
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()

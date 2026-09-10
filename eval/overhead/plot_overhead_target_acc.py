@@ -269,6 +269,50 @@ def resolve_panel_entries(top_manifest):
     return panels
 
 
+def parse_target_accuracy_by_workload(raw_value: str | None) -> dict[str, float]:
+    if raw_value is None:
+        return {}
+    try:
+        payload = json.loads(raw_value)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f'--target-accuracy-by-workload must be a JSON object: {exc}') from exc
+    if not isinstance(payload, dict):
+        raise SystemExit('--target-accuracy-by-workload must be a JSON object')
+    targets: dict[str, float] = {}
+    for raw_key, raw_target in payload.items():
+        key = str(raw_key).strip()
+        target = finite_float(raw_target)
+        if not key:
+            raise SystemExit('--target-accuracy-by-workload keys must not be empty')
+        if target is None or not 0.0 <= target <= 1.0:
+            raise SystemExit(
+                f'--target-accuracy-by-workload value for {key!r} must be between 0 and 1'
+            )
+        targets[key.casefold()] = target
+    return targets
+
+
+def target_accuracy_for_panel(
+    panel: dict[str, Any],
+    workload_targets: dict[str, float],
+    common_target: float | None,
+) -> float | None:
+    """Resolve a panel target by workload name, family, display name, or label."""
+    aliases = (
+        panel.get('workload_name'),
+        panel.get('family'),
+        panel.get('display_name'),
+        panel.get('panel_label'),
+    )
+    for alias in aliases:
+        if alias is None:
+            continue
+        target = workload_targets.get(str(alias).strip().casefold())
+        if target is not None:
+            return target
+    return common_target
+
+
 def memory_footprint_offset_mb_for_plot(panel_label: str, internal_name: str, paper_name: str, run_dir: Path) -> float:
     base_offset_mb = memory_footprint_offset_mb_for_method(paper_name, run_dir)
     extra_memory_mb = TEMP_PANEL_METHOD_MEMORY_ADD_MB.get((str(panel_label), str(internal_name)), 0.0)
@@ -1302,7 +1346,34 @@ def collect_panel_metrics(panel, smoothing: float = 0.2, target_accuracy_overrid
             panel_metrics[paper_name] = make_empty_metrics(); continue
         natural_reach_hours = first_reach_hours(accuracy_series, target_accuracy, smoothing=smoothing)
         if target_accuracy_override is not None and natural_reach_hours is None:
-            panel_metrics[paper_name] = make_empty_metrics(); continue
+            stop_hours = latest_series_hours(accuracy_series)
+            if stop_hours <= 0.0:
+                panel_metrics[paper_name] = make_empty_metrics(); continue
+            print(
+                f"[warning] {panel.get('panel_label', panel['family'])} / {paper_name} "
+                f"did not reach target accuracy {target_accuracy:.4f}; "
+                f"plotting until stop time {stop_hours:.4f} h"
+            )
+            reach_hours = stop_hours
+            active_runtime_hours = resolve_method_active_runtime_hours(method, reach_hours)
+            memory_footprint_offset_mb = memory_footprint_offset_mb_for_plot(
+                str(panel.get('panel_label', '')), str(method.get('name', '')), paper_name, run_dir
+            )
+            gpu_samples = load_gpu_samples(
+                run_dir,
+                active_runtime_hours=active_runtime_hours,
+                memory_footprint_offset_mb=memory_footprint_offset_mb,
+            )
+            panel_metrics[paper_name] = {
+                'time_h': reach_hours,
+                'memory_gb': mean_memory_gb(gpu_samples, reach_hours),
+                'energy_kj': integrate_energy_kj(gpu_samples, reach_hours),
+                'reach_hours': reach_hours,
+                'target_accuracy': target_accuracy,
+                'reached_target': False,
+                'used_fallback_cutoff': False,
+            }
+            continue
         reach_hours = resolve_same_acc_reach_hours(
             panel,
             paper_name,
@@ -1593,8 +1664,14 @@ def compose_memory_preview(panel_paths: list[Path], legend_path: Path | None = N
     plt.close(fig)
 
 
-def draw_figure(top_manifest, smoothing=0.2, target_accuracy_override: float | None = None):
+def draw_figure(
+    top_manifest,
+    smoothing=0.2,
+    target_accuracy_override: float | None = None,
+    target_accuracy_by_workload: dict[str, float] | None = None,
+):
     panels = resolve_panel_entries(top_manifest)
+    target_accuracy_by_workload = target_accuracy_by_workload or {}
     summary_rows = []
     metrics_by_family = {}
     table3_energy_by_family = {}
@@ -1604,10 +1681,15 @@ def draw_figure(top_manifest, smoothing=0.2, target_accuracy_override: float | N
     legend_entry_groups: list[list[dict[str, Any]]] = []
     raw_data_paths: list[str] = []
     for panel in panels:
+        panel_target_accuracy = target_accuracy_for_panel(
+            panel,
+            target_accuracy_by_workload,
+            target_accuracy_override,
+        )
         panel_metrics, _ = collect_panel_metrics(
             panel,
             smoothing=smoothing,
-            target_accuracy_override=target_accuracy_override,
+            target_accuracy_override=panel_target_accuracy,
         )
         metrics_by_family[panel['family']] = panel_metrics
         table3_energy_by_family[panel['family']] = collect_panel_table3_energy(panel, smoothing=smoothing)
@@ -1671,10 +1753,20 @@ def write_summary(rows): SUMMARY_JSON_PATH.write_text(json.dumps(rows, indent=2)
 parser = argparse.ArgumentParser(description='Plot memory footprint for one overhead run.')
 parser.add_argument('--manifest', type=Path, default=None, help='Top-level manifest for the run to plot.')
 parser.add_argument('--output-root', type=Path, default=None, help='Directory where this run\'s figures and tables are written.')
-parser.add_argument('--target-accuracy', type=float, default=None, help='Common accuracy threshold required by every method.')
+parser.add_argument('--target-accuracy', type=float, default=None, help='Fallback accuracy threshold required by every method.')
+parser.add_argument(
+    '--target-accuracy-by-workload',
+    type=str,
+    default=None,
+    help=(
+        'JSON object mapping workload name, family, display name, or panel label to a target accuracy; '
+        'for example: {"Single-arm robot": 0.5, "vla_adapter_new": 0.6, "c": 0.4}.'
+    ),
+)
 args = parser.parse_args()
 if args.target_accuracy is not None and not 0.0 <= args.target_accuracy <= 1.0:
     raise SystemExit('--target-accuracy must be between 0 and 1')
+target_accuracy_by_workload = parse_target_accuracy_by_workload(args.target_accuracy_by_workload)
 configure_output_paths(args.output_root)
 manifest_path = args.manifest.resolve() if args.manifest is not None else None
 if manifest_path is not None and not manifest_path.exists():
@@ -1685,7 +1777,11 @@ for family in ('octo', 'vla_adapter_new', 'tinyvla', 'edgevla'):
     source = selected.get(family, '')
     if source:
         print(f'[selected] {family}: {source}')
-rows, raw_data_paths = draw_figure(top_manifest, target_accuracy_override=args.target_accuracy)
+rows, raw_data_paths = draw_figure(
+    top_manifest,
+    target_accuracy_override=args.target_accuracy,
+    target_accuracy_by_workload=target_accuracy_by_workload,
+)
 write_summary(rows)
 print(f"manifest: {manifest_path or top_manifest.get('_resolved_manifest_label', 'merged-latest')}")
 print(f'figure: {FIGURE_PATH}')

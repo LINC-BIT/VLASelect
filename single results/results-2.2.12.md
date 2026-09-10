@@ -18,7 +18,7 @@
     </tr>
     <tr>
       <td align="center">Neuron/channel granularity's accuracy improvement than coarser granularties</td>
-      <td align="center"><strong>23.13%</strong></td>
+      <td align="center"><strong>61.21%</strong></td>
     </tr>
   </tbody>
 </table>

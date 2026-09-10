@@ -18,7 +18,13 @@ for candidate in (THIS_DIR, PARENT_DIR, REPO_ROOT):
 from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
-from train.common.mwe_eval import use_train_success_only
+from train.common.mwe_eval import (
+    SUCCESS_METRIC_WINDOW_EPISODES,
+    append_episode_metric_batch,
+    summarize_episode_metric_tensors,
+    trim_episode_metric_tensors,
+    use_train_success_only,
+)
 from train.common.memory_accounting import (
     DEFAULT_EXCLUDED_RUNTIME_PHASE_NAMES,
     MemoryPhaseTracker,
@@ -29,11 +35,6 @@ from train.common.time_breakdown import (
     snapshot_time_breakdown_to_metric,
     update_combined_search_enhancement_seconds,
     write_time_breakdown,
-)
-from train.common.materialized_fbs_cache import (
-    build_materialized_fbs_metadata,
-    maybe_load_materialized_fbs_policy_from_checkpoint,
-    maybe_persist_materialized_fbs_policy_to_checkpoint,
 )
 from collections import defaultdict
 from dataclasses import asdict, dataclass
@@ -72,7 +73,7 @@ from train.vla_adapter_new.ours.generate_static_small_model import (
     inherit_static_small_model_retained_channels,
 )
 from train.vla_adapter_new.ours.model_with_fbs_test import convert_to_fbs_model
-from ours.libs.train_with_fbs.lib import set_sparsity
+from ours.libs.train_with_fbs.lib import clear_cache, set_sparsity
 
 
 DEFAULT_MODEL_DIR = "ckpt/vla_adapter_new/LIBERO-Object"
@@ -225,7 +226,9 @@ def parse_args() -> Args:
         # PPO, so MWE prioritizes proving the path is runnable over throughput.
         args.num_envs = 4
         args.num_eval_envs = 1
-        args.num_steps = 4
+        args.num_steps = int(os.environ.get("MWE_NUM_STEPS", "4"))
+        if args.num_steps < 1:
+            raise ValueError("MWE_NUM_STEPS must be positive")
         args.update_epochs = 1
         args.num_minibatches = 2
         args.rollout_micro_batch_size = 4
@@ -442,7 +445,14 @@ def load_policy_state_from_checkpoint(checkpoint_path: str, policy: nn.Module) -
         policy_state = strip_module_prefix(checkpoint["agent"])
     else:
         policy_state = strip_module_prefix(checkpoint)
+    fbs_parameter_keys = [name for name in policy_state if ".fbs." in name]
+    if not fbs_parameter_keys:
+        raise RuntimeError(f"checkpoint does not contain FBS parameters: {checkpoint_path}")
     policy.load_state_dict(policy_state, strict=True)
+    print(
+        f"[setup] loaded checkpoint FBS directly from {checkpoint_path} "
+        f"({len(fbs_parameter_keys)} FBS parameter tensors)"
+    )
     return checkpoint if isinstance(checkpoint, dict) else {}
 
 
@@ -886,26 +896,22 @@ def train(args: Args) -> None:
     cumulative_rollout_seconds = 0.0
     cumulative_training_seconds = 0.0
 
-    materialized_fbs_metadata = build_materialized_fbs_metadata(args.large_agent_checkpoint)
-    large_agent = maybe_load_materialized_fbs_policy_from_checkpoint(
-        args.large_agent_checkpoint,
+    large_agent = reference.HandVLAAdapterActorCritic(
+        Path(args.model_dir),
+        device=device,
+        state_dim=args.state_dim,
+        action_dim=args.action_dim,
+    ).to(device)
+    # The checkpoint already contains the trained FBS tensors. Build only the
+    # matching module containers, then restore every tensor strictly from it.
+    large_agent = convert_to_fbs_model(
+        large_agent,
         device,
-        expected_metadata=materialized_fbs_metadata,
-    )
-    if large_agent is None:
-        large_agent = reference.HandVLAAdapterActorCritic(
-            Path(args.model_dir),
-            device=device,
-            state_dim=args.state_dim,
-            action_dim=args.action_dim,
-        ).to(device)
-        large_agent = convert_to_fbs_model(large_agent, device).to(device)
-        load_policy_state_from_checkpoint(args.large_agent_checkpoint, large_agent)
-        maybe_persist_materialized_fbs_policy_to_checkpoint(
-            args.large_agent_checkpoint,
-            large_agent,
-            expected_metadata=materialized_fbs_metadata,
-        )
+        verify_outputs=False,
+        materialize_fbs_cache=False,
+    ).to(device)
+    load_policy_state_from_checkpoint(args.large_agent_checkpoint, large_agent)
+    clear_cache(large_agent)
     set_sparsity(large_agent, resolve_small_model_sparsity(args))
     large_agent.eval_micro_batch_size = args.eval_micro_batch_size
     large_agent.eval()
@@ -986,9 +992,43 @@ def train(args: Args) -> None:
     update_at_last_small_model_regeneration = None
     current_success_end = None
 
+    def collect_training_policy_metric() -> Dict[str, float]:
+        """Collect MWE accuracy from completed training-environment episodes.
+
+        This mirrors api/update_impact_on_large_model/unified_online_rl.py: no
+        standalone evaluation pass is used in MWE, so overhead accuracy is based
+        on the same train-environment episode metrics collected by the API path.
+        """
+        measure_obs, _ = envs.reset(seed=args.seed)
+        collected_metrics = defaultdict(list)
+        small_agent.eval()
+        with torch.no_grad():
+            for _ in range(100):
+                rgbs = reference.extract_rgb_batch_from_obs(measure_obs)
+                states = reference.extract_hand_state_batch_from_obs(measure_obs)
+                action, _, _, _, _ = reference.batched_get_action_and_value_no_grad(
+                    small_agent,
+                    rgbs,
+                    states,
+                    micro_batch_size=args.rollout_micro_batch_size,
+                    deterministic=False,
+                )
+                measure_obs, _, _, _, infos = envs.step(action)
+                done_mask, episode_payload = get_completed_episode_metrics(infos)
+                if done_mask is not None and done_mask.any():
+                    append_episode_metric_batch(collected_metrics, episode_payload, done_mask)
+        return summarize_episode_metric_tensors(
+            collected_metrics,
+            max_num_values=SUCCESS_METRIC_WINDOW_EPISODES,
+        )
+
     if start_update <= 1 and global_step == 0:
         memory_phase_tracker.mark("evaluation")
-        initial_eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
+        initial_eval_metrics = (
+            collect_training_policy_metric()
+            if use_train_success_only()
+            else reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
+        )
         initial_metric = {
             "update": 0,
             "global_step": 0,
@@ -996,7 +1036,17 @@ def train(args: Args) -> None:
             "env_id": current_env_id,
             "env_index": current_env_index,
         }
-        initial_metric.update({f"eval_{k}": v for k, v in initial_eval_metrics.items()})
+        if use_train_success_only():
+            initial_metric.update(initial_eval_metrics)
+            for source_key, target_key in (
+                ("train_success_once", "eval_success_once"),
+                ("train_success_at_end", "eval_success_at_end"),
+                ("train_success", "eval_success"),
+            ):
+                if source_key in initial_metric:
+                    initial_metric[target_key] = initial_metric[source_key]
+        else:
+            initial_metric.update({f"eval_{k}": v for k, v in initial_eval_metrics.items()})
         module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
         snapshot_time_breakdown_to_metric(
             initial_metric,
@@ -1027,6 +1077,9 @@ def train(args: Args) -> None:
         save_metrics_history(output_dir, metrics_history)
         plot_metrics_history(output_dir, metrics_history)
         plot_success_time_curve(output_dir, metrics_history)
+        if use_train_success_only():
+            next_obs, _ = envs.reset(seed=args.seed)
+            next_done = torch.zeros(args.num_envs, device=device)
 
     def maybe_switch_envs():
         nonlocal envs, eval_envs, next_obs, next_done, current_env_id, current_env_index
@@ -1323,8 +1376,9 @@ def train(args: Args) -> None:
             "env_id": current_env_id,
             "env_index": current_env_index,
         }
-        metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
         if use_train_success_only():
+            trim_episode_metric_tensors(train_episode_metrics, SUCCESS_METRIC_WINDOW_EPISODES)
+            metric.update(collect_training_policy_metric())
             for source_key, target_key in (
                 ("train_success_once", "eval_success_once"),
                 ("train_success_at_end", "eval_success_at_end"),
@@ -1333,32 +1387,27 @@ def train(args: Args) -> None:
                 value = metric.get(source_key)
                 if value is not None:
                     metric[target_key] = value
+            next_obs, _ = envs.reset(seed=args.seed)
+            next_done = torch.zeros(args.num_envs, device=device)
+        else:
+            metric.update(reference.gather_metric_summary(summarize_episode_metrics(train_episode_metrics)))
 
-        if update % args.eval_every_updates == 0 or update == num_updates:
+        if not use_train_success_only() and (update % args.eval_every_updates == 0 or update == num_updates):
             eval_metrics = reference.evaluate_policy(small_agent, eval_envs, args.eval_episodes)
-            if not eval_metrics and use_train_success_only():
-                for source_key, target_key in (
-                    ("train_success_once", "success_once"),
-                    ("train_success_at_end", "success_at_end"),
-                    ("train_success", "success"),
-                ):
-                    value = metric.get(source_key)
-                    if value is not None:
-                        eval_metrics[target_key] = value
             metric.update({f"eval_{k}": v for k, v in eval_metrics.items()})
-            current_success_end = float(metric.get("eval_success_at_end", metric.get("eval_success_once", 0.0)))
-            if metric.get("eval_success_once", 0.0) >= best_success_once:
-                best_success_once = float(metric.get("eval_success_once", 0.0))
-                save_training_checkpoint(
-                    output_dir / "best_policy.pt",
-                    large_agent,
-                    small_agent,
-                    optimizer,
-                    current_pruning_info,
-                    update,
-                    global_step,
-                    best_success_once,
-                )
+        current_success_end = float(metric.get("eval_success_at_end", metric.get("eval_success_once", 0.0)))
+        if metric.get("eval_success_once", 0.0) >= best_success_once:
+            best_success_once = float(metric.get("eval_success_once", 0.0))
+            save_training_checkpoint(
+                output_dir / "best_policy.pt",
+                large_agent,
+                small_agent,
+                optimizer,
+                current_pruning_info,
+                update,
+                global_step,
+                best_success_once,
+            )
 
         module_breakdown["online_rl_completion_seconds"] = cumulative_rollout_seconds + cumulative_training_seconds
         snapshot_time_breakdown_to_metric(

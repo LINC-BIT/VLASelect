@@ -534,6 +534,7 @@ def main(args):
                     "elapsed_minutes": training_compute_seconds / 60.0,
                 }
             )
+            print(f'current rollout/training used time: {training_compute_seconds:.2f}s')
             dump_json(ckpt["metrics"], metrics_log)
             if score >= best_score:
                 best_score = score

@@ -1057,6 +1057,7 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
   ```bash
   cd discussion
   MODEL_SIZE_LIMIT_FAMILY=tinyvla bash sweep_model_size.sh
+  bash sweep_model_size_direct_test.sh
   ```
 - The resource requirements and outputs are listed below:
   <table align="center">

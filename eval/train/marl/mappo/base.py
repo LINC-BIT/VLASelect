@@ -661,9 +661,9 @@ def mappo_update_on_policy(
                     )
                     n_updates += 1
                     print(
-                        f"[{stage}] early stop on KL: "
-                        f"approx_kl={approx_kl:.6f}, old_approx_kl={old_approx_kl:.6f}, "
-                        f"target={args.target_kl:.6f}, clip_frac={clipfrac:.6f}"
+                        f"[{stage}] early stop on KL"
+                        # f"approx_kl={approx_kl:.6f}, old_approx_kl={old_approx_kl:.6f}, "
+                        # f"target={args.target_kl:.6f}, clip_frac={clipfrac:.6f}"
                     )
                     early_stop = True
                     break

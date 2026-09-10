@@ -667,25 +667,25 @@ launch_curve() {
         case "$panel_id" in
             scaling_law_function)
                 if [[ "$curve_id" == "without_scaling_law" ]]; then
-                    cmd+=(--mwe-regeneration-count "${MWE_REGENERATION_COUNT:-5}")
+                    cmd+=(--mwe-regeneration-count "${MWE_REGENERATION_COUNT:-1}")
                 fi
                 ;;
             neuron_grained_scaling_up)
-                cmd+=(--mwe-regeneration-count "${MWE_REGENERATION_COUNT:-5}")
+                cmd+=(--mwe-regeneration-count "${MWE_REGENERATION_COUNT:-1}")
                 ;;
             scaling_down_freezing_vs_pruning)
                 if [[ "$curve_id" != "freezing" ]]; then
-                    cmd+=(--mwe-scaling-down-count "${MWE_SCALING_DOWN_COUNT:-5}")
+                    cmd+=(--mwe-scaling-down-count "${MWE_SCALING_DOWN_COUNT:-1}")
                 fi
                 ;;
             knowledge_accumulation)
                 if [[ "$curve_id" != "selective_accumulation" ]]; then
-                    cmd+=(--mwe-knowledge-accumulation-count "${MWE_KNOWLEDGE_ACCUMULATION_COUNT:-5}")
+                    cmd+=(--mwe-knowledge-accumulation-count "${MWE_KNOWLEDGE_ACCUMULATION_COUNT:-1}")
                 fi
                 ;;
             neuron_swapping)
                 if [[ "$curve_id" == "random_swapping" ]]; then
-                    cmd+=(--mwe-regeneration-count "${MWE_REGENERATION_COUNT:-5}")
+                    cmd+=(--mwe-regeneration-count "${MWE_REGENERATION_COUNT:-1}")
                 fi
                 ;;
         esac

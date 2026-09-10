@@ -17,7 +17,8 @@ def add_FBS_into_transformer(model: nn.Module,
                        max_sparsity,
                        fbs_r,
                        model_forward_fn,
-                       verify_outputs=True):
+                       verify_outputs=True,
+                       materialize_cache_when_unverified=True):
     
     # 1. 分解QKV，以支持动态剪枝
     print(f'before svd decomposition model size: {get_model_size(model, True):.3f}MB')
@@ -89,8 +90,11 @@ def add_FBS_into_transformer(model: nn.Module,
             print('kb size: {}MB, proxy model size: {}MB)'.format(get_model_size(model, True), get_model_size(small_model, True)))
             print('FBS verify passed (diff: {}, diff2: {})'.format(diff, diff2))
         else:
-            model_forward_fn(model, example_sample)
-            print('[warning] skip FBS output verification for this call')
+            if materialize_cache_when_unverified:
+                model_forward_fn(model, example_sample)
+                print('[warning] skip FBS output verification for this call')
+            else:
+                print('[setup] built FBS modules without running randomly initialized FBS weights')
     # logger.debug(f'after add FBS model: {model}')
 
     return model

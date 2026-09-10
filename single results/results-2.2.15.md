@@ -4,7 +4,7 @@
 
 ### Minimal working example
 
-> **Key observation:** The transferred update can improve the large model's accuracy.
+> **Key observation:** The transferred update typically improves the large model's accuracy.
 
 <!-- <table align="center">
   <tbody>
@@ -23,8 +23,7 @@
   <img src="../imgs/2.2.14.png" alt="" style="zoom:33%;" />
 </div> -->
 
-Outputs are shown in the terminal:
-```bash
-[impact] update=3 large_model_accuracy_before_feedback=0.8333 large_model_accuracy_after_feedback=0.8333 improvement=+0.0000
-[impact] update=5 large_model_accuracy_before_feedback=0.3333 large_model_accuracy_after_feedback=0.6667 improvement=+0.3333
-```
+|  | large model's accuracy before feedback | large model's accuracy after feedback |
+| :---: | :---: | :---: |
+| Feedback 1 | 0.8333 | 0.8333 |
+| Feedback 2 | 0.3333 | 0.6667 |

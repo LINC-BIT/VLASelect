@@ -18,7 +18,7 @@
     </tr>
     <tr>
       <td align="center">VLASelect's accuracy improvement than these techniques</td>
-      <td align="center"><strong>57.19%</strong></td>
+      <td align="center"><strong>67.55%</strong></td>
     </tr>
   </tbody>
 </table>

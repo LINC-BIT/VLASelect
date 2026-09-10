@@ -14,7 +14,7 @@ from pathlib import Path
 #     f.write(str(actor))
 # exit()
 
-def convert_to_fbs_model(actor, device):
+def convert_to_fbs_model(actor, device, verify_outputs=True, materialize_fbs_cache=True):
 
     print(f'original model: {get_model_size(actor, True):.3f}MB')
 
@@ -55,7 +55,9 @@ def convert_to_fbs_model(actor, device):
                     rgbs=batch['rgbs'],
                     states=batch['states'],
                     mode='policy'
-                )[0].sum()
+                )[0].sum(),
+                verify_outputs=verify_outputs,
+                materialize_cache_when_unverified=materialize_fbs_cache,
             ).cpu()
     else:
         print('[setup] skipping FBS vision conversion because the current actor has no compatible transformer blocks')
@@ -81,7 +83,9 @@ def convert_to_fbs_model(actor, device):
                     input_ids=batch['input_ids'].to(device),
                     output_hidden_states=True,
                     return_dict=True,
-                ).hidden_states[-1].mean()
+                ).hidden_states[-1].mean(),
+                verify_outputs=verify_outputs,
+                materialize_cache_when_unverified=materialize_fbs_cache,
             ).cpu()
     else:
         print('[setup] skipping FBS language conversion because the current actor has no compatible decoder blocks')

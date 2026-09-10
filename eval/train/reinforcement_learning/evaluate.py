@@ -22,7 +22,7 @@ def evaluate(n: int, sample_fn: Callable, eval_envs):
         obs, info = eval_envs.reset()
         first_success_step = None
         eps_count = 0
-        pbar = tqdm(desc=f'Episode {eps_count}')
+        pbar = tqdm(desc=f'Evaluation Episode {eps_count} (total {n})')
         while eps_count < n:
             action = sample_fn(obs)
             obs, _, _, truncated, info = eval_envs.step(action)

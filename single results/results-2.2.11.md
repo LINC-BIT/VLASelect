@@ -9,12 +9,8 @@
 <table align="center">
   <tbody>
     <tr>
-      <td align="center">Compared knowledge distillation techniques</td>
-      <td align="center">Logit distillation; Feature distillation; Attention distillation; Data distillation; MiniLLM; DistiLLM</td>
-    </tr>
-    <tr>
-      <td align="center">Compared dynamic pruning techniques</td>
-      <td align="center">LLM in a Flash; PowerInfer; LLM Pruner; EdgeTA</td>
+      <td align="center">Compared baselines</td>
+      <td align="center">Attention distillation; LLM in a Flash; EdgeTA</td>
     </tr>
     <tr>
       <td align="center">VLASelect's accuracy improvement than these techniques</td>

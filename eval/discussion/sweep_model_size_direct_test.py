@@ -103,7 +103,82 @@ def sync_lm_layer_count_config(actor: torch.nn.Module) -> None:
                 pass
 
 
-def inflate_original_model_to_target(
+def get_layer_mlp_projections(layer: torch.nn.Module) -> tuple[torch.nn.Linear, torch.nn.Linear, torch.nn.Linear]:
+    mlp = getattr(layer, 'mlp', None)
+    gate_proj = getattr(mlp, 'gate_proj', None)
+    up_proj = getattr(mlp, 'up_proj', None)
+    down_proj = getattr(mlp, 'down_proj', None)
+    if not all(isinstance(module, torch.nn.Linear) for module in (gate_proj, up_proj, down_proj)):
+        raise RuntimeError('expected each language layer to expose mlp.gate_proj/up_proj/down_proj Linear modules')
+    if gate_proj.in_features != up_proj.in_features:
+        raise RuntimeError('gate_proj and up_proj input dimensions differ')
+    if gate_proj.out_features != up_proj.out_features:
+        raise RuntimeError('gate_proj and up_proj output dimensions differ')
+    if down_proj.in_features != gate_proj.out_features:
+        raise RuntimeError('down_proj input dimension does not match MLP intermediate dimension')
+    return gate_proj, up_proj, down_proj
+
+
+def widen_linear_out(linear: torch.nn.Linear, new_out_features: int) -> torch.nn.Linear:
+    if new_out_features <= linear.out_features:
+        return linear
+    widened = torch.nn.Linear(
+        linear.in_features,
+        new_out_features,
+        bias=linear.bias is not None,
+        device=linear.weight.device,
+        dtype=linear.weight.dtype,
+    )
+    with torch.no_grad():
+        widened.weight[: linear.out_features].copy_(linear.weight)
+        if linear.bias is not None:
+            widened.bias[: linear.out_features].copy_(linear.bias)
+        extra = new_out_features - linear.out_features
+        chunk_size = 8192
+        for offset in range(0, extra, chunk_size):
+            count = min(chunk_size, extra - offset)
+            target = slice(linear.out_features + offset, linear.out_features + offset + count)
+            source_idx = torch.arange(count, device=linear.weight.device) % linear.out_features
+            widened.weight[target].copy_(linear.weight.index_select(0, source_idx))
+            if linear.bias is not None:
+                widened.bias[target].copy_(linear.bias.index_select(0, source_idx))
+    return widened
+
+
+def widen_linear_in(linear: torch.nn.Linear, new_in_features: int) -> torch.nn.Linear:
+    if new_in_features <= linear.in_features:
+        return linear
+    widened = torch.nn.Linear(
+        new_in_features,
+        linear.out_features,
+        bias=linear.bias is not None,
+        device=linear.weight.device,
+        dtype=linear.weight.dtype,
+    )
+    with torch.no_grad():
+        widened.weight[:, : linear.in_features].copy_(linear.weight)
+        # Keep added intermediate channels functionally neutral but present in
+        # the graph.  This preserves shape/memory behavior without inflating
+        # activations numerically.
+        widened.weight[:, linear.in_features :].zero_()
+        if linear.bias is not None:
+            widened.bias.copy_(linear.bias)
+    return widened
+
+
+def estimate_mlp_width_unit_bytes(layer: torch.nn.Module) -> int:
+    gate_proj, up_proj, down_proj = get_layer_mlp_projections(layer)
+    element_size = gate_proj.weight.element_size()
+    values_per_added_channel = gate_proj.in_features + up_proj.in_features + down_proj.out_features
+    if gate_proj.bias is not None:
+        values_per_added_channel += 1
+    if up_proj.bias is not None:
+        values_per_added_channel += 1
+    # down_proj bias is unchanged when adding input channels.
+    return values_per_added_channel * element_size
+
+
+def widen_language_mlp_intermediate_to_target(
     actor: torch.nn.Module,
     *,
     target_original_model_mb: float,
@@ -116,32 +191,66 @@ def inflate_original_model_to_target(
     layers = get_lm_layers(actor)
     base_language_layers = len(layers)
     base_original_model_mb = tensor_storage_size_mb(actor)
-    template = layers[-1]
-    language_layer_mb = tensor_storage_size_mb(template)
-    if language_layer_mb <= 0:
-        raise RuntimeError('last language layer has zero measured size')
+    target_original_model_bytes = int(target_original_model_mb * 1024.0 * 1024.0)
+    base_original_model_bytes = int(base_original_model_mb * 1024.0 * 1024.0)
 
-    if target_original_model_mb <= base_original_model_mb:
-        added_layers = 0
-    else:
-        raw_layers = (target_original_model_mb - base_original_model_mb) / language_layer_mb
-        added_layers = max(0, int(round(raw_layers)))
+    gate0, _up0, _down0 = get_layer_mlp_projections(layers[0])
+    base_intermediate_size = int(gate0.out_features)
+    unit_bytes_per_layer = [estimate_mlp_width_unit_bytes(layer) for layer in layers]
+    total_unit_bytes = sum(unit_bytes_per_layer)
+    if total_unit_bytes <= 0:
+        raise RuntimeError('unable to estimate MLP width byte growth')
 
-    for _ in range(added_layers):
-        layers.append(copy.deepcopy(template))
-    sync_lm_layer_count_config(actor)
+    remaining_bytes = max(0, target_original_model_bytes - base_original_model_bytes)
+    uniform_delta = remaining_bytes // total_unit_bytes
+    remaining_after_uniform = remaining_bytes - uniform_delta * total_unit_bytes
+
+    per_layer_delta = [int(uniform_delta) for _ in layers]
+    for i, unit_bytes in enumerate(unit_bytes_per_layer):
+        if remaining_after_uniform >= unit_bytes:
+            per_layer_delta[i] += 1
+            remaining_after_uniform -= unit_bytes
+
+    max_intermediate_size = base_intermediate_size
+    min_intermediate_size = base_intermediate_size
+    total_added_intermediate_channels = 0
+    for layer, delta in zip(layers, per_layer_delta):
+        gate_proj, up_proj, down_proj = get_layer_mlp_projections(layer)
+        new_intermediate_size = int(gate_proj.out_features + delta)
+        layer.mlp.gate_proj = widen_linear_out(gate_proj, new_intermediate_size)
+        layer.mlp.up_proj = widen_linear_out(up_proj, new_intermediate_size)
+        layer.mlp.down_proj = widen_linear_in(down_proj, new_intermediate_size)
+        max_intermediate_size = max(max_intermediate_size, new_intermediate_size)
+        min_intermediate_size = min(min_intermediate_size, new_intermediate_size)
+        total_added_intermediate_channels += int(delta)
 
     actual_original_model_mb = tensor_storage_size_mb(actor)
     return {
+        'inflation_method': 'mlp_intermediate_width',
         'base_original_model_mb': base_original_model_mb,
         'target_original_model_mb': target_original_model_mb,
         'actual_original_model_mb': actual_original_model_mb,
-        'language_layer_mb': language_layer_mb,
         'base_language_layers': base_language_layers,
-        'total_language_layers': len(layers),
-        'added_language_layers': added_layers,
+        'total_language_layers': base_language_layers,
+        'added_language_layers': 0,
+        'base_mlp_intermediate_size': base_intermediate_size,
+        'min_mlp_intermediate_size': min_intermediate_size,
+        'max_mlp_intermediate_size': max_intermediate_size,
+        'total_added_intermediate_channels': total_added_intermediate_channels,
+        'mlp_width_unit_bytes_all_layers': total_unit_bytes,
         'target_error_mb': actual_original_model_mb - target_original_model_mb,
     }
+
+
+def inflate_original_model_to_target(
+    actor: torch.nn.Module,
+    *,
+    target_original_model_mb: float,
+) -> Dict[str, Any]:
+    return widen_language_mlp_intermediate_to_target(
+        actor,
+        target_original_model_mb=target_original_model_mb,
+    )
 
 
 def flatten_2d_arr(values):
@@ -348,12 +457,6 @@ def build_small_actor_reusing_added_layers(
             layer_info['vision_ff2'],
         )
     if layer_info['lm_qkv'] and hasattr(small_actor, 'vla') and hasattr(small_actor.vla, 'language_model'):
-        print(
-            '[direct-test] optimized language proxy generation: '
-            f"compress_base_layers={inflation_info['base_language_layers']} "
-            f"compress_added_layers={1 if inflation_info['added_language_layers'] > 0 else 0} "
-            f"copy_compressed_added_layers={max(0, inflation_info['added_language_layers'] - 1)}"
-        )
         small_actor.vla.language_model = generate_small_language_model_reusing_added_layers(
             small_actor.vla.language_model,
             layer_info['lm_qkv'],
@@ -467,13 +570,7 @@ def run_direct_test(args: argparse.Namespace) -> Dict[str, Any]:
         actor,
         target_original_model_mb=target_original_model_mb,
     )
-    print(
-        '[direct-test] '
-        f"base_original_model_mb={inflation_info['base_original_model_mb']:.2f} "
-        f"actual_original_model_mb={inflation_info['actual_original_model_mb']:.2f} "
-        f"added_language_layers={inflation_info['added_language_layers']} "
-        f"target_error_mb={inflation_info['target_error_mb']:.2f}"
-    )
+    
 
     actor = actor.to(build_device)
     set_actor_runtime_device(actor, build_device)
@@ -543,34 +640,16 @@ def run_direct_test(args: argparse.Namespace) -> Dict[str, Any]:
 
 def print_result(result: Dict[str, Any], output_dir: Path) -> None:
     print('')
-    print('Direct proxy training validation')
     print(f"max_memory_budget_gb={result['budget_gb']:.2f}")
-    print(f"max_memory_budget_mb={result['budget_mb']:.2f}")
+    print('')
     print(f"target_original_model_gb={result['target_original_model_gb']:.2f}")
-    print(f"target_original_model_mb={result['target_original_model_mb']:.2f}")
-    print(f"actual_original_model_mb={result['actual_original_model_mb']:.2f}")
-    print(f"proxy_model_mb={result['proxy_model_mb']:.2f}")
-    print(f"large_model_released_before_training={result['large_model_released_before_training']}")
-    print(f"gpu_allocated_mb_after_large_model_release={sweep.format_mb(result.get('gpu_allocated_mb_after_large_model_release'))}")
+    print('')
     print(f"actual_peak_train_memory_mb={sweep.format_mb(result.get('actual_peak_train_memory_mb'))}")
-    print(f"within_budget={result['within_budget']}")
-    print(f"status={result['status']}")
-    if result.get('error'):
-        print(f"error={result['error']}")
-
-    print(
-        '[direct-test-result] '
-        f"max_memory_budget_mb={result['budget_mb']:.2f} "
-        f"target_original_model_mb={result['target_original_model_mb']:.2f} "
-        f"actual_original_model_mb={result['actual_original_model_mb']:.2f} "
-        f"proxy_model_mb={result['proxy_model_mb']:.2f} "
-        f"large_model_released_before_training={result['large_model_released_before_training']} "
-        f"gpu_allocated_mb_after_large_model_release={sweep.format_mb(result.get('gpu_allocated_mb_after_large_model_release'))} "
-        f"actual_peak_train_memory_mb={sweep.format_mb(result.get('actual_peak_train_memory_mb'))} "
-        f"within_budget={result['within_budget']} "
-        f"status={result['status']}"
-    )
-    print(f'[summary] result_json={output_dir / "direct_test_summary.json"}')
+    print('')
+    print('---------------')
+    print(f"within_given_memory_budget={result['within_budget']}")
+    print('---------------')
+    
 
 
 def main() -> None:

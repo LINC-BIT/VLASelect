@@ -4,7 +4,7 @@
 
 ### Minimal working example
 
-> **Key observation:** The transferred update typically improves the large model's accuracy.
+> **Key observation:** The transferred update tends to improve the large model's accuracy. <br>This is due to VLASelect's selective knowledge transfer mechanism based on neuron indexes.
 
 <!-- <table align="center">
   <tbody>

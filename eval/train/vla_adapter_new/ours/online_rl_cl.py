@@ -1003,7 +1003,7 @@ def train(args: Args) -> None:
         collected_metrics = defaultdict(list)
         small_agent.eval()
         with torch.no_grad():
-            for _ in range(100):
+            for _ in range(max(1, int(args.max_episode_steps or 100))):
                 rgbs = reference.extract_rgb_batch_from_obs(measure_obs)
                 states = reference.extract_hand_state_batch_from_obs(measure_obs)
                 action, _, _, _, _ = reference.batched_get_action_and_value_no_grad(

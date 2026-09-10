@@ -34,7 +34,8 @@ def generate_small_cnn(fbs_model: nn.Module,
                        return_pruning_info=False,
                        previous_pruning_info=None,
                        regeneration_increment_ratio=1.0,
-                       ab_strategy=None):
+                       ab_strategy=None,
+                       previous_channel_keep_ratio=None):
     feature_boosting_info = {}
     pruning_masks = {}
     merge_stats = {}
@@ -42,6 +43,10 @@ def generate_small_cnn(fbs_model: nn.Module,
     if not 0.0 <= regeneration_increment_ratio <= 1.0:
         raise ValueError(
             f'regeneration_increment_ratio must be in [0, 1], got {regeneration_increment_ratio}'
+        )
+    if previous_channel_keep_ratio is not None and not 0.0 < previous_channel_keep_ratio <= 1.0:
+        raise ValueError(
+            f'previous_channel_keep_ratio must be in (0, 1], got {previous_channel_keep_ratio}'
         )
 
     previous_selected_indices_dict = None
@@ -53,7 +58,14 @@ def generate_small_cnn(fbs_model: nn.Module,
             return score_tensor.squeeze()
         return score_tensor.mean(0).squeeze()
 
-    def _get_expected_kept_count(layer):
+    def _get_expected_kept_count(layer, layer_name):
+        if (
+            previous_channel_keep_ratio is not None
+            and previous_selected_indices_dict is not None
+            and layer_name in previous_selected_indices_dict
+        ):
+            previous_count = len(previous_selected_indices_dict[layer_name])
+            return max(1, int(previous_count * previous_channel_keep_ratio))
         if isinstance(layer, Conv2dWithFBS):
             total_count = layer.raw_conv2d.out_channels
             sparsity = layer.k_takes_all.k
@@ -130,6 +142,9 @@ def generate_small_cnn(fbs_model: nn.Module,
                                 current_indices: torch.Tensor,
                                 raw_scores: torch.Tensor,
                                 expected_kept_count: int):
+        if ab_strategy in {'random', 'inverse'}:
+            return current_indices.sort().values
+
         if (
             previous_selected_indices_dict is None
             or layer_name not in previous_selected_indices_dict
@@ -211,7 +226,7 @@ def generate_small_cnn(fbs_model: nn.Module,
             
             w = _aggregate_scores(get_module(fbs_model, layer_name).cached_w)
             raw_w = _aggregate_scores(get_module(fbs_model, layer_name).cached_raw_w)
-            expected_kept_count = _get_expected_kept_count(layer)
+            expected_kept_count = _get_expected_kept_count(layer, layer_name)
 
             default_unpruned_filters_index = w.nonzero(as_tuple=True)[0]
             if ab_strategy in {'random', 'inverse'}:
@@ -250,7 +265,7 @@ def generate_small_cnn(fbs_model: nn.Module,
             
             w = _aggregate_scores(layer.cached_w)
             raw_w = _aggregate_scores(layer.cached_raw_w)
-            expected_kept_count = _get_expected_kept_count(layer)
+            expected_kept_count = _get_expected_kept_count(layer, layer_name)
 
             default_unpruned_filters_index = w.nonzero(as_tuple=True)[0]
             if ab_strategy in {'random', 'inverse'}:
@@ -784,15 +799,16 @@ def inherit_small_cnn_retained_channels(new_small_model: nn.Module,
 
         new_weight = new_feature_boosting.w.data
         previous_weight = previous_feature_boosting.w.data
-        if new_weight.shape != previous_weight.shape:
-            raise ValueError(
-                f'feature boosting shape mismatch during retained channel inheritance: '
-                f'{tuple(previous_weight.shape)} vs {tuple(new_weight.shape)}'
-            )
-        if new_weight.dim() < 2 or new_weight.size(0) != 1:
+        if (
+            new_weight.dim() < 2
+            or previous_weight.dim() != new_weight.dim()
+            or new_weight.size(0) != 1
+            or previous_weight.size(0) != 1
+            or new_weight.shape[2:] != previous_weight.shape[2:]
+        ):
             raise ValueError(
                 f'unexpected feature boosting weight shape during retained channel inheritance: '
-                f'{tuple(new_weight.shape)}'
+                f'{tuple(previous_weight.shape)} vs {tuple(new_weight.shape)}'
             )
 
         new_weight.copy_(

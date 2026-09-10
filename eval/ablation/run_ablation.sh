@@ -31,6 +31,7 @@ LIST_ONLY="${LIST_ONLY:-0}"
 MODEL_SELECTION="${MODEL_SELECTION:-}"
 MODEL_CKPT_PATH="${MODEL_CKPT_PATH:-${CHECKPOINT_PATH:-}}"
 MWE="${MWE:-0}"
+SCALING_DOWN_COUNT="${SCALING_DOWN_COUNT:-2}"
 
 : "${ABLATION_PANEL_RUNTIME_LIMIT_SECONDS:=300}"
 export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS
@@ -321,7 +322,7 @@ run_panel_group_with_limit() {
 
     export SUITE_STAMP LAUNCH_LOG_DIR BASE_ENV_ID BASE_ENVS_ID BASE_ENV_CHANGE_TIME_POINTS EFFECTIVE_BASE_ENV_CHANGE_TIME_POINTS
     export ENV_CONFIG_PATH STATE_NORM_STATS_PATH CHECKPOINT_PATH SMOKE PYTHON_BIN TAIL_LOG ABLATION_SELECTION
-    export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS MWE
+    export ABLATION_PANEL_RUNTIME_LIMIT_SECONDS MWE SCALING_DOWN_COUNT
 
     if ! command -v timeout >/dev/null 2>&1; then
         echo "[warn] timeout command not found; panel ${panel_id} cannot be evenly hard-capped" >&2
@@ -345,7 +346,6 @@ is_mwe = sys.argv[4] == "1"
 # same canonical VLASelect configuration:
 # scaling_law_function/with_scaling_law,
 # neuron_grained_scaling_up/neuron_grained,
-# scaling_down_freezing_vs_pruning/freezing,
 # neuron_swapping/with_swapping,
 # knowledge_accumulation/selective_accumulation.
 
@@ -451,8 +451,8 @@ panels = [
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/pruning/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Train a structurally pruned small model with the proposed scaling-up policy but without neuron swapping or knowledge accumulation.",
-                "changed_options": ["small_model_training_variant"],
+                "notes": "Start from the canonical small model, then structurally prune 50% of its remaining channels twice during training.",
+                "changed_options": ["small_model_scaling_down_strategy"],
             },
             {
                 "curve_id": "freezing",
@@ -462,8 +462,8 @@ panels = [
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_down_freezing_vs_pruning/freezing/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Canonical VLASelect run for this group.",
-                "changed_options": [],
+                "notes": "Start from the canonical small model, then freeze 50% of its remaining trainable channels twice without changing its architecture.",
+                "changed_options": ["small_model_scaling_down_strategy"],
             },
         ],
     },
@@ -550,7 +550,7 @@ payload = {
     "notes": [
         "The underlying small-model generation, channel inheritance, optimizer remapping, and feedback logic come from eval/ours.",
         "Each ablation curve records the intended changed_options so the comparison is easier to audit.",
-        "The following group options each run separately but use the same canonical VLASelect configuration: scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, scaling_down_freezing_vs_pruning/freezing, neuron_swapping/with_swapping, knowledge_accumulation/selective_accumulation.",
+        "The following group options each run separately but use the same canonical VLASelect configuration: scaling_law_function/with_scaling_law, neuron_grained_scaling_up/neuron_grained, neuron_swapping/with_swapping, knowledge_accumulation/selective_accumulation.",
         "All non-red-bar ablation choices use their own per-choice configurations as before.",
         "If a run directory has no metrics yet, plot_ablation.py will emit 0 rows in ablation_summary.csv and keep a placeholder bar in the vis-style figure.",
     ],
@@ -637,10 +637,10 @@ launch_curve() {
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_down_freezing_vs_pruning:pruning)
-            cmd+=(--max-sparsity 0.8 --small_model_training_variant pruned --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_scaling_down_strategy pruning --small_model_scaling_down_count "$SCALING_DOWN_COUNT")
             ;;
         scaling_down_freezing_vs_pruning:freezing)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_scaling_down_strategy freezing --small_model_scaling_down_count "$SCALING_DOWN_COUNT")
             ;;
         neuron_swapping:with_swapping)
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
@@ -672,11 +672,6 @@ launch_curve() {
                 ;;
             neuron_grained_scaling_up)
                 cmd+=(--mwe-regeneration-count "${MWE_REGENERATION_COUNT:-1}")
-                ;;
-            scaling_down_freezing_vs_pruning)
-                if [[ "$curve_id" != "freezing" ]]; then
-                    cmd+=(--mwe-scaling-down-count "${MWE_SCALING_DOWN_COUNT:-1}")
-                fi
                 ;;
             knowledge_accumulation)
                 if [[ "$curve_id" != "selective_accumulation" ]]; then

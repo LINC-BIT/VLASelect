@@ -230,10 +230,12 @@ class Args:
     """optional ablation strategy for small-model channel selection: random, inverse, or default"""
     small_model_regeneration_ab_strategy: Optional[str] = None
     """optional ablation strategy used only during regeneration/swapping; None reuses small_model_ab_strategy"""
+    small_model_scaling_down_strategy: Optional[str] = None
+    """runtime scaling-down ablation: pruning or freezing"""
+    small_model_scaling_down_count: int = 0
+    """number of forced runtime scaling-down operations"""
     mwe_regeneration_count: int = 0
     """number of regeneration operations during an MWE run"""
-    mwe_scaling_down_count: int = 0
-    """number of scaling-down operations during an MWE run"""
     mwe_knowledge_accumulation_count: int = 0
     """number of knowledge-accumulation/feedback operations during an MWE run"""
     update_feature_aggregator_lr: float = 0.
@@ -1508,6 +1510,144 @@ def reset_optimizer_state_for_model(
         optimizer.state.pop(param, None)
 
 
+def build_small_model_optimizer(model: nn.Module, learning_rate: float):
+    trainable_parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    if not trainable_parameters:
+        trainable_parameters = [torch.zeros(1, requires_grad=True, device=next(model.parameters()).device)]
+    return optim.Adam([{'params': trainable_parameters, 'lr': learning_rate}], eps=1e-5)
+
+
+def _small_model_output_layer(module: nn.Module):
+    if isinstance(module, (nn.Conv2d, nn.Linear)):
+        return module
+    for child in module.children():
+        if isinstance(child, (nn.Conv2d, nn.Linear)):
+            return child
+    return None
+
+
+def freeze_half_of_active_small_model_channels(
+    small_agent: nn.Module,
+    current_pruning_info: dict,
+    optimizer,
+    frozen_channel_masks: dict,
+    freeze_hook_handles: list,
+) -> None:
+    selected_indices = current_pruning_info.get('selected_indices', {})
+    frozen_count = 0
+    active_count = 0
+
+    def freeze_parameter_rows(parameter, row_indices):
+        if parameter is None or not parameter.requires_grad:
+            return
+        gradient_mask = torch.zeros_like(parameter, dtype=torch.bool)
+        gradient_mask[row_indices] = True
+        freeze_hook_handles.append(
+            parameter.register_hook(
+                lambda gradient, mask=gradient_mask: gradient.masked_fill(mask, 0)
+            )
+        )
+        optimizer.state.pop(parameter, None)
+
+    for layer_name in selected_indices:
+        layer = get_module(small_agent, layer_name)
+        output_layer = _small_model_output_layer(layer)
+        if output_layer is None:
+            continue
+
+        channel_count = output_layer.weight.size(0)
+        layer_frozen_mask = frozen_channel_masks.setdefault(
+            layer_name,
+            torch.zeros(channel_count, dtype=torch.bool, device=output_layer.weight.device),
+        )
+        if layer_frozen_mask.numel() != channel_count:
+            raise ValueError(
+                f'frozen-channel mask shape changed for {layer_name}: '
+                f'{layer_frozen_mask.numel()} vs {channel_count}'
+            )
+
+        active_indices = (~layer_frozen_mask).nonzero(as_tuple=True)[0]
+        num_to_freeze = active_indices.numel() // 2
+        if num_to_freeze == 0:
+            continue
+
+        channel_scores = output_layer.weight.detach().abs().flatten(1).mean(1)
+        ranked_active = torch.argsort(channel_scores[active_indices], stable=True)
+        newly_frozen = active_indices[ranked_active[:num_to_freeze]]
+        layer_frozen_mask[newly_frozen] = True
+
+        freeze_parameter_rows(output_layer.weight, newly_frozen)
+        freeze_parameter_rows(output_layer.bias, newly_frozen)
+        for child in layer.modules():
+            if isinstance(child, nn.modules.batchnorm._BatchNorm):
+                freeze_parameter_rows(child.weight, newly_frozen)
+                freeze_parameter_rows(child.bias, newly_frozen)
+
+        frozen_count += num_to_freeze
+        active_count += active_indices.numel()
+
+    print(
+        f'froze {frozen_count}/{active_count} currently active small-model channels; '
+        f'model architecture unchanged'
+    )
+
+
+@torch.no_grad()
+def prune_half_of_current_small_model(
+    large_agent,
+    small_agent,
+    current_pruning_info,
+    optimizer,
+    args,
+    eval_envs,
+    env_kwargs,
+    device,
+):
+    from ours.libs.gen_scaling_law_data_points_cnn import inherit_small_cnn_retained_channels
+    from ours.pretrain_fbs_model.main import generate_small_cnn_with_verify
+
+    sample, forward_seconds = collect_sample_for_small_model_generation(
+        args=args,
+        large_agent=large_agent,
+        small_agent=small_agent,
+        eval_envs=eval_envs,
+        env_kwargs=env_kwargs,
+        device=device,
+    )
+    start_time = time.perf_counter()
+    pruned_agent, new_pruning_info = generate_small_cnn_with_verify(
+        large_agent,
+        args.max_sparsity,
+        sample,
+        lambda model, model_sample: model(model_sample),
+        return_pruning_info=True,
+        previous_pruning_info=current_pruning_info,
+        regeneration_increment_ratio=0.0,
+        previous_channel_keep_ratio=0.5,
+    )
+    inherit_small_cnn_retained_channels(
+        pruned_agent,
+        small_agent,
+        new_pruning_info,
+        current_pruning_info,
+    )
+
+    was_training = pruned_agent.training
+    pruned_agent.eval()
+    pruned_agent(sample)
+    pruned_agent.train(was_training)
+
+    learning_rate = optimizer.param_groups[0]['lr']
+    optimizer = build_small_model_optimizer(pruned_agent, learning_rate)
+    previous_channels = sum(len(indices) for indices in current_pruning_info['selected_indices'].values())
+    current_channels = sum(len(indices) for indices in new_pruning_info['selected_indices'].values())
+    print(
+        f'pruned current small model channels: {previous_channels} -> {current_channels}; '
+        f'post-pruning inference passed'
+    )
+    return pruned_agent, new_pruning_info, optimizer, forward_seconds, time.perf_counter() - start_time
+
+
 @torch.no_grad()
 def feedback_small_model_to_large_model(
     large_agent,
@@ -1553,6 +1693,8 @@ def regenerate_small_model_in_place(
     search_seconds = time.perf_counter() - search_start_time
 
     enhancer_start_time = time.perf_counter()
+    regeneration_ab_strategy = resolve_regeneration_ab_strategy(args)
+    full_reselection = regeneration_ab_strategy in {'random', 'inverse'}
     regenerated_small_agent, new_pruning_info = generate_small_cnn_with_verify(
         large_agent,
         args.max_sparsity,
@@ -1561,9 +1703,9 @@ def regenerate_small_model_in_place(
         return_pruning_info=True,
         previous_pruning_info=current_pruning_info,
         regeneration_increment_ratio=args.small_model_regeneration_increment_ratio,
-        ab_strategy=resolve_regeneration_ab_strategy(args),
+        ab_strategy=regeneration_ab_strategy,
     )
-    if args.small_model_regeneration_increment_ratio < 1.0:
+    if args.small_model_regeneration_increment_ratio < 1.0 and not full_reselection:
         inherit_small_cnn_retained_channels(
             regenerated_small_agent,
             small_agent,
@@ -1588,7 +1730,7 @@ def regenerate_small_model_in_place(
             optimizer,
             small_agent,
             new_pruning_info=new_pruning_info,
-            previous_pruning_info=current_pruning_info,
+            previous_pruning_info=None if full_reselection else current_pruning_info,
         )
     enhancer_seconds = time.perf_counter() - enhancer_start_time
     return new_pruning_info, forward_seconds, enhancer_seconds
@@ -2143,6 +2285,19 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
     iteration_at_last_small_model_regeneration = None
     mwe_feedback_count = 0
     mwe_regeneration_count = 0
+    scaling_down_count = 0
+    frozen_channel_masks = {}
+    freeze_hook_handles = []
+    if args.small_model_scaling_down_strategy not in {None, 'pruning', 'freezing'}:
+        raise ValueError(
+            f'Unknown small_model_scaling_down_strategy: {args.small_model_scaling_down_strategy}'
+        )
+    if args.small_model_scaling_down_count < 0:
+        raise ValueError('small_model_scaling_down_count must be non-negative')
+    if args.small_model_scaling_down_count > 0 and args.small_model_scaling_down_strategy is None:
+        raise ValueError('small_model_scaling_down_strategy is required when scaling-down count is positive')
+    if args.small_model_scaling_down_count > 0 and current_small_model_pruning_info is None:
+        raise ValueError('runtime scaling down requires a structurally pruned initial small model')
     icl_accuracy_avg_enabled = "ICL_ACCURACY_AVG_WINDOW" in os.environ
     icl_accuracy_avg_window = int(os.environ.get("ICL_ACCURACY_AVG_WINDOW", "1"))
     if icl_accuracy_avg_window < 1:
@@ -2364,6 +2519,54 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             )
             break
 
+        scaling_down_due = mwe_operation_due(
+            args.small_model_scaling_down_count,
+            scaling_down_count,
+            runtime_tracker.current_minutes(),
+            args.max_time,
+        )
+        if scaling_down_due:
+            memory_phase_tracker.mark("large_model_runtime_excluded")
+            print(
+                f'Client {agent_name} apply {args.small_model_scaling_down_strategy} '
+                f'scaling-down operation {scaling_down_count + 1}/'
+                f'{args.small_model_scaling_down_count}'
+            )
+            if args.small_model_scaling_down_strategy == 'pruning':
+                agent, current_small_model_pruning_info, optimizer, forward_seconds, enhancer_seconds = (
+                    prune_half_of_current_small_model(
+                        large_agent=large_agent,
+                        small_agent=agent,
+                        current_pruning_info=current_small_model_pruning_info,
+                        optimizer=optimizer,
+                        args=args,
+                        eval_envs=eval_envs,
+                        env_kwargs=env_kwargs,
+                        device=device,
+                    )
+                )
+                module_breakdown["large_model_forward_seconds"] += forward_seconds
+                module_breakdown["small_model_generation_seconds"] += enhancer_seconds
+                update_combined_search_enhancement_seconds(module_breakdown)
+            else:
+                parameter_shapes = {
+                    name: tuple(parameter.shape)
+                    for name, parameter in agent.named_parameters()
+                }
+                freeze_half_of_active_small_model_channels(
+                    small_agent=agent,
+                    current_pruning_info=current_small_model_pruning_info,
+                    optimizer=optimizer,
+                    frozen_channel_masks=frozen_channel_masks,
+                    freeze_hook_handles=freeze_hook_handles,
+                )
+                if parameter_shapes != {
+                    name: tuple(parameter.shape)
+                    for name, parameter in agent.named_parameters()
+                }:
+                    raise RuntimeError('freezing unexpectedly changed the small-model architecture')
+            scaling_down_count += 1
+
         feedback_due = should_feedback_small_model_before_rollout(
             feedback_schedule,
             iteration,
@@ -2400,7 +2603,7 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             success_end_at_last_regeneration=success_end_at_last_small_model_regeneration,
             iteration_at_last_regeneration=iteration_at_last_small_model_regeneration,
         )
-        regeneration_count = max(args.mwe_regeneration_count, args.mwe_scaling_down_count)
+        regeneration_count = args.mwe_regeneration_count
         if os.environ.get("MWE", "0") == "1" and regeneration_count > 0:
             regeneration_due = mwe_operation_due(
                 regeneration_count,
@@ -2841,7 +3044,7 @@ def apply_mwe_overrides(args: Args) -> Args:
         )
         args.small_model_regeneration_schedule = (
             "before_per_rollout"
-            if max(args.mwe_regeneration_count, args.mwe_scaling_down_count) > 0
+            if args.mwe_regeneration_count > 0
             else "once"
         )
         args.total_timesteps = max(args.total_timesteps, 10**12)

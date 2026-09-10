@@ -176,7 +176,8 @@ def generate_small_cnn_with_verify(model,
                                    return_pruning_info=False,
                                    previous_pruning_info=None,
                                    regeneration_increment_ratio=1.0,
-                                   ab_strategy=None):
+                                   ab_strategy=None,
+                                   previous_channel_keep_ratio=None):
     with torch.no_grad():
         set_sparsity(model, sparsity)
         model.eval()
@@ -191,6 +192,7 @@ def generate_small_cnn_with_verify(model,
                 previous_pruning_info=previous_pruning_info,
                 regeneration_increment_ratio=regeneration_increment_ratio,
                 ab_strategy=ab_strategy,
+                previous_channel_keep_ratio=previous_channel_keep_ratio,
             )
         else:
             small_model = generate_small_cnn(
@@ -200,6 +202,7 @@ def generate_small_cnn_with_verify(model,
                 previous_pruning_info=previous_pruning_info,
                 regeneration_increment_ratio=regeneration_increment_ratio,
                 ab_strategy=ab_strategy,
+                previous_channel_keep_ratio=previous_channel_keep_ratio,
             )
         # print(small_model)
         small_model.eval()

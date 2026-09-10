@@ -18,6 +18,12 @@ from train.common.mwe_checkpoint import maybe_save_model_checkpoint
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import MemoryPhaseTracker
+from train.vla_adapter_new.mwe_training_metrics import (
+    add_mwe_metric_aliases,
+    apply_mwe_overrides,
+    collect_training_policy_metric,
+    use_train_success_only,
+)
 from collections import defaultdict
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Dict, List, Optional, Tuple, get_args, get_origin
@@ -141,29 +147,7 @@ def parse_args() -> Args:
         else:
             parser.add_argument(arg_name, type=type(default), default=default)
     args = Args(**vars(parser.parse_args()))
-    if os.environ.get("MWE", "0") == "1":
-        os.environ.setdefault("VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY", "1")
-        args.num_envs = 16
-        args.num_eval_envs = 1
-        args.num_steps = 16
-        args.max_episode_steps = 26
-        args.update_epochs = 1
-        args.num_minibatches = 2
-        args.rollout_micro_batch_size = 4
-        args.eval_micro_batch_size = 4
-        args.update_micro_batch_size = 2
-        args.small_model_feedback_schedule = "once"
-        args.small_model_regeneration_schedule = "once"
-        args.total_timesteps = max(args.total_timesteps, 10**12)
-        mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
-        if mwe_runtime_minutes <= 0:
-            raise ValueError("MWE_MAX_RUNTIME_MINUTES must be positive")
-        if hasattr(args, "max_runtime_hours"):
-            args.max_runtime_hours = mwe_runtime_minutes / 60.0
-        if hasattr(args, "max_time"):
-            args.max_time = mwe_runtime_minutes
-        if hasattr(args, "early_stop_zero_success_minutes"):
-            args.early_stop_zero_success_minutes = max(args.early_stop_zero_success_minutes, 5.0)
+    apply_mwe_overrides(args)
     return args
 
 
@@ -540,7 +524,11 @@ def train(args: Args) -> None:
         return True, False, elapsed_minutes
 
     memory_phase_tracker.mark("evaluation")
-    initial_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+    initial_eval_metrics = (
+        collect_training_policy_metric(envs, raw_policy, args, reference)
+        if use_train_success_only()
+        else reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+    )
     initial_metric = {
         "update": 0,
         "global_step": global_step,
@@ -559,13 +547,16 @@ def train(args: Args) -> None:
         "v_loss": 0.0,
         "entropy": 0.0,
     }
-    initial_metric.update({f"eval_{key}": value for key, value in initial_eval_metrics.items()})
+    if use_train_success_only():
+        add_mwe_metric_aliases(initial_metric, initial_eval_metrics)
+    else:
+        initial_metric.update({f"eval_{key}": value for key, value in initial_eval_metrics.items()})
     metrics_history.append(initial_metric)
     save_json(output_dir / "latest_metrics.json", initial_metric)
     save_metrics_history(output_dir, metrics_history)
     plot_metrics_history(output_dir, metrics_history)
     reference.plot_success_time_curve(output_dir, metrics_history)
-    initial_success_once = float(initial_eval_metrics.get("success_once", initial_eval_metrics.get("success", 0.0)))
+    initial_success_once = float(initial_eval_metrics.get("success_once", initial_eval_metrics.get("train_success_once", initial_eval_metrics.get("success", 0.0))))
     if initial_success_once >= best_success_once:
         best_success_once = initial_success_once
         maybe_save_model_checkpoint(
@@ -845,7 +836,19 @@ def train(args: Args) -> None:
         metric.update({f"wm_{key}": value for key, value in reward_info_last.items()})
         metric.update(reference.gather_metric_summary(reference.summarize_episode_metrics(train_episode_metrics)))
 
-        if update % args.eval_every_updates == 0 or update == num_updates:
+        if use_train_success_only():
+            memory_phase_tracker.mark("evaluation")
+            eval_metrics = collect_training_policy_metric(envs, raw_policy, args, reference)
+            add_mwe_metric_aliases(metric, eval_metrics)
+            success_once = float(eval_metrics.get("train_success_once", eval_metrics.get("success_once", 0.0)))
+            if success_once >= best_success_once:
+                best_success_once = success_once
+                maybe_save_model_checkpoint(
+                    {"policy": raw_policy.state_dict(), "optimizer": optimizer.state_dict(),
+                     "update": update, "global_step": global_step, "best_success_once": best_success_once},
+                    output_dir / "best_policy.pt",
+                )
+        elif update % args.eval_every_updates == 0 or update == num_updates:
             memory_phase_tracker.mark("evaluation")
             eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
             metric.update({f"eval_{key}": value for key, value in eval_metrics.items()})
@@ -919,7 +922,7 @@ def train(args: Args) -> None:
             break
 
     memory_phase_tracker.mark("evaluation")
-    final_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+    final_eval_metrics = collect_training_policy_metric(envs, raw_policy, args, reference) if use_train_success_only() else reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     save_json(output_dir / "final_eval_metrics.json", final_eval_metrics)
     save_metrics_history(output_dir, metrics_history)
     plot_metrics_history(output_dir, metrics_history)

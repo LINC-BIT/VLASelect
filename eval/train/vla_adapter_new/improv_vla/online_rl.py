@@ -16,6 +16,12 @@ from train.common.mwe_runtime import ActiveRuntimeTracker
 from train.common.time_breakdown import snapshot_time_breakdown_to_metric, write_time_breakdown
 from train.common.env_cleanup import clear_torch_cuda_cache, close_envs
 from train.common.memory_accounting import MemoryPhaseTracker
+from train.vla_adapter_new.mwe_training_metrics import (
+    add_mwe_metric_aliases,
+    apply_mwe_overrides,
+    collect_training_policy_metric,
+    use_train_success_only,
+)
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Deque, Dict, List, Optional, Tuple, get_args, get_origin
@@ -134,7 +140,9 @@ def parse_args() -> Args:
             parser.add_argument(arg_name, type=arg_type, default=None)
         else:
             parser.add_argument(arg_name, type=type(default), default=default)
-    return Args(**vars(parser.parse_args()))
+    args = Args(**vars(parser.parse_args()))
+    apply_mwe_overrides(args)
+    return args
 
 
 @dataclass
@@ -616,7 +624,7 @@ def train(args: Args) -> None:
         return True, False, elapsed_minutes
 
     memory_phase_tracker.mark("evaluation")
-    initial_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+    initial_eval_metrics = collect_training_policy_metric(envs, raw_policy, args, reference) if use_train_success_only() else reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     initial_metric = {
         "update": 0,
         "global_step": global_step,
@@ -639,13 +647,16 @@ def train(args: Args) -> None:
         "online_buffer_steps": 0.0,
         "online_success_trajectories": 0.0,
     }
-    initial_metric.update({f"eval_{key}": value for key, value in initial_eval_metrics.items()})
+    if use_train_success_only():
+        add_mwe_metric_aliases(initial_metric, initial_eval_metrics)
+    else:
+        initial_metric.update({f"eval_{key}": value for key, value in initial_eval_metrics.items()})
     metrics_history.append(initial_metric)
     save_json(output_dir / "latest_metrics.json", initial_metric)
     save_metrics_history(output_dir, metrics_history)
     plot_metrics_history(output_dir, metrics_history)
     reference.plot_success_time_curve(output_dir, metrics_history)
-    initial_success_once = float(initial_eval_metrics.get("success_once", initial_eval_metrics.get("success", 0.0)))
+    initial_success_once = float(initial_eval_metrics.get("success_once", initial_eval_metrics.get("train_success_once", initial_eval_metrics.get("success", 0.0))))
     best_success_once = max(best_success_once, initial_success_once)
     save_training_checkpoint(
         output_dir / "best_policy.pt",
@@ -949,7 +960,15 @@ def train(args: Args) -> None:
         }
         metric.update(reference.gather_metric_summary(reference.summarize_episode_metrics(train_episode_metrics)))
 
-        if update % args.eval_every_updates == 0 or update == num_updates:
+        if use_train_success_only():
+            memory_phase_tracker.mark("evaluation")
+            eval_metrics = collect_training_policy_metric(envs, raw_policy, args, reference)
+            add_mwe_metric_aliases(metric, eval_metrics)
+            success_once = float(eval_metrics.get("train_success_once", eval_metrics.get("success_once", 0.0)))
+            if success_once >= best_success_once:
+                best_success_once = success_once
+                save_training_checkpoint(output_dir / "best_policy.pt", raw_policy, rl_optimizer, sl_optimizer, update, global_step, best_success_once)
+        elif update % args.eval_every_updates == 0 or update == num_updates:
             memory_phase_tracker.mark("evaluation")
             eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
             metric.update({f"eval_{key}": value for key, value in eval_metrics.items()})
@@ -1031,7 +1050,7 @@ def train(args: Args) -> None:
             break
 
     memory_phase_tracker.mark("evaluation")
-    final_eval_metrics = reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
+    final_eval_metrics = collect_training_policy_metric(envs, raw_policy, args, reference) if use_train_success_only() else reference.evaluate_policy(raw_policy, eval_envs, args.eval_episodes)
     save_json(output_dir / "final_eval_metrics.json", final_eval_metrics)
     save_metrics_history(output_dir, metrics_history)
     plot_metrics_history(output_dir, metrics_history)

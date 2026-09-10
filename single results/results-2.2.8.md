@@ -10,6 +10,6 @@
 
 | | Results |
 | :---: | :---: |
-| **Small working example** | <img src="../imgs/2.5.2-swe.jpg"  style="zoom: 33%;" /> |
+| **Small working example (20min)** | <img src="../imgs/2.5.2-swe.jpg"  style="zoom: 33%;" /> |
 | **Minimal working example** | <img src="../imgs/2.5.2.png"  style="zoom: 33%;" /> |
 

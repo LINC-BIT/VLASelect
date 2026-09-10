@@ -216,7 +216,7 @@ class Args:
     small_model_generation_policy: str = 'small'
     """which policy collects target trajectories for small model generation: small, large, or better"""
     small_model_feedback_schedule: Optional[str] = None
-    """when to feedback small model into large model before rollout. None follows small_model_regeneration_schedule for backward compatibility"""
+    """when to feedback the small model: before rollout, after every training iteration, or according to a threshold"""
     small_model_regeneration_schedule: str = 'once'
     """when to regenerate small model: once, before_per_rollout, before_per_rollout_if_success_improv_less_than_xx_for_yy_iters, or legacy before_per_rollout_if_success_improv_is_larger_than_xx"""
     small_model_feedback_alpha: float = 1.0
@@ -226,6 +226,8 @@ class Args:
     """feedback target selection: None writes to inherited channels, random writes to random large-model channels"""
     small_model_regeneration_increment_ratio: float = 1.0
     """fraction of selected channels replaced during regeneration. 1.0 means full reselection, 0.0 means keep previous subnet"""
+    small_model_regenerate_after_feedback: bool = False
+    """whether every knowledge-feedback event immediately triggers small-model regeneration"""
     small_model_training_variant: str = 'pruned'
     """how to realize the trainable small model: pruned (static compact subnet) or frozen (gate-masked FBS model)"""
     small_model_ab_strategy: Optional[str] = None
@@ -1451,6 +1453,8 @@ def should_feedback_small_model_before_rollout(
 ) -> bool:
     if schedule == 'once':
         return False
+    if schedule == 'after_per_training_iteration':
+        return False
     if schedule == 'before_per_rollout':
         return iteration > start_iter_idx
     threshold_prefix = 'before_per_rollout_if_success_improv_is_larger_than_'
@@ -1651,6 +1655,114 @@ def prune_half_of_current_small_model(
 
 
 @torch.no_grad()
+def feedback_small_model_to_random_cross_layer_neurons(
+    large_agent: nn.Module,
+    small_agent: nn.Module,
+    current_pruning_info: dict,
+    alpha: float,
+) -> None:
+    selected_indices_by_layer = current_pruning_info['selected_indices']
+
+    def large_output_layer(layer: nn.Module):
+        if hasattr(layer, 'raw_conv2d') and isinstance(layer.raw_conv2d, nn.Conv2d):
+            return layer.raw_conv2d, 'conv'
+        if hasattr(layer, 'raw_linear') and isinstance(layer.raw_linear, nn.Linear):
+            return layer.raw_linear, 'linear'
+        raise TypeError(f'Unsupported random-feedback layer: {type(layer).__name__}')
+
+    def batch_norm(layer: nn.Module):
+        return next(
+            (child for child in layer.modules() if isinstance(child, nn.modules.batchnorm._BatchNorm)),
+            None,
+        )
+
+    def neuron_signature(output_layer: nn.Module, layer_kind: str, norm: Optional[nn.Module]):
+        return (
+            layer_kind,
+            tuple(output_layer.weight.shape[1:]),
+            output_layer.bias is not None,
+            norm is not None,
+        )
+
+    def blend(target: torch.Tensor, source: torch.Tensor) -> None:
+        if target.shape != source.shape:
+            raise ValueError(
+                f'cross-layer random feedback shape mismatch: {target.shape} vs {source.shape}'
+            )
+        source = source.to(device=target.device, dtype=target.dtype)
+        target.copy_((1.0 - alpha) * target + alpha * source)
+
+    source_neurons_by_signature = defaultdict(list)
+    target_neurons_by_signature = defaultdict(list)
+
+    for layer_name, selected_indices in selected_indices_by_layer.items():
+        large_layer = get_module(large_agent, layer_name)
+        target_output, target_kind = large_output_layer(large_layer)
+        target_norm = batch_norm(large_layer)
+        target_signature = neuron_signature(target_output, target_kind, target_norm)
+        for target_index in range(target_output.weight.size(0)):
+            target_neurons_by_signature[target_signature].append(
+                (layer_name, target_index, target_output, target_norm)
+            )
+
+        small_layer = get_module(small_agent, layer_name)
+        source_output = _small_model_output_layer(small_layer)
+        if source_output is None:
+            raise TypeError(
+                f'Cannot find the output layer for random-feedback source {layer_name}'
+            )
+        source_kind = 'conv' if isinstance(source_output, nn.Conv2d) else 'linear'
+        source_norm = batch_norm(small_layer)
+        source_signature = neuron_signature(source_output, source_kind, source_norm)
+        if source_output.weight.size(0) != len(selected_indices):
+            raise ValueError(
+                f'random-feedback source channel mismatch for {layer_name}: '
+                f'{source_output.weight.size(0)} vs {len(selected_indices)}'
+            )
+        for source_index in range(source_output.weight.size(0)):
+            source_neurons_by_signature[source_signature].append(
+                (layer_name, source_index, source_output, source_norm)
+            )
+
+    cross_layer_count = 0
+    feedback_count = 0
+    for signature, source_neurons in source_neurons_by_signature.items():
+        target_neurons = target_neurons_by_signature.get(signature, [])
+        if len(target_neurons) < len(source_neurons):
+            raise ValueError(
+                f'Not enough compatible large-model neurons for random feedback: '
+                f'need {len(source_neurons)}, found {len(target_neurons)}, signature={signature}'
+            )
+        random_target_order = torch.randperm(len(target_neurons)).tolist()
+        for source_neuron, target_position in zip(source_neurons, random_target_order):
+            source_layer_name, source_index, source_output, source_norm = source_neuron
+            target_layer_name, target_index, target_output, target_norm = target_neurons[target_position]
+
+            blend(target_output.weight.data[target_index], source_output.weight.data[source_index])
+            if target_output.bias is not None:
+                blend(target_output.bias.data[target_index], source_output.bias.data[source_index])
+            if target_norm is not None:
+                for tensor_name in ('weight', 'bias', 'running_mean', 'running_var'):
+                    target_tensor = getattr(target_norm, tensor_name, None)
+                    source_tensor = getattr(source_norm, tensor_name, None)
+                    if target_tensor is not None:
+                        if source_tensor is None:
+                            raise ValueError(
+                                f'cross-layer random feedback normalization mismatch: '
+                                f'{source_layer_name} -> {target_layer_name}'
+                            )
+                        blend(target_tensor.data[target_index], source_tensor.data[source_index])
+
+            feedback_count += 1
+            cross_layer_count += int(source_layer_name != target_layer_name)
+
+    print(
+        f'random cross-layer feedback updated {feedback_count} large-model neurons; '
+        f'{cross_layer_count} received weights from a different layer; alpha={alpha}'
+    )
+
+
+@torch.no_grad()
 def feedback_small_model_to_large_model(
     large_agent,
     small_agent,
@@ -1659,39 +1771,19 @@ def feedback_small_model_to_large_model(
 ):
     from ours.libs.gen_scaling_law_data_points_cnn import small_cnn_feedback
 
-    feedback_pruning_info = current_pruning_info
     if args.small_model_feedback_strategy == 'random':
-        random_selected_indices = {}
-        for layer_name, selected_indices in current_pruning_info['selected_indices'].items():
-            large_layer = get_module(large_agent, layer_name)
-            if hasattr(large_layer, 'raw_conv2d'):
-                channel_count = large_layer.raw_conv2d.out_channels
-                index_device = large_layer.raw_conv2d.weight.device
-            elif hasattr(large_layer, 'raw_linear'):
-                channel_count = large_layer.raw_linear.out_features
-                index_device = large_layer.raw_linear.weight.device
-            else:
-                raise TypeError(
-                    f'Unsupported random-feedback layer {layer_name}: '
-                    f'{type(large_layer).__name__}'
-                )
-            selected_count = len(selected_indices)
-            if selected_count > channel_count:
-                raise ValueError(
-                    f'random feedback requests {selected_count} of only '
-                    f'{channel_count} channels in {layer_name}'
-                )
-            random_selected_indices[layer_name] = torch.randperm(
-                channel_count,
-                device=index_device,
-            )[:selected_count].sort().values
-        feedback_pruning_info = dict(current_pruning_info)
-        feedback_pruning_info['selected_indices'] = random_selected_indices
+        feedback_small_model_to_random_cross_layer_neurons(
+            large_agent,
+            small_agent,
+            current_pruning_info,
+            alpha=args.small_model_feedback_alpha,
+        )
+        return
 
     small_cnn_feedback(
         large_agent,
         small_agent,
-        feedback_pruning_info,
+        current_pruning_info,
         alpha=args.small_model_feedback_alpha,
     )
 
@@ -1726,16 +1818,20 @@ def regenerate_small_model_in_place(
 
     enhancer_start_time = time.perf_counter()
     regeneration_ab_strategy = resolve_regeneration_ab_strategy(args)
-    full_reselection = force_full_replacement or regeneration_ab_strategy in {'random', 'inverse'}
+    full_reselection = (
+        force_full_replacement
+        or regeneration_ab_strategy in {'random', 'inverse'}
+        or args.small_model_regeneration_increment_ratio >= 1.0
+    )
     regenerated_small_agent, new_pruning_info = generate_small_cnn_with_verify(
         large_agent,
         args.max_sparsity,
         sample_for_gen_small_model,
         lambda model, sample: model(sample),
         return_pruning_info=True,
-        previous_pruning_info=None if force_full_replacement else current_pruning_info,
+        previous_pruning_info=None if full_reselection else current_pruning_info,
         regeneration_increment_ratio=(
-            1.0 if force_full_replacement else args.small_model_regeneration_increment_ratio
+            1.0 if full_reselection else args.small_model_regeneration_increment_ratio
         ),
         ab_strategy=regeneration_ab_strategy,
     )
@@ -2328,6 +2424,8 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         )
     if args.small_model_feedback_strategy == 'random' and current_small_model_pruning_info is None:
         raise ValueError('random small-model feedback requires a structurally pruned small model')
+    if args.small_model_feedback_strategy == 'random' and args.small_model_feedback_alpha != 1.0:
+        raise ValueError('random cross-layer feedback requires small_model_feedback_alpha=1.0')
     if args.small_model_scaling_down_strategy not in {None, 'pruning', 'freezing'}:
         raise ValueError(
             f'Unknown small_model_scaling_down_strategy: {args.small_model_scaling_down_strategy}'
@@ -2661,6 +2759,8 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
             )
         if args.small_model_feedback_strategy == 'random':
             regeneration_due = feedback_due
+        elif args.small_model_regenerate_after_feedback:
+            regeneration_due = regeneration_due or feedback_due
         if regeneration_due:
             memory_phase_tracker.mark("large_model_runtime_excluded")
             print(f'Client {agent_name} regenerate small model before rollout')
@@ -3020,6 +3120,21 @@ def ppo_agent(args: Args, device, base_runname, agent, agent_name, layer_name_of
         update_time = time.perf_counter() - update_time
         runtime_tracker.add_active_seconds(update_time)
         cumulative_times["update_time"] += update_time
+
+        if feedback_schedule == 'after_per_training_iteration':
+            memory_phase_tracker.mark("large_model_runtime_excluded")
+            print(f'Client {agent_name} accumulate small-model knowledge after training iteration')
+            feedback_start_time = time.perf_counter()
+            feedback_small_model_to_large_model(
+                large_agent=large_agent,
+                small_agent=agent,
+                current_pruning_info=current_small_model_pruning_info,
+                args=args,
+            )
+            module_breakdown["small_model_feedback_seconds"] += time.perf_counter() - feedback_start_time
+            success_end_at_last_small_model_feedback = current_success_end
+            mwe_feedback_count += 1
+
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
@@ -3090,9 +3205,10 @@ def apply_mwe_overrides(args: Args) -> Args:
         # Initialization still exercises the selected scaling method, while the
         # repeated regeneration path is outside this minimal run and can require
         # architecture-specific checkpoint shapes.
-        args.small_model_feedback_schedule = (
-            "before_per_rollout" if args.mwe_knowledge_accumulation_count > 0 else "once"
-        )
+        if args.small_model_feedback_schedule != 'after_per_training_iteration':
+            args.small_model_feedback_schedule = (
+                "before_per_rollout" if args.mwe_knowledge_accumulation_count > 0 else "once"
+            )
         args.small_model_regeneration_schedule = (
             "before_per_rollout"
             if args.mwe_regeneration_count > 0

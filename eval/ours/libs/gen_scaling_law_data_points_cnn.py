@@ -126,16 +126,8 @@ def generate_small_cnn(fbs_model: nn.Module,
         if strategy == 'random':
             return torch.randperm(raw_scores.size(0), device=raw_scores.device)[:expected_kept_count]
         if strategy == 'inverse':
-            num_replace = max(1, expected_kept_count // 2)
-            num_keep_default = expected_kept_count - num_replace
-            kept_default = _rank_indices(default_indices, raw_scores, num_keep_default)
-            candidate_mask = torch.ones(raw_scores.size(0), dtype=torch.bool, device=raw_scores.device)
-            candidate_mask[kept_default] = False
-            candidate_indices = candidate_mask.nonzero(as_tuple=True)[0]
-            ranked_low = torch.argsort(raw_scores[candidate_indices], descending=False, stable=True)
-            added = candidate_indices[ranked_low[:num_replace]]
-            mixed = torch.cat([kept_default, added], dim=0)
-            return _complete_unpruned_filters_index(mixed, raw_scores, expected_kept_count)
+            ranked_low = torch.argsort(raw_scores, descending=False, stable=True)
+            return ranked_low[:expected_kept_count]
         return default_indices
 
     def _merge_selected_indices(layer_name: str,

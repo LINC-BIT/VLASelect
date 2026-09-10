@@ -1,13 +1,13 @@
 panel_label,panel_id,curve_id,curve_label,run_dir,points,last_value,max_value,mean_value,changed_options
-a,scaling_law_function,without_scaling_law,Without scaling law,ckpt/ablation/20260910-035429/scaling_law_function/without_scaling_law/[agent],170,0.000000,1.000000,0.441176,['small_model_generation_strategy']
-a,scaling_law_function,with_scaling_law,With scaling law,ckpt/ablation/20260910-054439/scaling_law_function/with_scaling_law/[agent],50,1.000000,1.000000,0.383333,[]
-b,neuron_grained_scaling_up,random,Random,ckpt/ablation/20260910-115908/neuron_grained_scaling_up/random/[agent],20,0.000000,0.000000,0.000000,['small_model_ab_strategy']
-b,neuron_grained_scaling_up,inverse,Most accuracy-unrelated,ckpt/ablation/20260910-115908/neuron_grained_scaling_up/inverse/[agent],94,1.000000,1.000000,0.579787,['small_model_ab_strategy']
-b,neuron_grained_scaling_up,neuron_grained,Most accuracy-related,ckpt/ablation/20260910-115908/neuron_grained_scaling_up/neuron_grained/[agent],74,0.000000,1.000000,0.463964,[]
+a,scaling_law_function,without_scaling_law,Without scaling law,ckpt/ablation/20260910-123918/scaling_law_function/without_scaling_law/[agent],3,0.000000,0.000000,0.000000,"['max_sparsity', 'small_model_ab_strategy']"
+a,scaling_law_function,with_scaling_law,With scaling law,ckpt/ablation/20260910-123918/scaling_law_function/with_scaling_law/[agent],14,0.000000,1.000000,0.642857,[]
+b,neuron_grained_scaling_up,random,Random,ckpt/ablation/20260910-122239/neuron_grained_scaling_up/random/[agent],20,0.000000,1.000000,0.050000,['small_model_ab_strategy']
+b,neuron_grained_scaling_up,inverse,Most accuracy-unrelated,ckpt/ablation/20260910-122239/neuron_grained_scaling_up/inverse/[agent],25,0.000000,0.200000,0.008000,['small_model_ab_strategy']
+b,neuron_grained_scaling_up,neuron_grained,Most accuracy-related,ckpt/ablation/20260910-122239/neuron_grained_scaling_up/neuron_grained/[agent],66,1.000000,1.000000,0.396465,[]
 c,scaling_down_freezing_vs_pruning,pruning,Pruning,ckpt/ablation/20260910-120934/scaling_down_freezing_vs_pruning/pruning/[agent],36,0.000000,1.000000,0.398148,['small_model_scaling_down_strategy']
 c,scaling_down_freezing_vs_pruning,freezing,Freezing,ckpt/ablation/20260910-120934/scaling_down_freezing_vs_pruning/freezing/[agent],16,0.000000,1.000000,0.593750,['small_model_scaling_down_strategy']
-d,neuron_swapping,random_swapping,Random swapping,ckpt/ablation/20260910-035429/neuron_swapping/random_swapping/[agent],30,1.000000,1.000000,0.716667,['small_model_regeneration_ab_strategy']
-d,neuron_swapping,with_swapping,With swapping,ckpt/ablation/20260910-035429/neuron_swapping/with_swapping/[agent],14,0.000000,1.000000,0.428571,[]
-e,knowledge_accumulation,no_accumulation,No accumulation,ckpt/ablation/20260910-035429/knowledge_accumulation/no_accumulation/[agent],19,0.000000,1.000000,0.684211,['small_model_feedback_alpha']
-e,knowledge_accumulation,accumulate_every_rollout,Every-rollout accumulation,ckpt/ablation/20260910-035429/knowledge_accumulation/accumulate_every_rollout/[agent],15,0.000000,1.000000,0.600000,['small_model_feedback_schedule']
-e,knowledge_accumulation,selective_accumulation,Selective accumulation,ckpt/ablation/20260910-035429/knowledge_accumulation/selective_accumulation/[agent],11,0.000000,1.000000,0.363636,[]
+d,neuron_swapping,random_swapping,Random swapping,ckpt/ablation/20260910-124945/neuron_swapping/random_swapping/[agent],12,0.000000,1.000000,0.666667,"['small_model_feedback_strategy', 'small_model_feedback_alpha', 'small_model_regeneration_schedule']"
+d,neuron_swapping,with_swapping,With swapping,ckpt/ablation/20260910-124945/neuron_swapping/with_swapping/[agent],16,1.000000,1.000000,0.750000,[]
+e,knowledge_accumulation,no_accumulation,No accumulation,ckpt/ablation/20260910-141933/knowledge_accumulation/no_accumulation/[agent],138,0.500000,1.000000,0.351449,"['small_model_feedback_alpha', 'small_model_feedback_schedule', 'small_model_regeneration_schedule']"
+e,knowledge_accumulation,accumulate_every_rollout,Every-rollout accumulation,ckpt/ablation/20260910-141933/knowledge_accumulation/accumulate_every_rollout/[agent],164,0.000000,1.000000,0.339431,"['small_model_feedback_schedule', 'small_model_feedback_alpha', 'small_model_regeneration_schedule']"
+e,knowledge_accumulation,selective_accumulation,Selective accumulation,ckpt/ablation/20260910-141933/knowledge_accumulation/selective_accumulation/[agent],194,0.500000,1.000000,0.512027,[]

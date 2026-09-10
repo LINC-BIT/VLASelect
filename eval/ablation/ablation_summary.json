@@ -1,6 +1,6 @@
 {
-  "suite_stamp": "20260910-120934",
-  "manifest_path": "/home/zcr/vlaselect/eval/ablation/ablation_table/20260910-120934/manifest.json",
+  "suite_stamp": "20260910-141933",
+  "manifest_path": "/home/zcr/vlaselect/eval/ablation/ablation_table/20260910-141933/manifest.json",
   "figure_output": "ablation/FIG_ABLATION.pdf",
   "summary_csv": "ablation/ablation_summary.csv",
   "rows": [
@@ -9,13 +9,14 @@
       "panel_id": "scaling_law_function",
       "curve_id": "without_scaling_law",
       "curve_label": "Without scaling law",
-      "run_dir": "ckpt/ablation/20260910-035429/scaling_law_function/without_scaling_law/[agent]",
-      "points": 170,
+      "run_dir": "ckpt/ablation/20260910-123918/scaling_law_function/without_scaling_law/[agent]",
+      "points": 3,
       "last_value": "0.000000",
-      "max_value": "1.000000",
-      "mean_value": "0.441176",
+      "max_value": "0.000000",
+      "mean_value": "0.000000",
       "changed_options": [
-        "small_model_generation_strategy"
+        "max_sparsity",
+        "small_model_ab_strategy"
       ]
     },
     {
@@ -23,11 +24,11 @@
       "panel_id": "scaling_law_function",
       "curve_id": "with_scaling_law",
       "curve_label": "With scaling law",
-      "run_dir": "ckpt/ablation/20260910-054439/scaling_law_function/with_scaling_law/[agent]",
-      "points": 50,
-      "last_value": "1.000000",
+      "run_dir": "ckpt/ablation/20260910-123918/scaling_law_function/with_scaling_law/[agent]",
+      "points": 14,
+      "last_value": "0.000000",
       "max_value": "1.000000",
-      "mean_value": "0.383333",
+      "mean_value": "0.642857",
       "changed_options": []
     },
     {
@@ -35,11 +36,11 @@
       "panel_id": "neuron_grained_scaling_up",
       "curve_id": "random",
       "curve_label": "Random",
-      "run_dir": "ckpt/ablation/20260910-115908/neuron_grained_scaling_up/random/[agent]",
+      "run_dir": "ckpt/ablation/20260910-122239/neuron_grained_scaling_up/random/[agent]",
       "points": 20,
       "last_value": "0.000000",
-      "max_value": "0.000000",
-      "mean_value": "0.000000",
+      "max_value": "1.000000",
+      "mean_value": "0.050000",
       "changed_options": [
         "small_model_ab_strategy"
       ]
@@ -49,11 +50,11 @@
       "panel_id": "neuron_grained_scaling_up",
       "curve_id": "inverse",
       "curve_label": "Most accuracy-unrelated",
-      "run_dir": "ckpt/ablation/20260910-115908/neuron_grained_scaling_up/inverse/[agent]",
-      "points": 94,
-      "last_value": "1.000000",
-      "max_value": "1.000000",
-      "mean_value": "0.579787",
+      "run_dir": "ckpt/ablation/20260910-122239/neuron_grained_scaling_up/inverse/[agent]",
+      "points": 25,
+      "last_value": "0.000000",
+      "max_value": "0.200000",
+      "mean_value": "0.008000",
       "changed_options": [
         "small_model_ab_strategy"
       ]
@@ -63,11 +64,11 @@
       "panel_id": "neuron_grained_scaling_up",
       "curve_id": "neuron_grained",
       "curve_label": "Most accuracy-related",
-      "run_dir": "ckpt/ablation/20260910-115908/neuron_grained_scaling_up/neuron_grained/[agent]",
-      "points": 74,
-      "last_value": "0.000000",
+      "run_dir": "ckpt/ablation/20260910-122239/neuron_grained_scaling_up/neuron_grained/[agent]",
+      "points": 66,
+      "last_value": "1.000000",
       "max_value": "1.000000",
-      "mean_value": "0.463964",
+      "mean_value": "0.396465",
       "changed_options": []
     },
     {
@@ -103,13 +104,15 @@
       "panel_id": "neuron_swapping",
       "curve_id": "random_swapping",
       "curve_label": "Random swapping",
-      "run_dir": "ckpt/ablation/20260910-035429/neuron_swapping/random_swapping/[agent]",
-      "points": 30,
-      "last_value": "1.000000",
+      "run_dir": "ckpt/ablation/20260910-124945/neuron_swapping/random_swapping/[agent]",
+      "points": 12,
+      "last_value": "0.000000",
       "max_value": "1.000000",
-      "mean_value": "0.716667",
+      "mean_value": "0.666667",
       "changed_options": [
-        "small_model_regeneration_ab_strategy"
+        "small_model_feedback_strategy",
+        "small_model_feedback_alpha",
+        "small_model_regeneration_schedule"
       ]
     },
     {
@@ -117,11 +120,11 @@
       "panel_id": "neuron_swapping",
       "curve_id": "with_swapping",
       "curve_label": "With swapping",
-      "run_dir": "ckpt/ablation/20260910-035429/neuron_swapping/with_swapping/[agent]",
-      "points": 14,
-      "last_value": "0.000000",
+      "run_dir": "ckpt/ablation/20260910-124945/neuron_swapping/with_swapping/[agent]",
+      "points": 16,
+      "last_value": "1.000000",
       "max_value": "1.000000",
-      "mean_value": "0.428571",
+      "mean_value": "0.750000",
       "changed_options": []
     },
     {
@@ -129,13 +132,15 @@
       "panel_id": "knowledge_accumulation",
       "curve_id": "no_accumulation",
       "curve_label": "No accumulation",
-      "run_dir": "ckpt/ablation/20260910-035429/knowledge_accumulation/no_accumulation/[agent]",
-      "points": 19,
-      "last_value": "0.000000",
+      "run_dir": "ckpt/ablation/20260910-141933/knowledge_accumulation/no_accumulation/[agent]",
+      "points": 138,
+      "last_value": "0.500000",
       "max_value": "1.000000",
-      "mean_value": "0.684211",
+      "mean_value": "0.351449",
       "changed_options": [
-        "small_model_feedback_alpha"
+        "small_model_feedback_alpha",
+        "small_model_feedback_schedule",
+        "small_model_regeneration_schedule"
       ]
     },
     {
@@ -143,13 +148,15 @@
       "panel_id": "knowledge_accumulation",
       "curve_id": "accumulate_every_rollout",
       "curve_label": "Every-rollout accumulation",
-      "run_dir": "ckpt/ablation/20260910-035429/knowledge_accumulation/accumulate_every_rollout/[agent]",
-      "points": 15,
+      "run_dir": "ckpt/ablation/20260910-141933/knowledge_accumulation/accumulate_every_rollout/[agent]",
+      "points": 164,
       "last_value": "0.000000",
       "max_value": "1.000000",
-      "mean_value": "0.600000",
+      "mean_value": "0.339431",
       "changed_options": [
-        "small_model_feedback_schedule"
+        "small_model_feedback_schedule",
+        "small_model_feedback_alpha",
+        "small_model_regeneration_schedule"
       ]
     },
     {
@@ -157,11 +164,11 @@
       "panel_id": "knowledge_accumulation",
       "curve_id": "selective_accumulation",
       "curve_label": "Selective accumulation",
-      "run_dir": "ckpt/ablation/20260910-035429/knowledge_accumulation/selective_accumulation/[agent]",
-      "points": 11,
-      "last_value": "0.000000",
+      "run_dir": "ckpt/ablation/20260910-141933/knowledge_accumulation/selective_accumulation/[agent]",
+      "points": 194,
+      "last_value": "0.500000",
       "max_value": "1.000000",
-      "mean_value": "0.363636",
+      "mean_value": "0.512027",
       "changed_options": []
     }
   ]

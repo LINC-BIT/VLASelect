@@ -391,8 +391,8 @@ panels = [
                 "run_dir": f"ckpt/ablation/{suite_stamp}/scaling_law_function/without_scaling_law/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Target-batch generation without the target-trajectory scaling-law path.",
-                "changed_options": ["small_model_generation_strategy"],
+                "notes": "Uses the same random channel-selection configuration as neuron_grained_scaling_up/random.",
+                "changed_options": ["max_sparsity", "small_model_ab_strategy"],
             },
         ],
     },
@@ -481,8 +481,8 @@ panels = [
                 "run_dir": f"ckpt/ablation/{suite_stamp}/neuron_swapping/random_swapping/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Repeated regeneration with randomly selected swapped-in neurons.",
-                "changed_options": ["small_model_regeneration_ab_strategy"],
+                "notes": "Feedback fully overwrites randomly selected shape-compatible large-model neurons across layers (feedback_alpha=1), then fully replaces the small model by regenerating it from the updated large model.",
+                "changed_options": ["small_model_feedback_strategy", "small_model_feedback_alpha", "small_model_regeneration_schedule"],
             },
             {
                 "curve_id": "with_swapping",
@@ -511,8 +511,8 @@ panels = [
                 "run_dir": f"ckpt/ablation/{suite_stamp}/knowledge_accumulation/no_accumulation/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Disable knowledge accumulation by using feedback_alpha=0.",
-                "changed_options": ["small_model_feedback_alpha"],
+                "notes": "Disable both knowledge feedback and small-model regeneration.",
+                "changed_options": ["small_model_feedback_alpha", "small_model_feedback_schedule", "small_model_regeneration_schedule"],
             },
             {
                 "curve_id": "accumulate_every_rollout",
@@ -522,8 +522,8 @@ panels = [
                 "run_dir": f"ckpt/ablation/{suite_stamp}/knowledge_accumulation/accumulate_every_rollout/[agent]",
                 "metric_source": metric_source(),
                 "metric_key": metric_keys(),
-                "notes": "Accumulate knowledge before every rollout.",
-                "changed_options": ["small_model_feedback_schedule"],
+                "notes": "Blend small-model knowledge into the large model after every training iteration (feedback_alpha=0.5), without small-model regeneration.",
+                "changed_options": ["small_model_feedback_schedule", "small_model_feedback_alpha", "small_model_regeneration_schedule"],
             },
             {
                 "curve_id": "selective_accumulation",
@@ -595,7 +595,7 @@ launch_curve() {
     fi
 
     local -a cmd=(
-        env MWE_ACTIVE_RUNTIME_ONLY="${MWE_ACTIVE_RUNTIME_ONLY:-0}" MWE_MAX_RUNTIME_MINUTES="${MWE_MAX_RUNTIME_MINUTES:-5}" VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY="${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY:-0}" "$PYTHON_BIN" -u -m train.octo.ours_single_agent.online_rl_cl
+        env MWE_ACTIVE_RUNTIME_ONLY="${MWE_ACTIVE_RUNTIME_ONLY:-0}" MWE_MAX_RUNTIME_MINUTES="${MWE_MAX_RUNTIME_MINUTES:-5}" VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY="${VLASELECT_MWE_USE_TRAIN_SUCCESS_ONLY:-0}" "$PYTHON_BIN" -u -m train.octo.ours_single_agent.online_rl_cl_ablation
         --exp-name "$exp_name"
         --env-id "$BASE_ENV_ID"
         --envs-id "$BASE_ENVS_ID"
@@ -625,7 +625,7 @@ launch_curve() {
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         scaling_law_function:without_scaling_law)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-batch --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.6 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_ab_strategy random --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_grained_scaling_up:random)
             cmd+=(--max-sparsity 0.6 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_ab_strategy random --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
@@ -646,16 +646,16 @@ launch_curve() {
             cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         neuron_swapping:random_swapping)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --small_model_regeneration_ab_strategy random --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_feedback_strategy random --small_model_regeneration_schedule once --small_model_feedback_alpha 1.0 --small_model_regeneration_increment_ratio 1.0 --reset_optimizer_after_regeneration)
             ;;
         knowledge_accumulation:selective_accumulation)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout_if_success_improv_is_larger_than_0.2 --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 1.0 --reset_optimizer_after_regeneration)
             ;;
         knowledge_accumulation:no_accumulation)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule once --small_model_regeneration_schedule once --small_model_feedback_alpha 0.0 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         knowledge_accumulation:accumulate_every_rollout)
-            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule before_per_rollout --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0.1_for_4_iters --small_model_feedback_alpha 0.1 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
+            cmd+=(--max-sparsity 0.8 --small_model_generation_strategy target-single-traj --small_model_feedback_schedule after_per_training_iteration --small_model_regeneration_schedule before_per_rollout_if_success_improv_less_than_0 --small_model_feedback_alpha 0.5 --small_model_regeneration_increment_ratio 0.05 --reset_optimizer_after_regeneration)
             ;;
         *)
             echo "Unknown ablation curve: ${panel_id}:${curve_id}" >&2

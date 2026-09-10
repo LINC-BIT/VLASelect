@@ -71,9 +71,9 @@ PAPER_PANELS = [
 ]
 DEFAULT_TARGET_ACCURACY_BY_WORKLOAD = {
     "Single-arm robot": 0.5,
-    "Dexterous hand": 0.6,
-    "Mobile manipulator": 0.4,
-    "Humanoid robot": 0.7,
+    "Dexterous hand": 0.1,
+    "Mobile manipulator": 0.3,
+    "Humanoid robot": 0.16,
 }
 METHOD_STYLES = {'conrft': {'color': '#4C78A8', 'linestyle': '-'},'flare': {'color': '#59A14F', 'linestyle': '-'},'improv_vla': {'color': '#4D4D4D', 'linestyle': '-'},'edgeta': {'color': '#A6A6A6', 'linestyle': '--'},'convertnet': {'color': '#CEBB6C', 'linestyle': '--'},'ours': {'color': '#C44E52', 'linestyle': '-'},'ours_single_agent': {'color': '#C44E52', 'linestyle': '-'},'ppo_gen': {'color': '#4C78A8', 'linestyle': '--'},'self_improv': {'color': '#9A9A9A', 'linestyle': '-'},'self_improvement': {'color': '#9A9A9A', 'linestyle': '-'},'vla_rft': {'color': '#59A14F', 'linestyle': '--'},'world_env': {'color': '#4D4D4D', 'linestyle': '--'}}
 LEGEND_ORDER = ['conrft', 'flare', 'improv_vla', 'self_improv', 'self_improvement', 'ppo_gen', 'vla_rft', 'world_env', 'edgeta', 'convertnet', 'ours', 'ours_single_agent']
@@ -152,6 +152,31 @@ def load_default_manifest() -> dict[str, Any]:
     manifest.setdefault('table2_output', 'overhead/TAB_OVERHEAD.csv')
     manifest.setdefault('table3_output', 'overhead/TAB_ENERGY.csv')
     manifest['_resolved_manifest_label'] = str(manifest_path) if manifest_path is not None else str(manifest.get('suite_stamp', 'merged-latest'))
+    return manifest
+
+
+def manifest_for_suite_dir(suite_dir: Path, family: str) -> dict[str, Any]:
+    """Build a plotting manifest directly from one experiment-suite directory."""
+    if family not in FAMILY_CONFIGS:
+        raise SystemExit(f'unsupported --family {family!r}; choose from: {", ".join(FAMILY_CONFIGS)}')
+    suite_manifest = suite_dir / 'manifest.json'
+    if not suite_manifest.is_file():
+        raise SystemExit(f'suite manifest does not exist: {suite_manifest}')
+    panel_defaults = next(panel for panel in PAPER_PANELS if panel['family'] == family)
+    panel = dict(panel_defaults)
+    panel.update({
+        'suite_manifest': str(suite_manifest),
+        'suite_root': str(suite_dir),
+        'suite_stamp': suite_dir.name,
+        # The suite manifest itself does not carry the workload list.  The
+        # metric collector obtains the actual series from each method's run.
+        'mwe': '1',
+    })
+    manifest = default_manifest()
+    manifest['suite_stamp'] = suite_dir.name
+    manifest['panels'] = [panel]
+    manifest['families'] = [panel]
+    manifest['_resolved_manifest_label'] = str(suite_manifest)
     return manifest
 def default_manifest() -> dict[str, Any]:
     return {
@@ -1034,6 +1059,18 @@ def prepare_memory_plot_points(samples: list[dict[str, Any]], cutoff_hours: floa
     return list(zip(xs, ys))
 
 
+def anchor_plot_points_at_origin(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Visually extend a sampled memory curve to the y-axis.
+
+    The first GPU sample can arrive after the active rollout/training phase
+    begins.  This is only a display adjustment: calculations retain the
+    original, timestamped samples.
+    """
+    if points and points[0][0] > 0.0:
+        return [(0.0, points[0][1]), *points]
+    return points
+
+
 def collect_panel_table3_energy(panel, smoothing: float = 0.2):
     suite_manifest_raw = panel.get('suite_manifest')
     if not suite_manifest_raw:
@@ -1567,11 +1604,15 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                 paper_name = PAPER_METHOD_BY_INTERNAL.get(internal_name)
                 if not paper_name:
                     continue
+                status = str(method.get('status') or '').strip().lower()
+                if status and status not in {'completed', 'running'}:
+                    continue
                 run_dir = resolve_path(method['run_dir'])
                 raw_data_paths.append(str(find_gpu_metrics_csv(run_dir) or run_dir / 'analysis' / 'gpu_metrics.csv'))
                 raw_points = collect_raw_gpu_memory_plot_points(run_dir)
                 style = METHOD_STYLES.get(internal_name, {})
                 if raw_points:
+                    raw_points = anchor_plot_points_at_origin(raw_points)
                     raw_ax.plot(
                         [point[0] for point in raw_points],
                         [point[1] for point in raw_points],
@@ -1579,15 +1620,6 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                         color=style.get('color'),
                         linestyle=style.get('linestyle', '-'),
                     )
-                    canonical_name = _canonical_legend_method_name(internal_name)
-                    if canonical_name not in seen_legend_names:
-                        legend_entries.append({
-                            'name': internal_name,
-                            'label': _canonical_legend_label(internal_name, paper_name),
-                            'style': dict(style),
-                        })
-                        seen_legend_names.add(canonical_name)
-
                 metrics = panel_metrics.get(paper_name, make_empty_metrics())
                 if metrics['reach_hours'] <= 0.0:
                     continue
@@ -1602,8 +1634,17 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                 points = prepare_memory_plot_points(gpu_samples, metrics['reach_hours'])
                 if not points:
                     continue
+                points = anchor_plot_points_at_origin(points)
                 xs = [point[0] for point in points]
                 ys = [point[1] for point in points]
+                canonical_name = _canonical_legend_method_name(internal_name)
+                if canonical_name not in seen_legend_names:
+                    legend_entries.append({
+                        'name': internal_name,
+                        'label': _canonical_legend_label(internal_name, paper_name),
+                        'style': dict(style),
+                    })
+                    seen_legend_names.add(canonical_name)
                 drop_x = metrics['reach_hours']
                 stable_y = ys[-1]
                 if xs[-1] < drop_x:
@@ -1760,6 +1801,18 @@ def write_summary(rows): SUMMARY_JSON_PATH.write_text(json.dumps(rows, indent=2)
 
 parser = argparse.ArgumentParser(description='Plot memory footprint for one overhead run.')
 parser.add_argument('--manifest', type=Path, default=None, help='Top-level manifest for the run to plot.')
+parser.add_argument(
+    '--suite-dir',
+    type=Path,
+    default=None,
+    help='Plot one suite directory directly (the directory containing manifest.json).',
+)
+parser.add_argument(
+    '--family',
+    choices=sorted(FAMILY_CONFIGS),
+    default='vla_adapter_new',
+    help='Model family for --suite-dir (default: vla_adapter_new).',
+)
 parser.add_argument('--output-root', type=Path, default=None, help='Directory where this run\'s figures and tables are written.')
 parser.add_argument('--target-accuracy', type=float, default=None, help='Fallback accuracy threshold required by every method.')
 parser.add_argument(
@@ -1773,14 +1826,25 @@ parser.add_argument(
     ),
 )
 args = parser.parse_args()
+if args.manifest is not None and args.suite_dir is not None:
+    raise SystemExit('--manifest and --suite-dir cannot be used together')
 if args.target_accuracy is not None and not 0.0 <= args.target_accuracy <= 1.0:
     raise SystemExit('--target-accuracy must be between 0 and 1')
 target_accuracy_by_workload = parse_target_accuracy_by_workload(args.target_accuracy_by_workload)
 configure_output_paths(args.output_root)
 manifest_path = args.manifest.resolve() if args.manifest is not None else None
+suite_dir = args.suite_dir.resolve() if args.suite_dir is not None else None
 if manifest_path is not None and not manifest_path.exists():
     raise SystemExit(f'manifest does not exist: {manifest_path}')
-top_manifest = load_json(manifest_path) if manifest_path else load_default_manifest()
+if suite_dir is not None and not suite_dir.is_dir():
+    raise SystemExit(f'suite directory does not exist: {suite_dir}')
+top_manifest = (
+    load_json(manifest_path)
+    if manifest_path
+    else manifest_for_suite_dir(suite_dir, args.family)
+    if suite_dir is not None
+    else load_default_manifest()
+)
 selected = {row.get('family'): row.get('_top_manifest', '') for row in top_manifest.get('panels', []) if isinstance(row, dict)}
 for family in ('octo', 'vla_adapter_new', 'tinyvla', 'edgevla'):
     source = selected.get(family, '')

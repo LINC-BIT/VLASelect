@@ -66,11 +66,11 @@
       "workload_name": "Single-arm robot",
       "method_name": "ours_single_agent",
       "display_name": "VLASelect",
-      "sampling_seconds": 5.31741586583095,
-      "training_seconds": 0.7810736598709891,
-      "total_seconds": 6.098489525701939,
+      "sampling_seconds": 6.011923070414726,
+      "training_seconds": 0.6077383142669152,
+      "total_seconds": 6.619661384681641,
       "has_breakdown_data": 1,
-      "source": "ckpt/cl_suite/20260826-121034/ours_single_agent/[agent]/metrics_history.json"
+      "source": "ckpt/cl_suite/20260910-082538/ours_single_agent/[agent]/metrics_history.json"
     },
     {
       "family": "octo",
@@ -90,11 +90,11 @@
       "workload_name": "Single-arm robot",
       "method_name": "self_improv",
       "display_name": "Self-Improvement",
-      "sampling_seconds": 15.2205650806427,
-      "training_seconds": 0.34768517315387726,
-      "total_seconds": 15.568250253796577,
+      "sampling_seconds": 11.380192792205687,
+      "training_seconds": 0.41867861941078477,
+      "total_seconds": 11.79887141161647,
       "has_breakdown_data": 1,
-      "source": "ckpt/cl_suite/20260826-121034/self_improv/tb"
+      "source": "ckpt/cl_suite/20260910-082538/self_improv/tb"
     },
     {
       "family": "octo",
@@ -102,11 +102,11 @@
       "workload_name": "Single-arm robot",
       "method_name": "vla_rft",
       "display_name": "VLA-RFT",
-      "sampling_seconds": 52.80654430389404,
-      "training_seconds": 1.115650236606598,
-      "total_seconds": 53.92219454050064,
+      "sampling_seconds": 8.570117894286023,
+      "training_seconds": 0.3688482319982739,
+      "total_seconds": 8.938966126284297,
       "has_breakdown_data": 1,
-      "source": "ckpt/cl_suite/20260826-121034/vla_rft/tb"
+      "source": "ckpt/cl_suite/20260910-082538/vla_rft/tb"
     },
     {
       "family": "octo",
@@ -114,11 +114,11 @@
       "workload_name": "Single-arm robot",
       "method_name": "world_env",
       "display_name": "WorldEnv",
-      "sampling_seconds": 51.71630573272705,
-      "training_seconds": 1.1005153357982635,
-      "total_seconds": 52.816821068525314,
+      "sampling_seconds": 8.476296709400614,
+      "training_seconds": 0.35953954843013464,
+      "total_seconds": 8.83583625783075,
       "has_breakdown_data": 1,
-      "source": "ckpt/cl_suite/20260826-121034/world_env/tb"
+      "source": "ckpt/cl_suite/20260910-082538/world_env/tb"
     },
     {
       "family": "vla_adapter_new",
@@ -186,11 +186,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "ours",
       "display_name": "VLASelect",
-      "sampling_seconds": 18.2178621434713,
-      "training_seconds": 8.032446156546415,
-      "total_seconds": 26.250308300017714,
+      "sampling_seconds": 75.58680641290266,
+      "training_seconds": 48.74203690805007,
+      "total_seconds": 124.32884332095273,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/ours/metrics_history.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/ours/metrics_history.json"
     },
     {
       "family": "vla_adapter_new",
@@ -210,11 +210,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "self_improv",
       "display_name": "Self-Improv",
-      "sampling_seconds": 20.403674697598163,
-      "training_seconds": 250.8760541984865,
-      "total_seconds": 271.27972889608463,
+      "sampling_seconds": 307.74958174314816,
+      "training_seconds": 6.166707783937454,
+      "total_seconds": 313.9162895270856,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/self_improv/metrics_history.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/self_improv/metrics_history.json"
     },
     {
       "family": "vla_adapter_new",
@@ -222,11 +222,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "vla_rft",
       "display_name": "VLA-RFT",
-      "sampling_seconds": 106.09011367314011,
-      "training_seconds": 3.328870298449403,
-      "total_seconds": 109.41898397158951,
+      "sampling_seconds": 307.06224436999764,
+      "training_seconds": 6.775088530150242,
+      "total_seconds": 313.8373329001479,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/vla_rft/metrics_history.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/vla_rft/metrics_history.json"
     },
     {
       "family": "vla_adapter_new",
@@ -234,11 +234,11 @@
       "workload_name": "Dexterous hand",
       "method_name": "world_env",
       "display_name": "WorldEnv",
-      "sampling_seconds": 99.6649885562816,
-      "training_seconds": 2.8499896091441,
-      "total_seconds": 102.5149781654257,
+      "sampling_seconds": 303.8665295022074,
+      "training_seconds": 7.756691223941743,
+      "total_seconds": 311.62322072614916,
       "has_breakdown_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/world_env/metrics_history.json"
+      "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/world_env/metrics_history.json"
     },
     {
       "family": "tinyvla",
@@ -306,11 +306,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "ours",
       "display_name": "VLASelect",
-      "sampling_seconds": 49.28507792239543,
-      "training_seconds": 72.83243815391324,
-      "total_seconds": 122.11751607630868,
+      "sampling_seconds": 43.84645895322319,
+      "training_seconds": 77.77493544481695,
+      "total_seconds": 121.62139439804014,
       "has_breakdown_data": 1,
-      "source": "ckpt/tinyvla/cl_suite/20260826-210332/ours/metrics_history.json"
+      "source": "ckpt/tinyvla/cl_suite/20260910-082538/ours/metrics_history.json"
     },
     {
       "family": "tinyvla",
@@ -330,11 +330,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "self_improv",
       "display_name": "Self-Improv",
-      "sampling_seconds": 48.289043248980306,
-      "training_seconds": 292.41774944297504,
-      "total_seconds": 340.70679269195534,
+      "sampling_seconds": 93.21220360998996,
+      "training_seconds": 371.0538893529447,
+      "total_seconds": 464.26609296293464,
       "has_breakdown_data": 1,
-      "source": "ckpt/tinyvla/cl_suite/20260826-210332/self_improv/metrics_history.json"
+      "source": "ckpt/tinyvla/cl_suite/20260910-082538/self_improv/metrics_history.json"
     },
     {
       "family": "tinyvla",
@@ -342,11 +342,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "vla_rft",
       "display_name": "VLA-RFT",
-      "sampling_seconds": 64.04563501688409,
-      "training_seconds": 0.18205490245648054,
-      "total_seconds": 64.22768991934058,
+      "sampling_seconds": 90.8058811474181,
+      "training_seconds": 129.03664252895396,
+      "total_seconds": 219.84252367637208,
       "has_breakdown_data": 1,
-      "source": "ckpt/tinyvla/cl_suite/20260826-210332/vla_rft/metrics_history.json"
+      "source": "ckpt/tinyvla/cl_suite/20260910-082538/vla_rft/metrics_history.json"
     },
     {
       "family": "tinyvla",
@@ -354,11 +354,11 @@
       "workload_name": "Mobile manipulator",
       "method_name": "world_env",
       "display_name": "WorldEnv",
-      "sampling_seconds": 67.6828754292704,
-      "training_seconds": 0.18158992023623663,
-      "total_seconds": 67.86446534950663,
+      "sampling_seconds": 91.93955185574212,
+      "training_seconds": 127.09094734606333,
+      "total_seconds": 219.03049920180547,
       "has_breakdown_data": 1,
-      "source": "ckpt/tinyvla/cl_suite/20260826-210332/world_env/metrics_history.json"
+      "source": "ckpt/tinyvla/cl_suite/20260910-082538/world_env/metrics_history.json"
     },
     {
       "family": "edgevla",
@@ -426,11 +426,11 @@
       "workload_name": "Humanoid robot",
       "method_name": "ours",
       "display_name": "VLASelect",
-      "sampling_seconds": 0.0,
-      "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "sampling_seconds": 2.3317604148075057,
+      "training_seconds": 2.6682395851924943,
+      "total_seconds": 5.0,
+      "has_breakdown_data": 1,
+      "source": "train/edgevla/cl_suite/20260910-082538/ours/run/metrics_history.json"
     },
     {
       "family": "edgevla",
@@ -450,11 +450,11 @@
       "workload_name": "Humanoid robot",
       "method_name": "self_improv",
       "display_name": "Self-Improv",
-      "sampling_seconds": 0.0,
+      "sampling_seconds": 5.0,
       "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "total_seconds": 5.0,
+      "has_breakdown_data": 1,
+      "source": "train/edgevla/cl_suite/20260910-082538/self_improv/run/metrics_history.json"
     },
     {
       "family": "edgevla",
@@ -462,11 +462,11 @@
       "workload_name": "Humanoid robot",
       "method_name": "vla_rft",
       "display_name": "VLA-RFT",
-      "sampling_seconds": 0.0,
+      "sampling_seconds": 5.0,
       "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "total_seconds": 5.0,
+      "has_breakdown_data": 1,
+      "source": "train/edgevla/cl_suite/20260910-082538/vla_rft/run/metrics_history.json"
     },
     {
       "family": "edgevla",
@@ -474,11 +474,11 @@
       "workload_name": "Humanoid robot",
       "method_name": "world_env",
       "display_name": "WorldEnv",
-      "sampling_seconds": 0.0,
+      "sampling_seconds": 5.0,
       "training_seconds": 0.0,
-      "total_seconds": 0.0,
-      "has_breakdown_data": 0,
-      "source": ""
+      "total_seconds": 5.0,
+      "has_breakdown_data": 1,
+      "source": "train/edgevla/cl_suite/20260910-082538/world_env/run/metrics_history.json"
     }
   ],
   "module_rows": [
@@ -487,56 +487,22 @@
       "panel_label": "a",
       "workload_name": "Single-arm robot",
       "display_name": "VLASelect",
-      "workload_initialization_seconds": 3.8545424879994243,
-      "optimal_network_searcher_seconds": 0.014640639012213796,
-      "selective_model_enhancer_seconds": 0.8383110709837638,
-      "optimal_network_search_and_selective_model_enhancement_seconds": 0.8529517099959776,
+      "workload_initialization_seconds": 3.9512194140115753,
+      "optimal_network_searcher_seconds": 0.014466594904661179,
+      "selective_model_enhancer_seconds": 0.8399406870594248,
+      "optimal_network_search_and_selective_model_enhancement_seconds": 0.854407281964086,
       "selective_knowledge_accumulation_seconds": 0.0,
-      "online_rl_completion_seconds": 1.0651538790552877,
-      "total_seconds": 0.8529517099959776,
+      "online_rl_completion_seconds": 0.5991068340372294,
+      "total_seconds": 0.854407281964086,
       "has_module_data": 1,
-      "source": "ckpt/cl_suite/20260826-121034/ours_single_agent/[agent]/metrics_history.json",
-      "runtime_source": "ckpt/cl_suite/20260826-121034/ours_single_agent/[agent]/metrics_history.json",
-      "same_acc_runtime_seconds": 1.0651538790552877
+      "source": "ckpt/cl_suite/20260828-070838/ours_single_agent/[agent]/metrics_history.json",
+      "runtime_source": "ckpt/cl_suite/20260828-070838/ours_single_agent/[agent]/metrics_history.json",
+      "same_acc_runtime_seconds": 0.5991068340372294
     },
     {
       "family": "vla_adapter_new",
       "panel_label": "b",
       "workload_name": "Dexterous hand",
-      "display_name": "VLASelect",
-      "workload_initialization_seconds": 4.217004779027775,
-      "optimal_network_searcher_seconds": 4.428006910951808,
-      "selective_model_enhancer_seconds": 10.049657305935398,
-      "optimal_network_search_and_selective_model_enhancement_seconds": 14.477664216887206,
-      "selective_knowledge_accumulation_seconds": 0.0,
-      "online_rl_completion_seconds": 25.09970370819792,
-      "total_seconds": 14.477664216887206,
-      "has_module_data": 1,
-      "source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/ours/metrics_history.json",
-      "runtime_source": "ckpt/vla_adapter_new/cl_suite/20260826-160837/ours/metrics_history.json",
-      "same_acc_runtime_seconds": 25.09970370819792
-    },
-    {
-      "family": "tinyvla",
-      "panel_label": "c",
-      "workload_name": "Mobile manipulator",
-      "display_name": "VLASelect",
-      "workload_initialization_seconds": 3.5221181609667838,
-      "optimal_network_searcher_seconds": 0.5230858599534258,
-      "selective_model_enhancer_seconds": 11.331316187046468,
-      "optimal_network_search_and_selective_model_enhancement_seconds": 11.854402046999894,
-      "selective_knowledge_accumulation_seconds": 0.0,
-      "online_rl_completion_seconds": 9.608496586093679,
-      "total_seconds": 11.854402046999894,
-      "has_module_data": 1,
-      "source": "ckpt/tinyvla/cl_suite/20260826-210332/ours/metrics_history.json",
-      "runtime_source": "ckpt/tinyvla/cl_suite/20260826-210332/ours/metrics_history.json",
-      "same_acc_runtime_seconds": 9.608496586093679
-    },
-    {
-      "family": "edgevla",
-      "panel_label": "d",
-      "workload_name": "Humanoid robot",
       "display_name": "VLASelect",
       "workload_initialization_seconds": 0.0,
       "optimal_network_searcher_seconds": 0.0,
@@ -546,9 +512,43 @@
       "online_rl_completion_seconds": 0.0,
       "total_seconds": 0.0,
       "has_module_data": 0,
-      "source": "",
-      "runtime_source": "",
+      "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/ours/metrics_history.json",
+      "runtime_source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/ours/metrics_history.json",
       "same_acc_runtime_seconds": 0.0
+    },
+    {
+      "family": "tinyvla",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "display_name": "VLASelect",
+      "workload_initialization_seconds": 0.0,
+      "optimal_network_searcher_seconds": 0.0,
+      "selective_model_enhancer_seconds": 0.0,
+      "optimal_network_search_and_selective_model_enhancement_seconds": 0.0,
+      "selective_knowledge_accumulation_seconds": 0.0,
+      "online_rl_completion_seconds": 0.0,
+      "total_seconds": 0.0,
+      "has_module_data": 0,
+      "source": "ckpt/tinyvla/cl_suite/20260910-082538/ours/metrics_history.json",
+      "runtime_source": "ckpt/tinyvla/cl_suite/20260910-082538/ours/metrics_history.json",
+      "same_acc_runtime_seconds": 0.0
+    },
+    {
+      "family": "edgevla",
+      "panel_label": "d",
+      "workload_name": "Humanoid robot",
+      "display_name": "VLASelect",
+      "workload_initialization_seconds": 3.690385753987357,
+      "optimal_network_searcher_seconds": 0.5219388511031866,
+      "selective_model_enhancer_seconds": 9.743335996987298,
+      "optimal_network_search_and_selective_model_enhancement_seconds": 10.265274848090485,
+      "selective_knowledge_accumulation_seconds": 0.0,
+      "online_rl_completion_seconds": 10.748498074826784,
+      "total_seconds": 10.265274848090485,
+      "has_module_data": 1,
+      "source": "train/edgevla/cl_suite/20260828-185246/ours/run/metrics_history.json",
+      "runtime_source": "train/edgevla/cl_suite/20260828-185246/ours/run/metrics_history.json",
+      "same_acc_runtime_seconds": 10.748498074826784
     }
   ]
 }

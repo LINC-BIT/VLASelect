@@ -20,6 +20,7 @@ from common.figure_compose import compose_grid_figure
 from common.template_pdf_fill import fill_sampling_training_template
 from plot_breakdown_impl import (
     ALL_METHODS_TABLE_ROOT,
+    SAME_ACC_TABLE_ROOT,
     apply_dynamic_time_axis,
     load_csv_rows,
     load_top_manifest_from_table_root,
@@ -81,6 +82,11 @@ def load_manifest(manifest_path: str | None) -> tuple[dict, Path | None]:
     return load_latest_manifest()
 
 
+def load_same_acc_manifest() -> tuple[dict, Path | None]:
+    """Load the per-workload merged suite manifest used by the target-acc plot."""
+    return load_top_manifest_from_table_root(SAME_ACC_TABLE_ROOT, None)
+
+
 def warn_if_workloads_incomplete(manifest: dict) -> None:
     panels = manifest.get('panels', manifest.get('families', []))
     by_family = {
@@ -137,6 +143,11 @@ def resolve_eval_path(path_value: str) -> Path:
 
 def same_acc_summary_path(panel: dict, manifest: dict) -> Path | None:
     """Return the target-accuracy summary that defines this panel's cutoff."""
+    explicit_summary = str(panel.get("_same_acc_summary_path") or "").strip()
+    if explicit_summary:
+        summary_path = resolve_eval_path(explicit_summary)
+        if summary_path.is_file():
+            return summary_path
     candidates = [
         str(panel.get("same_acc_manifest") or "").strip(),
         str(manifest.get("same_acc_manifest") or "").strip(),
@@ -157,6 +168,26 @@ def same_acc_summary_path(panel: dict, manifest: dict) -> Path | None:
         if stamp and summary_path.is_file():
             return summary_path
     return None
+
+
+def apply_target_accuracy_summary(manifest: dict, summary_path: Path) -> dict:
+    """Make all workload panels use one plot_overhead_target_acc summary."""
+    try:
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"cannot read --target-accuracy-summary {summary_path}: {exc}") from exc
+    if not isinstance(payload, list):
+        raise SystemExit("--target-accuracy-summary must contain the JSON row list written by plot_overhead_target_acc.py")
+    result = dict(manifest)
+    for key in ("panels", "families"):
+        entries = result.get(key, [])
+        if not isinstance(entries, list):
+            continue
+        result[key] = [
+            ({**entry, "_same_acc_summary_path": str(summary_path)} if isinstance(entry, dict) else entry)
+            for entry in entries
+        ]
+    return result
 
 
 def collect_plot_inputs(manifest: dict, rows: list[dict[str, str]]) -> list[dict]:
@@ -333,9 +364,29 @@ def draw_panels(payload: dict) -> list[Path]:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--manifest', type=str, default=None)
+    parser.add_argument(
+        '--target-accuracy-summary',
+        type=Path,
+        default=None,
+        help='JSON summary emitted by plot_overhead_target_acc.py; use its reach_hours as each method cutoff.',
+    )
+    parser.add_argument(
+        '--same-acc-table',
+        action='store_true',
+        help='Use the merged suites from overhead_same_acc_table (the same data source as plot_overhead_target_acc.py).',
+    )
     args = parser.parse_args(argv)
+    if args.manifest is not None and args.same_acc_table:
+        raise SystemExit('--manifest and --same-acc-table cannot be used together')
 
-    manifest, resolved_manifest_path = load_manifest(args.manifest)
+    manifest, resolved_manifest_path = (
+        load_same_acc_manifest() if args.same_acc_table else load_manifest(args.manifest)
+    )
+    if args.target_accuracy_summary is not None:
+        summary_path = args.target_accuracy_summary.resolve()
+        if not summary_path.is_file():
+            raise SystemExit(f'target-accuracy summary does not exist: {summary_path}')
+        manifest = apply_target_accuracy_summary(manifest, summary_path)
     warn_if_workloads_incomplete(manifest)
     output_root = resolve_output_root(manifest, resolved_manifest_path)
     selected = {row.get('family'): row.get('_top_manifest', '') for row in manifest.get('panels', []) if isinstance(row, dict)}

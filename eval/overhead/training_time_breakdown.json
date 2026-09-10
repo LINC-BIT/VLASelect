@@ -81,20 +81,20 @@
     "self_improv": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.004227934744622973,
-          "model_update_hours": 9.65792147649659e-05
+          "rollout_hours": 0.00316116466450158,
+          "model_update_hours": 0.00011629961650299577
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.006069406216103946,
-          "model_update_hours": 0.07922912439861748
+          "rollout_hours": 0.08548599492865226,
+          "model_update_hours": 0.0017129743844270706
         },
         "tinyvla": {
-          "rollout_hours": 0.013344178933313943,
-          "model_update_hours": 0.07974560131803932
+          "rollout_hours": 0.025892278780552766,
+          "model_update_hours": 0.10307052482026241
         },
         "edgevla": {
-          "rollout_hours": 0.012897643446591115,
-          "model_update_hours": 0.0704356898867422
+          "rollout_hours": 0.001388888888888889,
+          "model_update_hours": 0.0
         }
       }
     },
@@ -121,40 +121,40 @@
     "vla_rft": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.014668484528859457,
-          "model_update_hours": 0.00030990284350183275
+          "rollout_hours": 0.0023805883039683395,
+          "model_update_hours": 0.00010245784222174274
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.032658894792483704,
-          "model_update_hours": 0.001036131077465446
+          "rollout_hours": 0.0852950678805549,
+          "model_update_hours": 0.001881969036152845
         },
         "tinyvla": {
-          "rollout_hours": 0.034315359732524184,
-          "model_update_hours": 7.488713363677056e-05
+          "rollout_hours": 0.025223855874282806,
+          "model_update_hours": 0.03584351181359832
         },
         "edgevla": {
-          "rollout_hours": 0.03686099423111753,
-          "model_update_hours": 7.519038361755924e-05
+          "rollout_hours": 0.001388888888888889,
+          "model_update_hours": 0.0
         }
       }
     },
     "world_env": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.01436564048131307,
-          "model_update_hours": 0.0003056987043884065
+          "rollout_hours": 0.0023545268637223927,
+          "model_update_hours": 9.987209678614851e-05
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.03312580851391734,
-          "model_update_hours": 0.0008295437988838077
+          "rollout_hours": 0.08440736930616873,
+          "model_update_hours": 0.002154636451094929
         },
         "tinyvla": {
-          "rollout_hours": 0.03402356681695286,
-          "model_update_hours": 9.609743917179812e-05
+          "rollout_hours": 0.02553876440437281,
+          "model_update_hours": 0.035303040929462036
         },
         "edgevla": {
-          "rollout_hours": 0.040391681548337346,
-          "model_update_hours": 7.586467891491743e-05
+          "rollout_hours": 0.001388888888888889,
+          "model_update_hours": 0.0
         }
       }
     },
@@ -201,22 +201,352 @@
     "ours": {
       "by_dataset": {
         "octo": {
-          "rollout_hours": 0.0014688666680152554,
-          "model_update_hours": 0.0002158982983889913
+          "rollout_hours": 0.0016699786306707573,
+          "model_update_hours": 0.00016881619840747642
         },
         "vla_adapter_new": {
-          "rollout_hours": 0.0067742201186857896,
-          "model_update_hours": 0.003134800473813386
+          "rollout_hours": 0.020996335114695182,
+          "model_update_hours": 0.013539454696680574
         },
         "tinyvla": {
-          "rollout_hours": 0.004460412066413552,
-          "model_update_hours": 0.009391902879647033
+          "rollout_hours": 0.012179571931450887,
+          "model_update_hours": 0.021604148734671372
         },
         "edgevla": {
-          "rollout_hours": 0.010206907398068323,
-          "model_update_hours": 0.014861919764157364
+          "rollout_hours": 0.0006477112263354182,
+          "model_update_hours": 0.0007411776625534706
         }
       }
     }
-  }
+  },
+  "plot_inputs": [
+    {
+      "family": "octo",
+      "panel_label": "a",
+      "workload_name": "Single-arm robot",
+      "target_accuracy_mode": "per-workload",
+      "target_accuracy": 0.5,
+      "target_accuracy_by_method": {
+        "ours_single_agent": 0.5,
+        "self_improv": 0.5,
+        "vla_rft": 0.5,
+        "world_env": 0.5
+      },
+      "reach_hours_by_method": {
+        "ours_single_agent": 0.0018387948290782337,
+        "self_improv": 0.003223339808302828,
+        "vla_rft": 0.0024830462125181737,
+        "world_env": 0.0024543988858284948
+      },
+      "target_accuracy_source": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260910-082538/plot/overhead_same_target_acc_summary.json",
+      "timing_inputs": [
+        {
+          "method": "conrft",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "flare",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "improv_vla",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "edgeta",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "convertnet",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "ours_single_agent",
+          "source": "ckpt/cl_suite/20260910-082538/ours_single_agent/[agent]/metrics_history.json",
+          "sampling_seconds": 6.011923070414726,
+          "training_seconds": 0.6077383142669152
+        },
+        {
+          "method": "ppo_gen",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "self_improv",
+          "source": "ckpt/cl_suite/20260910-082538/self_improv/tb",
+          "sampling_seconds": 11.380192792205687,
+          "training_seconds": 0.41867861941078477
+        },
+        {
+          "method": "vla_rft",
+          "source": "ckpt/cl_suite/20260910-082538/vla_rft/tb",
+          "sampling_seconds": 8.570117894286023,
+          "training_seconds": 0.3688482319982739
+        },
+        {
+          "method": "world_env",
+          "source": "ckpt/cl_suite/20260910-082538/world_env/tb",
+          "sampling_seconds": 8.476296709400614,
+          "training_seconds": 0.35953954843013464
+        }
+      ]
+    },
+    {
+      "family": "vla_adapter_new",
+      "panel_label": "b",
+      "workload_name": "Dexterous hand",
+      "target_accuracy_mode": "per-workload",
+      "target_accuracy": 0.1,
+      "target_accuracy_by_method": {
+        "ours": 0.1,
+        "self_improv": 0.1,
+        "vla_rft": 0.1,
+        "world_env": 0.1
+      },
+      "reach_hours_by_method": {
+        "ours": 0.034535789811375756,
+        "self_improv": 0.08719904248502441,
+        "vla_rft": 0.0871771625377975,
+        "world_env": 0.0865620939269623
+      },
+      "target_accuracy_source": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260910-082538/plot/overhead_same_target_acc_summary.json",
+      "timing_inputs": [
+        {
+          "method": "conrft",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "flare",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "improv_vla",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "edgeta",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "convertnet",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "ours",
+          "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/ours/metrics_history.json",
+          "sampling_seconds": 75.58680641290266,
+          "training_seconds": 48.74203690805007
+        },
+        {
+          "method": "ppo_gen",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "self_improv",
+          "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/self_improv/metrics_history.json",
+          "sampling_seconds": 307.74958174314816,
+          "training_seconds": 6.166707783937454
+        },
+        {
+          "method": "vla_rft",
+          "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/vla_rft/metrics_history.json",
+          "sampling_seconds": 307.06224436999764,
+          "training_seconds": 6.775088530150242
+        },
+        {
+          "method": "world_env",
+          "source": "ckpt/vla_adapter_new/cl_suite/20260910-082538/world_env/metrics_history.json",
+          "sampling_seconds": 303.8665295022074,
+          "training_seconds": 7.756691223941743
+        }
+      ]
+    },
+    {
+      "family": "tinyvla",
+      "panel_label": "c",
+      "workload_name": "Mobile manipulator",
+      "target_accuracy_mode": "per-workload",
+      "target_accuracy": 0.3,
+      "target_accuracy_by_method": {
+        "ours": 0.3,
+        "self_improv": 0.3,
+        "vla_rft": 0.3,
+        "world_env": 0.3
+      },
+      "reach_hours_by_method": {
+        "ours": 0.03378372066612226,
+        "self_improv": 0.1289628036008152,
+        "vla_rft": 0.061067306272226334,
+        "world_env": 0.060841733855842094
+      },
+      "target_accuracy_source": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260910-082538/plot/overhead_same_target_acc_summary.json",
+      "timing_inputs": [
+        {
+          "method": "conrft",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "flare",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "improv_vla",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "edgeta",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "convertnet",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "ours",
+          "source": "ckpt/tinyvla/cl_suite/20260910-082538/ours/metrics_history.json",
+          "sampling_seconds": 43.84645895322319,
+          "training_seconds": 77.77493544481695
+        },
+        {
+          "method": "ppo_gen",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "self_improv",
+          "source": "ckpt/tinyvla/cl_suite/20260910-082538/self_improv/metrics_history.json",
+          "sampling_seconds": 93.21220360998996,
+          "training_seconds": 371.0538893529447
+        },
+        {
+          "method": "vla_rft",
+          "source": "ckpt/tinyvla/cl_suite/20260910-082538/vla_rft/metrics_history.json",
+          "sampling_seconds": 90.8058811474181,
+          "training_seconds": 129.03664252895396
+        },
+        {
+          "method": "world_env",
+          "source": "ckpt/tinyvla/cl_suite/20260910-082538/world_env/metrics_history.json",
+          "sampling_seconds": 91.93955185574212,
+          "training_seconds": 127.09094734606333
+        }
+      ]
+    },
+    {
+      "family": "edgevla",
+      "panel_label": "d",
+      "workload_name": "Humanoid robot",
+      "target_accuracy_mode": "per-workload",
+      "target_accuracy": 0.16,
+      "target_accuracy_by_method": {
+        "ours": 0.16,
+        "self_improv": 0.16,
+        "vla_rft": 0.16,
+        "world_env": 0.16
+      },
+      "reach_hours_by_method": {
+        "ours": 0.001388888888888889,
+        "self_improv": 0.001388888888888889,
+        "vla_rft": 0.001388888888888889,
+        "world_env": 0.001388888888888889
+      },
+      "target_accuracy_source": "/home/zcr/vlaselect/eval/overhead/overhead_same_acc_table/20260910-082538/plot/overhead_same_target_acc_summary.json",
+      "timing_inputs": [
+        {
+          "method": "conrft",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "flare",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "improv_vla",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "edgeta",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "convertnet",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "ours",
+          "source": "train/edgevla/cl_suite/20260910-082538/ours/run/metrics_history.json",
+          "sampling_seconds": 2.3317604148075057,
+          "training_seconds": 2.6682395851924943
+        },
+        {
+          "method": "ppo_gen",
+          "source": "",
+          "sampling_seconds": 0.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "self_improv",
+          "source": "train/edgevla/cl_suite/20260910-082538/self_improv/run/metrics_history.json",
+          "sampling_seconds": 5.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "vla_rft",
+          "source": "train/edgevla/cl_suite/20260910-082538/vla_rft/run/metrics_history.json",
+          "sampling_seconds": 5.0,
+          "training_seconds": 0.0
+        },
+        {
+          "method": "world_env",
+          "source": "train/edgevla/cl_suite/20260910-082538/world_env/run/metrics_history.json",
+          "sampling_seconds": 5.0,
+          "training_seconds": 0.0
+        }
+      ]
+    }
+  ]
 }

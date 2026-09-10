@@ -14,6 +14,7 @@ source "${EVAL_ROOT}/common/resource_summary.sh"
 
 SUITE_STAMP="${SUITE_STAMP:-$(date -u +"%Y%m%d-%H%M%S")}"
 TABLE_ROOT="${TABLE_ROOT_OVERRIDE:-overhead/overhead_breakdown_all_methods_table}"
+SAME_ACC_TABLE_ROOT="${SAME_ACC_TABLE_ROOT_OVERRIDE:-overhead/overhead_same_acc_table}"
 RUN_ROOT="${TABLE_ROOT}/${SUITE_STAMP}"
 LAUNCH_LOG_DIR="${RUN_ROOT}/launch_logs"
 PANELS_JSONL="${RUN_ROOT}/panels.jsonl"
@@ -31,6 +32,10 @@ MODEL_SELECTION="${MODEL_SELECTION:-}"
 FAMILY_SELECTION="${FAMILY_SELECTION:-${MODEL_SELECTION:-}}"
 METHODS="${METHODS:-${RUN_METHODS:-}}"
 MWE="${MWE:-0}"
+# Breakdown should normally analyse the exact suites used for the same-
+# accuracy footprint figure, rather than launching a second, differently
+# scheduled copy of the experiment.  Set to 0 to retain the legacy rerun.
+REUSE_SAME_ACC="${REUSE_SAME_ACC:-1}"
 BREAKDOWN_ALL_METHODS_ACTIVE_RUNTIME_SECONDS="${BREAKDOWN_ALL_METHODS_ACTIVE_RUNTIME_SECONDS:-120}"
 
 if [[ -z "${MWE_WORKLOAD_RUNTIME_LIMIT_SECONDS+x}" ]]; then
@@ -47,9 +52,13 @@ if [[ "$MWE" == "1" ]]; then
     PLOT_INTERVAL_SECONDS="${PLOT_INTERVAL_SECONDS:-5}"
     SUITE_WAIT_POLL_SECONDS="${SUITE_WAIT_POLL_SECONDS:-5}"
 fi
-vlaselect_resource_summary_start "overhead_breakdown_all_methods.sh"
-vlaselect_install_cleanup_trap
-vlaselect_run_sanity_check "overhead_breakdown_all_methods.sh" "$EVAL_ROOT" "$MWE" "32" "12"
+if [[ "$REUSE_SAME_ACC" == "1" ]]; then
+    echo "[breakdown] REUSE_SAME_ACC=1: skipping launch/resource checks and reusing same-acc suites."
+else
+    vlaselect_resource_summary_start "overhead_breakdown_all_methods.sh"
+    vlaselect_install_cleanup_trap
+    vlaselect_run_sanity_check "overhead_breakdown_all_methods.sh" "$EVAL_ROOT" "$MWE" "32" "12"
+fi
 
 EDGEVLA_ENVS_ID="${EDGEVLA_ENVS_ID:-['UnitreeG1LiftCubeObjectScaleDown1p3-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeLightWeaker50-v1','UnitreeG1LiftCubeObjectPurple-v1','UnitreeG1LiftSphereLightStronger50-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectScaleDown1p1-v1','UnitreeG1LiftSphereObjectScaleDown1p3-v1','UnitreeG1LiftCubeColorTempLower50-v1','UnitreeG1LiftCubeObjectPurple-v1']}"
 TINYVLA_ENVS_ID="${TINYVLA_ENVS_ID:-['OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1016ScaleUp1p3-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1','OpenCabinetDrawerCabinet1027Default-v1','OpenCabinetDrawerCabinet1021Default-v1','OpenCabinetDrawerCabinet1032Default-v1','OpenCabinetDrawerCabinet1033ScaleUp1p3-v1']}"
@@ -458,11 +467,51 @@ launch_family_suite() {
     fi
 }
 
-for family in "${FAMILY_ORDER[@]}"; do
-    if [[ "${SHOULD_RUN_FAMILY[$family]}" == "1" ]]; then
-        launch_family_suite "$family"
-    fi
-done
+if [[ "$REUSE_SAME_ACC" == "1" ]]; then
+    python - <<'PY' "$SAME_ACC_TABLE_ROOT" "$PANELS_JSONL" "${FAMILY_ORDER[*]}" "${SHOULD_RUN_FAMILY[octo]}" "${SHOULD_RUN_FAMILY[vla_adapter_new]}" "${SHOULD_RUN_FAMILY[tinyvla]}" "${SHOULD_RUN_FAMILY[edgevla]}"
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path.cwd() / "overhead"))
+from plot_breakdown_impl import load_top_manifest_from_table_root
+
+table_root = Path(sys.argv[1])
+jsonl_path = Path(sys.argv[2])
+families = sys.argv[3].split()
+enabled = {family: flag == "1" for family, flag in zip(families, sys.argv[4:])}
+manifest, _ = load_top_manifest_from_table_root(table_root, None)
+panels = manifest.get("panels", manifest.get("families", []))
+by_family = {
+    str(panel.get("family")): panel
+    for panel in panels
+    if isinstance(panel, dict) and str(panel.get("family", "")).strip()
+}
+selected = []
+for family in families:
+    if not enabled.get(family):
+        continue
+    panel = by_family.get(family)
+    suite_manifest = str(panel.get("suite_manifest", "")).strip() if isinstance(panel, dict) else ""
+    if not suite_manifest:
+        raise SystemExit(f"No reusable same-acc suite found for {family} under {table_root}")
+    selected.append(panel)
+jsonl_path.write_text(
+    "".join(json.dumps(panel) + "\n" for panel in selected),
+    encoding="utf-8",
+)
+print("[breakdown] reusing same-acc suites:")
+for panel in selected:
+    print(f"  {panel['family']}: {panel['suite_manifest']}")
+PY
+    refresh_top_manifest
+else
+    for family in "${FAMILY_ORDER[@]}"; do
+        if [[ "${SHOULD_RUN_FAMILY[$family]}" == "1" ]]; then
+            launch_family_suite "$family"
+        fi
+    done
+fi
 
 python overhead/plot_breakdown_impl.py --manifest "$MANIFEST_JSON" --prepare-only
 

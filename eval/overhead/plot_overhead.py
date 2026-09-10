@@ -1481,6 +1481,9 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                 paper_name = PAPER_METHOD_BY_INTERNAL.get(internal_name)
                 if not paper_name:
                     continue
+                status = str(method.get('status') or '').strip().lower()
+                if status and status not in {'completed', 'running'}:
+                    continue
                 run_dir = resolve_path(method['run_dir'])
                 raw_data_paths.append(str(find_gpu_metrics_csv(run_dir) or run_dir / 'analysis' / 'gpu_metrics.csv'))
                 raw_points = collect_raw_gpu_memory_plot_points(run_dir)
@@ -1493,15 +1496,6 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                         color=style.get('color'),
                         linestyle=style.get('linestyle', '-'),
                     )
-                    canonical_name = _canonical_legend_method_name(internal_name)
-                    if canonical_name not in seen_legend_names:
-                        legend_entries.append({
-                            'name': internal_name,
-                            'label': _canonical_legend_label(internal_name, paper_name),
-                            'style': dict(style),
-                        })
-                        seen_legend_names.add(canonical_name)
-
                 metrics = panel_metrics.get(paper_name, make_empty_metrics())
                 if metrics['reach_hours'] <= 0.0:
                     continue
@@ -1518,6 +1512,14 @@ def draw_memory_panel(panel, panel_metrics) -> tuple[Path, Path, list[dict[str, 
                     continue
                 xs = [point[0] for point in points]
                 ys = [point[1] for point in points]
+                canonical_name = _canonical_legend_method_name(internal_name)
+                if canonical_name not in seen_legend_names:
+                    legend_entries.append({
+                        'name': internal_name,
+                        'label': _canonical_legend_label(internal_name, paper_name),
+                        'style': dict(style),
+                    })
+                    seen_legend_names.add(canonical_name)
                 drop_x = metrics['reach_hours']
                 stable_y = ys[-1]
                 if xs[-1] < drop_x:

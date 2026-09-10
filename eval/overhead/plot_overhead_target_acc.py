@@ -22,7 +22,9 @@ if str(EVAL_ROOT) not in sys.path:
 from common.figure_compose import compose_grid_figure, render_legend_image
 from common.template_pdf_fill import fill_memory_template
 from plot_breakdown_impl import load_top_manifest_from_table_root
-TABLE_ROOT = SCRIPT_DIR / 'overhead_same_target_acc_table'
+# This figure consumes the same-accuracy overhead suites.  The loader below
+# merges the newest available manifest independently for each workload.
+TABLE_ROOT = SCRIPT_DIR / 'overhead_same_acc_table'
 BREAKDOWN_ROOT = SCRIPT_DIR
 LATEST_POINTER = TABLE_ROOT / 'latest.txt'
 FIGURE_PATH = SCRIPT_DIR / 'FIG_MEMORY_FOOTPOINT.pdf'
@@ -67,6 +69,12 @@ PAPER_PANELS = [
     {'panel_label': 'c', 'family': 'tinyvla', 'display_name': 'TinyVLA', 'workload_name': 'Mobile manipulator', 'panel_title': '(c) Mobile manipulator'},
     {'panel_label': 'd', 'family': 'edgevla', 'display_name': 'EdgeVLA', 'workload_name': 'Humanoid robot', 'panel_title': '(d) Humanoid robot'},
 ]
+DEFAULT_TARGET_ACCURACY_BY_WORKLOAD = {
+    "Single-arm robot": 0.5,
+    "Dexterous hand": 0.6,
+    "Mobile manipulator": 0.4,
+    "Humanoid robot": 0.7,
+}
 METHOD_STYLES = {'conrft': {'color': '#4C78A8', 'linestyle': '-'},'flare': {'color': '#59A14F', 'linestyle': '-'},'improv_vla': {'color': '#4D4D4D', 'linestyle': '-'},'edgeta': {'color': '#A6A6A6', 'linestyle': '--'},'convertnet': {'color': '#CEBB6C', 'linestyle': '--'},'ours': {'color': '#C44E52', 'linestyle': '-'},'ours_single_agent': {'color': '#C44E52', 'linestyle': '-'},'ppo_gen': {'color': '#4C78A8', 'linestyle': '--'},'self_improv': {'color': '#9A9A9A', 'linestyle': '-'},'self_improvement': {'color': '#9A9A9A', 'linestyle': '-'},'vla_rft': {'color': '#59A14F', 'linestyle': '--'},'world_env': {'color': '#4D4D4D', 'linestyle': '--'}}
 LEGEND_ORDER = ['conrft', 'flare', 'improv_vla', 'self_improv', 'self_improvement', 'ppo_gen', 'vla_rft', 'world_env', 'edgeta', 'convertnet', 'ours', 'ours_single_agent']
 FAMILY_CONFIGS = {'edgevla': {'metric_key': 'eval_success_once', 'loader': 'history'},'octo': {'metric_key': 'eval/success_once', 'loader': 'tensorboard'},'tinyvla': {'metric_key': 'eval_success_once', 'loader': 'history'},'vla_adapter_new': {'metric_key': 'eval_success_once', 'loader': 'history'}}
@@ -148,7 +156,7 @@ def load_default_manifest() -> dict[str, Any]:
 def default_manifest() -> dict[str, Any]:
     return {
         'suite_stamp': 'no-data',
-        'table_root': 'overhead/overhead_same_target_acc_table',
+        'table_root': 'overhead/overhead_same_acc_table',
         'figure_output': 'overhead/FIG_MEMORY_FOOTPOINT.pdf',
         'table2_output': 'overhead/TAB_OVERHEAD.csv',
         'table3_output': 'overhead/TAB_ENERGY.csv',
@@ -1757,10 +1765,11 @@ parser.add_argument('--target-accuracy', type=float, default=None, help='Fallbac
 parser.add_argument(
     '--target-accuracy-by-workload',
     type=str,
-    default=None,
+    default=json.dumps(DEFAULT_TARGET_ACCURACY_BY_WORKLOAD),
     help=(
         'JSON object mapping workload name, family, display name, or panel label to a target accuracy; '
-        'for example: {"Single-arm robot": 0.5, "vla_adapter_new": 0.6, "c": 0.4}.'
+        'defaults to {"Single-arm robot": 0.5, "Dexterous hand": 0.6, '
+        '"Mobile manipulator": 0.4, "Humanoid robot": 0.7}.'
     ),
 )
 args = parser.parse_args()

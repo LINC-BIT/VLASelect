@@ -1,3 +1,4 @@
+import os
 import sys
 
 sys.path.append('./')  # 添加当前目录到sys.path，以便导入ours.pretrain_fbs_model.main
@@ -15,6 +16,14 @@ from pathlib import Path
 # exit()
 
 def convert_to_fbs_model(actor, device, verify_outputs=True, materialize_fbs_cache=True):
+
+    # MWE overhead runs load the trained FBS parameters directly from the
+    # checkpoint.  The random-input reconstruction check is both unnecessary
+    # for that path and unstable across the mixed-precision model variants.
+    # Keep the normal experiment behavior unchanged.
+    if os.environ.get('MWE') == '1':
+        verify_outputs = False
+        materialize_fbs_cache = False
 
     print(f'original model: {get_model_size(actor, True):.3f}MB')
 

@@ -31,6 +31,7 @@ FIG_ALL_METHODS = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS.pdf"
 FIG_ALL_METHODS_SVG = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS.svg"
 FIG_ALL_METHODS_PNG = SCRIPT_DIR / "FIG_BREAKDOWN_ALL_METHODS.png"
 JSON_OUTPUT = SCRIPT_DIR / "training_time_breakdown.json"
+PLOT_INPUTS_FILENAME = "breakdown_plot_inputs.json"
 
 DATASET_ORDER = ["octo", "vla_adapter_new", "tinyvla", "edgevla"]
 METHOD_ORDER = ["conrft", "flare", "improv_vla", "self_improv", "ppo_gen", "vla_rft", "world_env", "edgeta", "convertnet", "ours"]
@@ -127,6 +128,113 @@ def resolve_output_root(manifest: dict, resolved_manifest_path: Path | None) -> 
     if suite_stamp and suite_stamp not in {"no-data", "merged-latest"}:
         return ALL_METHODS_TABLE_ROOT / suite_stamp
     return ALL_METHODS_TABLE_ROOT / "merged-summary-aligned"
+
+
+def resolve_eval_path(path_value: str) -> Path:
+    path = Path(path_value)
+    return path if path.is_absolute() else EVAL_ROOT / path
+
+
+def same_acc_summary_path(panel: dict, manifest: dict) -> Path | None:
+    """Return the target-accuracy summary that defines this panel's cutoff."""
+    candidates = [
+        str(panel.get("same_acc_manifest") or "").strip(),
+        str(manifest.get("same_acc_manifest") or "").strip(),
+    ]
+    for manifest_ref in candidates:
+        if not manifest_ref:
+            continue
+        summary_path = resolve_eval_path(manifest_ref).parent / "overhead_same_acc_summary.json"
+        if summary_path.is_file():
+            return summary_path
+
+    # This is the same fallback used when a breakdown manifest has no explicit
+    # same-accuracy reference.
+    latest_path = SCRIPT_DIR / "overhead_same_acc_table" / "latest.txt"
+    if latest_path.is_file():
+        stamp = latest_path.read_text(encoding="utf-8").strip()
+        summary_path = latest_path.parent / stamp / "overhead_same_acc_summary.json"
+        if stamp and summary_path.is_file():
+            return summary_path
+    return None
+
+
+def collect_plot_inputs(manifest: dict, rows: list[dict[str, str]]) -> list[dict]:
+    """Describe the exact timing and target-accuracy inputs used per panel."""
+    panels = manifest.get("panels", manifest.get("families", []))
+    panels_by_family = {
+        str(panel.get("family")): panel
+        for panel in panels
+        if isinstance(panel, dict)
+    }
+    inputs: list[dict] = []
+    for family in DATASET_ORDER:
+        panel = panels_by_family.get(family, {})
+        panel_rows = [row for row in rows if row.get("family") == family]
+        summary_path = same_acc_summary_path(panel, manifest)
+        target_by_method: dict[str, float] = {}
+        reach_hours_by_method: dict[str, float] = {}
+        if summary_path is not None:
+            try:
+                summary_rows = json.loads(summary_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                warnings.warn(f"Cannot read target-accuracy summary {summary_path}: {exc}", RuntimeWarning)
+                summary_rows = []
+            if isinstance(summary_rows, list):
+                for row in summary_rows:
+                    if not isinstance(row, dict) or str(row.get("family", "")) != family:
+                        continue
+                    method = str(row.get("method", "")).strip()
+                    target = row.get("target_accuracy")
+                    reach_hours = row.get("reach_hours")
+                    if method and isinstance(target, (int, float)):
+                        target_by_method[method] = float(target)
+                    if method and isinstance(reach_hours, (int, float)):
+                        reach_hours_by_method[method] = float(reach_hours)
+        unique_targets = sorted(set(target_by_method.values()))
+        inputs.append(
+            {
+                "family": family,
+                "panel_label": panel.get("panel_label", ""),
+                "workload_name": panel.get("workload_name", family),
+                "target_accuracy_mode": (
+                    "per-workload" if len(unique_targets) == 1 and unique_targets else
+                    "mixed-per-method" if len(unique_targets) > 1 else "unavailable"
+                ),
+                "target_accuracy": unique_targets[0] if len(unique_targets) == 1 else None,
+                "target_accuracy_by_method": target_by_method,
+                "reach_hours_by_method": reach_hours_by_method,
+                "target_accuracy_source": str(summary_path) if summary_path is not None else "",
+                "timing_inputs": [
+                    {
+                        "method": row.get("method_name", ""),
+                        "source": row.get("source", ""),
+                        "sampling_seconds": float(row.get("sampling_seconds", 0.0)),
+                        "training_seconds": float(row.get("training_seconds", 0.0)),
+                    }
+                    for row in panel_rows
+                ],
+            }
+        )
+    return inputs
+
+
+def print_plot_inputs(plot_inputs: list[dict]) -> None:
+    for item in plot_inputs:
+        target = item["target_accuracy"]
+        target_text = f"{target:.4f}" if target is not None else "unavailable"
+        print(
+            f"[plot-input] {item['family']} ({item['workload_name']}): "
+            f"target_acc={target_text}, mode={item['target_accuracy_mode']}, "
+            f"target_source={item['target_accuracy_source'] or '<none>'}"
+        )
+        for timing in item["timing_inputs"]:
+            print(
+                f"[plot-input]   method={timing['method']} "
+                f"sampling_s={timing['sampling_seconds']:.6f} "
+                f"training_s={timing['training_seconds']:.6f} "
+                f"source={timing['source'] or '<none>'}"
+            )
 
 
 def build_payload(rows: list[dict[str, str]]) -> dict:
@@ -240,11 +348,17 @@ def main(argv: list[str] | None = None) -> None:
         all_rows = load_csv_rows(output_root / 'BREAKDOWN_ALL_METHODS.csv')
 
     payload = build_payload(all_rows)
+    plot_inputs = collect_plot_inputs(manifest, all_rows)
+    payload['plot_inputs'] = plot_inputs
     JSON_OUTPUT.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+    plot_inputs_output = output_root / PLOT_INPUTS_FILENAME
+    plot_inputs_output.write_text(json.dumps(plot_inputs, indent=2), encoding='utf-8')
+    print_plot_inputs(plot_inputs)
     panel_paths = draw_panels(payload)
     compose_grid_figure(panel_paths, output_paths=[FIG_ALL_METHODS_PNG, FIG_ALL_METHODS_SVG], rows=1, cols=4, figsize=(20.0, 5.0), legend_path=None, dpi=200)
     fill_sampling_training_template(FIG_ALL_METHODS, panel_paths)
     print(f"Saved JSON: {JSON_OUTPUT}")
+    print(f"Saved plot inputs: {plot_inputs_output}")
     print(f"Saved PDF: {FIG_ALL_METHODS}")
     print(f"Saved PNG: {FIG_ALL_METHODS_PNG}")
     print(f"Saved SVG: {FIG_ALL_METHODS_SVG}")

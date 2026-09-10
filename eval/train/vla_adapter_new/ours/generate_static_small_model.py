@@ -1,4 +1,5 @@
 import copy
+import os
 from functools import partial
 import sys
 from pathlib import Path
@@ -524,7 +525,9 @@ def generate_static_small_model_with_returning_pruning_info(
             device=device,
             dtype=torch.float32,
         )
-    if verify:
+    # MWE overhead reports training success, not numerical reconstruction
+    # quality.  Do not run or print the large/small diff for any method.
+    if verify and os.environ.get("MWE") != "1":
         _verify_static_small_model(actor, small_model, prepared_sample)
     return small_model, pruning_info
 

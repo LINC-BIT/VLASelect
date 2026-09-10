@@ -98,3 +98,4 @@ tmp_mask_*.pth
 eval/forgetting/results
 start_docker.sh
 **/.ipynb_checkpoints/
+**/multi_agent_*.json

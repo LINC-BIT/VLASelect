@@ -50,6 +50,7 @@ Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2212-experiment-12-discussion-6-in-section-55-comparison-between-different-knowledge-exchange-granularities">2.2.12 Experiment 12: (Discussion 6 in Section 5.5) Comparison between Different Knowledge Exchange Granularities</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2213-experiment-13-discussion-7-in-section-55-forgetting-on-previously-learned-environmentstasks">2.2.13 Experiment 13: (Discussion 7 in Section 5.5) Forgetting on Previously Learned Environments/Tasks</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2214-experiment-14-discussion-8-in-section-55-applicability-to-mlpcnn-models">2.2.14 Experiment 14: (Discussion 8 in Section 5.5) Applicability to MLP/CNN models</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#2215-extra-experiment-1-impact-of-transferred-updates-on-the-large-model">2.2.15 Extra Experiment 1: Impact of Transferred Updates on the Large Model</a><br>
 <a href="#3-reusability-integrating-vlaselect-with-vla-models-scaling-strategies-and-knowledge-exchange-granularities">3. Reusability: Integrating VLASelect with VLA Models, Scaling Strategies, and Knowledge Exchange Granularities</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#31-example-1-vla-adapter">3.1 Example 1: VLA-Adapter</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#311-model-integration-interface">3.1.1 Model Integration Interface</a><br>
@@ -736,14 +737,14 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
   cd overhead
 
   # You can run four workloads by one command:
-  bash overhead_same_acc.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_same_acc.sh
   python3 plot_overhead.py
 
   # Or you can run each workloads step by step:
-  bash overhead_same_acc_single_arm_robot.sh
-  bash overhead_same_acc_mobile_manipulator.sh
-  bash overhead_same_acc_dexterous_hand.sh
-  bash overhead_same_acc_humanoid_robot.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_same_acc_single_arm_robot.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_same_acc_mobile_manipulator.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_same_acc_dexterous_hand.sh
+  MWE=1 METHODS=self_improv,vla_rft,world_env,vlaselect bash overhead_same_acc_humanoid_robot.sh
   python3 plot_overhead.py
   ```
 - **Option 2:** Commands for small working examples on all methods:
@@ -751,14 +752,14 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
   cd overhead
 
   # You can run four workloads by one command:
-  bash overhead_same_acc.sh
+  MWE=1 bash overhead_same_acc.sh
   python3 plot_overhead.py
 
   # Or you can run each workloads step by step:
-  bash overhead_same_acc_single_arm_robot.sh
-  bash overhead_same_acc_mobile_manipulator.sh
-  bash overhead_same_acc_dexterous_hand.sh
-  bash overhead_same_acc_humanoid_robot.sh
+  MWE=1 bash overhead_same_acc_single_arm_robot.sh
+  MWE=1 bash overhead_same_acc_mobile_manipulator.sh
+  MWE=1 bash overhead_same_acc_dexterous_hand.sh
+  MWE=1 bash overhead_same_acc_humanoid_robot.sh
   python3 plot_overhead.py
   ```
 - **Option 3:** Commands for full run:
@@ -1245,6 +1246,38 @@ Finally, follow Sections 2.2.1 to 2.2.14 to reproduce each figure/table in our e
           <td>12 minutes for training, 8 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
           <td>Create files<br>api/model_type/<br>CNN-ACC.png,<br>api/model_type/<br>MLP-ACC.png, and<br>api/model_type/<br>MLP-CNN-ACC-COMPARE.png</td>
           <td><a href="./single%20results/results-2.2.14.md">Link</a></td>
+        </tr>
+      </tbody>
+    </table>
+
+
+#### 2.2.15 Extra Experiment 1: Impact of Transferred Updates on the Large Model<img src="./heading-divider-h4.svg" alt="" width="100%" height="1">
+
+  - **Option 1:** Commands for minimum working examples:
+    ```bash
+    MWE=1 bash api/update_impact_on_large_model/run.sh
+    ```
+  - **Option 2:** Commands for full run (13 hours, 60GB memory, and 30GB disk space):
+    ```bash
+    bash api/update_impact_on_large_model/run.sh
+    ```
+  - The example resource requirements and outputs are listed below:
+
+    <table align="center">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Resource Requirements</th>
+          <th>Side-Effects</th>
+          <th>Example Running Outputs</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Minimum working example</td>
+          <td>5 minutes for training, 15 minutes for initialization and evaluation<br>20GB memory<br>30GB disk space</td>
+          <td>Create directory<br>api/<br>update_impact_on_large_model/<br>outputs/<br>impact_on_large_model/<br>&lt;STAMP&gt;/</td>
+          <td><a href="./single%20results/results-2.2.15.md">Link</a></td>
         </tr>
       </tbody>
     </table>

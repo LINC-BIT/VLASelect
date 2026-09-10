@@ -679,7 +679,9 @@ launch_curve() {
                 fi
                 ;;
             knowledge_accumulation)
-                cmd+=(--mwe-knowledge-accumulation-count "${MWE_KNOWLEDGE_ACCUMULATION_COUNT:-5}")
+                if [[ "$curve_id" != "selective_accumulation" ]]; then
+                    cmd+=(--mwe-knowledge-accumulation-count "${MWE_KNOWLEDGE_ACCUMULATION_COUNT:-5}")
+                fi
                 ;;
             neuron_swapping)
                 if [[ "$curve_id" == "random_swapping" ]]; then

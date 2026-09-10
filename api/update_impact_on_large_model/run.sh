@@ -32,7 +32,7 @@ ARGS=(
 )
 
 if [[ "$MWE" == "1" ]]; then
-  export MWE_MAX_RUNTIME_MINUTES=${MWE_MAX_RUNTIME_MINUTES:-5}
+  export MWE_MAX_RUNTIME_MINUTES=${MWE_MAX_RUNTIME_MINUTES:-10}
   ARGS+=(--learning-rate 1e-7 --head-learning-rate 1e-7 --state-learning-rate 1e-7 --value-head-learning-rate 1e-7 --backbone-learning-rate 1e-7)
 fi
 

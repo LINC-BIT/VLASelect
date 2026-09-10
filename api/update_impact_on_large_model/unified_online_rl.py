@@ -226,7 +226,7 @@ def parse_args() -> Args:
         # args.small_model_feedback_schedule = "once"
         # args.small_model_regeneration_schedule = "once"
         args.total_timesteps = max(args.total_timesteps, 10**12)
-        mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "5.0"))
+        mwe_runtime_minutes = float(os.environ.get("MWE_MAX_RUNTIME_MINUTES", "10.0"))
         if mwe_runtime_minutes <= 0:
             raise ValueError("MWE_MAX_RUNTIME_MINUTES must be positive")
         args.max_runtime_hours = mwe_runtime_minutes / 60.0
@@ -641,6 +641,21 @@ def train(
             value = metrics.get("train_success_at_end", 0.0)
         return float(value)
 
+    def collect_large_model_metric() -> Dict[str, float]:
+        sparsity_modules = [
+            module
+            for module in large_agent.modules()
+            if "KTakesAll" in module.__class__.__name__ and hasattr(module, "k")
+        ]
+        previous_sparsities = [module.k for module in sparsity_modules]
+        try:
+            for module in sparsity_modules:
+                module.k = 0.0
+            return collect_policy_metric(eval_envs, large_agent)
+        finally:
+            for module, sparsity in zip(sparsity_modules, previous_sparsities):
+                module.k = sparsity
+
     def collect_initial_training_metric() -> Dict[str, Any]:
         """Measure the initial policy on the training environments before PPO updates."""
         metric: Dict[str, Any] = {
@@ -762,16 +777,14 @@ def train(
             print("[impact] measuring policies before feedback")
             pause_training_clock()
             try:
-                large_before = collect_policy_metric(eval_envs, large_agent)
-                small_before = collect_policy_metric(eval_envs, small_agent)
+                large_before = collect_large_model_metric()
                 feedback_static_small_model_to_large_model(
                     large_agent,
                     small_agent,
                     current_pruning_info,
                     alpha=args.small_model_feedback_alpha,
                 )
-                large_after = collect_policy_metric(eval_envs, large_agent)
-                small_after = collect_policy_metric(eval_envs, small_agent)
+                large_after = collect_large_model_metric()
             finally:
                 start_training_clock()
             impact_records.append(
@@ -779,18 +792,14 @@ def train(
                     "time": elapsed_training_hours(),
                     "large_model_acc_before_feedback": policy_accuracy(large_before),
                     "large_model_acc_after_feedback": policy_accuracy(large_after),
-                    "small_model_acc_before_feedback": policy_accuracy(small_before),
-                    "small_model_acc_after_feedback": policy_accuracy(small_after),
                 }
             )
             latest_impact = impact_records[-1]
             print(
                 f"[impact] update={update} "
-                f"large_before={latest_impact['large_model_acc_before_feedback']:.4f} "
-                f"large_after={latest_impact['large_model_acc_after_feedback']:.4f} "
-                f"small_before={latest_impact['small_model_acc_before_feedback']:.4f} "
-                f"small_after={latest_impact['small_model_acc_after_feedback']:.4f} "
-                f"large_delta={latest_impact['large_model_acc_after_feedback'] - latest_impact['large_model_acc_before_feedback']:+.4f}"
+                f"large_model_accuracy_before_feedback={latest_impact['large_model_acc_before_feedback']:.4f} "
+                f"large_model_accuracy_after_feedback={latest_impact['large_model_acc_after_feedback']:.4f} "
+                f"improvement={latest_impact['large_model_acc_after_feedback'] - latest_impact['large_model_acc_before_feedback']:+.4f}"
             )
             success_end_at_last_small_model_feedback = current_success_end
 

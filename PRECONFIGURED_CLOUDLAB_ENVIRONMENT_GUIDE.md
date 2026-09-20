@@ -33,7 +33,7 @@ Reviewers can access this environment and run the **minimum working examples** d
 
 ## 2. Access the Environment
 
-- **Step 1**: Open the URL [http://http://clgpu015.clemson.cloudlab.us:8080/](http://clgpu015.clemson.cloudlab.us:8080/) in a web browser (e.g. Chrome or Microsoft Edge). The login page will appear as below:
+- **Step 1**: Open the URL [http://clgpu015.clemson.cloudlab.us:8080/](http://clgpu015.clemson.cloudlab.us:8080/) in a web browser (e.g. Chrome or Microsoft Edge). The login page will appear as below:
 
 <p align="center">
     <img src="./imgs/step1-cloud-login.png" alt="Login page" width="90%" />

@@ -9,8 +9,7 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
 [An open access small machine](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_ENVIRONMENT_GUIDE.md) and its
-[Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
-[Open access of an academic cloud machine (CloudLab)](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_CLOUDLAB_ENVIRONMENT_GUIDE.md) and its
+[Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br><!-- [Open access of an academic cloud machine (CloudLab)](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_CLOUDLAB_ENVIRONMENT_GUIDE.md) and its -->
 [Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect%20(CloudLab).md)<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22646068)<br>
 Docker Image: <br>

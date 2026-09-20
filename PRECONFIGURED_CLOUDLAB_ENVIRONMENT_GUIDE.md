@@ -33,10 +33,15 @@ Reviewers can access this environment and run the **minimum working examples** d
 
 ## 2. Access the Environment
 
-Open the URL http://clgpu015.clemson.cloudlab.us:8080/?folder=/data/VLASelect in a web browser (e.g. Chrome or Microsoft Edge). 
+- **Step 1**: Open the URL [http://http://clgpu015.clemson.cloudlab.us:8080/](http://clgpu015.clemson.cloudlab.us:8080/) in a web browser (e.g. Chrome or Microsoft Edge). The login page will appear as below:
 
-The page of **preconfigured environment** will appear as below:
+<p align="center">
+    <img src="./imgs/step1-cloud-login.png" alt="Login page" width="90%" />
+  </p>
 
+- **Step 2**: Input the password `ae5a1f08d4f7ed584893bff99b0924055209f1b3e86cb0e0` and click the "SUBMIT" button;
+
+- **Step 3**: The page of **preconfigured environment** will appear as below:
 <p align="center">
   <img src="./imgs/step1-cloud.png" alt="Login page" width="90%" />
 </p>

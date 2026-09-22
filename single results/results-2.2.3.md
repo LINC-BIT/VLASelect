@@ -10,6 +10,19 @@
 
 <img src="../imgs/2.2.2.1.png" alt="Overhead Comparison - Full Run" style="zoom:150%;" />
 
+<br>
+
+**Clarification of VLASelect's low memory footprint**: VLASelect maintains additional data structures (e.g. large model and neuron index) and running steps (data movements) but achieves the lowest memory footprint. We clarify the low resource consumption of these additional data structures and running steps:
+
+- **The complete large model**: It is stored on disk and **takes no memory footprint during training**. Only a small proportion of neurons in the large model are loaded into memory when (i) calculating the neuron’s accuracy contribution and (ii) enhancing the small model. Both operations take less than 1s in total, and thus do not increase the average memory footprint during training.
+
+- **The cache/backing-store memory**: The LRU neuron cache only keeps 1% of the most frequently used neurons in the large model, which takes less than 100MB memory (**less than 0.7% of the training memory**).
+
+- **The neuron-index state**: The neuron index is stored on disk and **takes no memory footprint during training**. It is only loaded into memory when (i) enhancing the small model and (ii) updating the large model. Both operations take less than 1s in total, and thus do not increase the average memory footprint during training.
+
+- **The data-movement costs**: The costs primarily arise from transferring selected neurons from the large model to the small model. This process involves only read operations from memory or disk and is **completed within 1s**.
+
+
 <br><br>
 
 #### Table 2: Full-scale Example for Average Energy Consumption (kJ) in each new task

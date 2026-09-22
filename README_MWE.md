@@ -7,13 +7,13 @@ This repository contains the artifacts for the paper **"VLASelect: Selective Lar
 
 > This guide covers only Minimal Working Examples (MWE). For comprehensive documentation or troubleshooting, please check the main [README](./README.md).
 
+
 ## Checklist, Open Access Platforms and Downloads
 
 [Artifact Evaluation Checklist (Available, Functional, Reproduced)](./ARTIFACT-CHECKLIST.md)<br>
-[An open access small machine](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_ENVIRONMENT_GUIDE.md) and its
+[A Commercial Cloud Platform](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_ENVIRONMENT_GUIDE.md) and Its
 [Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect.md)<br>
-[Open access of an academic cloud machine (CloudLab)](https://github.com/LINC-BIT/VLASelect/blob/main/PRECONFIGURED_CLOUDLAB_ENVIRONMENT_GUIDE.md) and its
-[Evaluation Report](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect%20(CloudLab).md)<br>
+[Evaluation Report on An Academic Cloud Machine (CloudLab)](https://github.com/LINC-BIT/VLASelect/blob/main/Artifact%20Evaluation%20Report%20for%20VLASelect%20(CloudLab).md)<br>
 [Zenodo for Long-Term Storage](https://zenodo.org/records/22646068)<br>
 Docker Image: <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[147MB version](https://hub.docker.com/r/cz22edd/pytorch?tag=maniskillv2-100m) (requiring further dependency installation by running [dep-non-docker.sh](./dep-non-docker.sh))<br>
